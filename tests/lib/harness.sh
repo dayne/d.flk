@@ -93,6 +93,8 @@ mcq()    { mcping "${2:-$(machine_ip)}" 25565 -q "$1"; } # mcq flk.boots [IP]
 host_online() { timeout 3 bash -c '</dev/tcp/1.1.1.1/53' 2>/dev/null; }
 port_helper_ready() { sudo -n -l /usr/local/libexec/flk-ports >/dev/null 2>&1; }
 port_map() { sudo -n /usr/local/libexec/flk-ports list; } # the live nft map
+# host_listening PORT: a TCP socket listens on PORT (ss exits 0 either way)
+host_listening() { ss -Hltn "sport = :$1" | grep -q .; }
 host_lan_ip() { ip -o route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}'; }
 
 # Called by the runner after a failed vm test: append context to its log.

@@ -152,7 +152,7 @@ test_host_listener_blocks_forward() {
   ensure_up
   ruby -rsocket -e 'TCPServer.new("0.0.0.0", ARGV[0].to_i); sleep' "$HOST_PORT" &
   local pid=$!
-  wait_until 5 ss -Hltn "sport = :$HOST_PORT" || { kill "$pid"; fail "test listener never bound"; }
+  wait_until 5 host_listening "$HOST_PORT" || { kill "$pid"; fail "test listener never bound"; }
   flk ports sync
   local ports; ports=$(flk ports)
   kill "$pid"; wait "$pid" 2>/dev/null || true
@@ -173,7 +173,7 @@ test_port_helper_refuses_host_ports() {
   assert_contains "$out" "below"
   ruby -rsocket -e 'TCPServer.new("0.0.0.0", ARGV[0].to_i); sleep' "$((HOST_PORT + 1))" &
   local pid=$!
-  wait_until 5 ss -Hltn "sport = :$((HOST_PORT + 1))" || { kill "$pid"; fail "test listener never bound"; }
+  wait_until 5 host_listening "$((HOST_PORT + 1))" || { kill "$pid"; fail "test listener never bound"; }
   local rc=0
   out=$(echo "tcp $((HOST_PORT + 1)) $ip 25565" | sudo -n "$helper" replace 2>&1) || rc=$?
   kill "$pid"; wait "$pid" 2>/dev/null || true
