@@ -1,0 +1,70 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "label": "/dev/kvm read/write",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "firecracker /home/dayne/.local/share/flk/bin/firecracker",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "guest kernel /home/dayne/.local/share/flk/kernel/vmlinux",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "bridge flkbr0",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "tap pool 16/16",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "ipv4 forwarding",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "tmux",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "mkfs.ext4",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "fakeroot",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "container engine (podman)",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "podman resolves short image names (FROM ruby:3.3)",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "port helper (host ports from 1024)",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "boot service (machines come back after a reboot)",
+      "status": "pass",
+      "hint": null
+    }
+  ]
+}

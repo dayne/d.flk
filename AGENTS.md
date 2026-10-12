@@ -33,5 +33,8 @@ Working on flk itself:
   reference text is `share/guide.md`; guides by stage are `share/help/*.md`
   (add new ones to `Commands::TOPICS`). Commands that change things end with
   a `Next:` line (`next_step`).
+- `lazyflk/` is the terminal UI (Go, its own module; spec in
+  `lazyflk/SPEC.md`). It uses only flk's CLI, so CLI and JSON changes are
+  its API: keep them compatible, and record what it needs in `TODO.md`.
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
   full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`.

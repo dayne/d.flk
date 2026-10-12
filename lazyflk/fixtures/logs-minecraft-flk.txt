@@ -1,0 +1,40 @@
+[22:34:46] [main/INFO]: Applied 0 biome modifications to 0 of 66 new biomes in 1.235 ms
+[22:34:46] [Server thread/INFO]: Starting minecraft server version 26.2
+[22:34:46] [Server thread/INFO]: Loading properties
+[22:34:46] [Server thread/INFO]: Default game type: SURVIVAL
+[22:34:46] [Server thread/INFO]: Generating keypair
+[22:34:46] [Server thread/INFO]: Starting Minecraft server on *:25565
+[22:34:46] [Server thread/INFO]: Preparing level "world2-201803"
+[22:34:47] [Server thread/INFO]: Loading 25 persistent chunks...
+[22:34:47] [Server thread/INFO]: Preparing spawn area: 28%
+[22:34:48] [Server thread/INFO]: Preparing spawn area: 28%
+[22:34:48] [Server thread/INFO]: Preparing spawn area: 28%
+[22:34:49] [Server thread/INFO]: Preparing spawn area: 28%
+[22:34:49] [Server thread/INFO]: Preparing spawn area: 28%
+[22:34:50] [Server thread/INFO]: Time elapsed: 2465 ms
+[22:34:50] [Server thread/INFO]: Done (3.031s)! For help, type "help"
+[22:34:50] [Server thread/INFO]: Starting remote control listener
+[22:34:50] [Server thread/INFO]: Thread RCON Listener started
+[22:34:50] [Server thread/INFO]: RCON running on 0.0.0.0:25576
+[22:34:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:overworld
+[22:34:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:the_nether
+[22:34:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:the_end
+[22:34:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:34:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:34:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:34:50] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:34:50] [Server thread/INFO]: Took 17ms to boot Floodgate
+[22:34:51] [Server thread/INFO]: ******************************************
+[22:34:51] [Server thread/INFO]: 
+[22:34:51] [Server thread/INFO]: Loading Geyser version 2.11.0-b1205 (git-master-3aeedfa)
+[22:34:51] [Server thread/INFO]: 
+[22:34:51] [Server thread/INFO]: ******************************************
+[22:34:51] [Server thread/INFO]: Registered 199 custom block overrides.
+[22:34:51] [Server thread/INFO]: Registered 2 custom block item overrides.
+[22:34:51] [Server thread/INFO]: Registered 7 custom blocks.
+[22:34:53] [Server thread/INFO]: Registered 1 custom items
+[22:34:53] [GeyserServer-3-1/INFO]: Started Geyser on UDP port 19132
+[22:34:53] [Server thread/INFO]: Done (2.811s)! Run /geyser help for help!
+[22:34:53] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 3523ms or 70 ticks behind
+[22:34:54] [ForkJoinPool.commonPool-worker-1/INFO]: [32;1mThere's a new Geyser update available to support Bedrock version 26.52. Download it here: [34;1m[4mhttps://geysermc.org/download[0m
+list

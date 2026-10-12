@@ -1,0 +1,796 @@
+{
+  "version": "0.1.0",
+  "state_dir": "/home/dayne/.local/share/flk",
+  "global_options": [
+    {
+      "switches": [
+        "-a",
+        "--app APP"
+      ],
+      "description": "Act on this app instead of the one in ./flk.toml (any command)"
+    }
+  ],
+  "exit_codes": {
+    "0": "success",
+    "1": "error (message on stderr, starting with 'Error:')",
+    "130": "interrupted (Ctrl-C)"
+  },
+  "commands": [
+    {
+      "name": "context",
+      "usage": "flk context [--all] [--json]",
+      "summary": "What flk sees right now: host health, the current app, machines, ports, next steps",
+      "options": [
+        {
+          "switches": [
+            "--all"
+          ],
+          "description": "Every app on this host, not just the current one"
+        },
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "Run this first. It resolves the app the same way other commands do (-a APP, or flk.toml / fly.toml in the current directory) and works even when there is none.",
+        "Also tidies machines that exited on their own, like status does."
+      ]
+    },
+    {
+      "name": "help",
+      "usage": "flk help [COMMAND|TOPIC] [SUBCOMMAND] [--all] [--json]",
+      "summary": "Show help for flk, a command, or a topic (cheatsheet, install, first-app, operate, troubleshoot, uninstall)",
+      "args": "[COMMAND|TOPIC] [SUBCOMMAND]",
+      "options": [
+        {
+          "switches": [
+            "--all"
+          ],
+          "description": "The full reference: concepts, every command, config, workflows, gotchas"
+        },
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "With --all: the command table as JSON"
+        }
+      ],
+      "json": false,
+      "notes": [
+        "`flk COMMAND --help` is the same as `flk help COMMAND`."
+      ]
+    },
+    {
+      "name": "completion",
+      "usage": "flk completion SHELL",
+      "summary": "Print a tab-completion script (bash; zsh via bashcompinit)",
+      "args": "SHELL",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "Install: echo 'source <(flk completion bash)' >> ~/.bashrc  (or, with bash-completion loaded: flk completion bash > ~/.local/share/bash-completion/completions/flk)",
+        "zsh: autoload -U bashcompinit && bashcompinit && source <(flk completion bash)"
+      ]
+    },
+    {
+      "name": "setup",
+      "usage": "flk setup",
+      "summary": "Download firecracker + guest kernel (no root), then run doctor",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "Root setup (bridge, taps, NAT, port helper) is separate: sudo /home/dayne/flk/setup-host.sh"
+      ]
+    },
+    {
+      "name": "doctor",
+      "usage": "flk doctor [--json]",
+      "summary": "Check host readiness",
+      "options": [
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "--json prints {\"ok\", \"checks\": [{\"label\", \"status\", \"hint\"}]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails."
+      ]
+    },
+    {
+      "name": "version",
+      "usage": "flk version",
+      "summary": "Print the flk version",
+      "options": [
+
+      ],
+      "json": false
+    },
+    {
+      "name": "resume",
+      "usage": "flk resume",
+      "summary": "Start every machine that should be running (after a reboot, or after stop-all)",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "Should be running: started, restarted, deployed or scaled, and not stopped with `flk machine stop` since. A machine whose app exited counts too.",
+        "flk-machines.service runs it at boot (sudo /home/dayne/flk/setup-host.sh --install-service).",
+        "-a APP limits it to one app."
+      ]
+    },
+    {
+      "name": "stop-all",
+      "usage": "flk stop-all",
+      "summary": "Gracefully stop every running machine, remembering to resume them",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "What the host does at shutdown (flk-machines.service): all machines stop in parallel, each with its kill_timeout, and `flk resume` brings them back.",
+        "To stop a machine for good, use `flk machine stop`.",
+        "-a APP limits it to one app."
+      ]
+    },
+    {
+      "name": "launch",
+      "usage": "flk launch [--name NAME] [--image IMAGE] [--port PORT] [--cpus N] [--memory MB] [--no-deploy]",
+      "summary": "Create flk.toml (if missing) in the current directory, register the app, deploy",
+      "options": [
+        {
+          "switches": [
+            "--name NAME"
+          ],
+          "description": "App name (default: directory name)"
+        },
+        {
+          "switches": [
+            "--image IMAGE"
+          ],
+          "description": "Use a prebuilt image instead of a Dockerfile"
+        },
+        {
+          "switches": [
+            "--port PORT"
+          ],
+          "description": "internal_port in the generated flk.toml (default 8080)"
+        },
+        {
+          "switches": [
+            "--cpus N"
+          ],
+          "description": "vCPUs in the generated flk.toml (default 1)"
+        },
+        {
+          "switches": [
+            "--memory MB"
+          ],
+          "description": "Memory in the generated flk.toml (default 256)"
+        },
+        {
+          "switches": [
+            "--no-deploy"
+          ],
+          "description": "Register the app but don't deploy"
+        }
+      ],
+      "json": false,
+      "notes": [
+        "An existing flk.toml or fly.toml is used as-is; the options only shape a new one.",
+        "Deploys right away unless --no-deploy, or there's no Dockerfile / [build] image yet."
+      ]
+    },
+    {
+      "name": "deploy",
+      "usage": "flk deploy [--image IMAGE]",
+      "summary": "Build the image and roll machines to a new release",
+      "options": [
+        {
+          "switches": [
+            "--image IMAGE"
+          ],
+          "description": "Deploy this image instead of building"
+        }
+      ],
+      "json": false,
+      "notes": [
+        "Run from the app directory (it reads flk.toml / fly.toml there).",
+        "Creates machines on the first deploy (count from `flk scale count`, default 1); later deploys stop, update and reboot each machine in turn.",
+        "Waits up to 30s per machine for internal_port to accept connections, then warns but carries on.",
+        "Volumes named in [[mounts]] must exist first: flk volumes create NAME --size 1 (one per machine)."
+      ]
+    },
+    {
+      "name": "status",
+      "usage": "flk status [--json]",
+      "summary": "App and machine overview",
+      "options": [
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "Also tidies machines that exited on their own and hands their host ports on."
+      ]
+    },
+    {
+      "name": "releases",
+      "usage": "flk releases [--json]",
+      "summary": "Release history",
+      "options": [
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true
+    },
+    {
+      "name": "apps",
+      "usage": "flk apps SUBCOMMAND",
+      "summary": "List or destroy apps",
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": "list",
+      "subcommands": [
+        {
+          "name": "list",
+          "usage": "flk apps list [--json]",
+          "summary": "All apps on this host",
+          "aliases": [
+            "ls"
+          ],
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "destroy",
+          "usage": "flk apps destroy NAME [--yes]",
+          "summary": "Destroy an app, its machines and volumes",
+          "args": "NAME",
+          "options": [
+            {
+              "switches": [
+                "-y",
+                "--yes"
+              ],
+              "description": "Don't ask for confirmation"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "Without a terminal (agents, scripts) --yes is required; otherwise it asks."
+          ]
+        },
+        {
+          "name": "prune",
+          "usage": "flk apps prune",
+          "summary": "Remove container images left behind by apps that no longer exist",
+          "options": [
+
+          ],
+          "json": false
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "usage": "flk config SUBCOMMAND",
+      "summary": "Inspect the app config",
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": "show",
+      "subcommands": [
+        {
+          "name": "show",
+          "usage": "flk config show [--json]",
+          "summary": "Print the parsed flk.toml / fly.toml and the machine config flk derives from it",
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Accepted; the output is always JSON"
+            }
+          ],
+          "json": true
+        }
+      ]
+    },
+    {
+      "name": "machine",
+      "usage": "flk machine SUBCOMMAND",
+      "summary": "Manage machines (IDs accept a prefix or the machine name)",
+      "aliases": [
+        "machines",
+        "m"
+      ],
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": "list",
+      "subcommands": [
+        {
+          "name": "list",
+          "usage": "flk machine list [--json]",
+          "summary": "Machines of the app",
+          "aliases": [
+            "ls"
+          ],
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "start",
+          "usage": "flk machine start ID...",
+          "summary": "Boot machines",
+          "args": "ID...",
+          "options": [
+
+          ],
+          "json": false
+        },
+        {
+          "name": "stop",
+          "usage": "flk machine stop ID...",
+          "summary": "Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they stay stopped across reboots",
+          "args": "ID...",
+          "options": [
+
+          ],
+          "json": false
+        },
+        {
+          "name": "restart",
+          "usage": "flk machine restart ID...",
+          "summary": "Stop, then boot",
+          "args": "ID...",
+          "options": [
+
+          ],
+          "json": false
+        },
+        {
+          "name": "destroy",
+          "usage": "flk machine destroy ID... [--force]",
+          "summary": "Delete machines (their volumes are kept, unattached)",
+          "aliases": [
+            "rm"
+          ],
+          "args": "ID...",
+          "options": [
+            {
+              "switches": [
+                "-f",
+                "--force"
+              ],
+              "description": "Stop it first if running"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "status",
+          "usage": "flk machine status ID... [--json]",
+          "summary": "Machine record and state as JSON (an array when given several IDs)",
+          "aliases": [
+            "show"
+          ],
+          "args": "ID...",
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Accepted; the output is always JSON"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "config",
+          "usage": "flk machine config ID... [--json]",
+          "summary": "The Firecracker VM config as JSON (an array when given several IDs)",
+          "args": "ID...",
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Accepted; the output is always JSON"
+            }
+          ],
+          "json": true
+        }
+      ]
+    },
+    {
+      "name": "scale",
+      "usage": "flk scale SUBCOMMAND",
+      "summary": "Set the number of machines",
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": null,
+      "subcommands": [
+        {
+          "name": "count",
+          "usage": "flk scale count N",
+          "summary": "Create or destroy machines to reach N",
+          "args": "N",
+          "options": [
+
+          ],
+          "json": false,
+          "notes": [
+            "Each new machine needs its own unattached volume per [[mounts]] entry.",
+            "Before the first deploy this just records N."
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logs",
+      "usage": "flk logs [--instance ID] [--lines N] [--follow] [--no-tail]",
+      "summary": "Serial console output (app stdout/stderr and boot messages)",
+      "options": [
+        {
+          "switches": [
+            "-i",
+            "--instance ID"
+          ],
+          "description": "One machine (default: all)"
+        },
+        {
+          "switches": [
+            "-n",
+            "--lines N"
+          ],
+          "description": "Lines of history (default 50)"
+        },
+        {
+          "switches": [
+            "-f",
+            "--follow"
+          ],
+          "description": "Keep following, even without a terminal"
+        },
+        {
+          "switches": [
+            "--no-tail"
+          ],
+          "description": "Print and exit, even in a terminal"
+        }
+      ],
+      "json": false,
+      "notes": [
+        "Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits.",
+        "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB."
+      ]
+    },
+    {
+      "name": "console",
+      "usage": "flk console [ID]",
+      "summary": "Attach to a machine's serial console",
+      "args": "[ID]",
+      "options": [
+
+      ],
+      "json": false,
+      "blocks": "attaches an interactive terminal; agents should use `flk logs` instead",
+      "notes": [
+        "Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Needs a terminal.",
+        "It's the serial console, not a shell: you see app output and type to its stdin (server consoles: stop, say, op...). Ctrl-C here doesn't signal the app; use flk machine stop.",
+        "`flk ssh console` is an alias."
+      ]
+    },
+    {
+      "name": "ssh",
+      "usage": "flk ssh SUBCOMMAND",
+      "summary": "Alias: `flk ssh console` = `flk console`",
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": null,
+      "subcommands": [
+        {
+          "name": "console",
+          "usage": "flk ssh console [ID]",
+          "summary": "Same as flk console",
+          "args": "[ID]",
+          "options": [
+
+          ],
+          "json": false,
+          "blocks": "attaches an interactive terminal; agents should use `flk logs` instead"
+        }
+      ]
+    },
+    {
+      "name": "proxy",
+      "usage": "flk proxy LOCAL[:REMOTE] [ID] [--bind ADDR]",
+      "summary": "Forward a local TCP port to a machine",
+      "args": "LOCAL[:REMOTE] [ID]",
+      "options": [
+        {
+          "switches": [
+            "--bind ADDR"
+          ],
+          "description": "Listen address (default 127.0.0.1; 0.0.0.0 exposes it on the LAN)"
+        }
+      ],
+      "json": false,
+      "blocks": "forwards until Ctrl-C; run it in the background (`flk proxy 8080 &`) and kill it when done",
+      "notes": [
+        "Rarely needed: machine IPs (172.30.0.x, see `flk status`) are reachable from the host directly."
+      ]
+    },
+    {
+      "name": "ports",
+      "usage": "flk ports SUBCOMMAND",
+      "summary": "Host ports forwarded to machines ([[services.ports]])",
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": "list",
+      "subcommands": [
+        {
+          "name": "list",
+          "usage": "flk ports list [--json]",
+          "summary": "Forwarded ports: active, waiting (another machine has it) or blocked (and why)",
+          "aliases": [
+            "ls"
+          ],
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "sync",
+          "usage": "flk ports sync",
+          "summary": "Rewrite the host's port map from the running machines",
+          "options": [
+
+          ],
+          "json": false
+        },
+        {
+          "name": "reap",
+          "usage": "flk ports reap",
+          "summary": "Tidy machines that exited on their own and hand their ports on (run automatically by flk's tmux hook)",
+          "options": [
+
+          ],
+          "json": false
+        }
+      ]
+    },
+    {
+      "name": "secrets",
+      "usage": "flk secrets SUBCOMMAND",
+      "summary": "App secrets, delivered to machines as env vars",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "Changing secrets restarts running machines unless --stage is given."
+      ],
+      "default_subcommand": "list",
+      "subcommands": [
+        {
+          "name": "list",
+          "usage": "flk secrets list [--json]",
+          "summary": "Names and digests (never values)",
+          "aliases": [
+            "ls"
+          ],
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "set",
+          "usage": "flk secrets set KEY=VALUE... [--stage]",
+          "summary": "Set secrets (VALUE '-' reads it from stdin)",
+          "args": "KEY=VALUE...",
+          "options": [
+            {
+              "switches": [
+                "--stage"
+              ],
+              "description": "Don't restart machines; applies on next start/deploy"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "unset",
+          "usage": "flk secrets unset KEY... [--stage]",
+          "summary": "Remove secrets",
+          "args": "KEY...",
+          "options": [
+            {
+              "switches": [
+                "--stage"
+              ],
+              "description": "Don't restart machines; applies on next start/deploy"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "import",
+          "usage": "flk secrets import [--stage]",
+          "summary": "Set secrets from KEY=VALUE lines on stdin",
+          "options": [
+            {
+              "switches": [
+                "--stage"
+              ],
+              "description": "Don't restart machines; applies on next start/deploy"
+            }
+          ],
+          "json": false
+        }
+      ]
+    },
+    {
+      "name": "volumes",
+      "usage": "flk volumes SUBCOMMAND",
+      "summary": "Persistent disks (sparse ext4), one machine each",
+      "aliases": [
+        "volume",
+        "vol"
+      ],
+      "options": [
+
+      ],
+      "json": false,
+      "default_subcommand": "list",
+      "subcommands": [
+        {
+          "name": "list",
+          "usage": "flk volumes list [--json]",
+          "summary": "Volumes and what they're attached to",
+          "aliases": [
+            "ls"
+          ],
+          "options": [
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true
+        },
+        {
+          "name": "create",
+          "usage": "flk volumes create NAME [--size GB] [--path FILE] [--from-dir DIR]",
+          "summary": "Create a volume for [[mounts]] source = NAME",
+          "args": "NAME",
+          "options": [
+            {
+              "switches": [
+                "-s",
+                "--size GB"
+              ],
+              "description": "Size in GB (default 1)"
+            },
+            {
+              "switches": [
+                "--path FILE"
+              ],
+              "description": "Create the image at FILE (e.g. on a bigger disk) instead of flk's state dir; flk never deletes it"
+            },
+            {
+              "switches": [
+                "--from-dir DIR"
+              ],
+              "description": "Fill it with a copy of DIR (owner/group IDs kept as-is)"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "import",
+          "usage": "flk volumes import NAME [--path FILE]",
+          "summary": "Register an existing ext4 image as a volume; flk never deletes it",
+          "args": "NAME",
+          "options": [
+            {
+              "switches": [
+                "--path FILE"
+              ],
+              "description": "An existing ext4 image file (required)"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "Size comes from the file. Don't mount it on the host while a machine uses it."
+          ]
+        },
+        {
+          "name": "destroy",
+          "usage": "flk volumes destroy ID|NAME [--delete-data]",
+          "summary": "Delete an unattached volume and its data (external volumes: unregister, keep the file)",
+          "aliases": [
+            "rm"
+          ],
+          "args": "ID|NAME",
+          "options": [
+            {
+              "switches": [
+                "--delete-data"
+              ],
+              "description": "Also delete an external (--path / import) volume's file"
+            }
+          ],
+          "json": false
+        }
+      ]
+    }
+  ],
+  "topics": {
+    "cheatsheet": "One screen: the commands you need, by task",
+    "install": "Setting up a host, from nothing to `flk doctor` passing",
+    "first-app": "Launch, configure, deploy and check an app",
+    "operate": "Day to day: changes, logs, consoles, reboots, disk, updates",
+    "troubleshoot": "Symptom -> cause -> command",
+    "uninstall": "Removing apps, host setup and files"
+  }
+}

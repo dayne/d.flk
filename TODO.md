@@ -51,7 +51,7 @@ Each entry says where the issue is caught today, and where a fix could go.
   `flk deploy --release vN` / `flk releases rollback`. Only the last two
   rootfs images are kept.
 
-## For lazyflk (TUI, spec in ~/lazyflk/SPEC.md section 9)
+## For lazyflk (TUI, spec in lazyflk/SPEC.md section 9)
 
 - [ ] **G1: read commands can block on a deploy.** `apps list` / `status` /
   `ports` reap exited machines, and that waits for the global lock a deploy
@@ -65,6 +65,8 @@ Each entry says where the issue is caught today, and where a fix could go.
   for cheap polling.
 - [ ] **G6: JSON has no schema version.** `"schema": 1` plus a compatibility rule.
 - [ ] **G7: no events.** Later: `flk events --json`.
+- [ ] **G8: no disk breakdown.** `flk disk [--json]`: bytes per app and
+  category (release images, rootfs copies, volumes, logs), sparse-aware.
 
 ## Bigger features
 

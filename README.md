@@ -86,6 +86,8 @@ flk doctor | setup
 `-a APP` works anywhere, as with fly. Machine IDs accept prefixes or names.
 Listing commands take `--json`. Unknown options and extra arguments are errors.
 
+A terminal UI, **lazyflk**, is specced in [lazyflk/SPEC.md](lazyflk/SPEC.md) (not built yet).
+
 Help is generated from one command table (`lib/flk/commands.rb`); the
 long-form reference is `share/guide.md` and the guides are `share/help/*.md`.
 Hints and errors name the fix, with absolute paths for the root-side tools. AI agents: see [AGENTS.md](AGENTS.md).

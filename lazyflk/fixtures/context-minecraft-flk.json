@@ -1,0 +1,112 @@
+{
+  "flk": {
+    "version": "0.1.0",
+    "state_dir": "/home/dayne/.local/share/flk",
+    "source": "/home/dayne/flk",
+    "reference": "flk help --all"
+  },
+  "host": {
+    "ok": true,
+    "problems": [
+
+    ]
+  },
+  "cwd": "/home/dayne/flk",
+  "config": null,
+  "app": {
+    "name": "minecraft-flk",
+    "registered": true,
+    "home": "/home/dayne/.local/share/flk/apps/minecraft-flk",
+    "release": {
+      "version": 5,
+      "tag": "flk.local/minecraft-flk:v5",
+      "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v5.ext4",
+      "source": "Dockerfile",
+      "created_at": "2026-10-12T06:34:31Z"
+    },
+    "releases": 5,
+    "scale": null,
+    "machines": [
+      {
+        "id": "225d58f615e7e6",
+        "name": "mellow-aurora-7882",
+        "state": "started",
+        "desired_state": "started",
+        "release": 5,
+        "ip": "172.30.0.10",
+        "cpus": 4,
+        "memory_mb": 11264,
+        "internal_port": 25565,
+        "ports": [
+          {
+            "proto": "tcp",
+            "port": 25565,
+            "internal_port": 25565
+          },
+          {
+            "proto": "udp",
+            "port": 19132,
+            "internal_port": 19132
+          }
+        ],
+        "volumes": [
+          {
+            "volume": "vol_28392490d0d4d4c7",
+            "destination": "/server"
+          }
+        ],
+        "created_at": "2026-10-12T05:01:50Z",
+        "updated_at": "2026-10-12T06:34:35Z"
+      }
+    ],
+    "volumes": [
+      {
+        "id": "vol_28392490d0d4d4c7",
+        "name": "world",
+        "size_gb": 40,
+        "path": "/data/minecraft/flk/world.ext4",
+        "attached_machine": "225d58f615e7e6",
+        "created_at": "2026-10-12T05:01:16Z"
+      }
+    ],
+    "secrets": [
+
+    ],
+    "ports": {
+      "active": [
+        {
+          "key": "tcp/25565",
+          "proto": "tcp",
+          "port": 25565,
+          "ip": "172.30.0.10",
+          "internal_port": 25565,
+          "app": "minecraft-flk",
+          "machine": "225d58f615e7e6",
+          "address": "10.47.11.116:25565"
+        },
+        {
+          "key": "udp/19132",
+          "proto": "udp",
+          "port": 19132,
+          "ip": "172.30.0.10",
+          "internal_port": 19132,
+          "app": "minecraft-flk",
+          "machine": "225d58f615e7e6",
+          "address": "10.47.11.116:19132"
+        }
+      ],
+      "waiting": [
+
+      ],
+      "blocked": [
+
+      ]
+    }
+  },
+  "other_apps": [
+
+  ],
+  "next_steps": [
+    "all good; try: curl http://172.30.0.10:25565/ (logs: flk logs)"
+  ]
+}

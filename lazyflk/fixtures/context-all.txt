@@ -1,0 +1,15 @@
+# flk host overview
+
+flk 0.1.0  state: /home/dayne/.local/share/flk  source: /home/dayne/flk
+host: ready, LAN IP 10.47.11.116, boot service installed
+
+## minecraft-flk  (v5, 1/1 started)
+  225d58f615e7e6 [mellow-aurora-7882] started 172.30.0.10:25565
+  port tcp/25565 -> 10.47.11.116:25565
+  port udp/19132 -> 10.47.11.116:19132
+  volumes: world 40GB
+
+## Needs attention
+- nothing
+
+Details for one app: flk context -a APP.  Commands by task: flk help cheatsheet
