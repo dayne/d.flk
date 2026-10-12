@@ -39,9 +39,11 @@ flk setup          # runs `flk doctor` at the end
 
 # Optional: let podman resolve short image names like `FROM ruby:3.3`.
 # Without this only fully qualified names (docker.io/library/ruby:3.3) work
-# on Ubuntu/Debian podman. ./flk-sanity.sh warns when it's missing.
-mkdir -p ~/.config/containers
-echo 'unqualified-search-registries = ["docker.io"]' >> ~/.config/containers/registries.conf
+# on Ubuntu/Debian podman. `flk doctor` warns when it's missing, and a deploy
+# that hits it prints this fix. A drop-in adds to the system config; a
+# user-level registries.conf would replace it.
+mkdir -p ~/.config/containers/registries.conf.d
+echo 'unqualified-search-registries = ["docker.io"]' > ~/.config/containers/registries.conf.d/50-flk-docker-io.conf
 
 # 4. Deploy the example
 cd examples/hello
@@ -139,7 +141,7 @@ Still worth checking on a new host:
 
 - **Kernel `ip=` autoconfig.** It depends on `CONFIG_IP_PNP` in the guest kernel. `flk setup` saves the kernel's config as `kernel/vmlinux.config` and warns if it's missing. Without it, init falls back to `ip` from the image (Alpine/busybox has it; debian-slim does not).
 - **Firecracker CI kernel location.** Since 2026 CI kernels are in dated `firecracker-ci/YYYYMMDD-*` dirs rather than `firecracker-ci/vX.Y`. `flk-fetch-assets` tries both. Override with `FLK_KERNEL_URL=...` if the layout changes again.
-- **Podman short image names.** `FROM ruby:3.3` only resolves if podman has search registries configured. `flk-sanity.sh` warns when it doesn't; fully qualified names (`docker.io/library/ruby:3.3`) always work.
+- **Podman short image names.** `FROM ruby:3.3` only resolves if podman has search registries configured. `flk doctor` (and so `flk context` and `flk-sanity.sh`) warns when it doesn't, and a deploy that fails on it prints the fix. Fully qualified names (`docker.io/library/ruby:3.3`) always work.
 - **Host firewalls.** A FORWARD drop from another firewall overrides flk's own nft accept rules and blackholes the bridge. `setup-host.sh` handles the common cases: `DOCKER-USER` accept rules for Docker, `ufw route allow` rules when ufw is active, and the trusted zone for firewalld. The ufw and firewalld paths are untested on real hosts. `flk-sanity.sh` checks for all three.
 
 ## Known limits

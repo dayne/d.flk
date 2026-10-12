@@ -3,9 +3,39 @@ module Flk
   module Image
     module_function
 
+    # A user-level drop-in adds to the system registries.conf; a user-level
+    # registries.conf would replace it (and its short-name aliases).
+    REGISTRIES_DROPIN = "~/.config/containers/registries.conf.d/50-flk-docker-io.conf"
+    REGISTRIES_FIX = "mkdir -p #{File.dirname(REGISTRIES_DROPIN)} && " \
+                     "echo 'unqualified-search-registries = [\"docker.io\"]' > #{REGISTRIES_DROPIN}"
+
     def engine
       ENV["FLK_ENGINE"] || %w[podman docker].find { Util.which(_1) } ||
         raise(Error, "need podman or docker to build images")
+    end
+
+    def podman?(eng = engine) = File.basename(eng) == "podman"
+
+    # Can podman resolve `FROM ruby:3.3`? Ubuntu/Debian ship no search
+    # registries, so only aliased names (alpine, debian...) work there.
+    def short_names_resolve?
+      out, st = Open3.capture2e(engine, "info", "--format", "{{json .Registries}}")
+      st.success? && Array(JSON.parse(out)["search"]).any?
+    rescue JSON::ParserError, SystemCallError
+      false
+    end
+
+    # Runs a build/pull, turning podman's short-name failure into the fix.
+    def engine_run!(*cmd)
+      out, st = Util.sh_capture(*cmd)
+      return if st.success?
+      if (name = out[/short-name "([^"]+)" did not resolve/, 1])
+        full = name.include?("/") ? "docker.io/#{name}" : "docker.io/library/#{name}"
+        raise Error, "podman can't resolve the short image name \"#{name}\": no unqualified-search registries are configured.\n" \
+                     "Fix it once for your user (no root):\n  #{REGISTRIES_FIX}\n" \
+                     "or use the full name, e.g. FROM #{full}"
+      end
+      raise Error, "command failed: #{cmd.shelljoin}"
     end
 
     def build(app, cfg, version, image_override: nil)
@@ -16,7 +46,7 @@ module Flk
       if src
         unless system(eng, "image", "inspect", src, out: File::NULL, err: File::NULL)
           puts "==> Pulling #{src}"
-          Util.sh!(eng, "pull", src)
+          engine_run!(eng, "pull", src)
         end
         Util.run!(eng, "tag", src, tag)
       else
@@ -24,7 +54,7 @@ module Flk
         raise Error, "no [build] image and no #{cfg.dockerfile} in #{cfg.dir}" unless File.exist?(df)
         puts "==> Building #{tag} with #{eng}"
         args = cfg.build_args.flat_map { |k, v| ["--build-arg", "#{k}=#{v}"] }
-        Util.sh!(eng, "build", "-t", tag, "-f", df, *args, cfg.dir)
+        engine_run!(eng, "build", "-t", tag, "-f", df, *args, cfg.dir)
       end
 
       icfg = JSON.parse(Util.run!(eng, "image", "inspect", "--format", "{{json .Config}}", tag)) || {}

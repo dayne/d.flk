@@ -61,6 +61,10 @@ and secrets.
   config from the current directory. `-a` alone isn't enough for them.
 - **Slow commands:** `deploy` builds an image and boots each machine, waiting
   up to 30s per machine for `internal_port`. Expect a minute or more.
+- **"short-name ... did not resolve"** on deploy: podman has no search
+  registries (common on Ubuntu/Debian). flk prints a one-line fix that
+  needs no root; using the full name (`FROM docker.io/library/ruby:3.3`)
+  also works. `flk doctor` warns about it ahead of time.
 - **Root** is only needed once, for `sudo ./setup-host.sh`, and again only if
   `flk doctor` / `flk context` say so. Day-to-day commands never need sudo.
 

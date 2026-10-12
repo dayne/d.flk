@@ -173,6 +173,13 @@ module Flk
       end
       eng = begin; Image.engine; rescue Error; nil; end
       check["container engine (#{eng || 'none'})", !eng.nil?, "install podman (or docker)"]
+      if eng && Image.podman?(eng)
+        if Image.short_names_resolve?
+          record["podman resolves short image names (FROM ruby:3.3)", "pass", nil]
+        else
+          record["podman can't resolve short image names like FROM ruby:3.3 (full names work)", "warn", Image::REGISTRIES_FIX]
+        end
+      end
       port_helper_check(record)
       results
     end

@@ -67,6 +67,16 @@ module Flk
       system(*cmd) or raise Error, "command failed: #{cmd.shelljoin}"
     end
 
+    # Like sh!, streaming output as it comes, but also returns it, so the
+    # caller can explain known failures: [output, Process::Status].
+    def sh_capture(*cmd)
+      out = +""
+      Open3.popen2e(*cmd) do |_in, io, wait|
+        io.each_line { |l| $stdout.print l; $stdout.flush; out << l }
+        [out, wait.value]
+      end
+    end
+
     def mkfs_ext4(path, size_mb, label:, from_dir: nil)
       FileUtils.rm_f(path)
       File.open(path, "w") { _1.truncate(size_mb * 1024 * 1024) } # sparse

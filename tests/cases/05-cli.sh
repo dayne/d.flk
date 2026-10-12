@@ -122,3 +122,25 @@ test_deploy_checks_volumes_before_building() {
   assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "releases after the failed deploy"
   [[ -z $(ls "$FLK_HOME/apps/$APP/images" 2>/dev/null) ]] || fail "left an image behind"
 }
+
+# Ubuntu/Debian podman has no search registries: FROM ruby:3.3 fails to
+# resolve. doctor warns, and deploy turns podman's error into the fix.
+no_registries() { CONTAINERS_REGISTRIES_CONF=/dev/null "$@"; }
+
+test_short_image_names_explained() {
+  command -v podman >/dev/null && [[ ${FLK_ENGINE:-podman} == podman ]] || skip_test "podman only"
+  no_registries podman info --format '{{json .Registries}}' | grep -q '"search"' &&
+    skip_test "can't hide this host's search registries (drop-in dir?)"
+  assert_contains "$(no_registries "$FLK_BIN" doctor --json)" "can't resolve short image names" "doctor warning"
+
+  stage_app hello
+  trap destroy_app EXIT
+  echo 'FROM ruby:3.3' >"$APP_DIR/Dockerfile"
+  flk launch --no-deploy >/dev/null
+  local out
+  out=$(cd "$APP_DIR" && no_registries "$FLK_BIN" deploy 2>&1) && fail "deploy resolved ruby:3.3 without registries"
+  assert_contains "$out" 'short image name "ruby:3.3"'
+  assert_contains "$out" "registries.conf.d/50-flk-docker-io.conf"
+  assert_contains "$out" "FROM docker.io/library/ruby:3.3"
+  assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from the failed build"
+}

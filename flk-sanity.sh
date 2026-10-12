@@ -53,7 +53,6 @@ CHECKS=(
   "packages:check_cmd sysctl"
   packages:check_docker_iptables
   packages:check_engine
-  packages:check_short_names
   host:check_dev_tun
   host:check_kvm_group
   host:check_disk_space
@@ -241,18 +240,6 @@ check_engine() {
     fail "docker installed but not usable by $USER" "sudo usermod -aG docker $USER (then log out/in), or install podman"
   else
     fail "$eng installed but '$eng info' fails" "run '$eng info' to see why"
-  fi
-}
-
-# `FROM ruby:3` style short names only resolve if podman has search
-# registries (or a built-in alias, which covers alpine but not ruby).
-check_short_names() {
-  [[ ${FLK_ENGINE:-podman} == podman ]] && have podman || { skip "short image names (podman only)"; return; }
-  if podman info --format '{{json .Registries}}' 2>/dev/null | grep -q '"search"'; then
-    pass "podman resolves short image names"
-  else
-    warn "podman has no search registries: 'FROM ruby:3.3' fails, 'FROM docker.io/library/ruby:3.3' works" \
-      "mkdir -p ~/.config/containers && echo 'unqualified-search-registries = [\"docker.io\"]' >> ~/.config/containers/registries.conf"
   fi
 }
 

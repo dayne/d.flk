@@ -5,23 +5,28 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Setup and host checks
 
-- [ ] **Podman short image names.** On Ubuntu/Debian, podman has no
-  `unqualified-search-registries`, so `FROM ruby:3.3` fails with
-  "short-name did not resolve". `alpine` only works because podman ships an
-  alias for it. Most real Dockerfiles (Minecraft ones included) use short names.
-  - *Caught today:* `flk-sanity.sh` warns (`check_short_names`), and the README
-    quick start shows the one-line fix.
-  - *Fix options:* have `flk setup` offer to write
-    `~/.config/containers/registries.conf` (user-level, no root), and/or have
-    `flk deploy` spot the "short-name ... did not resolve" error and print the fix.
-    Watch out: a user-level registries.conf replaces the system one, so merge,
-    don't overwrite.
-- [ ] **ufw and firewalld handling is untested on real hosts.** `setup-host.sh`
-  adds `ufw route allow` rules or puts the bridge in firewalld's trusted zone.
-  Only the Docker path existed before. Test both, and the matching
-  `flk-sanity.sh` checks, on a host where they're enabled.
-- [ ] **pacman/dnf package names** in `flk-sanity.sh` haven't been tried on Arch
-  or Fedora.
+- [ ] **Firewall and distro paths are untested on real hosts.** Only Ubuntu
+  with Docker's firewall rules has been run end to end. These were written
+  blind and need one pass each on a real host:
+  - **ufw** (Ubuntu with `sudo ufw enable`): `setup-host.sh` adds
+    `ufw route allow in on flkbr0` / `out on flkbr0` rules (`firewall_allow`);
+    `flk-sanity.sh` checks them (`check_ufw`).
+  - **firewalld** (Fedora default): `setup-host.sh` puts the bridge in the
+    `trusted` zone; `flk-sanity.sh` checks it (`check_firewalld`).
+  - **dnf / pacman package names**: the install commands `flk-sanity.sh`
+    suggests on Fedora and Arch (the `PKG` table) have never been run.
+  - *How to test:* on each host, start from a clean install, run
+    `./flk-sanity.sh` and run the install command it suggests, then
+    `sudo ./setup-host.sh`, `flk setup`, and `tests/run.sh`.
+    What to look for: the VMs get network (the `test_guest_egress_nat_and_dns`
+    and `test_reachable_on_host_lan_ip` tests), the forwarded ports work
+    with the firewall on, `sudo ./setup-host.sh --down` removes the
+    rules it added (`firewall_remove`), and sanity's checks pass or point at the right fix.
+  - *Suggested hosts:* Fedora (covers firewalld and dnf), Arch (pacman), and
+    Ubuntu with ufw enabled.
+  - *Symptom if broken:* machines boot but have no network (another
+    firewall's FORWARD drop wins over flk's nft accept), or forwarded host
+    ports time out.
 
 ## Port forwarding
 
@@ -64,6 +69,11 @@ Each entry says where the issue is caught today, and where a fix could go.
   shows the current state with next steps. `--json` on listing commands.
   `logs` follows only in a terminal; `apps destroy` and `console` never wait
   on a missing terminal.
+- [x] Podman short image names: `flk doctor` / `flk context` warn when podman
+  has no search registries, and a build or pull that fails with
+  "short-name ... did not resolve" prints the fix: a user-level drop-in
+  (`~/.config/containers/registries.conf.d/`, which adds to the system config
+  instead of replacing it), or the full image name.
 - [x] Deploy checks volumes and free taps before building, and again under
   the lock before recording the release; a deploy that fails before then
   leaves no release and no image behind. `scale count` checks first too.
