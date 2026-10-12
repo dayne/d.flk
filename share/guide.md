@@ -44,7 +44,9 @@ shows the live state with suggested next steps.
   them marked as running, which is what the host does at shutdown. `flk machine stop` sends the app SIGTERM, then kills the VM after
   `kill_timeout`.
 
-Inside every machine: `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`,
+Inside every machine, like a container: `/dev/fd`, `/dev/stdin`,
+`/dev/stdout`, `/dev/stderr`, `/dev/pts`, `/dev/shm`; the app's stdin is
+the serial console. Env: `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`,
 `FLY_REGION=local`, the `FLK_*` equivalents, `FLK_RELEASE`, plus `[env]`
 and secrets.
 
@@ -131,7 +133,9 @@ while the boot service is missing.
   (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
 - `[flk]` (flk only): `http_port` (host port for `[http_service]`), `kernel_args`,
-  `rootfs_extra_mb` (default 512)
+  `rootfs_extra_mb` (default 512), `stdin` (`"console"`, the default: the app
+  reads what you type in `flk console`; `"null"`: /dev/null, like
+  `docker run` without `-i`)
 
 Everything else in a fly.toml (regions, checks, concurrency, statics) is ignored.
 `flk config show` prints what flk understood.

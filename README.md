@@ -103,6 +103,7 @@ flk-only keys go under `[flk]`:
 - `http_port`: host port forwarded to `[http_service] internal_port`
 - `kernel_args`: appended to the boot cmdline
 - `rootfs_extra_mb`: free space added to the rootfs (default 512)
+- `stdin`: `"console"` (default; `flk console` input reaches the app) or `"null"`
 
 Everything else (regions, concurrency, checks, statics) is ignored.
 
@@ -149,7 +150,7 @@ Still worth checking on a new host:
 
 - **Images need `/bin/sh`**, because init and the cmd wrapper are shell scripts. Distroless/scratch images won't boot yet.
 - **Zombie reaping is minimal.** Apps that spawn and orphan many processes should run under `tini` inside the image.
-- **`flk console` is the serial console**, not a separate shell. You see app output and can type to its stdin.
+- **`flk console` is the serial console**, not a separate shell. You see app output and type to the app's stdin (set `[flk] stdin = "null"` for `/dev/null`).
 - **No `.internal` DNS between machines yet.** Use the 172.30.0.x IPs (`flk status`).
 - **x86_64 is the tested path.** On aarch64, Ctrl-Alt-Del isn't supported, so stop falls back to SIGTERM after 10s.
 

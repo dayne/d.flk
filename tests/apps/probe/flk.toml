@@ -1,0 +1,9 @@
+# Guest runtime checks: /dev/fd and friends, and the app's stdin.
+app = "probe"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpus = 1
+  memory_mb = 128

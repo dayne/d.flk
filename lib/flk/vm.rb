@@ -58,7 +58,8 @@ module Flk
           "FLK_MACHINE_ID" => m.id, "FLY_MACHINE_ID" => m.id,
           "FLK_HOSTNAME" => m.name, "FLK_IP" => m.ip, "FLY_PRIVATE_IP" => m.ip,
           "FLK_PREFIX" => "24", "FLK_GATEWAY" => Net::GATEWAY, "FLK_DNS" => Net::DNS,
-          "FLY_REGION" => "local", "FLK_RELEASE" => "v#{m.release}"
+          "FLY_REGION" => "local", "FLK_RELEASE" => "v#{m.release}",
+          "FLK_STDIN" => m.config["stdin"] || "console"
         }.merge(m.config["env"] || {}).merge(m.app.secrets)
         File.write(File.join(d, "env"), env.map { |k, v| "export #{k}=#{v.to_s.shellescape}\n" }.join)
         File.write(File.join(d, "mounts"), m.config["mounts"].each_with_index.map { |mt, i|

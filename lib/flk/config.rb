@@ -68,6 +68,14 @@ module Flk
 
     def rootfs_extra_mb = (data.dig("flk", "rootfs_extra_mb") || 512).to_i
 
+    # The app's stdin: the serial console (typing in `flk console` reaches
+    # it), or /dev/null like `docker run` without -i.
+    def app_stdin
+      v = (data.dig("flk", "stdin") || "console").to_s
+      raise Error, "[flk] stdin must be \"console\" or \"null\" (got '#{v}')" unless %w[console null].include?(v)
+      v
+    end
+
     # fly's kill_timeout: seconds between the stop signal and a hard kill.
     # Accepts 30 or "30s"/"2m", like fly. Default 10 (flk's old fixed value).
     def kill_timeout
@@ -133,7 +141,8 @@ module Flk
         "internal_port" => internal_port,
         "ports" => ports,
         "kill_timeout" => kill_timeout,
-        "kernel_args" => data.dig("flk", "kernel_args")
+        "kernel_args" => data.dig("flk", "kernel_args"),
+        "stdin" => app_stdin
       }
     end
 

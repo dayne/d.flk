@@ -187,3 +187,12 @@ test_http_port_rules() {
   out=$(config 2>&1) && fail "accepted the same host port twice"
   assert_contains "$out" "tcp/18080 is listed twice"
 }
+
+test_stdin_option() {
+  stage_app hello
+  assert_eq console "$(config | json_get machine_config.stdin)" "default"
+  toml_append '[flk]' '  stdin = "tty"'
+  local out
+  out=$(config 2>&1) && fail "accepted stdin = tty"
+  assert_contains "$out" '[flk] stdin must be "console" or "null"'
+}

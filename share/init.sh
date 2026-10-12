@@ -11,6 +11,14 @@ mkdir -p /dev/pts /dev/shm
 mount -t devpts devpts /dev/pts 2>/dev/null
 mount -t tmpfs tmpfs /dev/shm 2>/dev/null
 mount -t tmpfs tmpfs /run 2>/dev/null
+# devtmpfs has device nodes only; udev or a container runtime would add
+# these. Without /dev/fd, bash process substitution (<(...), >(...)) fails,
+# and configs that log to /dev/stdout or /dev/stderr break.
+ln -sfn /proc/self/fd /dev/fd
+ln -sf /proc/self/fd/0 /dev/stdin
+ln -sf /proc/self/fd/1 /dev/stdout
+ln -sf /proc/self/fd/2 /dev/stderr
+ln -sf /proc/kcore /dev/core
 
 # The kernel's default Ctrl-Alt-Del action is an immediate hard reboot; real
 # init systems turn it off at boot. flk stops VMs with Ctrl-Alt-Del, so turn
@@ -79,7 +87,16 @@ on_stop() {
 trap on_stop TERM INT
 
 log "starting app: $(tail -n1 /flk/cmd | sed 's/^exec //')"
-start_app &
+# A background job's stdin is /dev/null unless redirected, so hand the app
+# the serial console explicitly: `flk console` input reaches it (server
+# consoles: stop, say, op...). [flk] stdin = "null" gives it /dev/null, as
+# `docker run` without -i does. Not a controlling tty: Ctrl-C typed on the
+# console doesn't signal the app.
+if [ "${FLK_STDIN:-console}" = null ]; then
+  start_app </dev/null &
+else
+  start_app </dev/console &
+fi
 child=$!
 # `wait` returns early when a trapped signal arrives, so loop until the app is gone.
 while kill -0 "$child" 2>/dev/null; do

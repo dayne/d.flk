@@ -115,7 +115,7 @@ module Flk
         blocks: "attaches an interactive terminal; agents should use `flk logs` instead",
         summary: "Attach to a machine's serial console",
         notes: ["Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Needs a terminal.",
-                "It's the serial console, not a shell: you see app output and type to its stdin.",
+                "It's the serial console, not a shell: you see app output and type to its stdin (server consoles: stop, say, op...). Ctrl-C here doesn't signal the app; use flk machine stop.",
                 "`flk ssh console` is an alias."] },
       { name: "ssh", group: "Machines", hidden: true, summary: "Alias: `flk ssh console` = `flk console`",
         subs: [{ name: "console", args: "[ID]", run: :cmd_console, summary: "Same as flk console",
