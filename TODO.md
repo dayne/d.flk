@@ -78,12 +78,6 @@ Each entry says where the issue is caught today, and where a fix could go.
   sub-second resume.
 - [ ] **Static init** (Go/Rust) so distroless/scratch images boot without `/bin/sh`.
 
-## Housekeeping
-
-- [ ] **`resume` is committed.** It holds a personal Claude session ID
-  (`claude --resume ...`); it probably belongs outside the repo or in
-  `.gitignore`.
-
 ## Machines
 
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
