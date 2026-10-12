@@ -51,6 +51,21 @@ Each entry says where the issue is caught today, and where a fix could go.
   `flk deploy --release vN` / `flk releases rollback`. Only the last two
   rootfs images are kept.
 
+## For lazyflk (TUI, spec in ~/lazyflk/SPEC.md section 9)
+
+- [ ] **G1: read commands can block on a deploy.** `apps list` / `status` /
+  `ports` reap exited machines, and that waits for the global lock a deploy
+  holds for its whole run (12.5s observed). Take it non-blocking and skip.
+- [ ] **G2: the app's config dir isn't recorded.** Store the flk.toml path in
+  `app.json` on launch/deploy; expose `config_path` in status/context JSON.
+- [ ] **G3: no non-interactive console input.** `flk console ID --send TEXT`.
+- [ ] **G4: no per-machine CPU/memory.** `flk machine stats [--json]`, `pid`
+  in machine JSON.
+- [ ] **G5: context always runs doctor.** `flk context --all --json --no-host`
+  for cheap polling.
+- [ ] **G6: JSON has no schema version.** `"schema": 1` plus a compatibility rule.
+- [ ] **G7: no events.** Later: `flk events --json`.
+
 ## Bigger features
 
 - [ ] **Exec into a machine.** A small vsock agent in the guest for a real
