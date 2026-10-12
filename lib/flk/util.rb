@@ -8,6 +8,7 @@ require "tmpdir"
 require "socket"
 require "digest"
 require "set"
+require "rbconfig"
 
 module Flk
   VERSION = "0.1.0"

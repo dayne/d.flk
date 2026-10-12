@@ -40,7 +40,8 @@ test_redeploy_keeps_machine() {
 
 test_experimental_cmd_and_exit_status() {
   wait_until 30 is_stopped
-  toml_append '[experimental]' '  cmd = ["sh", "-c", "echo custom cmd; exit 3"]'
+  toml_append '[experimental]' '  cmd = ["sh", "-c", "echo custom cmd; exit 3"]' \
+              '[[restart]]' '  policy = "never"' # restarts are 12-restart's business
   flk deploy
   wait_log "custom cmd" 30
   wait_log "app exited with status 3" 10

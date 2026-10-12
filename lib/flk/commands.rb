@@ -112,6 +112,8 @@ module Flk
           { name: "restart", args: "ID...", summary: "Stop, then boot" },
           { name: "destroy", aliases: %w[rm], args: "ID...", opts: [["-f", "--force", "Stop it first if running"]],
             summary: "Delete machines (their volumes are kept, unattached)" },
+          { name: "revive", args: "ID", hidden: true,
+            summary: "Restart a machine that exited on its own, per its restart policy (run by flk itself)" },
           { name: "status", aliases: %w[show], args: "ID...", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
             summary: "Machine record and state as JSON (an array when given several IDs)" },
           { name: "config", args: "ID...", opts: [["--json", "Accepted; the output is always JSON"]], json: true,

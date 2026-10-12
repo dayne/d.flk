@@ -128,7 +128,33 @@ module Flk
 
     # Firecracker went away without flk stopping it: the app exited, the
     # guest powered off, or it crashed. Its pid file (and host ports) linger.
-    def exited? = !pid.nil? && !running?
+    def exited? = !pid.nil? && !running? && !stopping?
+
+    # flk is stopping it (VM.stop): its exit is expected, so the exit hook
+    # must neither reap nor restart it. A marker left by a crashed flk
+    # expires after the longest possible stop.
+    def stopping?
+      t = File.mtime(path("stopping"))
+      Time.now - t < (config["kill_timeout"] || 10).to_i + 60
+    rescue SystemCallError
+      false
+    end
+
+    # The restart policy it was deployed with (older machines: the default).
+    def restart_policy = config["restart"] || { "policy" => "on-failure", "retries" => 10 }
+
+    # The app's exit status from its last boot, from init's log line; nil if
+    # it never got that far (crash, kernel panic, killed).
+    def last_exit_status
+      tail = File.open(path("console.log"), "rb") do |f|
+        f.seek([f.size - 65_536, 0].max)
+        f.read
+      end
+      boot = tail.rindex("--- flk: booting") || 0
+      tail[boot..][/.*\[flk-init\] app exited with status (\d+)/m, 1]&.to_i
+    rescue SystemCallError
+      nil
+    end
 
     def state = running? ? "started" : "stopped"
 

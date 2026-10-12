@@ -30,9 +30,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Reliability
 
-- [ ] **No restart policy.** A crashed app stays down. Fly's
-  `[[restart]] policy = "always" | "on-failure" | "no"` could hang off the
-  tmux `session-closed` hook (`flk ports reap`).
 - [ ] **Forwarded ports on 127.0.0.1** (from the bug report, optional part):
   loopback is skipped on purpose; making it work needs `route_localnet`
   on the bridge path, a host-wide security trade-off. `flk proxy` covers
@@ -75,12 +72,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Machines
 
-- [ ] **The tmux exit hook follows the last flk that started a VM.** It's a
-  global hook holding that flk's absolute path, so running tests from a
-  second checkout (a git worktree) repoints it, and removing that checkout
-  breaks reaping until a VM is started from the main one. Fix: point the
-  hook at a stable path (e.g. the one in `flk-machines.service`), or have
-  `flk doctor` check that the hook's binary exists.
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
@@ -116,6 +107,12 @@ Each entry says where the issue is caught today, and where a fix could go.
   "short-name ... did not resolve" prints the fix: a user-level drop-in
   (`~/.config/containers/registries.conf.d/`, which adds to the system config
   instead of replacing it), or the full image name.
+- [x] Restart policy: `[[restart]] policy = on-failure (default) | always |
+  never`, `retries` (10), backoff 1s..60s, reset after 10 minutes up or a
+  manual start; gives up visibly (log, context). flk marks machines it's
+  stopping so its own stops are never taken for crashes (that race was real:
+  1 in 3 stops). Tests run on their own tmux server, so they never repoint
+  the real exit hook, and doctor checks the hook's flk exists.
 - [x] lazyflk gaps G1-G3: read commands never wait on flk's lock (they skip
   the reap when busy); flk records each app's config path so `-a APP`
   works from anywhere (`config_path` in JSON); `flk console --send TEXT

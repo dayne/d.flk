@@ -33,6 +33,9 @@ prebuilt image, `--port`, `--cpus`, `--memory`, `--name`.
       source = "data"            # a volume, one per machine
       destination = "/data"
 
+    [[restart]]
+      policy = "on-failure"      # the default; "always" or "never"
+
     [flk]
       http_port = 8080           # also on the host's LAN IP:8080 (>= 1024)
 

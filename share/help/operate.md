@@ -20,9 +20,14 @@ For one command without attaching: `flk console ID --send "say hi"`; add
 `--wait-log "REGEX"` to print the app's answer (scripts and agents too).
 
 **Stop and start.** `flk machine stop ID` stops a machine and keeps it
-stopped, across reboots too. `flk machine start ID` brings it back. When
-an app exits by itself, its machine stops but counts as "should be
-running": `flk resume` starts it again.
+stopped, across reboots too. `flk machine start ID` brings it back.
+
+**Crashes.** When an app crashes or exits non-zero, flk restarts it (1s, 2s,
+4s... apart, 10 times in a row at most; `[[restart]]` in flk.toml changes
+that, `policy = "never"` turns it off). The log shows each restart. If it
+gives up, `flk context` says so: read `flk logs -i ID`, fix, then
+`flk machine start ID`. An app that exits cleanly (status 0) stays
+stopped but counts as "should be running": `flk resume` starts it again.
 
 **Reboots.** With `flk-machines.service` installed (`flk doctor` checks),
 machines stop gracefully at shutdown and come back at boot. Without it:

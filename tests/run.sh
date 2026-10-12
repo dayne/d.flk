@@ -32,7 +32,10 @@ free_port() {
   done
 }
 HOST_PORT=$(free_port)
-export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT
+# Test machines run on their own tmux server, so its exit hook runs the flk
+# under test, and the real machines' server (and hook) is never touched.
+FLK_TMUX_SOCKET="flkt-$RUN_ID"
+export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT FLK_TMUX_SOCKET
 
 TIER=all FORCE=0 KEEP=0 LIST=0 FILTERS=() CUR=""
 COLOR=1; [[ -t 1 && -z ${NO_COLOR:-} ]] || COLOR=0
@@ -46,6 +49,13 @@ clean() {
     [[ -d $d ]] || continue
     "$FLK_BIN" apps destroy "$(basename "$d")" --yes
   done
+  local s
+  for s in "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)"/flkt-*; do
+    [[ -S $s ]] || continue
+    tmux -L "$(basename "$s")" kill-server 2>/dev/null
+    rm -f "$s"
+  done
+  return 0
 }
 
 parse_args() {
@@ -189,7 +199,11 @@ main() {
     "$(c 32 "$(grep -c '^PASS ' "$OUT/results")")" "$(c 31 "$n_fail")" \
     "$(c 33 "$(grep -c '^PEND ' "$OUT/results")")" "$(grep -c '^SKIP ' "$OUT/results")" "$(c 90 "logs: $OUT")"
   ((n_fail)) && sed -n 's/^FAIL /  failed: /p' "$OUT/results"
-  ((KEEP)) && echo "kept test apps (flkt-*-$RUN_ID); remove with: $0 --clean"
+  if ((KEEP)); then echo "kept test apps (flkt-*-$RUN_ID); remove with: $0 --clean"
+  else
+    tmux -L "$FLK_TMUX_SOCKET" kill-server 2>/dev/null
+    rm -f "${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/$FLK_TMUX_SOCKET" # kill-server leaves the socket file
+  fi
   ((n_fail)) && exit 1
   exit 0
 }

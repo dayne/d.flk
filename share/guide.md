@@ -39,7 +39,8 @@ shows the live state with suggested next steps.
   loopback port for TCP.
 - **Lifecycle**: when the app process exits, its VM powers off (state
   `stopped`) and flk hands its host ports on right away (a hook on flk's
-  tmux server runs `flk ports reap`).
+  tmux server runs `flk ports reap`). Then the restart policy decides:
+  by default a crash or non-zero exit is restarted, a clean exit isn't.
 - **Desired state**: flk remembers whether you want each machine running.
   start/restart/deploy/scale mean yes, `flk machine stop` means no; an app
   exiting on its own changes nothing. `flk resume` starts every machine that
@@ -102,6 +103,12 @@ also its own help page: {{TOPICS}}.
   (allow with `sudo FLK_MIN_PORT=N {{SRC}}/setup-host.sh`) and ports a host process
   listens on outside loopback. `flk ports` shows blocked ports and why.
 - `kill_timeout`: `30`, `"30s"` or `"2m"`. Default 10, at most {{MAX_KILL_TIMEOUT}} seconds.
+- `[[restart]]`: `policy` = `"on-failure"` (default: restart after a non-zero
+  exit or a crash), `"always"` (after any exit) or `"never"`; `retries`
+  (default 10) restarts in a row, with 1, 2, 4... up to 60s between them,
+  before giving up. A run of 10+ minutes resets the count, and so does
+  starting the machine yourself. flk's own stops (`machine stop`,
+  `stop-all`, deploys) are never restarted.
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
   (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)

@@ -68,6 +68,26 @@ module Flk
 
     def rootfs_extra_mb = (data.dig("flk", "rootfs_extra_mb") || 512).to_i
 
+    # fly's [[restart]]: what happens when the app exits on its own (not
+    # when flk stops it). "on-failure" (default): restart after a non-zero
+    # exit or a crash; "always": after any exit; "never" (or "no"): stay
+    # stopped. retries: restarts in a row before giving up (default 10).
+    RESTART_POLICIES = %w[always on-failure never].freeze
+
+    def restart
+      r = [data["restart"]].flatten.compact.first || {}
+      policy = (r["policy"] || "on-failure").to_s
+      policy = "never" if policy == "no"
+      unless RESTART_POLICIES.include?(policy)
+        raise Error, "[[restart]] policy must be always, on-failure or never (got '#{r['policy']}')"
+      end
+      retries = Integer(r["retries"] || r["max_retries"] || 10)
+      raise Error, "[[restart]] retries can't be negative" if retries.negative?
+      { "policy" => policy, "retries" => retries }
+    rescue ArgumentError, TypeError
+      raise Error, "[[restart]] retries must be a number"
+    end
+
     # The app's stdin: the serial console (typing in `flk console` reaches
     # it), or /dev/null like `docker run` without -i.
     def app_stdin
@@ -142,7 +162,8 @@ module Flk
         "ports" => ports,
         "kill_timeout" => kill_timeout,
         "kernel_args" => data.dig("flk", "kernel_args"),
-        "stdin" => app_stdin
+        "stdin" => app_stdin,
+        "restart" => restart
       }
     end
 

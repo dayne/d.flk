@@ -243,6 +243,7 @@ module Flk
       end
       port_helper_check(record)
       boot_service_check(record)
+      exit_hook_check(record)
       results
     end
 
@@ -257,6 +258,20 @@ module Flk
     def boot_unit_mount_dirs
       out, st = Open3.capture2("systemctl", "show", "-p", "RequiresMountsFor", "--value", "flk-machines.service")
       st.success? ? out.split : []
+    end
+
+    # The hook on flk's tmux server must run a flk that exists; a removed
+    # checkout (git worktree) leaves it dangling and exits go unnoticed.
+    def exit_hook_check(record)
+      return if VM.tmux_sessions.empty? # nothing running: the next start installs it
+      bin = VM.exit_hook_bin
+      if bin.nil?
+        record["exit hook missing: machines that exit won't be noticed", "warn", "flk resume (re-installs it)"]
+      elsif !File.executable?(bin)
+        record["exit hook runs #{bin}, which is gone", "warn", "flk resume (re-installs it)"]
+      else
+        record["exit hook (#{bin})", "pass", nil]
+      end
     end
 
     # Optional: without it nothing comes back after a reboot.
@@ -420,7 +435,10 @@ module Flk
         steps << "no machines; flk deploy (or flk scale count 1)"
       end
       ms.reject(&:running?).each do |m|
-        steps << if m.desired_state == "started"
+        steps << if m.h.dig("restarts", "gave_up_at")
+                   "machine #{m.id} [#{m.name}] kept failing; its restart policy gave up after " \
+                   "#{m.h.dig('restarts', 'count')} restarts: flk logs -i #{m.id} --no-tail, fix, then flk machine start #{m.id}"
+                 elsif m.desired_state == "started"
                    "machine #{m.id} [#{m.name}] should be running but isn't (it exited, or the host restarted); " \
                    "see why: flk logs -i #{m.id} --no-tail; bring it back: flk resume"
                  else
@@ -539,6 +557,9 @@ module Flk
         # [[mounts]]
         #   source = "data"        # flk volumes create data --size 1
         #   destination = "/data"
+
+        # [[restart]]
+        #   policy = "on-failure"  # default: restart after a crash; "always" or "never"
 
         # [flk]
         #   http_port = 8080       # also serve internal_port on host port 8080 (LAN too)
@@ -713,6 +734,7 @@ module Flk
     # A machine as list/status/context JSON show it.
     def machine_json(m)
       { "id" => m.id, "name" => m.name, "state" => m.state, "desired_state" => m.desired_state,
+        "restart" => m.restart_policy, "restarts" => m.h["restarts"],
         "release" => m.release, "ip" => m.ip,
         "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
@@ -769,6 +791,32 @@ module Flk
     end
     def machine_restart(args, _o) = each_ref(args) { |m| VM.stop(m); boot(m, "Machine #{m.id} [#{m.name}] restarted") }
     def machine_destroy(args, o) = Util.with_lock { each_ref(args) { |m| destroy_machine(m, force: o[:force]) } }
+    # Run by flk itself (VM.spawn_revive) when a machine exited on its own
+    # and its restart policy wants it back: back off 1, 2, 4... up to 60s,
+    # then boot, until `retries` restarts in a row. A run of 10+ minutes
+    # resets the count.
+    def machine_revive(args, _o)
+      a = App.new(@app_name || raise(Error, "revive needs -a APP"))
+      return unless a.exists?
+      m = a.machines.find { _1.id == args[0] } or return
+      policy = m.restart_policy
+      started = (Time.parse(m.h["started_at"]) rescue Time.now)
+      count = Time.now - started > 600 ? 0 : m.h.dig("restarts", "count").to_i
+      status = m.last_exit_status
+      note = ->(s) { File.open(m.path("console.log"), "a") { _1.puts "\n--- flk: #{s} (#{Util.now}) ---" } }
+      if count >= policy["retries"]
+        note["restart policy #{policy['policy']}: gave up after #{count} restarts in a row (last exit status #{status || 'none'})"]
+        m.h["restarts"] = { "count" => count, "gave_up_at" => Util.now }
+        return m.save!
+      end
+      sleep [2**count, 60].min
+      m = a.machines.find { _1.id == args[0] } or return # reload: someone may have acted meanwhile
+      return if m.running? || m.desired_state != "started" || m.stopping?
+      note["restart policy #{policy['policy']}: exit status #{status || 'none'}, restart #{count + 1} of #{policy['retries']}"]
+      m.h["restarts"] = { "count" => count + 1, "last_at" => Util.now }
+      boot(m, "Machine #{m.id} [#{m.name}] restarted by its restart policy", revive: true)
+    end
+
     def machine_status(args, _o) = print_json_each(args) { |m| m.h.merge("state" => m.state) }
     def machine_config(args, _o) = print_json_each(args) { |m| VM.spec(m) }
 
@@ -867,7 +915,10 @@ module Flk
       puts "Machine #{m.id} [#{m.name}] destroyed"
     end
 
-    def boot(m, msg)
+    # revive: a restart by the restart policy; anything else is a person
+    # starting it, which resets the count of restarts in a row.
+    def boot(m, msg, revive: false)
+      m.h.delete("restarts") unless revive
       VM.start(m)
       puts "  #{Util.green('✔')} #{msg} (#{m.ip})"
       port = m.config["internal_port"] or return m

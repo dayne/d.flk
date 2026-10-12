@@ -9,6 +9,13 @@ problems show up there with the fix. Then find the symptom below.
 - Bring it back: `flk machine start ID` (or `flk resume` for all of them).
 - It stops right away again: the app itself is exiting. Check its command
   (`flk config show`, `[experimental] cmd`) and its env/secrets.
+- "restart policy gave up": it crashed `retries` times in a row (each
+  restart is noted in `flk logs`). Fix the cause, then `flk machine start ID`.
+- It keeps coming back after you stopped it from inside (an in-game `stop`
+  that exits non-zero): that's the restart policy; use `flk machine stop ID`,
+  or set `[[restart]] policy = "never"`.
+- Machines that exit aren't noticed (ports stay mapped, no restarts):
+  `flk doctor` checks flk's exit hook; `flk resume` reinstalls it.
 
 **Deploy fails**
 - `short-name ... did not resolve`: run the one-liner flk prints, or use a

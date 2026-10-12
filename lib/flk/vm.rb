@@ -8,7 +8,8 @@ module Flk
     # flk's own tmux server, separate from the user's. A tmux server keeps the
     # groups it started with, so sharing a long-lived personal one can leave
     # firecracker without the kvm group even after the user logs back in.
-    TMUX = ["tmux", "-L", ENV.fetch("FLK_TMUX_SOCKET", "flk")].freeze
+    SOCKET = ENV.fetch("FLK_TMUX_SOCKET", "flk")
+    TMUX = ["tmux", "-L", SOCKET].freeze
     # console.log rotates to console.log.1 past this (see libexec/flk-logpipe)
     LOG_MAX_BYTES = Integer(ENV.fetch("FLK_LOG_MAX_MB", "10")) * 1024 * 1024
 
@@ -152,6 +153,7 @@ module Flk
     def stop(m, timeout: nil, keep_desired: false, sync_ports: true)
       # capped here too: machines deployed before the config check keep their old value
       timeout ||= [(m.config["kill_timeout"] || 10).to_i, AppConfig::MAX_KILL_TIMEOUT].min
+      File.write(m.path("stopping"), Util.now) if File.directory?(m.dir) # see Machine#stopping?
       if m.running?
         sent = begin
           api(m.path("fc.sock"), "PUT", "/actions", { "action_type" => "SendCtrlAltDel" })
@@ -170,6 +172,8 @@ module Flk
       m.h["desired_state"] = "stopped" unless keep_desired
       m.save!
       Ports.sync! if sync_ports && Array(m.config["ports"]).any? # hand its ports to another machine, or drop them
+    ensure
+      FileUtils.rm_f(m.path("stopping"))
     end
 
     # Tidy machines that exited on their own (see Machine#exited?) and hand
@@ -191,7 +195,29 @@ module Flk
           FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
         end
         Ports.sync! if dead.any? { Array(_1.config["ports"]).any? }
+        dead.select { restart_wanted?(_1) }.each { spawn_revive(_1) }
       end
+    end
+
+    # Should its restart policy bring this exited machine back?
+    def restart_wanted?(m)
+      return false unless m.desired_state == "started"
+      case m.restart_policy["policy"]
+      when "always" then true
+      when "on-failure" then m.last_exit_status != 0 # nil (crash) counts as a failure
+      else false
+      end
+    end
+
+    # `flk machine revive` in the background: it waits out the backoff and
+    # boots, so whoever noticed the exit (the tmux hook, a status call)
+    # returns at once.
+    def spawn_revive(m)
+      log = File.join(ROOT, "hooks.log")
+      pid = Process.spawn({ "FLK_HOME" => ROOT, "FLK_TMUX_SOCKET" => SOCKET },
+                          RbConfig.ruby, BIN, "-a", m.app.name, "machine", "revive", m.id,
+                          in: File::NULL, out: File::NULL, err: [log, "a"], pgroup: true)
+      Process.detach(pid)
     end
 
     def wait_port(m, port, timeout = 30)
@@ -257,10 +283,17 @@ module Flk
 
     def install_exit_hook
       log = File.join(ROOT, "hooks.log")
-      cmd = "FLK_HOME=#{ROOT.shellescape} #{BIN.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"
+      cmd = "FLK_HOME=#{ROOT.shellescape} FLK_TMUX_SOCKET=#{SOCKET.shellescape} " \
+            "#{BIN.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"
       raise Error, "can't install the exit hook: a path contains a single quote" if cmd.include?("'")
       tmux_quiet("set-option", "-g", "exit-empty", "off")
       tmux_quiet("set-hook", "-g", "session-closed", "run-shell -b '#{cmd}'")
+    end
+
+    # The flk binary the exit hook runs, or nil (no server, or no hook).
+    def exit_hook_bin
+      out, st = Open3.capture2e(*TMUX, "show-hooks", "-g", "session-closed")
+      st.success? ? out[%r{(/\S+/bin/flk) ports reap}, 1] : nil
     end
 
     def tmux_quiet(*args) = system(*TMUX, *args, out: File::NULL, err: File::NULL)
