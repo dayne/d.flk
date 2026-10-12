@@ -390,6 +390,9 @@ module Flk
         # [[mounts]]
         #   source = "data"        # flk volumes create data --size 1
         #   destination = "/data"
+
+        # [flk]
+        #   http_port = 8080       # also serve internal_port on host port 8080 (LAN too)
       TOML
     end
 
@@ -684,6 +687,8 @@ module Flk
         end
       end
     end
+
+    def ports_reap(_args, _o) = reap_exited
 
     def ports_sync(_args, _o)
       reap_exited

@@ -30,12 +30,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Port forwarding
 
-- [ ] **No watcher for machines that exit on their own.** `flk status`,
-  `flk ports`, `flk machine list` and `flk apps list` now reap them and resync,
-  but if no flk command runs, the port stays mapped to a dead IP. A small
-  watcher (or a systemd path unit on the pid files) would close the gap.
-- [ ] **`[http_service]` isn't exposed.** It means public 80/443 on Fly. Maybe a
-  `[flk] http_port = 8080` to forward it to a chosen host port.
 
 ## Machines
 
@@ -43,9 +37,10 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
-- [ ] **flk's tmux server keeps its groups.** If VMs are running when you're added
-  to a new group (e.g. `kvm` after a reinstall), restarts fail until
-  `tmux -L flk kill-server`. flk detects this and says so.
+- [ ] **flk's tmux server keeps its groups.** The server now stays up when idle
+  (for the exit hook). If it lacks `kvm` and no machines run, flk restarts it
+  by itself; with machines running it still says to stop them and run
+  `tmux -L flk kill-server`.
 
 ## Done (for reference)
 
@@ -74,6 +69,12 @@ Each entry says where the issue is caught today, and where a fix could go.
   "short-name ... did not resolve" prints the fix: a user-level drop-in
   (`~/.config/containers/registries.conf.d/`, which adds to the system config
   instead of replacing it), or the full image name.
+- [x] Machines that exit on their own are noticed immediately: a
+  `session-closed` hook on flk's tmux server runs `flk ports reap` (no
+  daemon); `exit-empty off` keeps the server alive for it.
+- [x] `[flk] http_port = N` forwards `[http_service] internal_port` to host
+  port N, with the same guard as `[[services.ports]]`; duplicate host ports
+  in one config are rejected.
 - [x] Deploy checks volumes and free taps before building, and again under
   the lock before recording the release; a deploy that fails before then
   leaves no release and no image behind. `scale count` checks first too.

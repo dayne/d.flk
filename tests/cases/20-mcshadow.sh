@@ -182,18 +182,20 @@ test_port_helper_refuses_host_ports() {
   flk ports sync # put the real map back
 }
 
-# The app exits / the VM dies without flk: the next flk listing notices and
-# drops (or hands over) its host port instead of leaving it on a dead IP.
+# The app exits / the VM dies without flk: flk's tmux hook (session-closed
+# -> flk ports reap) drops (or hands over) its host port within moments,
+# with no flk command run in between.
+port_released() { [[ $(port_map) != *"$HOST_PORT :"* ]]; }
+pid_gone() { [[ ! -e $FLK_HOME/apps/$APP/machines/$1/pid ]]; }
+
 test_exited_machine_releases_host_port() {
   port_helper_ready || skip_test "port helper not installed; run: sudo ./setup-host.sh"
   ensure_up
   local id; id=$(machine_id)
   assert_contains "$(port_map)" "$HOST_PORT :" "forward before the crash"
   kill -KILL "$(cat "$FLK_HOME/apps/$APP/machines/$id/pid")"
-  wait_until 10 is_stopped || fail "machine still looks running after SIGKILL"
-  flk status >/dev/null
-  [[ ! -e $FLK_HOME/apps/$APP/machines/$id/pid ]] || fail "stale pid file left behind"
-  [[ $(port_map) != *"$HOST_PORT :"* ]] || fail "port $HOST_PORT still forwarded to the dead machine"
+  wait_until 10 port_released || fail "port $HOST_PORT still forwarded to the dead machine (tmux hook didn't run?)"
+  wait_until 5 pid_gone "$id" || fail "stale pid file left behind"
   ensure_up
   assert_contains "$(port_map)" "$HOST_PORT :" "forward after restart"
 }

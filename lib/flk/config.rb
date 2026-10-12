@@ -84,25 +84,42 @@ module Flk
     end
 
     # Host ports from [[services]] + [[services.ports]], forwarded from every
-    # host address to the machine (see Ports). [http_service] is not exposed:
-    # on Fly it means public 80/443, which a laptop shouldn't grab implicitly.
-    # Ports below the helper's floor (1024 unless setup-host.sh was given
-    # FLK_MIN_PORT) are refused here, so deploy fails before anything boots.
+    # host address to the machine (see Ports). [http_service] means public
+    # 80/443 on Fly, which a laptop shouldn't grab implicitly, so it's only
+    # forwarded when [flk] http_port names a host port for it.
     def ports
-      [data["services"]].flatten.compact.flat_map do |svc|
+      list = [data["services"]].flatten.compact.flat_map do |svc|
         proto = (svc["protocol"] || "tcp").to_s.downcase
         raise Error, "[[services]] protocol '#{proto}' not supported (tcp or udp)" unless %w[tcp udp].include?(proto)
         internal = svc["internal_port"] or raise Error, "[[services]] needs internal_port"
         [svc["ports"]].flatten.compact.map do |p|
-          port = Integer(p["port"] || raise(Error, "[[services.ports]] needs port"))
-          raise Error, "[[services.ports]] port #{port} isn't a valid port" unless port.between?(1, 65_535)
-          if port < (min = Ports.min_port)
-            raise Error, "[[services.ports]] port #{port} is below #{min}, where host services live; " \
-                         "use a higher port, or allow it: sudo FLK_MIN_PORT=#{port} ./setup-host.sh"
-          end
+          port = host_port(p["port"] || raise(Error, "[[services.ports]] needs port"), "[[services.ports]] port")
           { "proto" => proto, "port" => port, "internal_port" => Integer(internal) }
         end
       end
+      if (hp = data.dig("flk", "http_port"))
+        internal = data.dig("http_service", "internal_port") or
+          raise Error, "[flk] http_port needs [http_service] internal_port to forward to"
+        list << { "proto" => "tcp", "port" => host_port(hp, "[flk] http_port"), "internal_port" => Integer(internal) }
+      end
+      list.group_by { "#{_1['proto']}/#{_1['port']}" }.each do |key, rows|
+        raise Error, "host port #{key} is listed twice" if rows.size > 1
+      end
+      list
+    end
+
+    # Ports below the helper's floor (1024 unless setup-host.sh was given
+    # FLK_MIN_PORT) are refused here, so deploy fails before anything boots.
+    def host_port(v, label)
+      port = Integer(v)
+      raise Error, "#{label} #{port} isn't a valid port" unless port.between?(1, 65_535)
+      if port < (min = Ports.min_port)
+        raise Error, "#{label} #{port} is below #{min}, where host services live; " \
+                     "use a higher port, or allow it: sudo FLK_MIN_PORT=#{port} ./setup-host.sh"
+      end
+      port
+    rescue ArgumentError, TypeError
+      raise Error, "#{label} '#{v}' isn't a port number"
     end
 
     # The snapshot each machine keeps, like a Fly machine's own config.

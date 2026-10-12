@@ -155,3 +155,35 @@ test_doctor_json() {
     d["checks"].each { |c| abort "bad check #{c}" unless c["label"].is_a?(String) && %w[pass fail warn].include?(c["status"]) }
     abort "ok disagrees with checks" unless d["ok"] == d["checks"].none? { _1["status"] == "fail" }' "$out"
 }
+
+# [http_service] is only forwarded when [flk] http_port picks the host port
+test_http_port_forwards_http_service() {
+  stage_app hello
+  toml_append '[http_service]' '  internal_port = 8080' '[flk]' '  http_port = 18080'
+  local cfg; cfg=$(config)
+  assert_eq tcp "$(json_get machine_config.ports.0.proto <<<"$cfg")" proto
+  assert_eq 18080 "$(json_get machine_config.ports.0.port <<<"$cfg")" "host port"
+  assert_eq 8080 "$(json_get machine_config.ports.0.internal_port <<<"$cfg")" "forwarded to internal_port"
+}
+
+test_http_service_alone_not_forwarded() {
+  stage_app hello
+  toml_append '[http_service]' '  internal_port = 8080'
+  assert_eq "[]" "$(config | json_get machine_config.ports)" "no host ports without [flk] http_port"
+}
+
+test_http_port_rules() {
+  stage_app hello
+  toml_append '[flk]' '  http_port = 18080'
+  local out
+  out=$(config 2>&1) && fail "accepted http_port without [http_service]"
+  assert_contains "$out" "needs [http_service] internal_port"
+  toml_append '[http_service]' '  internal_port = 8080'
+  toml_set '  http_port' '  http_port = 80'
+  out=$(config 2>&1) && fail "accepted http_port = 80"
+  assert_contains "$out" "[flk] http_port 80 is below 1024"
+  toml_set '  http_port' '  http_port = 18080'
+  toml_append '[[services]]' '  internal_port = 9000' '  [[services.ports]]' '    port = 18080'
+  out=$(config 2>&1) && fail "accepted the same host port twice"
+  assert_contains "$out" "tcp/18080 is listed twice"
+}

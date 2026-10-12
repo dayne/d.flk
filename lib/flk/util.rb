@@ -18,6 +18,7 @@ module Flk
               File.join(ENV["XDG_DATA_HOME"] || File.join(Dir.home, ".local/share"), "flk"))
   SHARE   = File.expand_path("../../share", __dir__)
   LIBEXEC = File.expand_path("../../libexec", __dir__)
+  BIN     = File.expand_path("../../bin/flk", __dir__)
   ENV_KEY = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
   module Util

@@ -75,8 +75,14 @@ module Flk
       raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo ./setup-host.sh" unless Net.tap_exists?(m.tap_index)
       raise Error, "tmux is required" unless Util.which("tmux")
       if tmux_server_lacks_kvm?
-        raise Error, "flk's tmux server started before you joined the kvm group; " \
-                     "stop running machines, then: #{TMUX.join(' ')} kill-server"
+        # The server outlives its sessions (see install_exit_hook); when it's
+        # idle, restarting it with the current groups is safe.
+        if tmux_sessions.empty?
+          tmux_quiet("kill-server")
+        else
+          raise Error, "flk's tmux server started before you joined the kvm group; " \
+                       "stop running machines, then: #{TMUX.join(' ')} kill-server"
+        end
       end
     end
 
@@ -111,6 +117,7 @@ module Flk
       # the log pipe, then configure + InstanceStart, so no early boot output is lost.
       Util.run!(*TMUX, "new-session", "-d", "-s", m.session, "-x", "200", "-y", "50",
                 "exec #{[bin, '--api-sock', sock, '--log-path', fclog, '--level', 'Warning'].shelljoin}")
+      install_exit_hook
       Util.run!(*TMUX, "pipe-pane", "-t", m.session, "-o", "cat >> #{m.path('console.log').shellescape}")
       File.write(m.path("pid"), Util.run!(*TMUX, "display-message", "-p", "-t", m.session, '#{pane_pid}').strip)
 
@@ -203,6 +210,25 @@ module Flk
       Process.kill(sig, pid) if pid
     rescue SystemCallError
       nil
+    end
+
+    # `tmux ls` exits 0 with no sessions on a server kept alive by exit-empty off
+    def tmux_sessions
+      out, st = Open3.capture2e(*TMUX, "list-sessions", "-F", '#{session_name}')
+      st.success? ? out.split("\n") : []
+    end
+
+    # When firecracker exits on its own (the app quit, the guest powered off,
+    # it crashed), its tmux session closes and this hook runs `flk ports reap`:
+    # the machine is tidied and its host ports handed on within a second, with
+    # no daemon. exit-empty off keeps the server, and so the hook, alive when
+    # the last session closes, the common "my only machine died" case.
+    def install_exit_hook
+      log = File.join(ROOT, "hooks.log")
+      cmd = "FLK_HOME=#{ROOT.shellescape} #{BIN.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"
+      raise Error, "can't install the exit hook: a path contains a single quote" if cmd.include?("'")
+      tmux_quiet("set-option", "-g", "exit-empty", "off")
+      tmux_quiet("set-hook", "-g", "session-closed", "run-shell -b '#{cmd}'")
     end
 
     def tmux_quiet(*args) = system(*TMUX, *args, out: File::NULL, err: File::NULL)

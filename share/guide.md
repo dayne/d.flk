@@ -35,7 +35,8 @@ shows the live state with suggested next steps.
   host address) to the first running machine that asks for it. When that
   machine stops, the next one takes over.
 - **Lifecycle**: when the app process exits, its VM powers off (state
-  `stopped`). `flk machine stop` sends the app SIGTERM, then kills the VM after
+  `stopped`) and flk hands its host ports on right away (a hook on flk's
+  tmux server runs `flk ports reap`). `flk machine stop` sends the app SIGTERM, then kills the VM after
   `kill_timeout`.
 
 Inside every machine: `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`,
@@ -92,8 +93,9 @@ and rolls the machines one at a time.
 Scale: `flk volumes create data --size 1` (if `[[mounts]]` is used), then
 `flk scale count 2`.
 
-Expose on the LAN: add `[[services]]` with `[[services.ports]] port = N`
-(N >= 1024), deploy, then check `flk ports`.
+Expose on the LAN: for an `[http_service]` app add `[flk] http_port = N`;
+otherwise add `[[services]]` with `[[services.ports]] port = N`. N >= 1024.
+Deploy, then check `flk ports`.
 
 Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets: everything).
 
@@ -104,8 +106,9 @@ Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets: everything).
 - `[env]`: plain env vars
 - `[[mounts]]`: `source` (volume name), `destination` (path in the VM)
 - `[http_service] internal_port`, or the first `[[services]] internal_port`:
-  the port flk waits for after boot and prints as the app URL. It is not
-  forwarded to the host.
+  the port flk waits for after boot and prints as the app URL. `[http_service]`
+  is reachable on the machine IP; to also serve it on a host port (and the
+  LAN), set `[flk] http_port = N`. Same rules as `[[services.ports]]`.
 - `[[services]]`: `internal_port`, `protocol` (`tcp`/`udp`), and
   `[[services.ports]] port`: host ports to forward. Refused: ports below 1024
   (allow with `sudo FLK_MIN_PORT=N ./setup-host.sh`) and ports a host process
@@ -114,7 +117,8 @@ Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets: everything).
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
   (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
-- `[flk]` (flk only): `kernel_args`, `rootfs_extra_mb` (default 512)
+- `[flk]` (flk only): `http_port` (host port for `[http_service]`), `kernel_args`,
+  `rootfs_extra_mb` (default 512)
 
 Everything else in a fly.toml (regions, checks, concurrency, statics) is ignored.
 `flk config show` prints what flk understood.

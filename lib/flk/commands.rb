@@ -116,7 +116,9 @@ module Flk
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
             summary: "Forwarded ports: active, waiting (another machine has it) or blocked (and why)" },
-          { name: "sync", summary: "Rewrite the host's port map from the running machines" }
+          { name: "sync", summary: "Rewrite the host's port map from the running machines" },
+          { name: "reap", hidden: true,
+            summary: "Tidy machines that exited on their own and hand their ports on (run automatically by flk's tmux hook)" }
         ] },
 
       { name: "secrets", group: "Config & data", default_sub: "list",
@@ -193,7 +195,7 @@ module Flk
       GROUPS.each do |g|
         out << g
         LIST.select { _1[:group] == g && !_1[:hidden] }.each do |c|
-          head = c[:subs] ? "#{c[:name]} #{c[:subs].map { _1[:name] }.join('|')}" : [c[:name], c[:args]].compact.join(" ")
+          head = c[:subs] ? "#{c[:name]} #{c[:subs].reject { _1[:hidden] }.map { _1[:name] }.join('|')}" : [c[:name], c[:args]].compact.join(" ")
           out << (head.size > 30 ? "  #{head}\n  #{' ' * 31}#{c[:summary]}" : format("  %-30s %s", head, c[:summary]))
         end
         out << ""

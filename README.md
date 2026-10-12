@@ -93,13 +93,14 @@ long-form reference text lives in `share/guide.md`. AI agents: see [AGENTS.md](A
 - `[env]`
 - `[[mounts]]`: `source`, `destination`
 - `[http_service] internal_port` (or the first `[[services]]` entry). This drives the post-boot "listening" check.
-- `[[services]]` with `protocol` (`tcp`/`udp`) and `[[services.ports]] port`: forwarded from every host address (your LAN IP included) to the machine's `internal_port`. With several machines, the first running one owns the port and the next takes over when it stops. `[http_service]` is *not* forwarded, since on Fly it means public 80/443. Host ports below 1024 are refused (to allow one: `sudo FLK_MIN_PORT=80 ./setup-host.sh`), and so is any port a host process already listens on outside loopback, so a flk.toml can't take over sshd or a database. `flk ports` shows blocked ports and why. If a machine exits on its own, the next `flk status`, `flk ports` or `flk machine list` gives its port to the next machine or drops it.
+- `[[services]]` with `protocol` (`tcp`/`udp`) and `[[services.ports]] port`: forwarded from every host address (your LAN IP included) to the machine's `internal_port`. With several machines, the first running one owns the port and the next takes over when it stops. `[http_service]` is *not* forwarded by default, since on Fly it means public 80/443; set `[flk] http_port = 8080` to serve it on a host port. Host ports below 1024 are refused (to allow one: `sudo FLK_MIN_PORT=80 ./setup-host.sh`), and so is any port a host process already listens on outside loopback, so a flk.toml can't take over sshd or a database. `flk ports` shows blocked ports and why. If a machine exits on its own, flk's tmux server notices (a `session-closed` hook runs `flk ports reap`) and gives its port to the next machine or drops it, with no daemon.
 - `kill_timeout`: seconds (`30`, `"30s"`, `"2m"`) between asking the app to stop and killing the VM. Default 10, at most 300 (5 minutes). Raise it for apps that save on shutdown, like game servers.
 - `[[vm]]`: `cpus`, `memory` (`'1gb'`/`'512mb'`), `memory_mb`, and `size` presets (`shared-cpu-Nx`, `performance-Nx`)
 - `[experimental]`: `cmd`, `entrypoint`
 
 flk-only keys go under `[flk]`:
 
+- `http_port`: host port forwarded to `[http_service] internal_port`
 - `kernel_args`: appended to the boot cmdline
 - `rootfs_extra_mb`: free space added to the rootfs (default 512)
 
