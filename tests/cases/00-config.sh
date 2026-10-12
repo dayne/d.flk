@@ -99,6 +99,16 @@ test_kill_timeout_formats() {
   assert_contains "$out" "can't parse kill_timeout"
 }
 
+test_kill_timeout_capped() {
+  stage_app hello
+  sed -i 's/^app = .*/&\nkill_timeout = "5m"/' "$APP_DIR/flk.toml"
+  assert_eq 300 "$(config | json_get machine_config.kill_timeout)" '"5m" (the limit)'
+  sed -i 's/^kill_timeout = .*/kill_timeout = 3000/' "$APP_DIR/flk.toml"
+  local out
+  out=$(config 2>&1) && fail "accepted kill_timeout = 3000"
+  assert_contains "$out" "over the 300s"
+}
+
 test_udp_and_multiple_ports() {
   stage_app hello
   toml_append '[[services]]' '  internal_port = 19132' '  protocol = "udp"' \

@@ -3,6 +3,7 @@ module Flk
   # Fly-only keys (primary_region, concurrency, checks...) are ignored.
   class AppConfig
     FILES = %w[flk.toml fly.toml].freeze
+    MAX_KILL_TIMEOUT = 300 # seconds; a typo like 3000 would hang `machine stop` for 50 minutes
 
     attr_reader :path, :data
 
@@ -74,7 +75,12 @@ module Flk
       return 10 if v.nil?
       s = v.to_s.strip.downcase
       raise Error, "can't parse kill_timeout '#{v}' (want seconds, e.g. 30 or \"30s\")" unless s =~ /\A(\d+)(s|m)?\z/
-      $2 == "m" ? $1.to_i * 60 : $1.to_i
+      secs = $2 == "m" ? $1.to_i * 60 : $1.to_i
+      if secs > MAX_KILL_TIMEOUT
+        raise Error, "kill_timeout #{v} is over the #{MAX_KILL_TIMEOUT}s (#{MAX_KILL_TIMEOUT / 60}m) limit; " \
+                     "stop would wait that long before killing the machine"
+      end
+      secs
     end
 
     # Host ports from [[services]] + [[services.ports]], forwarded from every

@@ -135,7 +135,8 @@ module Flk
     # SIGTERM -> init reboots -> firecracker exits. After kill_timeout
     # seconds (fly.toml, default 10), TERM/KILL fallbacks.
     def stop(m, timeout: nil)
-      timeout ||= (m.config["kill_timeout"] || 10).to_i
+      # capped here too: machines deployed before the config check keep their old value
+      timeout ||= [(m.config["kill_timeout"] || 10).to_i, AppConfig::MAX_KILL_TIMEOUT].min
       if m.running?
         sent = begin
           api(m.path("fc.sock"), "PUT", "/actions", { "action_type" => "SendCtrlAltDel" })
