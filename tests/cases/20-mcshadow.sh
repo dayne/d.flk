@@ -25,6 +25,15 @@ test_status_ping() {
   assert_eq 20 "$(mcq players.max)" "players.max"
 }
 
+test_json_and_context_see_the_running_machine() {
+  assert_eq started "$(flk status --json | json_get machines.0.state)" "status --json state"
+  assert_eq "$(machine_ip)" "$(flk machine list --json | json_get 0.ip)" "machine list --json ip"
+  local c; c=$(flk context --json)
+  assert_eq started "$(json_get app.machines.0.state <<<"$c")" "context machine state"
+  [[ $(json_get next_steps <<<"$c") != *"flk deploy"* ]] || fail "context suggests deploying an app that's up: $(json_get next_steps <<<"$c")"
+  assert_eq started "$(flk machine status "$(machine_id)" "$(machine_id)" | json_get 1.state)" "several IDs -> one JSON array"
+}
+
 test_deploy_reports_listening() {
   assert_contains "$(cat "$OUT/$CUR.setup.log")" "listening on $(machine_ip):25565" "deploy output"
 }

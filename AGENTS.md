@@ -1,0 +1,33 @@
+# Working with flk (for AI agents)
+
+flk runs fly.io-style apps as local Firecracker microVMs. Its CLI explains
+itself, so ask it instead of guessing:
+
+1. `flk context` (or `flk context --json`): host health, the app in the
+   current directory, its machines, volumes and ports, plus the next steps
+   that apply right now.
+2. `flk help --all`: the full reference. Concepts, every command and option,
+   the flk.toml subset, workflows, gotchas, exit codes. `--json` prints the
+   command table.
+3. `flk help COMMAND` (or `flk COMMAND --help`) for a single command.
+
+Things to know:
+
+- No flk command waits on a missing terminal: `flk logs` prints and exits,
+  `flk apps destroy` needs `--yes`, and `flk console` refuses to run (use
+  `flk logs`). `flk proxy` blocks by design and is rarely needed, because
+  machine IPs are reachable from the host.
+- Listing commands take `--json`. Unknown options and extra arguments are
+  errors, never silently ignored.
+- `flk deploy` and `flk launch` read `flk.toml` from the current directory.
+- Only `sudo ./setup-host.sh` needs root. Don't run it unless `flk context`
+  or `flk doctor` says to, and ask the user first.
+
+Working on flk itself:
+
+- Commands are defined in `lib/flk/commands.rb`. The CLI parses arguments
+  and generates all help from that table, so add new commands and options
+  there first, then write the handler in `lib/flk/cli.rb`. The long-form
+  reference text is `share/guide.md`.
+- Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
+  full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`.

@@ -34,6 +34,11 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Machines
 
+- [ ] **A failed deploy leaves a release with no machines.** `flk deploy`
+  records release vN before attaching volumes, so a missing volume aborts
+  after the image is built and vN is saved. Check volumes (and other
+  preconditions) before building.
+
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
@@ -57,6 +62,12 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [x] Tests forward a random free host port instead of 25565.
 - [x] `kill_timeout` capped at 300s (config rejects more; stop clamps old
   machines' stored value).
+- [x] Agent-friendly CLI: one command table drives argument parsing (unknown
+  options/arguments are errors, with did-you-mean) and all help: `flk help`,
+  `flk help CMD`, `flk CMD --help`, `flk help --all [--json]`. `flk context`
+  shows the current state with next steps. `--json` on listing commands.
+  `logs` follows only in a terminal; `apps destroy` and `console` never wait
+  on a missing terminal.
 - [x] `flk doctor --json`; `flk-sanity.sh` reads that instead of ✔/✘ lines.
   Doctor also reports the port helper (missing / needs a password /
   predates the host port guard) as a warning.
