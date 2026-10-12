@@ -28,11 +28,77 @@ Each entry says where the issue is caught today, and where a fix could go.
     firewall's FORWARD drop wins over flk's nft accept), or forwarded host
     ports time out.
 
-## Port forwarding
+## Leaks
 
+- [ ] **Podman image tags are never removed.** `Image.prune` deletes old
+  `images/vN.ext4` files but not the `flk.local/APP:vN` tags, and
+  `flk apps destroy` leaves all of an app's tags behind. Found: 111 tags,
+  47 of them for apps that no longer exist (1.36 GB reclaimable).
+- [ ] **`console.log` grows forever.** Every boot appends to it (via
+  `pipe-pane`) and nothing rotates it; a long-running server fills the disk.
+
+## Reliability
+
+- [ ] **Nothing survives a reboot.** Without `setup-host.sh --install-service`
+  the bridge and taps are gone after a reboot, and even with it no machine
+  comes back: flk doesn't record which machines are meant to be running.
+  Record desired state on start/stop, add a way to bring those machines back
+  (run at boot), and have doctor/context warn when the boot service is missing.
+- [ ] **No restart policy.** A crashed app stays down. Fly's
+  `[[restart]] policy = "always" | "on-failure" | "no"` could hang off the
+  tmux `session-closed` hook (`flk ports reap`).
+- [ ] **Deploys don't wait for health.** A machine that never listens only
+  gets a warning, and the roll continues. Stop the roll instead (Fly's
+  `[[http_service.checks]]` / `[checks]` are a model).
+
+## Config and releases
+
+- [ ] **Typos in flk.toml are silently ignored.** Unknown keys are dropped on
+  purpose (fly.toml compatibility), so `kill_timout = 60` does nothing.
+  Warn on keys that are neither flk's nor known Fly keys, in `deploy` and
+  `config show`.
+- [ ] **No rollback.** `flk releases` lists history but there's no
+  `flk deploy --release vN` / `flk releases rollback`. Only the last two
+  rootfs images are kept.
+
+## Admin experience (help at every stage)
+
+- [ ] **No one-screen overview of the host.** `flk context --all` (or
+  `flk status --all`): every app, machine, IP and port, and anything wrong.
+- [ ] **No cheat sheet.** `flk help --all` is ~350 lines. `flk help cheatsheet`:
+  one screen by task ("see what's running", "read logs", "expose a port",
+  "recover after reboot", "remove an app").
+- [ ] **No guides by stage.** `flk help setup | first-app | operate |
+  troubleshoot | uninstall`, sections of `share/guide.md`. Troubleshoot maps
+  symptoms (no network, port unreachable, keeps stopping, short-name error)
+  to commands.
+- [ ] **Commands that change things don't say what's next.** `flk context`
+  computes next steps; print a `Next:` line after launch, volumes create,
+  deploy, stop, scale, secrets set.
+- [ ] **No shell completion.** Generate it from the command table
+  (`flk completion bash`).
+- [ ] **Root-side tools are invisible from flk.** `flk context` / `doctor`
+  should say when `setup-host.sh`, `--install-service` or `flk-sanity.sh`
+  are needed, and where they are.
+
+## Bigger features
+
+- [ ] **Exec into a machine.** A small vsock agent in the guest for a real
+  `flk ssh console` and `flk ssh console -C "cmd"` (like Fly's hallpass).
+- [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
+  from machine records).
+- [ ] **Volume snapshots, extend, backup.**
+- [ ] **Snapshots of machines** (Firecracker snapshot/restore): suspend and
+  sub-second resume.
+- [ ] **Static init** (Go/Rust) so distroless/scratch images boot without `/bin/sh`.
+
+## Housekeeping
+
+- [ ] **`resume` is committed.** It holds a personal Claude session ID
+  (`claude --resume ...`); it probably belongs outside the repo or in
+  `.gitignore`.
 
 ## Machines
-
 
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
