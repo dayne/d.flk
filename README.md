@@ -31,7 +31,7 @@ sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables cu
 
 # 2. One-time root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding
 sudo ./setup-host.sh
-sudo ./setup-host.sh --install-service   # optional: recreate at boot
+sudo ./setup-host.sh --install-service   # recommended: at boot, recreate networking and resume machines
 
 # 3. Firecracker + guest kernel into ~/.local/share/flk (no root)
 ln -s "$PWD/bin/flk" ~/.local/bin/flk

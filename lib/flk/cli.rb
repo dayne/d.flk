@@ -27,8 +27,7 @@ module Flk
         what = argv.size < min ? "missing arguments" : "unexpected argument '#{argv[max]}'"
         raise Error, "#{what}; usage: #{Commands.usage(cmd, sub)}"
       end
-      handler = entry[:run] || (sub ? "#{cmd[:name]}_#{sub[:name]}" : "cmd_#{cmd[:name]}")
-      send(handler, argv, opts)
+      send(Commands.handler(cmd, sub), argv, opts)
     rescue Error, OptionParser::ParseError => e
       msg = e.message.sub(/\n\s*Did you mean\?\s*(\S+).*/m) { "; did you mean --#{$1}?" }
       ref = @help_ref && e.is_a?(OptionParser::ParseError) ? " (see: #{@help_ref})" : ""
@@ -184,7 +183,22 @@ module Flk
         record["#{orphans.size} destroyed app#{'s' if orphans.size > 1} still have container images", "warn", "flk apps prune"]
       end
       port_helper_check(record)
+      boot_service_check(record)
       results
+    end
+
+    # Optional: without it nothing comes back after a reboot.
+    def boot_service_check(record)
+      unit = "/etc/systemd/system/flk-machines.service"
+      ok = File.exist?(unit) && system("systemctl", "is-enabled", "--quiet", "flk-machines.service", err: File::NULL)
+      if ok
+        record["boot service (machines come back after a reboot)", "pass", nil]
+      else
+        record["boot service: after a reboot the network and machines stay down", "warn",
+               "sudo ./setup-host.sh --install-service"]
+      end
+    rescue SystemCallError
+      record["boot service: systemctl not found", "warn", "after a reboot: sudo ./setup-host.sh && flk resume"]
     end
 
     # Optional: without it machines run, but [[services.ports]] isn't forwarded.
@@ -280,7 +294,12 @@ module Flk
         steps << "no machines; flk deploy (or flk scale count 1)"
       end
       ms.reject(&:running?).each do |m|
-        steps << "machine #{m.id} [#{m.name}] is stopped; see why: flk logs -i #{m.id} --no-tail; start: flk machine start #{m.id}"
+        steps << if m.desired_state == "started"
+                   "machine #{m.id} [#{m.name}] should be running but isn't (it exited, or the host restarted); " \
+                   "see why: flk logs -i #{m.id} --no-tail; bring it back: flk resume"
+                 else
+                   "machine #{m.id} [#{m.name}] is stopped; start it: flk machine start #{m.id}"
+                 end
       end
       h["ports"]["blocked"].each { steps << "host port #{_1['key']} not forwarded: #{_1['blocked']}" }
       h["ports"]["waiting"].each { steps << "host port #{_1['key']} is held by another machine; this one gets it when that stops" }
@@ -560,7 +579,8 @@ module Flk
 
     # A machine as list/status/context JSON show it.
     def machine_json(m)
-      { "id" => m.id, "name" => m.name, "state" => m.state, "release" => m.release, "ip" => m.ip,
+      { "id" => m.id, "name" => m.name, "state" => m.state, "desired_state" => m.desired_state,
+        "release" => m.release, "ip" => m.ip,
         "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
         "volumes" => Array(m.config["mounts"]), "created_at" => m.created_at, "updated_at" => m.updated_at }
@@ -570,6 +590,42 @@ module Flk
       reap_exited
       return puts(JSON.pretty_generate(app.machines.map { machine_json(_1) })) if o[:json]
       machine_table(app)
+    end
+
+    # ---------- host lifecycle ----------
+
+    def lifecycle_machines = (@app_name ? [app] : App.all).flat_map(&:machines)
+
+    def cmd_resume(_args, _o)
+      todo = lifecycle_machines.select { _1.desired_state == "started" && !_1.running? }
+      VM.ensure_server
+      return puts("Nothing to resume") if todo.empty?
+      puts "==> Resuming #{todo.size} machine#{'s' if todo.size > 1}"
+      failed = todo.reject do |m|
+        boot(m, "#{m.app.name}: #{m.id} [#{m.name}] resumed")
+        true
+      rescue Error => e
+        warn Util.red("  ✘ #{m.app.name}: #{m.id} [#{m.name}]: #{e.message}")
+        false
+      end
+      raise Error, "#{failed.size} machine#{'s' if failed.size > 1} didn't resume (see above)" if failed.any?
+    end
+
+    # Graceful, in parallel (each gets its kill_timeout), and remembering
+    # they should run: what the host does at shutdown.
+    def cmd_stop_all(_args, _o)
+      todo = lifecycle_machines.select(&:running?)
+      return puts("Nothing running") if todo.empty?
+      puts "==> Stopping #{todo.size} machine#{'s' if todo.size > 1} (flk resume brings them back)"
+      todo.map do |m|
+        Thread.new do
+          VM.stop(m, keep_desired: true, sync_ports: false)
+          puts "  #{m.app.name}: #{m.id} [#{m.name}] stopped"
+        rescue StandardError => e
+          warn "  #{m.app.name}: #{m.id} [#{m.name}]: #{e.message}"
+        end
+      end.each(&:join)
+      Ports.sync!
     end
 
     def machine_start(args, _o) = each_ref(args) { |m| boot(m, "Machine #{m.id} [#{m.name}] started") }

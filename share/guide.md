@@ -36,7 +36,12 @@ shows the live state with suggested next steps.
   machine stops, the next one takes over.
 - **Lifecycle**: when the app process exits, its VM powers off (state
   `stopped`) and flk hands its host ports on right away (a hook on flk's
-  tmux server runs `flk ports reap`). `flk machine stop` sends the app SIGTERM, then kills the VM after
+  tmux server runs `flk ports reap`).
+- **Desired state**: flk remembers whether you want each machine running.
+  start/restart/deploy/scale mean yes, `flk machine stop` means no; an app
+  exiting on its own changes nothing. `flk resume` starts every machine that
+  should be running; `flk stop-all` stops them all gracefully but keeps
+  them marked as running, which is what the host does at shutdown. `flk machine stop` sends the app SIGTERM, then kills the VM after
   `kill_timeout`.
 
 Inside every machine: `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`,
@@ -97,7 +102,15 @@ Expose on the LAN: for an `[http_service]` app add `[flk] http_port = N`;
 otherwise add `[[services]]` with `[[services.ports]] port = N`. N >= 1024.
 Deploy, then check `flk ports`.
 
-Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets: everything).
+Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets, images:
+everything). `flk apps prune` removes images left by apps destroyed before
+that was the case.
+
+After a reboot: with `sudo ./setup-host.sh --install-service` done once,
+nothing to do: `flk-net.service` rebuilds the network and
+`flk-machines.service` runs `flk resume` (and `flk stop-all` at shutdown).
+Without it: `sudo ./setup-host.sh`, then `flk resume`. `flk doctor` warns
+while the boot service is missing.
 
 ## Config (flk.toml / fly.toml subset)
 

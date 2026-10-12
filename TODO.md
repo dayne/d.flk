@@ -28,22 +28,8 @@ Each entry says where the issue is caught today, and where a fix could go.
     firewall's FORWARD drop wins over flk's nft accept), or forwarded host
     ports time out.
 
-## Leaks
-
-- [ ] **Podman image tags are never removed.** `Image.prune` deletes old
-  `images/vN.ext4` files but not the `flk.local/APP:vN` tags, and
-  `flk apps destroy` leaves all of an app's tags behind. Found: 111 tags,
-  47 of them for apps that no longer exist (1.36 GB reclaimable).
-- [ ] **`console.log` grows forever.** Every boot appends to it (via
-  `pipe-pane`) and nothing rotates it; a long-running server fills the disk.
-
 ## Reliability
 
-- [ ] **Nothing survives a reboot.** Without `setup-host.sh --install-service`
-  the bridge and taps are gone after a reboot, and even with it no machine
-  comes back: flk doesn't record which machines are meant to be running.
-  Record desired state on start/stop, add a way to bring those machines back
-  (run at boot), and have doctor/context warn when the boot service is missing.
 - [ ] **No restart policy.** A crashed app stays down. Fly's
   `[[restart]] policy = "always" | "on-failure" | "no"` could hang off the
   tmux `session-closed` hook (`flk ports reap`).
@@ -135,6 +121,14 @@ Each entry says where the issue is caught today, and where a fix could go.
   "short-name ... did not resolve" prints the fix: a user-level drop-in
   (`~/.config/containers/registries.conf.d/`, which adds to the system config
   instead of replacing it), or the full image name.
+- [x] No more image and log leaks: release pruning and `apps destroy` untag
+  `flk.local/APP:vN`; `flk apps prune` clears tags of apps already gone
+  (doctor warns about them); `console.log` rotates to `console.log.1` past
+  `FLK_LOG_MAX_MB` (libexec/flk-logpipe).
+- [x] Reboots: machines record `desired_state`; `flk resume` starts what should
+  run, `flk stop-all` stops everything gracefully and keeps it marked;
+  `--install-service` adds `flk-machines.service` (resume at boot, stop-all
+  at shutdown); doctor warns when it's missing.
 - [x] Machines that exit on their own are noticed immediately: a
   `session-closed` hook on flk's tmux server runs `flk ports reap` (no
   daemon); `exit-empty off` keeps the server alive for it.

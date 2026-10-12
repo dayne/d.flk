@@ -133,6 +133,7 @@ module Flk
       api(sock, "PUT", "/actions", { "action_type" => "InstanceStart" })
 
       m.h["started_at"] = Util.now
+      m.h["desired_state"] = "started"
       m.save!
       Ports.sync! if Array(m.config["ports"]).any?
     rescue StandardError
@@ -144,7 +145,10 @@ module Flk
     # Graceful: Ctrl-Alt-Del -> guest kernel SIGINTs /flk/init -> app gets
     # SIGTERM -> init reboots -> firecracker exits. After kill_timeout
     # seconds (fly.toml, default 10), TERM/KILL fallbacks.
-    def stop(m, timeout: nil)
+    # keep_desired: the host is going down (flk stop-all), so flk resume
+    # should bring the machine back. sync_ports: false when the caller syncs
+    # once for many machines (Ports.sync!'s lock isn't thread-safe).
+    def stop(m, timeout: nil, keep_desired: false, sync_ports: true)
       # capped here too: machines deployed before the config check keep their old value
       timeout ||= [(m.config["kill_timeout"] || 10).to_i, AppConfig::MAX_KILL_TIMEOUT].min
       if m.running?
@@ -162,8 +166,9 @@ module Flk
       tmux_quiet("kill-session", "-t", m.session)
       FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
       m.h["stopped_at"] = Util.now
+      m.h["desired_state"] = "stopped" unless keep_desired
       m.save!
-      Ports.sync! if Array(m.config["ports"]).any? # hand its ports to another machine, or drop them
+      Ports.sync! if sync_ports && Array(m.config["ports"]).any? # hand its ports to another machine, or drop them
     end
 
     # Tidy machines that exited on their own (see Machine#exited?) and hand
@@ -226,6 +231,15 @@ module Flk
     # the machine is tidied and its host ports handed on within a second, with
     # no daemon. exit-empty off keeps the server, and so the hook, alive when
     # the last session closes, the common "my only machine died" case.
+    # Start flk's tmux server now, so it (and every machine started later)
+    # lives in the caller's cgroup: flk-machines.service at boot, which then
+    # stops them gracefully at shutdown instead of the session teardown
+    # killing them.
+    def ensure_server
+      tmux_quiet("start-server", ";", "set-option", "-g", "exit-empty", "off")
+      install_exit_hook
+    end
+
     def install_exit_hook
       log = File.join(ROOT, "hooks.log")
       cmd = "FLK_HOME=#{ROOT.shellescape} #{BIN.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"

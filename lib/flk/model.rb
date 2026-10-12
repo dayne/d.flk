@@ -117,5 +117,12 @@ module Flk
     def exited? = !pid.nil? && !running?
 
     def state = running? ? "started" : "stopped"
+
+    # What the user last asked for: start/restart/deploy/scale say "started",
+    # `machine stop` says "stopped"; exiting on its own changes nothing. flk
+    # resume brings back "started" machines. Machines from before this field
+    # count as started if a pid file says they were running when the host
+    # went down.
+    def desired_state = h["desired_state"] || (pid ? "started" : "stopped")
   end
 end

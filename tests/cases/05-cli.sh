@@ -15,7 +15,7 @@ test_command_table_complete() {
     cli = Flk::CLI.new
     Flk::Commands.all.each do |c|
       (c[:subs] || [nil]).each do |s|
-        h = (s || c)[:run] || (s ? "#{c[:name]}_#{s[:name]}" : "cmd_#{c[:name]}")
+        h = Flk::Commands.handler(c, s)
         abort "no handler #{h} for flk #{c[:name]} #{s&.dig(:name)}" unless cli.respond_to?(h, true)
         Array((s || c)[:opts]).each { Flk::Commands.key(_1) }
       end

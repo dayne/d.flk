@@ -20,7 +20,7 @@ module Flk
   module Commands
     JSON_OPT = ["--json", "Print JSON instead of a table"].freeze
 
-    GROUPS = ["Start here", "Setup", "Apps", "Machines", "Config & data"].freeze
+    GROUPS = ["Start here", "Setup", "Host", "Apps", "Machines", "Config & data"].freeze
 
     LIST = [
       { name: "context", group: "Start here", opts: [["--json", "Print JSON"]], json: true,
@@ -40,6 +40,17 @@ module Flk
         summary: "Check host readiness",
         notes: ['--json prints {"ok", "checks": [{"label", "status", "hint"}]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.'] },
       { name: "version", group: "Setup", summary: "Print the flk version" },
+
+      { name: "resume", group: "Host",
+        summary: "Start every machine that should be running (after a reboot, or after stop-all)",
+        notes: ["Should be running: started, restarted, deployed or scaled, and not stopped with `flk machine stop` since. A machine whose app exited counts too.",
+                "flk-machines.service runs it at boot (sudo ./setup-host.sh --install-service).",
+                "-a APP limits it to one app."] },
+      { name: "stop-all", group: "Host",
+        summary: "Gracefully stop every running machine, remembering to resume them",
+        notes: ["What the host does at shutdown (flk-machines.service): all machines stop in parallel, each with its kill_timeout, and `flk resume` brings them back.",
+                "To stop a machine for good, use `flk machine stop`.",
+                "-a APP limits it to one app."] },
 
       { name: "launch", group: "Apps",
         opts: [["--name NAME", "App name (default: directory name)"],
@@ -79,7 +90,7 @@ module Flk
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "Machines of the app" },
           { name: "start", args: "ID...", summary: "Boot machines" },
-          { name: "stop", args: "ID...", summary: "Stop machines gracefully (SIGTERM to the app, kill after kill_timeout)" },
+          { name: "stop", args: "ID...", summary: "Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they stay stopped across reboots" },
           { name: "restart", args: "ID...", summary: "Stop, then boot" },
           { name: "destroy", aliases: %w[rm], args: "ID...", opts: [["-f", "--force", "Stop it first if running"]],
             summary: "Delete machines (their volumes are kept, unattached)" },
@@ -155,6 +166,11 @@ module Flk
 
     def find(name, list = LIST)
       list.find { |c| c[:name] == name || Array(c[:aliases]).include?(name) }
+    end
+
+    # CLI method for a command: :run, else cmd_NAME or NAME_SUB ("stop-all" -> cmd_stop_all)
+    def handler(cmd, sub = nil)
+      (sub || cmd)[:run] || (sub ? "#{cmd[:name]}_#{sub[:name]}" : "cmd_#{cmd[:name]}").tr("-", "_")
     end
 
     def names(list = LIST) = list.flat_map { [_1[:name], *Array(_1[:aliases])] }

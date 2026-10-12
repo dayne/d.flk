@@ -3,7 +3,7 @@
 #
 #   sudo ./setup-host.sh                    bridge + tap pool + NAT + port forwarding, kvm group
 #   sudo ./setup-host.sh --down             remove taps, bridge, NAT table
-#   sudo ./setup-host.sh --install-service  re-create networking at boot (systemd)
+#   sudo ./setup-host.sh --install-service  at boot: re-create networking, then resume machines (systemd)
 #   sudo ./setup-host.sh --uninstall        --down, plus remove the port helper, sudoers rule, service
 #
 # Env: FLK_BRIDGE (flkbr0)  FLK_SUBNET (172.30.0)  FLK_TAPS (16)  FLK_UPLINK (auto)
@@ -106,12 +106,15 @@ install_port_helper() {
 }
 
 uninstall() {
+  local unit
+  for unit in flk-machines flk-net; do # machines first: they stop gracefully while the network is still up
+    if [[ -f /etc/systemd/system/$unit.service ]]; then
+      systemctl disable --now "$unit.service" 2>/dev/null || true
+      rm -f "/etc/systemd/system/$unit.service"
+    fi
+  done
+  systemctl daemon-reload 2>/dev/null || true
   down
-  if [[ -f /etc/systemd/system/flk-net.service ]]; then
-    systemctl disable --now flk-net.service 2>/dev/null || true
-    rm -f /etc/systemd/system/flk-net.service
-    systemctl daemon-reload
-  fi
   rm -f "$helper" "$sudoers"
   echo "flk host setup removed (the kvm group membership stays)"
 }
@@ -133,9 +136,39 @@ ExecStop=$self --down
 [Install]
 WantedBy=multi-user.target
 EOF
+
+  # Machines: `flk resume` once the network is up, `flk stop-all` (graceful,
+  # remembering them) at shutdown. Runs as the user, with their ruby on PATH;
+  # the tmux server it starts, and so every machine, lives in this unit.
+  local ruby_bin
+  ruby_bin=$(sudo -u "$user" -H bash -lc 'command -v ruby' 2>/dev/null || command -v ruby)
+  [[ -n $ruby_bin ]] || { echo "ruby not found for $user" >&2; exit 1; }
+  cat > /etc/systemd/system/flk-machines.service <<UNIT
+[Unit]
+Description=flk machines: resume at boot, stop gracefully at shutdown
+Requires=flk-net.service
+After=flk-net.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=$user
+Environment=PATH=$(dirname "$ruby_bin"):/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=FLK_BRIDGE=$bridge FLK_SUBNET=$subnet FLK_TAPS=$taps
+# '-': a machine that fails to resume must not fail the unit (which would kill the others)
+ExecStart=-$ruby_bin $src/bin/flk resume
+ExecStop=$ruby_bin $src/bin/flk stop-all
+TimeoutStartSec=20min
+# kill_timeout is at most 300s, and stop-all stops machines in parallel
+TimeoutStopSec=330
+
+[Install]
+WantedBy=multi-user.target
+UNIT
   systemctl daemon-reload
   systemctl enable --now flk-net.service
-  echo "installed and started flk-net.service"
+  systemctl enable --now flk-machines.service
+  echo "installed and started flk-net.service and flk-machines.service"
 }
 
 case "${1:-}" in

@@ -199,3 +199,29 @@ test_exited_machine_releases_host_port() {
   ensure_up
   assert_contains "$(port_map)" "$HOST_PORT :" "forward after restart"
 }
+
+# Host lifecycle: stop-all stops gracefully but remembers; resume brings back
+# what should run and leaves explicitly stopped machines alone. -a keeps the
+# tests off the host's real apps.
+desired() { flk machine status "$(machine_id)" | json_get desired_state; }
+
+test_stop_all_then_resume() {
+  ensure_up
+  local s; s=$(mcq flk.saves)
+  "$FLK_BIN" -a "$APP" stop-all
+  is_stopped || fail "still running after stop-all"
+  assert_eq started "$(desired)" "desired state after stop-all"
+  "$FLK_BIN" -a "$APP" resume
+  wait_mc 60
+  assert_eq $((s + 1)) "$(mcq flk.saves)" "stop-all let the world save"
+}
+
+test_resume_skips_machines_stopped_on_purpose() {
+  ensure_up
+  flk machine stop "$(machine_id)"
+  assert_eq stopped "$(desired)" "desired state after machine stop"
+  assert_contains "$("$FLK_BIN" -a "$APP" resume)" "Nothing to resume"
+  is_stopped || fail "resume started a machine stopped with machine stop"
+  flk machine start "$(machine_id)"
+  assert_eq started "$(desired)" "desired state after machine start"
+}
