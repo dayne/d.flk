@@ -19,10 +19,12 @@ module Flk
     # Kernel-level IP config: works even in images without iproute2.
     def kernel_ip_arg(i, hostname) = "ip=#{ip(i)}::#{GATEWAY}:255.255.255.0:#{hostname}:eth0:off"
 
+    def used = Dir.glob(File.join(ROOT, "apps/*/machines/*/machine.json")).filter_map { Util.read_json(_1)&.dig("tap_index") }
+    def free_count = (0...POOL).count { !used.include?(_1) && tap_exists?(_1) }
+
     def allocate!
-      used = Dir.glob(File.join(ROOT, "apps/*/machines/*/machine.json"))
-                .filter_map { Util.read_json(_1)&.dig("tap_index") }
-      i = (0...POOL).find { !used.include?(_1) } or
+      taken = used
+      i = (0...POOL).find { !taken.include?(_1) } or
         raise Error, "tap pool exhausted (#{POOL}); re-run: sudo FLK_TAPS=#{POOL * 2} ./setup-host.sh"
       raise Error, "#{tap(i)} doesn't exist; run: sudo ./setup-host.sh" unless tap_exists?(i)
       i

@@ -46,7 +46,7 @@ test_each_machine_has_its_own_volume() {
 test_scale_beyond_volumes_fails_cleanly() {
   local out
   out=$(flk scale count 3 2>&1) && fail "scaled past the number of volumes"
-  assert_contains "$out" "no unattached volume"
+  assert_contains "$out" "not enough free volumes"
   assert_eq 2 "$(machine_count)" "machines after failed scale"
 }
 

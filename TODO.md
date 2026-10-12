@@ -34,10 +34,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Machines
 
-- [ ] **A failed deploy leaves a release with no machines.** `flk deploy`
-  records release vN before attaching volumes, so a missing volume aborts
-  after the image is built and vN is saved. Check volumes (and other
-  preconditions) before building.
 
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
@@ -68,6 +64,9 @@ Each entry says where the issue is caught today, and where a fix could go.
   shows the current state with next steps. `--json` on listing commands.
   `logs` follows only in a terminal; `apps destroy` and `console` never wait
   on a missing terminal.
+- [x] Deploy checks volumes and free taps before building, and again under
+  the lock before recording the release; a deploy that fails before then
+  leaves no release and no image behind. `scale count` checks first too.
 - [x] `flk doctor --json`; `flk-sanity.sh` reads that instead of ✔/✘ lines.
   Doctor also reports the port helper (missing / needs a password /
   predates the host port guard) as a warning.

@@ -106,3 +106,19 @@ test_no_hangs_without_a_terminal() {
   ((rc != 124)) || fail "flk logs kept following without a terminal"
   assert_contains "$out" "boot line" "logs output"
 }
+
+# A deploy that can't place its machines fails before the (slow) build and
+# records no release, so the next deploy doesn't inherit an empty vN.
+test_deploy_checks_volumes_before_building() {
+  stage_app hello
+  trap destroy_app EXIT
+  toml_append '[[mounts]]' '  source = "data"' '  destination = "/data"'
+  flk launch --no-deploy >/dev/null
+  local out
+  out=$(flk deploy 2>&1) && fail "deployed without the volume [[mounts]] needs"
+  assert_contains "$out" "not enough free volumes for [[mounts]] source 'data'"
+  assert_contains "$out" "flk volumes create data --size 1"
+  [[ $out != *"==> Building"* && $out != *"==> Release"* ]] || fail "started building before checking volumes"
+  assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "releases after the failed deploy"
+  [[ -z $(ls "$FLK_HOME/apps/$APP/images" 2>/dev/null) ]] || fail "left an image behind"
+}

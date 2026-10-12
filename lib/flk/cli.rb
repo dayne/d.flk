@@ -395,23 +395,31 @@ module Flk
       a.create! unless a.exists?
       mconfig = cfg.machine_config
 
+      deploy_capacity!(a, mconfig) # before the slow build
       version = (a.meta["releases"].last&.dig("version") || 0) + 1
       puts "==> Release v#{version} of #{a.name}"
-      rel = Image.build(a, cfg, version, image_override: o[:image])
-
-      Util.with_lock do
-        meta = a.meta
-        meta["releases"] << rel
-        a.save_meta(meta)
-        machines = a.machines
-        if machines.empty?
-          count = [meta["scale"] || 1, 1].max
-          puts "==> Creating #{count} machine#{'s' if count > 1}"
-          count.times { create_machine(a, rel, mconfig) }
-        else
-          puts "==> Updating #{machines.size} machine#{'s' if machines.size > 1} (rolling)"
-          machines.each { update_machine(_1, rel, mconfig) }
+      recorded = false
+      begin
+        rel = Image.build(a, cfg, version, image_override: o[:image])
+        Util.with_lock do
+          machines = deploy_capacity!(a, mconfig) # again: things may have changed during the build
+          # Record the release only once its machines can be rolled, so a
+          # failed precondition never leaves a release with nothing on it.
+          meta = a.meta
+          meta["releases"] << rel
+          a.save_meta(meta)
+          recorded = true
+          if machines.empty?
+            count = [meta["scale"] || 1, 1].max
+            puts "==> Creating #{count} machine#{'s' if count > 1}"
+            count.times { create_machine(a, rel, mconfig) }
+          else
+            puts "==> Updating #{machines.size} machine#{'s' if machines.size > 1} (rolling)"
+            machines.each { update_machine(_1, rel, mconfig) }
+          end
         end
+      ensure
+        FileUtils.rm_f(File.join(a.dir, "images", "v#{version}.ext4")) unless recorded
       end
       Image.prune(a)
 
@@ -419,6 +427,37 @@ module Flk
       if (port = mconfig["internal_port"])
         a.machines.each { |m| puts "   #{m.name}  http://#{m.ip}:#{port}" }
       end
+    end
+
+    # Raises unless the deploy can create or update all its machines; returns
+    # the machines it will update (none on a first deploy).
+    def deploy_capacity!(a, mconfig)
+      machines = a.machines
+      if machines.empty?
+        check_capacity!(a, mconfig, creating: [a.meta["scale"] || 1, 1].max)
+      else
+        check_capacity!(a, mconfig, updating: machines)
+      end
+      machines
+    end
+
+    # Volumes and taps for `creating` new machines plus `updating` existing
+    # ones (which may keep the volumes they hold). One volume per machine
+    # per [[mounts]] entry, as attach_volumes hands them out.
+    def check_capacity!(a, mconfig, creating: 0, updating: [])
+      ids = updating.map(&:id)
+      need = creating + updating.size
+      vols = a.volumes
+      Array(mconfig["mount_specs"]).group_by { _1["source"] }.each do |src, specs|
+        want = need * specs.size
+        free = vols.count { _1["name"] == src && (_1["attached_machine"].nil? || ids.include?(_1["attached_machine"])) }
+        next if free >= want
+        raise Error, "not enough free volumes for [[mounts]] source '#{src}' (need #{want}, #{free} free; one per machine); " \
+                     "create #{want - free} more: flk volumes create #{src} --size 1"
+      end
+      return if creating.zero? || (taps = Net.free_count) >= creating
+      raise Error, "need #{creating} free tap#{'s' if creating > 1} for new machines, #{taps} free; " \
+                   "re-run: sudo FLK_TAPS=#{Net::POOL * 2} ./setup-host.sh"
     end
 
     # Every listing command tidies machines that exited on their own, so the
@@ -540,6 +579,7 @@ module Flk
           cfg = AppConfig.find
           base = cfg && cfg.app == a.name ? cfg.machine_config : ms.last&.config&.reject { |k, _| k == "mounts" }
           raise Error, "run from the app directory so flk can read its config" unless base
+          check_capacity!(a, base, creating: n - ms.size)
           (n - ms.size).times { create_machine(a, rel, base) }
         else
           ms.last(ms.size - n).reverse_each { destroy_machine(_1, force: true) }
