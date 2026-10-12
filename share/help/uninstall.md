@@ -1,0 +1,23 @@
+# Removing flk
+
+1. **Apps.** `flk apps list`, then `flk apps destroy APP --yes` for each:
+   machines, volumes and images go. External volume files (created with
+   `--path` or imported) are kept; flk lists them.
+
+2. **Host setup.**
+
+       sudo {{SRC}}/setup-host.sh --uninstall
+
+   This removes the boot services, the bridge, the taps, the nft table, the
+   port helper and its sudoers rule. With the boot service installed it
+   stops the machines gracefully first; without it, run `flk stop-all`
+   before this. Your `kvm` group membership stays.
+
+3. **flk's files.** `rm -rf {{ROOT}}` (firecracker, kernel, and anything
+   left), `rm ~/.local/bin/flk`, and the completion file if you installed
+   one. Images: `flk apps prune` before step 1 leaves nothing; otherwise
+   `podman images | grep flk.local`.
+
+4. **Optional:** the podman registries drop-in
+   `~/.config/containers/registries.conf.d/50-flk-docker-io.conf`, and the
+   source in `{{SRC}}`.

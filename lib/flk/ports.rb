@@ -24,7 +24,7 @@ module Flk
     # process listens on would steal its inbound traffic (sshd, a database...).
     def blocked_reason(proto, port, listeners = host_listeners)
       if port < min_port
-        "below #{min_port}; to allow: sudo FLK_MIN_PORT=#{port} ./setup-host.sh"
+        "below #{min_port}; to allow: sudo FLK_MIN_PORT=#{port} #{SETUP_HOST}"
       elsif listeners.include?("#{proto}/#{port}")
         "a host process is listening on it"
       end
@@ -84,7 +84,7 @@ module Flk
         active, = table
         unless available?
           return true if active.empty?
-          warn_once("port forwarding isn't set up; run: sudo ./setup-host.sh")
+          warn_once("port forwarding isn't set up; run: sudo #{SETUP_HOST}")
           return false
         end
         input = active.map { "#{_1['proto']} #{_1['port']} #{_1['ip']} #{_1['internal_port']}\n" }.join

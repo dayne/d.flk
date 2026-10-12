@@ -73,9 +73,9 @@ module Flk
 
     def preflight!(m)
       raise Error, "machine #{m.id} is already running" if m.running?
-      raise Error, "/dev/kvm not accessible; run: sudo ./setup-host.sh, then log out/in" unless File.writable?("/dev/kvm")
+      raise Error, "/dev/kvm not accessible; run: sudo #{SETUP_HOST}, then log out/in" unless File.writable?("/dev/kvm")
       raise Error, "guest kernel not found at #{kernel}; run: flk setup" unless File.exist?(kernel)
-      raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo ./setup-host.sh" unless Net.tap_exists?(m.tap_index)
+      raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo #{SETUP_HOST}" unless Net.tap_exists?(m.tap_index)
       raise Error, "tmux is required" unless Util.which("tmux")
       if tmux_server_lacks_kvm?
         # The server outlives its sessions (see install_exit_hook); when it's

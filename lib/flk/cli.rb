@@ -117,21 +117,42 @@ module Flk
       end
       raise Error, "--json goes with --all: flk help --all --json" if o[:json]
       return puts(Commands.short_help) if args.empty?
-      cmd = Commands.find(args[0]) or raise Error, "unknown command '#{args[0]}'#{hint_for(Commands.suggest(args[0]))} (see: flk help)"
+      if Commands::TOPICS.key?(args[0])
+        raise Error, "unexpected argument '#{args[1]}'" if args[1]
+        return puts(topic(args[0]))
+      end
+      cmd = Commands.find(args[0]) or
+        raise Error, "unknown command or topic '#{args[0]}'#{hint_for(Commands.suggest(args[0], Commands::LIST + Commands::TOPICS.keys.map { { name: _1 } }))} (see: flk help)"
       sub = args[1] && (Commands.find(args[1], Array(cmd[:subs])) or
                         raise Error, "unknown subcommand 'flk #{cmd[:name]} #{args[1]}' (see: flk help #{cmd[:name]})")
       puts Commands.command_help(cmd, sub)
     end
 
-    # share/guide.md with the generated command reference spliced in.
+    def fill(text) = text.gsub("{{VERSION}}", VERSION).gsub("{{ROOT}}", ROOT).gsub("{{SRC}}", File.dirname(SHARE))
+
+    def topic(name) = fill(File.read(File.join(SHARE, "help", "#{name}.md")))
+
+    # share/guide.md with the generated command reference and the topic
+    # pages spliced in.
     def guide
-      File.read(File.join(SHARE, "guide.md"))
-          .gsub("{{VERSION}}", VERSION).gsub("{{ROOT}}", ROOT).gsub("{{SRC}}", File.dirname(SHARE))
+      pages = Commands::TOPICS.keys.map { topic(_1).sub(/\A# /, "## Guide: ") }.join("\n")
+      fill(File.read(File.join(SHARE, "guide.md")))
+          .gsub("{{TOPICS}}", Commands::TOPICS.keys.map { "`flk help #{_1}`" }.join(", "))
+          .gsub("{{TOPIC_PAGES}}", pages)
           .gsub("{{COMMANDS}}", Commands.reference_md)
           .gsub("{{JSON_COMMANDS}}", Commands.json_summary)
           .gsub("{{EXIT_CODES}}", Commands::EXIT_CODES.map { |k, v| "- `#{k}`: #{v}" }.join("\n"))
           .gsub("{{MAX_KILL_TIMEOUT}}", AppConfig::MAX_KILL_TIMEOUT.to_s)
     end
+
+    def cmd_completion(args, _o)
+      raise Error, "only bash is supported (zsh: autoload -U bashcompinit && bashcompinit, then the bash script)" unless args[0] == "bash"
+      puts Commands.bash_completion
+    end
+
+    # "Next: ..." after commands that change things, so nobody has to
+    # remember the order. One line, plain, after the result.
+    def next_step(*cmds) = puts("Next: #{cmds.join('   or: ')}")
 
     def cmd_setup(_args, _o)
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
@@ -158,15 +179,15 @@ module Flk
       end
       check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
       check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
-            "sudo ./setup-host.sh (adds you to kvm group; log out/in)"]
+            "sudo #{SETUP_HOST} (adds you to kvm group; log out/in)"]
       fc = begin; VM.firecracker_bin; rescue Error; nil; end
       check["firecracker #{fc}", !fc.nil?, "flk setup"]
       check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
-      check["bridge #{Net::BRIDGE}", Net.bridge_up?, "sudo ./setup-host.sh"]
+      check["bridge #{Net::BRIDGE}", Net.bridge_up?, "sudo #{SETUP_HOST}"]
       taps = (0...Net::POOL).count { Net.tap_exists?(_1) }
-      check["tap pool #{taps}/#{Net::POOL}", taps.positive?, "sudo ./setup-host.sh"]
+      check["tap pool #{taps}/#{Net::POOL}", taps.positive?, "sudo #{SETUP_HOST}"]
       fwd = (File.read("/proc/sys/net/ipv4/ip_forward").strip == "1" rescue false)
-      check["ipv4 forwarding", fwd, "sudo ./setup-host.sh"]
+      check["ipv4 forwarding", fwd, "sudo #{SETUP_HOST}"]
       { "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }.each do |bin, pkg|
         check[bin, !Util.which(bin).nil?, "install #{pkg}"]
       end
@@ -195,15 +216,15 @@ module Flk
         record["boot service (machines come back after a reboot)", "pass", nil]
       else
         record["boot service: after a reboot the network and machines stay down", "warn",
-               "sudo ./setup-host.sh --install-service"]
+               "sudo #{SETUP_HOST} --install-service"]
       end
     rescue SystemCallError
-      record["boot service: systemctl not found", "warn", "after a reboot: sudo ./setup-host.sh && flk resume"]
+      record["boot service: systemctl not found", "warn", "after a reboot: sudo #{SETUP_HOST} && flk resume"]
     end
 
     # Optional: without it machines run, but [[services.ports]] isn't forwarded.
     def port_helper_check(record)
-      fix = "sudo ./setup-host.sh"
+      fix = "sudo #{SETUP_HOST}"
       if !Ports.available?
         record["port helper (forwarding [[services.ports]])", "warn", fix]
       elsif !system("sudo", "-n", "-l", Ports::HELPER, out: File::NULL, err: File::NULL)
@@ -221,9 +242,55 @@ module Flk
 
     def cmd_context(_args, o)
       reap_exited
-      c = context
+      c = o[:all] ? host_context : context
       return puts(JSON.pretty_generate(c)) if o[:json]
-      puts context_text(c)
+      puts(o[:all] ? host_context_text(c) : context_text(c))
+    end
+
+    # Every app at once: what's running where, what's reachable, what's wrong.
+    def host_context
+      host = doctor_checks
+      steps = host.reject { _1["status"] == "pass" }
+                  .map { "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
+      apps = App.all.map do |a|
+        app_steps = []
+        cfg = (AppConfig.find if AppConfig.find&.app == a.name rescue nil)
+        h = app_context(a, cfg, app_steps)
+        steps.concat(app_steps.reject { _1.start_with?("all good") }.map { "#{a.name}: #{_1}" })
+        h
+      end
+      { "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
+        "host" => { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
+                    "lan_ip" => Net.host_lan_ip, "boot_service" => host.any? { _1["label"].start_with?("boot service (") } },
+        "apps" => apps, "next_steps" => steps }
+    end
+
+    def host_context_text(c)
+      h = c["host"]
+      out = ["# flk host overview", "",
+             "flk #{c['flk']['version']}  state: #{c['flk']['state_dir']}  source: #{c['flk']['source']}",
+             "host: #{h['ok'] ? 'ready' : 'NOT ready'}, LAN IP #{h['lan_ip'] || '?'}, " \
+             "boot service #{h['boot_service'] ? 'installed' : 'missing'}", ""]
+      return (out << "No apps. Start with: flk help first-app").join("\n") if c["apps"].empty?
+      c["apps"].each do |a|
+        ms = Array(a["machines"])
+        rel = a["release"]
+        out << "## #{a['name']}  (#{rel ? "v#{rel['version']}" : 'no release'}, #{ms.count { _1['state'] == 'started' }}/#{ms.size} started)"
+        ms.each do |m|
+          flag = m["state"] != "started" && m["desired_state"] == "started" ? "  <- should be running" : ""
+          out << "  #{m['id']} [#{m['name']}] #{m['state']} #{m['ip']}#{m['internal_port'] ? ":#{m['internal_port']}" : ''}#{flag}"
+        end
+        Array(a.dig("ports", "active")).each { out << "  port #{_1['key']} -> #{_1['address'] || "LAN IP:#{_1['port']}"}" }
+        Array(a.dig("ports", "blocked")).each { out << "  port #{_1['key']} blocked: #{_1['blocked']}" }
+        vols = Array(a["volumes"])
+        out << "  volumes: #{vols.map { "#{_1['name']} #{_1['size_gb']}GB#{' (external)' if _1['external']}" }.join(', ')}" if vols.any?
+        out << ""
+      end
+      out << "## Needs attention"
+      c["next_steps"].each { out << "- #{_1}" }
+      out << "- nothing" if c["next_steps"].empty?
+      out << "" << "Details for one app: flk context -a APP.  Commands by task: flk help cheatsheet"
+      out.join("\n")
     end
 
     # Everything an agent (or a person) needs to pick the next command,
@@ -384,7 +451,7 @@ module Flk
       buildable = cfg.image || File.exist?(File.expand_path(cfg.dockerfile, cfg.dir))
       if o[:no_deploy] || !buildable
         puts "No Dockerfile or [build] image yet." unless buildable
-        puts "Run 'flk deploy' when ready."
+        next_step("edit flk.toml (flk help first-app)", "flk deploy")
       else
         cmd_deploy([], {})
       end
@@ -462,6 +529,7 @@ module Flk
       if (port = mconfig["internal_port"])
         a.machines.each { |m| puts "   #{m.name}  http://#{m.ip}:#{port}" }
       end
+      next_step("flk status", "flk logs", "flk context")
     end
 
     # Raises unless the deploy can create or update all its machines; returns
@@ -492,7 +560,7 @@ module Flk
       end
       return if creating.zero? || (taps = Net.free_count) >= creating
       raise Error, "need #{creating} free tap#{'s' if creating > 1} for new machines, #{taps} free; " \
-                   "re-run: sudo FLK_TAPS=#{Net::POOL * 2} ./setup-host.sh"
+                   "re-run: sudo FLK_TAPS=#{Net::POOL * 2} #{SETUP_HOST}"
     end
 
     # Every listing command tidies machines that exited on their own, so the
@@ -610,7 +678,8 @@ module Flk
         warn Util.red("  ✘ #{m.app.name}: #{m.id} [#{m.name}]: #{e.message}")
         false
       end
-      raise Error, "#{failed.size} machine#{'s' if failed.size > 1} didn't resume (see above)" if failed.any?
+      raise Error, "#{failed.size} machine#{'s' if failed.size > 1} didn't resume (see above; flk help troubleshoot)" if failed.any?
+      next_step("flk context --all")
     end
 
     # Graceful, in parallel (each gets its kill_timeout), and remembering
@@ -631,7 +700,10 @@ module Flk
     end
 
     def machine_start(args, _o) = each_ref(args) { |m| boot(m, "Machine #{m.id} [#{m.name}] started") }
-    def machine_stop(args, _o) = each_ref(args) { |m| VM.stop(m); puts "Machine #{m.id} [#{m.name}] stopped" }
+    def machine_stop(args, _o)
+      each_ref(args) { |m| VM.stop(m); puts "Machine #{m.id} [#{m.name}] stopped (stays stopped, also after reboots)" }
+      next_step("flk machine start #{args.join(' ')}")
+    end
     def machine_restart(args, _o) = each_ref(args) { |m| VM.stop(m); boot(m, "Machine #{m.id} [#{m.name}] restarted") }
     def machine_destroy(args, o) = Util.with_lock { each_ref(args) { |m| destroy_machine(m, force: o[:force]) } }
     def machine_status(args, _o) = print_json_each(args) { |m| m.h.merge("state" => m.state) }
@@ -667,6 +739,7 @@ module Flk
           ms.last(ms.size - n).reverse_each { destroy_machine(_1, force: true) }
         end
         puts "Scaled #{a.name} to #{n} machine#{'s' unless n == 1}"
+        next_step("flk status")
       end
     end
 
@@ -781,7 +854,7 @@ module Flk
       reap_exited
       return puts(JSON.pretty_generate(ports_json)) if o[:json]
       active, waiting, blocked = Ports.table
-      puts Util.yellow("Port helper not installed; run: sudo ./setup-host.sh\n") unless Ports.available?
+      puts Util.yellow("Port helper not installed; run: sudo #{SETUP_HOST}\n") unless Ports.available?
       return puts("No forwarded ports (add [[services.ports]] to flk.toml)") if [active, waiting, blocked].all?(&:empty?)
       row = ->(r, status) { [r["key"], r["machine"], "#{r['ip']}:#{r['internal_port']}", r["app"], status] }
       Util.table(%w[HOST_PORT MACHINE TARGET APP STATUS],
@@ -891,7 +964,10 @@ module Flk
       yield s
       a.save_secrets(s)
       puts "Secrets updated"
-      return puts("Staged; applies on next start/deploy") if o[:stage]
+      if o[:stage]
+        puts "Staged; applies on next start/deploy"
+        return next_step("flk deploy", "flk machine restart ID")
+      end
       a.machines.select(&:running?).each do |m|
         VM.stop(m)
         boot(m, "Machine #{m.id} [#{m.name}] restarted with new secrets")
@@ -952,6 +1028,7 @@ module Flk
       register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path }.merge(o[:path] ? { "external" => true } : {}))
       puts "Created #{id} (#{name}, #{size}GB sparse#{", at #{path}" if o[:path]}#{", from #{from}" if from})"
       puts "Note: files keep their owner/group IDs from #{from}; the app may need to run as that user (or chown inside)." if from
+      next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
     end
 
     # --from-dir must fit with headroom: ext4 metadata takes a few percent.
@@ -980,6 +1057,7 @@ module Flk
       register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path, "external" => true })
       puts "Imported #{path} as #{id} (#{name}, #{size}GB). flk won't delete this file."
       puts "Don't mount it on the host while a machine uses it."
+      next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
     end
 
     # External volumes (--path / import) are only unregistered unless

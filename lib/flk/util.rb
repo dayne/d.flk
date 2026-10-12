@@ -19,6 +19,9 @@ module Flk
   SHARE   = File.expand_path("../../share", __dir__)
   LIBEXEC = File.expand_path("../../libexec", __dir__)
   BIN     = File.expand_path("../../bin/flk", __dir__)
+  # Root-side tools, by absolute path so hints work from any directory
+  SETUP_HOST = File.expand_path("../../setup-host.sh", __dir__)
+  SANITY     = File.expand_path("../../flk-sanity.sh", __dir__)
   ENV_KEY = /\A[A-Za-z_][A-Za-z0-9_]*\z/
 
   module Util

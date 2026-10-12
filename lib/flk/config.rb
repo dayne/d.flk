@@ -123,7 +123,7 @@ module Flk
       raise Error, "#{label} #{port} isn't a valid port" unless port.between?(1, 65_535)
       if port < (min = Ports.min_port)
         raise Error, "#{label} #{port} is below #{min}, where host services live; " \
-                     "use a higher port, or allow it: sudo FLK_MIN_PORT=#{port} ./setup-host.sh"
+                     "use a higher port, or allow it: sudo FLK_MIN_PORT=#{port} #{SETUP_HOST}"
       end
       port
     rescue ArgumentError, TypeError

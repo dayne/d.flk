@@ -10,6 +10,8 @@ itself, so ask it instead of guessing:
    the flk.toml subset, workflows, gotchas, exit codes. `--json` prints the
    command table.
 3. `flk help COMMAND` (or `flk COMMAND --help`) for a single command.
+4. `flk context --all` for every app on the host; `flk help troubleshoot`
+   maps symptoms to commands; `flk help cheatsheet` is one screen by task.
 
 Things to know:
 
@@ -28,6 +30,8 @@ Working on flk itself:
 - Commands are defined in `lib/flk/commands.rb`. The CLI parses arguments
   and generates all help from that table, so add new commands and options
   there first, then write the handler in `lib/flk/cli.rb`. The long-form
-  reference text is `share/guide.md`.
+  reference text is `share/guide.md`; guides by stage are `share/help/*.md`
+  (add new ones to `Commands::TOPICS`). Commands that change things end with
+  a `Next:` line (`next_step`).
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
   full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`.

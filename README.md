@@ -63,9 +63,12 @@ again after each fix. `tests/run.sh` checks flk itself end to end.
 ## Commands
 
 ```
-flk context                  # what flk sees now: host, current app, machines, ports, next steps
+flk context [--all]          # what flk sees now: host, app(s), machines, ports, next steps
 flk help [COMMAND]           # short help, or one command (same as: flk COMMAND --help)
-flk help --all [--json]      # full reference: concepts, every command, config, workflows
+flk help cheatsheet          # one screen, by task; also: install, first-app, operate, troubleshoot, uninstall
+flk help --all [--json]      # full reference: concepts, every command, config, all the guides
+flk completion bash          # tab completion (commands, options, app names, machine IDs)
+flk resume | stop-all        # bring back / gracefully stop every machine (boot and shutdown)
 flk launch | deploy | status | releases
 flk machine list|start|stop|restart|destroy|status|config ID...
 flk scale count N
@@ -73,8 +76,8 @@ flk logs [-i ID] [-n N] [-f]                # follows only in a terminal
 flk console [ID]                            # Ctrl-b d to detach (Ctrl-b Ctrl-b d inside tmux)
 flk proxy 8080[:80] [ID] [--bind 0.0.0.0]
 flk secrets list | set K=V (V='-' reads stdin) | unset K | import  [--stage]
-flk volumes list | create NAME [-s GB] | destroy ID|NAME
-flk apps list | destroy NAME [--yes]
+flk volumes list | create NAME [-s GB] [--path FILE] [--from-dir DIR] | import NAME --path FILE | destroy ID|NAME
+flk apps list | destroy NAME [--yes] | prune
 flk ports [list|sync]                       # host ports forwarded to machines
 flk config show
 flk doctor | setup
@@ -83,8 +86,9 @@ flk doctor | setup
 `-a APP` works anywhere, as with fly. Machine IDs accept prefixes or names.
 Listing commands take `--json`. Unknown options and extra arguments are errors.
 
-Help is generated from one command table (`lib/flk/commands.rb`), and the
-long-form reference text lives in `share/guide.md`. AI agents: see [AGENTS.md](AGENTS.md).
+Help is generated from one command table (`lib/flk/commands.rb`); the
+long-form reference is `share/guide.md` and the guides are `share/help/*.md`.
+Hints and errors name the fix, with absolute paths for the root-side tools. AI agents: see [AGENTS.md](AGENTS.md).
 
 ## Supported fly.toml subset
 

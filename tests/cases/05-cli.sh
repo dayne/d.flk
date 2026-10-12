@@ -62,7 +62,7 @@ test_unknown_arguments_rejected() {
 # OptionParser hands a literal --no-x switch false; flk must treat it as given
 test_no_flags_are_true() {
   local out; out=$(flk launch --no-deploy 2>&1)
-  assert_contains "$out" "Run 'flk deploy' when ready"
+  assert_contains "$out" "Next: "
   assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from launch --no-deploy"
 }
 
@@ -110,7 +110,7 @@ test_no_hangs_without_a_terminal() {
 # A deploy that can't place its machines fails before the (slow) build and
 # records no release, so the next deploy doesn't inherit an empty vN.
 test_deploy_checks_volumes_before_building() {
-  stage_app hello
+  stage_app hello own
   trap destroy_app EXIT
   toml_append '[[mounts]]' '  source = "data"' '  destination = "/data"'
   flk launch --no-deploy >/dev/null
@@ -133,7 +133,7 @@ test_short_image_names_explained() {
     skip_test "can't hide this host's search registries (drop-in dir?)"
   assert_contains "$(no_registries "$FLK_BIN" doctor --json)" "can't resolve short image names" "doctor warning"
 
-  stage_app hello
+  stage_app hello own
   trap destroy_app EXIT
   echo 'FROM ruby:3.3' >"$APP_DIR/Dockerfile"
   flk launch --no-deploy >/dev/null
@@ -197,4 +197,37 @@ test_volume_from_dir() {
   local out
   out=$(flk volumes create toobig --size 1 --from-dir "$d/src" 2>&1) && fail "filled a 1GB volume from 2GB"
   assert_contains "$out" "too much for a 1GB volume"
+}
+
+test_help_topics() {
+  local t out
+  for t in cheatsheet install first-app operate troubleshoot uninstall; do
+    out=$("$FLK_BIN" help "$t")
+    [[ -n $out && $out != *"{{"* ]] || fail "flk help $t empty or has a placeholder"
+  done
+  assert_contains "$("$FLK_BIN" help --all)" "## Guide: Troubleshooting" "help --all includes the guides"
+  assert_contains "$("$FLK_BIN" help)" "cheatsheet" "short help lists topics"
+  out=$("$FLK_BIN" help troubleshot 2>&1) && fail "accepted a misspelled topic"
+  assert_contains "$out" "did you mean 'troubleshoot'"
+  # hints point at the real setup-host.sh, usable from any directory
+  assert_contains "$("$FLK_BIN" help install)" "sudo $FLK_SRC/setup-host.sh"
+}
+
+test_completion_bash() {
+  local f="$WORK/flk.bash"
+  "$FLK_BIN" completion bash >"$f"
+  bash -n "$f" || fail "completion script has a syntax error"
+  local got
+  got=$(PATH="$FLK_SRC/bin:$PATH" bash -c '. "$1"; COMP_WORDS=(flk machine st); COMP_CWORD=2; _flk; echo "${COMPREPLY[*]}"' _ "$f")
+  assert_eq "start stop status" "$got" "flk machine st<TAB>"
+  local out
+  out=$("$FLK_BIN" completion fish 2>&1) && fail "accepted fish"
+  assert_contains "$out" "only bash is supported"
+}
+
+test_context_all() {
+  local c; c=$("$FLK_BIN" context --all --json)
+  ruby -rjson -e 'd = JSON.parse(ARGV[0]); exit d["apps"].any? { _1["name"] == ARGV[1] }' "$c" "$APP" ||
+    fail "context --all lacks $APP"
+  assert_contains "$("$FLK_BIN" context --all)" "## $APP" "text overview"
 }

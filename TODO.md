@@ -33,6 +33,10 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [ ] **No restart policy.** A crashed app stays down. Fly's
   `[[restart]] policy = "always" | "on-failure" | "no"` could hang off the
   tmux `session-closed` hook (`flk ports reap`).
+- [ ] **Forwarded ports on 127.0.0.1** (from the bug report, optional part):
+  loopback is skipped on purpose; making it work needs `route_localnet`
+  on the bridge path, a host-wide security trade-off. `flk proxy` covers
+  TCP; nothing covers UDP yet.
 - [ ] **Deploys don't wait for health.** A machine that never listens only
   gets a warning, and the roll continues. Stop the roll instead (Fly's
   `[[http_service.checks]]` / `[checks]` are a model).
@@ -46,26 +50,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [ ] **No rollback.** `flk releases` lists history but there's no
   `flk deploy --release vN` / `flk releases rollback`. Only the last two
   rootfs images are kept.
-
-## Admin experience (help at every stage)
-
-- [ ] **No one-screen overview of the host.** `flk context --all` (or
-  `flk status --all`): every app, machine, IP and port, and anything wrong.
-- [ ] **No cheat sheet.** `flk help --all` is ~350 lines. `flk help cheatsheet`:
-  one screen by task ("see what's running", "read logs", "expose a port",
-  "recover after reboot", "remove an app").
-- [ ] **No guides by stage.** `flk help setup | first-app | operate |
-  troubleshoot | uninstall`, sections of `share/guide.md`. Troubleshoot maps
-  symptoms (no network, port unreachable, keeps stopping, short-name error)
-  to commands.
-- [ ] **Commands that change things don't say what's next.** `flk context`
-  computes next steps; print a `Next:` line after launch, volumes create,
-  deploy, stop, scale, secrets set.
-- [ ] **No shell completion.** Generate it from the command table
-  (`flk completion bash`).
-- [ ] **Root-side tools are invisible from flk.** `flk context` / `doctor`
-  should say when `setup-host.sh`, `--install-service` or `flk-sanity.sh`
-  are needed, and where they are.
 
 ## Bigger features
 
@@ -115,6 +99,16 @@ Each entry says where the issue is caught today, and where a fix could go.
   "short-name ... did not resolve" prints the fix: a user-level drop-in
   (`~/.config/containers/registries.conf.d/`, which adds to the system config
   instead of replacing it), or the full image name.
+- [x] Admin help at every stage: `flk context --all` (host overview),
+  `flk help TOPIC` guides (cheatsheet, install, first-app, operate,
+  troubleshoot, uninstall; also in `help --all`), `Next:` lines after
+  commands that change things, `flk completion bash`, and absolute paths
+  to `setup-host.sh` in every hint.
+- [x] From the minecraft.flk bug report: `/dev/fd`, `/dev/std*` in the guest;
+  the app's stdin is the serial console (`[flk] stdin = "null"` to opt out);
+  volumes with `--path` / `--from-dir` / `import` that flk never deletes;
+  forwarded ports say they don't answer on 127.0.0.1 and show the address
+  that does.
 - [x] No more image and log leaks: release pruning and `apps destroy` untag
   `flk.local/APP:vN`; `flk apps prune` clears tags of apps already gone
   (doctor warns about them); `console.log` rotates to `console.log.1` past

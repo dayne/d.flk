@@ -22,20 +22,34 @@ module Flk
 
     GROUPS = ["Start here", "Setup", "Host", "Apps", "Machines", "Config & data"].freeze
 
+    # `flk help TOPIC`: share/help/TOPIC.md, also appended to `flk help --all`
+    TOPICS = {
+      "cheatsheet" => "One screen: the commands you need, by task",
+      "install" => "Setting up a host, from nothing to `flk doctor` passing",
+      "first-app" => "Launch, configure, deploy and check an app",
+      "operate" => "Day to day: changes, logs, consoles, reboots, disk, updates",
+      "troubleshoot" => "Symptom -> cause -> command",
+      "uninstall" => "Removing apps, host setup and files"
+    }.freeze
+
     LIST = [
-      { name: "context", group: "Start here", opts: [["--json", "Print JSON"]], json: true,
+      { name: "context", group: "Start here", opts: [["--all", "Every app on this host, not just the current one"], ["--json", "Print JSON"]], json: true,
         summary: "What flk sees right now: host health, the current app, machines, ports, next steps",
         notes: ["Run this first. It resolves the app the same way other commands do (-a APP, or flk.toml / fly.toml in the current directory) and works even when there is none.",
                 "Also tidies machines that exited on their own, like status does."] },
-      { name: "help", group: "Start here", args: "[COMMAND] [SUBCOMMAND]",
+      { name: "help", group: "Start here", args: "[COMMAND|TOPIC] [SUBCOMMAND]",
         opts: [["--all", "The full reference: concepts, every command, config, workflows, gotchas"],
                ["--json", "With --all: the command table as JSON"]],
-        summary: "Show help for flk or one command",
+        summary: "Show help for flk, a command, or a topic (cheatsheet, install, first-app, operate, troubleshoot, uninstall)",
         notes: ["`flk COMMAND --help` is the same as `flk help COMMAND`."] },
+      { name: "completion", group: "Start here", args: "SHELL",
+        summary: "Print a tab-completion script (bash; zsh via bashcompinit)",
+        notes: ["Install: flk completion bash > ~/.local/share/bash-completion/completions/flk",
+                "zsh: autoload -U bashcompinit && bashcompinit && source <(flk completion bash)"] },
 
       { name: "setup", group: "Setup",
         summary: "Download firecracker + guest kernel (no root), then run doctor",
-        notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo ./setup-host.sh"] },
+        notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo #{SETUP_HOST}"] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
         notes: ['--json prints {"ok", "checks": [{"label", "status", "hint"}]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.'] },
@@ -44,7 +58,7 @@ module Flk
       { name: "resume", group: "Host",
         summary: "Start every machine that should be running (after a reboot, or after stop-all)",
         notes: ["Should be running: started, restarted, deployed or scaled, and not stopped with `flk machine stop` since. A machine whose app exited counts too.",
-                "flk-machines.service runs it at boot (sudo ./setup-host.sh --install-service).",
+                "flk-machines.service runs it at boot (sudo #{SETUP_HOST} --install-service).",
                 "-a APP limits it to one app."] },
       { name: "stop-all", group: "Host",
         summary: "Gracefully stop every running machine, remembering to resume them",
@@ -226,9 +240,12 @@ module Flk
         end
         out << ""
       end
+      out << "Guides: flk help TOPIC"
+      TOPICS.each { |t, d| out << format("  %-30s %s", t, d) }
+      out << ""
       out << "flk help COMMAND     details for one command (or: flk COMMAND --help)"
-      out << "flk help --all       full reference: concepts, config, workflows, gotchas"
-      out << "flk context          what flk sees right now, and what to do next"
+      out << "flk help --all       full reference: concepts, config, every command, the guides"
+      out << "flk context          what flk sees right now, and what to do next (--all: whole host)"
       out << "State lives in #{ROOT}"
       out.join("\n")
     end
@@ -299,6 +316,69 @@ module Flk
       "#{flagged.join(', ')} take `--json`; #{always.join(', ')} always print JSON"
     end
 
+    # bash completion from the table: commands, subcommands, options, and
+    # live app names (-a) and machine IDs (ID arguments).
+    def bash_completion
+      cmds = LIST.reject { _1[:hidden] }.flat_map { [_1[:name], *Array(_1[:aliases])] }
+      cases = LIST.map do |c|
+        subs = Array(c[:subs]).reject { _1[:hidden] }
+        sub_cases = subs.map do |s|
+          words = Array(s[:opts]).flat_map { switches(_1).map { |w| w.split.first } }
+          ids = s[:args].to_s.include?("ID") ? " $(__flk_ids)" : ""
+          "        #{s[:name]}) COMPREPLY=($(compgen -W \"#{words.join(' ')}#{ids}\" -- \"$cur\")) ;;"
+        end
+        words = Array(c[:opts]).flat_map { switches(_1).map { |w| w.split.first } }
+        own = c[:args].to_s.include?("ID") ? " $(__flk_ids)" : ""
+        own += " #{TOPICS.keys.join(' ')} #{cmds.join(' ')}" if c[:name] == "help"
+        own += " bash" if c[:name] == "completion"
+        body = if subs.any?
+                 <<~SH.chomp
+                   if [[ $cword -eq $((cmd_at + 1)) ]]; then
+                         COMPREPLY=($(compgen -W "#{subs.map { _1[:name] }.join(' ')} #{words.join(' ')}" -- "$cur"))
+                       else
+                         case "${words[cmd_at + 1]}" in
+                   #{sub_cases.join("
+")}
+                         esac
+                       fi
+                 SH
+               else
+                 %(COMPREPLY=($(compgen -W "#{words.join(' ')}#{own}" -- "$cur")))
+               end
+        "    #{[c[:name], *Array(c[:aliases])].join('|')})\n      #{body} ;;"
+      end
+      <<~SH
+        # bash completion for flk (generated by `flk completion bash`)
+        # IDs of the app named by -a on the line, or the one in this directory
+        __flk_ids() {
+          local i app=()
+          for ((i = 1; i < ${#COMP_WORDS[@]} - 1; i++)); do
+            [[ ${COMP_WORDS[i]} == -a || ${COMP_WORDS[i]} == --app ]] && app=(-a "${COMP_WORDS[i + 1]}")
+          done
+          flk "${app[@]}" machine list --json 2>/dev/null | sed -n 's/.*"id": "\\([0-9a-f]*\\)".*/\\1/p'
+        }
+        __flk_apps() { flk apps list --json 2>/dev/null | sed -n 's/.*"name": "\\([^"]*\\)".*/\\1/p'; }
+        _flk() {
+          local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]} cword=$COMP_CWORD
+          local words=("${COMP_WORDS[@]}") cmd_at=1
+          case $prev in
+            -a|--app) COMPREPLY=($(compgen -W "$(__flk_apps)" -- "$cur")); return ;;
+            -i|--instance) COMPREPLY=($(compgen -W "$(__flk_ids)" -- "$cur")); return ;;
+            --path|--from-dir) COMPREPLY=($(compgen -f -- "$cur")); return ;;
+          esac
+          while [[ ${words[cmd_at]} == -a || ${words[cmd_at]} == --app ]]; do cmd_at=$((cmd_at + 2)); done
+          if [[ $cword -eq $cmd_at ]]; then
+            COMPREPLY=($(compgen -W "#{cmds.join(' ')} --help --version -a" -- "$cur")); return
+          fi
+          case "${words[cmd_at]}" in
+        #{cases.join("
+")}
+          esac
+        }
+        complete -F _flk flk
+      SH
+    end
+
     def to_h
       ser = lambda do |e, parent = nil|
         h = { "name" => e[:name], "usage" => parent ? usage(parent, e) : usage(e), "summary" => e[:summary] }
@@ -318,7 +398,8 @@ module Flk
         "version" => VERSION, "state_dir" => ROOT,
         "global_options" => GLOBAL_OPTS.map { { "switches" => switches(_1), "description" => desc(_1) } },
         "exit_codes" => EXIT_CODES.transform_keys(&:to_s),
-        "commands" => LIST.map { ser.call(_1) }
+        "commands" => LIST.map { ser.call(_1) },
+        "topics" => TOPICS
       }
     end
   end

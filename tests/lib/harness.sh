@@ -45,8 +45,10 @@ flk() { (cd "${APP_DIR:-$PWD}" && "$FLK_BIN" "$@"); }
 # stage_app SRC: copy tests/apps/SRC to a scratch dir as app
 # flkt-SRC-NN-<run id>, NN from the case file, so files never share an app.
 # Host ports ([[services.ports]] port = ...) become $HOST_PORT (see run.sh).
+# stage_app SRC TAG: a second app from the same file (in a test, while
+# setup_file's app lives on) needs its own TAG, or the names collide.
 stage_app() {
-  APP="flkt-$1-${CUR%%-*}-$RUN_ID"
+  APP="flkt-$1-${CUR%%-*}${2:+-$2}-$RUN_ID"
   APP_DIR=$(mktemp -d "$WORK/$APP.XXXX")
   cp -r "$TESTS/apps/$1/." "$APP_DIR"
   sed -i -e "s/^app = .*/app = \"$APP\"/" -e "s/^\(\s*\)port = [0-9]*$/\1port = $HOST_PORT/" "$APP_DIR/flk.toml"

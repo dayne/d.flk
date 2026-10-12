@@ -76,52 +76,13 @@ and secrets.
   registries (common on Ubuntu/Debian). flk prints a one-line fix that
   needs no root; using the full name (`FROM docker.io/library/ruby:3.3`)
   also works. `flk doctor` warns about it ahead of time.
-- **Root** is only needed once, for `sudo ./setup-host.sh`, and again only if
+- **Root** is only needed once, for `sudo {{SRC}}/setup-host.sh`, and again only if
   `flk doctor` / `flk context` say so. Day-to-day commands never need sudo.
 
-## Common workflows
+## Guides
 
-New app from a directory with a Dockerfile:
-
-    flk launch --no-deploy            # writes flk.toml if missing, registers the app
-    # edit flk.toml: internal_port, [[mounts]], [[services]] ...
-    flk volumes create data --size 1  # one per machine, if [[mounts]] is used
-    flk secrets set API_TOKEN=... --stage
-    flk deploy
-    flk status --json                 # machines, IPs, states
-
-Debug a machine that won't stay up:
-
-    flk status                        # state stopped?
-    flk logs -i ID -n 200             # app output and boot messages (exits by itself)
-    flk machine status ID             # record, config, timestamps
-    flk machine start ID
-
-Change config or code: edit, then `flk deploy`. Every deploy is a new release
-and rolls the machines one at a time.
-
-Data on another disk, or existing data: `flk volumes create data --size 50
---path /big/disk/data.ext4` puts the image there; add `--from-dir DIR` to
-copy a directory in (file owner IDs are kept). `flk volumes import data
---path FILE` registers an existing ext4 image. flk never deletes these
-files: `volumes destroy` only unregisters them (`--delete-data` to delete).
-
-Scale: `flk volumes create data --size 1` (if `[[mounts]]` is used), then
-`flk scale count 2`.
-
-Expose on the LAN: for an `[http_service]` app add `[flk] http_port = N`;
-otherwise add `[[services]]` with `[[services.ports]] port = N`. N >= 1024.
-Deploy, then check `flk ports`.
-
-Clean up: `flk apps destroy APP --yes` (machines, volumes, secrets, images:
-everything). `flk apps prune` removes images left by apps destroyed before
-that was the case.
-
-After a reboot: with `sudo ./setup-host.sh --install-service` done once,
-nothing to do: `flk-net.service` rebuilds the network and
-`flk-machines.service` runs `flk resume` (and `flk stop-all` at shutdown).
-Without it: `sudo ./setup-host.sh`, then `flk resume`. `flk doctor` warns
-while the boot service is missing.
+Short guides for each stage follow at the end of this page, and each one is
+also its own help page: {{TOPICS}}.
 
 ## Config (flk.toml / fly.toml subset)
 
@@ -135,7 +96,7 @@ while the boot service is missing.
   LAN), set `[flk] http_port = N`. Same rules as `[[services.ports]]`.
 - `[[services]]`: `internal_port`, `protocol` (`tcp`/`udp`), and
   `[[services.ports]] port`: host ports to forward. Refused: ports below 1024
-  (allow with `sudo FLK_MIN_PORT=N ./setup-host.sh`) and ports a host process
+  (allow with `sudo FLK_MIN_PORT=N {{SRC}}/setup-host.sh`) and ports a host process
   listens on outside loopback. `flk ports` shows blocked ports and why.
 - `kill_timeout`: `30`, `"30s"` or `"2m"`. Default 10, at most {{MAX_KILL_TIMEOUT}} seconds.
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
@@ -186,3 +147,5 @@ everywhere.
 The flk source is at `{{SRC}}`. Host setup lives in `setup-host.sh`, the host
 checker in `flk-sanity.sh`, and end-to-end tests in `tests/run.sh`. Known rough
 edges are listed in `TODO.md`.
+
+{{TOPIC_PAGES}}
