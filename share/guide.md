@@ -57,7 +57,8 @@ and secrets.
 
 - **Never hangs without a terminal.** `flk logs` prints and exits unless
   stdout is a terminal (`-f` forces following). `flk apps destroy` needs
-  `--yes`. `flk console` refuses to run; use `flk logs` instead.
+  `--yes`. `flk console` refuses to attach; type to the app with
+  `flk console ID --send TEXT [--wait-log REGEX]` and read `flk logs`.
 - **One command blocks by design:** `flk proxy` forwards until it's killed.
   Run it in the background, and usually skip it altogether: machine IPs are
   reachable from the host (`curl http://172.30.0.10:8080/`).

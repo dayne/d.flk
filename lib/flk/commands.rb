@@ -20,6 +20,10 @@ module Flk
   module Commands
     JSON_OPT = ["--json", "Print JSON instead of a table"].freeze
 
+    CONSOLE_OPTS = [["--send TEXT", "Type one line into the app's stdin, then return (no terminal needed)"],
+                    ["--wait-log REGEX", "With --send: print console output until a line matches REGEX"],
+                    ["--timeout SECONDS", Integer, "With --wait-log: give up after this long (default 10)"]].freeze
+
     GROUPS = ["Start here", "Setup", "Host", "Apps", "Machines", "Config & data"].freeze
 
     # `flk help TOPIC`: share/help/TOPIC.md, also appended to `flk help --all`
@@ -125,15 +129,18 @@ module Flk
         summary: "Serial console output (app stdout/stderr and boot messages)",
         notes: ["Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits.",
                 "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB."] },
-      { name: "console", group: "Machines", args: "[ID]",
-        blocks: "attaches an interactive terminal; agents should use `flk logs` instead",
-        summary: "Attach to a machine's serial console",
-        notes: ["Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Needs a terminal.",
+      { name: "console", group: "Machines", args: "[ID]", opts: CONSOLE_OPTS,
+        blocks: "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`",
+        summary: "Attach to a machine's serial console, or --send one line to the app's stdin",
+        notes: ["Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Attaching needs a terminal; --send doesn't.",
+                "--send types TEXT and Enter into the app's stdin (needs [flk] stdin = \"console\", the default). " \
+                "With --wait-log it then prints the console output until a line matches REGEX (exit 1 after --timeout). " \
+                "The console echoes what you type; that echo is skipped when matching.",
                 "It's the serial console, not a shell: you see app output and type to its stdin (server consoles: stop, say, op...). Ctrl-C here doesn't signal the app; use flk machine stop.",
                 "`flk ssh console` is an alias."] },
       { name: "ssh", group: "Machines", hidden: true, summary: "Alias: `flk ssh console` = `flk console`",
-        subs: [{ name: "console", args: "[ID]", run: :cmd_console, summary: "Same as flk console",
-                 blocks: "attaches an interactive terminal; agents should use `flk logs` instead" }] },
+        subs: [{ name: "console", args: "[ID]", run: :cmd_console, summary: "Same as flk console", opts: CONSOLE_OPTS,
+                 blocks: "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`" }] },
       { name: "proxy", group: "Machines", args: "LOCAL[:REMOTE] [ID]",
         opts: [["--bind ADDR", "Listen address (default 127.0.0.1; 0.0.0.0 exposes it on the LAN)"]],
         blocks: "forwards until Ctrl-C; run it in the background (`flk proxy 8080 &`) and kill it when done",

@@ -16,7 +16,8 @@ itself, so ask it instead of guessing:
 Things to know:
 
 - No flk command waits on a missing terminal: `flk logs` prints and exits,
-  `flk apps destroy` needs `--yes`, and `flk console` refuses to run (use
+  `flk apps destroy` needs `--yes`, and `flk console` refuses to attach (use
+  `flk console ID --send TEXT --wait-log REGEX` to talk to the app, and
   `flk logs`). `flk proxy` blocks by design and is rarely needed, because
   machine IPs are reachable from the host.
 - Listing commands take `--json`. Unknown options and extra arguments are

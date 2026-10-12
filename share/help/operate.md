@@ -16,6 +16,8 @@ for more, `-i ID` for one, `-f` to follow). Logs rotate at 10MB
 **Talk to the app.** `flk console ID` attaches to its serial console: what
 you type goes to the app's stdin (Minecraft: `say hi`, `stop`). Leave with
 Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Ctrl-C there doesn't stop the app.
+For one command without attaching: `flk console ID --send "say hi"`; add
+`--wait-log "REGEX"` to print the app's answer (scripts and agents too).
 
 **Stop and start.** `flk machine stop ID` stops a machine and keeps it
 stopped, across reboots too. `flk machine start ID` brings it back. When

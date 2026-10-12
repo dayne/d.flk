@@ -53,12 +53,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## For lazyflk (TUI, spec in lazyflk/SPEC.md section 9)
 
-- [ ] **G1: read commands can block on a deploy.** `apps list` / `status` /
-  `ports` reap exited machines, and that waits for the global lock a deploy
-  holds for its whole run (12.5s observed). Take it non-blocking and skip.
-- [ ] **G2: the app's config dir isn't recorded.** Store the flk.toml path in
-  `app.json` on launch/deploy; expose `config_path` in status/context JSON.
-- [ ] **G3: no non-interactive console input.** `flk console ID --send TEXT`.
 - [ ] **G4: no per-machine CPU/memory.** `flk machine stats [--json]`, `pid`
   in machine JSON.
 - [ ] **G5: context always runs doctor.** `flk context --all --json --no-host`
@@ -116,6 +110,10 @@ Each entry says where the issue is caught today, and where a fix could go.
   "short-name ... did not resolve" prints the fix: a user-level drop-in
   (`~/.config/containers/registries.conf.d/`, which adds to the system config
   instead of replacing it), or the full image name.
+- [x] lazyflk gaps G1-G3: read commands never wait on flk's lock (they skip
+  the reap when busy); flk records each app's config path so `-a APP`
+  works from anywhere (`config_path` in JSON); `flk console --send TEXT
+  [--wait-log REGEX] [--timeout S]` talks to the app without attaching.
 - [x] Admin help at every stage: `flk context --all` (host overview),
   `flk help TOPIC` guides (cheatsheet, install, first-app, operate,
   troubleshoot, uninstall; also in `help --all`), `Next:` lines after

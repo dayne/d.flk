@@ -938,16 +938,71 @@ module Flk
       exec("tail", "-n", (o[:lines] || 50).to_s, *(follow ? ["-F"] : []), *files)
     end
 
-    def cmd_console(argv, _o)
-      raise Error, "console needs an interactive terminal; for output use: flk logs" unless $stdin.tty? && $stdout.tty?
-      m = argv.first ? app.machine!(argv.first) : (app.machines.find(&:running?) || raise(Error, "no running machines"))
-      raise Error, "machine #{m.id} isn't running" unless m.running?
+    def cmd_console(argv, o)
+      return console_send(argv, o) if o[:send]
+      raise Error, "--wait-log and --timeout go with --send" if o[:wait_log] || o[:timeout]
+      unless $stdin.tty? && $stdout.tty?
+        raise Error, "console needs an interactive terminal; to type a line: flk console [ID] --send TEXT; for output: flk logs"
+      end
+      m = console_machine(argv)
       # flk's sessions live on their own tmux server, so from inside the user's
       # tmux this is a nested attach: the outer tmux sees Ctrl-b first.
       detach = ENV["TMUX"] ? "Ctrl-b Ctrl-b d" : "Ctrl-b d"
       puts "Attaching to #{m.name} serial console (detach: #{detach})"
       sleep 0.5
       exec({ "TMUX" => nil }, *VM::TMUX, "attach", "-t", m.session)
+    end
+
+    def console_machine(argv)
+      m = argv.first ? app.machine!(argv.first) : (app.machines.find(&:running?) || raise(Error, "no running machines"))
+      raise Error, "machine #{m.id} isn't running; start it: flk machine start #{m.id}" unless m.running?
+      m
+    end
+
+    # One line into the app's stdin, without attaching. With --wait-log,
+    # stream what the console prints next until a line matches.
+    def console_send(argv, o)
+      text = o[:send]
+      raise Error, "--send takes one line (no newlines or control characters)" if text.match?(/[\x00-\x1f\x7f]/)
+      re = begin
+        o[:wait_log] && Regexp.new(o[:wait_log])
+      rescue RegexpError => e
+        raise Error, "bad --wait-log regex: #{e.message}"
+      end
+      m = console_machine(argv)
+      if m.config["stdin"] == "null"
+        raise Error, "#{m.app.name} has [flk] stdin = \"null\": the app doesn't read the console"
+      end
+      log = m.path("console.log")
+      offset = File.size?(log) || 0
+      VM.send_line(m, text)
+      return puts("Sent to #{m.id} [#{m.name}]: #{text}") unless re
+      wait_for_log(log, offset, re, text, o[:timeout] || 10)
+    end
+
+    # Prints new console.log lines from offset until one matches re (the echo
+    # of what was typed doesn't count). Follows a rotation to a fresh file.
+    def wait_for_log(log, offset, re, typed, timeout)
+      deadline = Time.now + timeout
+      partial = +""
+      loop do
+        size = File.size?(log) || 0
+        offset = 0 if size < offset # rotated
+        if size > offset
+          chunk = File.open(log, "rb") { |f| f.seek(offset); f.read(size - offset) }
+          offset = size
+          lines = (partial + chunk).split("\n", -1)
+          partial = lines.pop.to_s
+          lines.each do |l|
+            l = l.delete("\r")
+            next if l.strip == typed.strip # the console's echo
+            puts l
+            return if l.match?(re)
+          end
+        end
+        raise Error, "no console line matched /#{re.source}/ within #{timeout}s" if Time.now > deadline
+        sleep 0.2
+      end
     end
 
     # The bridge is already routable from the host; this is for binding

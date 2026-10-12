@@ -228,6 +228,13 @@ module Flk
       nil
     end
 
+    # Types a line into the machine's serial console (the app's stdin):
+    # literal text, then Enter.
+    def send_line(m, text)
+      Util.run!(*TMUX, "send-keys", "-t", m.session, "-l", text)
+      Util.run!(*TMUX, "send-keys", "-t", m.session, "Enter")
+    end
+
     # `tmux ls` exits 0 with no sessions on a server kept alive by exit-empty off
     def tmux_sessions
       out, st = Open3.capture2e(*TMUX, "list-sessions", "-F", '#{session_name}')

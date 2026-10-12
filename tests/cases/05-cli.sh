@@ -97,6 +97,9 @@ test_no_hangs_without_a_terminal() {
   assert_contains "$out" "pass --yes"
   out=$(timeout 5 "$FLK_BIN" -a "$APP" console </dev/null 2>&1) && fail "console ran without a terminal"
   assert_contains "$out" "interactive terminal"
+  assert_contains "$out" "--send TEXT" "points agents at --send"
+  out=$("$FLK_BIN" -a "$APP" console --wait-log x 2>&1) && fail "--wait-log without --send"
+  assert_contains "$out" "go with --send"
   mkdir -p "$FLK_HOME/apps/$APP/machines/fake"
   printf '{"id":"fake","name":"fake","tap_index":99,"created_at":"2000-01-01T00:00:00Z","config":{"mounts":[]}}' \
     >"$FLK_HOME/apps/$APP/machines/fake/machine.json"

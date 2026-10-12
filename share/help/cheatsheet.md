@@ -15,6 +15,7 @@ Run an app (in its directory, with a Dockerfile, flk.toml or fly.toml)
 Look inside
   flk logs [-i ID] [-n 200] [-f]     app output and boot messages
   flk console [ID]                   type to the app (server consoles); leave: Ctrl-b d
+  flk console --send "say hi"        one line to the app, no attaching (--wait-log REGEX: see the answer)
   flk machine status ID              everything flk knows about a machine
 
 Start and stop
