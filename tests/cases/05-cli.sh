@@ -154,3 +154,47 @@ test_logpipe_rotates() {
   printf 'partial' | "$FLK_SRC/libexec/flk-logpipe" "$d/p.log" 100
   assert_eq partial "$(cat "$d/p.log")" "unterminated last line"
 }
+
+# Volumes outside flk's state dir: created with --path, filled --from-dir,
+# or imported. flk never deletes their files unless told to.
+test_external_volumes() {
+  local d; d=$(mktemp -d "$WORK/vols.XXXX")
+  flk volumes create ext --size 1 --path "$d/ext.ext4" >/dev/null
+  [[ -f $d/ext.ext4 ]] || fail "--path didn't create the file"
+  assert_contains "$(flk volumes list)" "$d/ext.ext4" "volumes list shows the external file"
+  assert_eq true "$(flk volumes list --json | json_get 0.external)" "external flag"
+
+  local out
+  touch "$d/other.ext4"
+  out=$(flk volumes create ext2 --path "$d/other.ext4" 2>&1) && fail "overwrote an existing file"
+  assert_contains "$out" "already exists"
+  out=$(flk volumes import again --path "$d/ext.ext4" 2>&1) && fail "registered one file twice"
+  assert_contains "$out" "is already volume"
+  out=$(flk volumes create inroot --path "$FLK_HOME/x.ext4" 2>&1) && fail "accepted a --path inside FLK_HOME"
+  assert_contains "$out" "inside flk's state dir"
+
+  out=$(flk volumes destroy ext)
+  assert_contains "$out" "file kept at $d/ext.ext4"
+  [[ -f $d/ext.ext4 ]] || fail "destroy deleted an external file"
+
+  flk volumes import ext --path "$d/ext.ext4" >/dev/null
+  assert_eq 1 "$(flk volumes list --json | json_get 0.size_gb)" "imported size"
+  flk volumes destroy ext --delete-data >/dev/null
+  [[ ! -e $d/ext.ext4 ]] || fail "--delete-data kept the file"
+
+  head -c 1M /dev/zero >"$d/junk.img"
+  out=$(flk volumes import junk --path "$d/junk.img" 2>&1) && fail "imported a non-ext4 file"
+  assert_contains "$out" "isn't an ext4 image"
+}
+
+test_volume_from_dir() {
+  local d; d=$(mktemp -d "$WORK/fromdir.XXXX")
+  mkdir -p "$d/src/world" && echo level >"$d/src/world/level.dat"
+  flk volumes create seeded --size 1 --path "$d/seeded.ext4" --from-dir "$d/src" >/dev/null
+  debugfs -R "cat /world/level.dat" "$d/seeded.ext4" 2>/dev/null | grep -q level || fail "level.dat not in the volume"
+  flk volumes destroy seeded --delete-data >/dev/null
+  truncate -s 2G "$d/src/big" # sparse: 2GB to du -b, nothing on disk
+  local out
+  out=$(flk volumes create toobig --size 1 --from-dir "$d/src" 2>&1) && fail "filled a 1GB volume from 2GB"
+  assert_contains "$out" "too much for a 1GB volume"
+}

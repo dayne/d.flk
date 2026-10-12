@@ -338,7 +338,7 @@ module Flk
           out << "volumes: #{a['volumes'].map { "#{_1['name']}=#{_1['id']}(#{_1['attached_machine'] || 'free'})" }.join(', ').then { _1.empty? ? 'none' : _1 }}"
           out << "secrets: #{a['secrets'].empty? ? 'none' : a['secrets'].join(', ')}"
           ports = a["ports"]
-          rows = ports["active"].map { "#{_1['key']} -> #{_1['ip']}:#{_1['internal_port']} (active)" } +
+          rows = ports["active"].map { "#{_1['key']} -> #{_1['ip']}:#{_1['internal_port']} (active; connect to #{_1['address'] || "host LAN IP:#{_1['port']}"}, not 127.0.0.1)" } +
                  ports["waiting"].map { "#{_1['key']} (waiting: held by another machine)" } +
                  ports["blocked"].map { "#{_1['key']} (blocked: #{_1['blocked']})" }
           out << "host ports: #{rows.empty? ? 'none' : rows.join('; ')}"
@@ -549,10 +549,12 @@ module Flk
         print "Destroy #{name}, its #{a.machines.size} machine(s) and #{a.volumes.size} volume(s)? [y/N] "
         return puts("Aborted") unless $stdin.gets.to_s.strip.downcase == "y"
       end
+      kept = a.volumes.select { _1["external"] }
       Util.with_lock { a.machines.each { destroy_machine(_1, force: true) } }
-      FileUtils.rm_rf(a.dir)
+      FileUtils.rm_rf(a.dir) # external volume files live outside it
       Image.untag(name)
       puts "Destroyed app #{name}"
+      kept.each { puts "  kept external volume #{_1['name']} (#{_1['id']}): #{_1['path']}" }
     end
 
     def apps_prune(_args, _o)
@@ -751,7 +753,7 @@ module Flk
         elsif o.nil? || !Ports.available?
           next
         elsif o["machine"] == m.id
-          puts "    host port #{key} -> #{m.ip}:#{p['internal_port']}"
+          puts "    host port #{key} -> #{m.ip}:#{p['internal_port']}  (reach it at #{Net.host_lan_ip || 'the host LAN IP'}:#{p['port']}, not 127.0.0.1)"
         else
           puts Util.yellow("    ⚠ host port #{key} is taken by #{o['app']} (#{o['machine']}); this machine gets it when that one stops")
         end
@@ -766,10 +768,13 @@ module Flk
       puts "Port forwarding synced"
     end
 
+    # active rows get "address": where to connect (host LAN IP:port)
     def ports_json
       active, waiting, blocked = Ports.table
-      { "helper_installed" => Ports.available?, "min_port" => Ports.min_port,
-        "active" => active, "waiting" => waiting, "blocked" => blocked }
+      lan = Net.host_lan_ip
+      { "helper_installed" => Ports.available?, "min_port" => Ports.min_port, "host_address" => lan,
+        "active" => active.map { _1.merge("address" => lan && "#{lan}:#{_1['port']}") },
+        "waiting" => waiting, "blocked" => blocked }
     end
 
     def ports_list(_args, o)
@@ -782,6 +787,9 @@ module Flk
       Util.table(%w[HOST_PORT MACHINE TARGET APP STATUS],
                  active.map { row[_1, "active"] } + waiting.map { row[_1, "waiting (port taken)"] } +
                  blocked.map { row[_1, "blocked: #{_1['blocked']}"] })
+      return if active.empty?
+      puts "\nConnect to #{Net.host_lan_ip || 'the host LAN IP'}:PORT (from the host too) or the TARGET directly; " \
+           "not 127.0.0.1, which isn't forwarded (for TCP: flk proxy PORT)."
     end
 
     # Follows only when someone is watching: an agent or a pipe would wait forever.
@@ -894,29 +902,89 @@ module Flk
       v = app.volumes
       return puts(JSON.pretty_generate(v)) if o[:json]
       return puts("No volumes") if v.empty?
-      Util.table(%w[ID NAME SIZE ATTACHED CREATED],
-                 v.map { [_1["id"], _1["name"], "#{_1['size_gb']}GB", _1["attached_machine"] || "-", Util.ago(_1["created_at"])] })
+      ext = v.any? { _1["external"] }
+      Util.table(%w[ID NAME SIZE ATTACHED CREATED] + (ext ? ["FILE (external)"] : []),
+                 v.map { [_1["id"], _1["name"], "#{_1['size_gb']}GB", _1["attached_machine"] || "-", Util.ago(_1["created_at"])] +
+                         (ext ? [_1["external"] ? _1["path"] : "-"] : []) })
+    end
+
+    def volume_name!(name)
+      raise Error, "volume names: lowercase letters, digits, underscores" unless name.match?(/\A[a-z0-9_]{1,30}\z/)
+      name
+    end
+
+    # An image file outside flk's state dir: flk never deletes it. Refuses a
+    # file another volume (in any app) already uses.
+    def external_path!(path)
+      full = File.expand_path(path)
+      raise Error, "#{full} is inside flk's state dir; leave out --path for that" if full.start_with?("#{ROOT}/")
+      App.all.each do |other|
+        if (v = other.volumes.find { _1["path"] == full })
+          raise Error, "#{full} is already volume #{v['id']} (#{v['name']}) of app #{other.name}"
+        end
+      end
+      full
+    end
+
+    def register_volume(a, h)
+      Util.with_lock do
+        vols = a.volumes
+        vols << h.merge("attached_machine" => nil, "created_at" => Util.now)
+        a.save_volumes(vols)
+      end
     end
 
     def volumes_create(args, o)
       a = app
-      name = args.first
-      raise Error, "volume names: lowercase letters, digits, underscores" unless name.match?(/\A[a-z0-9_]{1,30}\z/)
+      name = volume_name!(args.first)
       size = o[:size] || 1
+      raise Error, "--size must be at least 1 (GB)" if size < 1
       id = "vol_#{SecureRandom.hex(8)}"
-      path = File.join(a.dir, "volumes", "#{id}.ext4")
-      FileUtils.mkdir_p(File.dirname(path))
-      Util.mkfs_ext4(path, size * 1024, label: name)
-      Util.with_lock do
-        vols = a.volumes
-        vols << { "id" => id, "name" => name, "size_gb" => size, "path" => path,
-                  "attached_machine" => nil, "created_at" => Util.now }
-        a.save_volumes(vols)
+      path = o[:path] ? external_path!(o[:path]) : File.join(a.dir, "volumes", "#{id}.ext4")
+      if o[:path]
+        raise Error, "#{path} already exists; to use an existing image: flk volumes import #{name} --path #{path}" if File.exist?(path)
+        raise Error, "#{File.dirname(path)} doesn't exist" unless File.directory?(File.dirname(path))
       end
-      puts "Created #{id} (#{name}, #{size}GB sparse)"
+      from = o[:from_dir] && from_dir!(o[:from_dir], size)
+      FileUtils.mkdir_p(File.dirname(path))
+      puts "==> Copying #{from} into the volume (this can take a while)" if from
+      Util.mkfs_ext4(path, size * 1024, label: name, from_dir: from)
+      register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path }.merge(o[:path] ? { "external" => true } : {}))
+      puts "Created #{id} (#{name}, #{size}GB sparse#{", at #{path}" if o[:path]}#{", from #{from}" if from})"
+      puts "Note: files keep their owner/group IDs from #{from}; the app may need to run as that user (or chown inside)." if from
     end
 
-    def volumes_destroy(args, _o)
+    # --from-dir must fit with headroom: ext4 metadata takes a few percent.
+    def from_dir!(dir, size_gb)
+      full = File.expand_path(dir)
+      raise Error, "#{full} isn't a directory" unless File.directory?(full)
+      used = Util.run!("du", "-sb", full).split.first.to_i
+      cap = size_gb * 1024**3
+      if used > cap * 0.9
+        raise Error, "#{full} holds #{(used / 1024.0**3).round(1)}GB, too much for a #{size_gb}GB volume; " \
+                     "use --size #{(used * 1.25 / 1024**3).ceil}"
+      end
+      full
+    end
+
+    def volumes_import(args, o)
+      a = app
+      name = volume_name!(args.first)
+      path = external_path!(o[:path] || raise(Error, "--path FILE is required"))
+      raise Error, "#{path} doesn't exist" unless File.file?(path)
+      raise Error, "#{path} isn't writable by you (machines open it read-write)" unless File.writable?(path)
+      type = (Util.run!("blkid", "-o", "value", "-s", "TYPE", path).strip rescue "")
+      raise Error, "#{path} isn't an ext4 image (blkid says '#{type.empty? ? 'unknown' : type}')" unless type == "ext4"
+      id = "vol_#{SecureRandom.hex(8)}"
+      size = (File.size(path) / 1024.0**3).ceil
+      register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path, "external" => true })
+      puts "Imported #{path} as #{id} (#{name}, #{size}GB). flk won't delete this file."
+      puts "Don't mount it on the host while a machine uses it."
+    end
+
+    # External volumes (--path / import) are only unregistered unless
+    # --delete-data: flk didn't create that file, so it won't silently delete it.
+    def volumes_destroy(args, o)
       a = app
       ref = args.first
       Util.with_lock do
@@ -924,9 +992,10 @@ module Flk
         if v["attached_machine"]
           raise Error, "#{v['id']} is attached to machine #{v['attached_machine']}; destroy that machine first"
         end
-        FileUtils.rm_f(v["path"])
+        keep = v["external"] && !o[:delete_data]
+        FileUtils.rm_f(v["path"]) unless keep
         a.save_volumes(a.volumes.reject { _1["id"] == v["id"] })
-        puts "Destroyed #{v['id']}"
+        puts keep ? "Unregistered #{v['id']}; file kept at #{v['path']} (--delete-data deletes it)" : "Destroyed #{v['id']}"
       end
     end
   end

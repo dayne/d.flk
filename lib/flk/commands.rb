@@ -150,9 +150,17 @@ module Flk
         summary: "Persistent disks (sparse ext4), one machine each",
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "Volumes and what they're attached to" },
-          { name: "create", args: "NAME", opts: [["-s", "--size GB", Integer, "Size in GB (default 1)"]],
+          { name: "create", args: "NAME",
+            opts: [["-s", "--size GB", Integer, "Size in GB (default 1)"],
+                   ["--path FILE", "Create the image at FILE (e.g. on a bigger disk) instead of flk's state dir; flk never deletes it"],
+                   ["--from-dir DIR", "Fill it with a copy of DIR (owner/group IDs kept as-is)"]],
             summary: "Create a volume for [[mounts]] source = NAME" },
-          { name: "destroy", aliases: %w[rm], args: "ID|NAME", summary: "Delete an unattached volume and its data" }
+          { name: "import", args: "NAME", opts: [["--path FILE", "An existing ext4 image file (required)"]],
+            summary: "Register an existing ext4 image as a volume; flk never deletes it",
+            notes: ["Size comes from the file. Don't mount it on the host while a machine uses it."] },
+          { name: "destroy", aliases: %w[rm], args: "ID|NAME",
+            opts: [["--delete-data", "Also delete an external (--path / import) volume's file"]],
+            summary: "Delete an unattached volume and its data (external volumes: unregister, keep the file)" }
         ] }
     ].freeze
 
@@ -233,7 +241,10 @@ module Flk
       out << "Blocks: #{e[:blocks]}" if e[:blocks]
       if !sub && cmd[:subs]
         out << "" << "Subcommands#{" (default: #{cmd[:default_sub]})" if cmd[:default_sub]}:"
-        cmd[:subs].each { |s| out << format("  %-34s %s", usage(cmd, s).delete_prefix("flk #{cmd[:name]} "), s[:summary]) }
+        cmd[:subs].each do |s|
+          u = usage(cmd, s).delete_prefix("flk #{cmd[:name]} ")
+          out << (u.size > 34 ? "  #{u}\n  #{' ' * 35}#{s[:summary]}" : format("  %-34s %s", u, s[:summary]))
+        end
       end
       if Array(e[:opts]).any?
         out << "" << "Options:"

@@ -16,6 +16,16 @@ module Flk
     def tap_exists?(i) = File.exist?("/sys/class/net/#{tap(i)}")
     def bridge_up? = File.exist?("/sys/class/net/#{BRIDGE}")
 
+    # The host's address on the default route: where forwarded host ports
+    # answer (from the host itself too). Not 127.0.0.1: the DNAT rules skip
+    # loopback.
+    def host_lan_ip
+      out, st = Open3.capture2e("ip", "-o", "route", "get", "1.1.1.1")
+      st.success? ? out[/\bsrc (\S+)/, 1] : nil
+    rescue SystemCallError
+      nil
+    end
+
     # Kernel-level IP config: works even in images without iproute2.
     def kernel_ip_arg(i, hostname) = "ip=#{ip(i)}::#{GATEWAY}:255.255.255.0:#{hostname}:eth0:off"
 

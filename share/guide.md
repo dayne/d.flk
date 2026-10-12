@@ -33,7 +33,10 @@ shows the live state with suggested next steps.
   Changing them restarts running machines unless `--stage` is given.
 - **Host ports**: `[[services.ports]] port = N` forwards host port N (on every
   host address) to the first running machine that asks for it. When that
-  machine stops, the next one takes over.
+  machine stops, the next one takes over. **Not on 127.0.0.1**: the
+  forwarding skips loopback, so from the host itself connect to the host's
+  LAN IP (shown by `flk ports`) or the machine IP; `flk proxy` gives a
+  loopback port for TCP.
 - **Lifecycle**: when the app process exits, its VM powers off (state
   `stopped`) and flk hands its host ports on right away (a hook on flk's
   tmux server runs `flk ports reap`).
@@ -96,6 +99,12 @@ Debug a machine that won't stay up:
 
 Change config or code: edit, then `flk deploy`. Every deploy is a new release
 and rolls the machines one at a time.
+
+Data on another disk, or existing data: `flk volumes create data --size 50
+--path /big/disk/data.ext4` puts the image there; add `--from-dir DIR` to
+copy a directory in (file owner IDs are kept). `flk volumes import data
+--path FILE` registers an existing ext4 image. flk never deletes these
+files: `volumes destroy` only unregisters them (`--delete-data` to delete).
 
 Scale: `flk volumes create data --size 1` (if `[[mounts]]` is used), then
 `flk scale count 2`.

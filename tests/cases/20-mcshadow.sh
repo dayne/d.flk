@@ -141,6 +141,8 @@ test_reachable_on_host_lan_ip() {
   ensure_up
   assert_contains "$(flk ports)" "tcp/$HOST_PORT" "flk ports"
   local ip; ip=$(host_lan_ip)
+  assert_eq "$ip:$HOST_PORT" "$(flk ports --json | json_get active.0.address)" "ports --json address"
+  assert_contains "$(flk ports)" "not 127.0.0.1" "flk ports explains loopback"
   mc_up "$ip" "$HOST_PORT" || fail "no status ping on $ip:$HOST_PORT"
   assert_eq "$APP" "$(mcping "$ip" "$HOST_PORT" -q flk.app)" "app answering on the LAN port"
 }
