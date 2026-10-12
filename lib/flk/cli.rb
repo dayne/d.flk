@@ -91,9 +91,47 @@ module Flk
       out
     end
 
+    # ./flk.toml (or fly.toml), unless -a names another app: then the file
+    # flk recorded for it at launch/deploy, so -a works from anywhere.
     def config
-      @config ||= AppConfig.find ||
-                  raise(Error, "no flk.toml or fly.toml in #{Dir.pwd} (run: flk launch)")
+      @config ||= begin
+        here = AppConfig.find
+        if @app_name && here&.app != @app_name
+          recorded_config(@app_name)
+        else
+          here || raise(Error, "no flk.toml or fly.toml in #{Dir.pwd} (run: flk launch)")
+        end
+      end
+    end
+
+    def recorded_config(name)
+      a = App.new(name)
+      path = a.exists? ? a.meta["config_path"] : nil
+      unless path
+        raise Error, "flk doesn't know where #{name}'s flk.toml is yet; run flk deploy (or flk launch --no-deploy) " \
+                     "once in its directory"
+      end
+      raise Error, "#{name}'s config was at #{path}, which is gone; run flk deploy in its new directory" unless File.exist?(path)
+      cfg = AppConfig.new(path)
+      raise Error, "#{path} now belongs to app '#{cfg.app}', not #{name}" unless cfg.app == name
+      cfg
+    end
+
+    # The config for an app if flk can find it (here, or recorded), else nil.
+    def config_for(name)
+      here = (AppConfig.find rescue nil)
+      return here if here&.app == name
+      recorded_config(name)
+    rescue Error
+      nil
+    end
+
+    # Remember where the config lives (launch, deploy).
+    def record_config_path(a, cfg)
+      meta = a.meta
+      return if meta["config_path"] == File.expand_path(cfg.path)
+      meta["config_path"] = File.expand_path(cfg.path)
+      a.save_meta(meta)
     end
 
     def app
@@ -270,7 +308,7 @@ module Flk
                   .map { "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
       apps = App.all.map do |a|
         app_steps = []
-        cfg = (AppConfig.find if AppConfig.find&.app == a.name rescue nil)
+        cfg = config_for(a.name)
         h = app_context(a, cfg, app_steps)
         steps.concat(app_steps.reject { _1.start_with?("all good") }.map { "#{a.name}: #{_1}" })
         h
@@ -341,7 +379,7 @@ module Flk
 
       name = @app_name || c.dig("config", "app")
       if name
-        c["app"] = app_context(App.new(name), cfg&.app == name ? cfg : nil, steps)
+        c["app"] = app_context(App.new(name), cfg&.app == name ? cfg : config_for(name), steps)
       elsif !c["config"]
         steps << "no flk.toml or fly.toml in #{Dir.pwd}: cd to an app directory, pass -a APP, or create one with: flk launch"
       end
@@ -357,7 +395,8 @@ module Flk
       end
       ms = a.machines
       rel = a.current_release
-      h.merge!("home" => a.dir, "release" => rel, "releases" => a.meta["releases"].size, "scale" => a.meta["scale"],
+      h.merge!("home" => a.dir, "config_path" => a.meta["config_path"],
+               "release" => rel, "releases" => a.meta["releases"].size, "scale" => a.meta["scale"],
                "machines" => ms.map { machine_json(_1) }, "volumes" => a.volumes,
                "secrets" => a.secrets.keys)
       ports = ports_json
@@ -371,6 +410,9 @@ module Flk
         n = want - have
         steps << "[[mounts]] source '#{mt['source']}' needs #{n} more volume#{'s' if n > 1}: " \
                  "flk volumes create #{mt['source']} --size 1#{" (run #{n} times)" if n > 1}"
+      end
+      unless a.meta["config_path"]
+        steps << "flk doesn't know where #{a.name}'s flk.toml is: run flk launch --no-deploy (or flk deploy) once in its directory"
       end
       if rel.nil?
         steps << (cfg ? "deploy the first release: flk deploy" : "no release yet; run flk deploy from the app directory")
@@ -463,6 +505,7 @@ module Flk
         puts "Registered app '#{name}' in #{a.dir}"
       end
       @config = nil
+      record_config_path(a, AppConfig.find)
 
       cfg = config
       buildable = cfg.image || File.exist?(File.expand_path(cfg.dockerfile, cfg.dir))
@@ -523,6 +566,7 @@ module Flk
           # failed precondition never leaves a release with nothing on it.
           meta = a.meta
           meta["releases"] << rel
+          meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)
           recorded = true
           if machines.empty?
@@ -589,13 +633,15 @@ module Flk
       a = app
       rel = a.current_release
       if o[:json]
-        return puts(JSON.pretty_generate("app" => { "name" => a.name, "release" => rel, "home" => a.dir },
+        return puts(JSON.pretty_generate("app" => { "name" => a.name, "release" => rel, "home" => a.dir,
+                                                    "config_path" => a.meta["config_path"] },
                                          "machines" => a.machines.map { machine_json(_1) }))
       end
       puts "App"
       puts "  Name     = #{a.name}"
       puts "  Release  = #{rel ? "v#{rel['version']} (#{rel['tag']})" : 'none'}"
       puts "  Home     = #{a.dir}"
+      puts "  Config   = #{a.meta['config_path'] || 'unknown (run flk deploy in the app directory once)'}"
       puts
       machine_table(a)
     end
@@ -612,7 +658,7 @@ module Flk
       App.all.map do |a|
         ms = a.machines
         { "name" => a.name, "machines" => ms.size, "started" => ms.count(&:running?),
-          "release" => a.current_release&.dig("version") }
+          "release" => a.current_release&.dig("version"), "config_path" => a.meta["config_path"] }
       end
     end
 
@@ -747,8 +793,8 @@ module Flk
 
         ms = a.machines
         if n > ms.size
-          cfg = AppConfig.find
-          base = cfg && cfg.app == a.name ? cfg.machine_config : ms.last&.config&.reject { |k, _| k == "mounts" }
+          cfg = config_for(a.name)
+          base = cfg ? cfg.machine_config : ms.last&.config&.reject { |k, _| k == "mounts" }
           raise Error, "run from the app directory so flk can read its config" unless base
           check_capacity!(a, base, creating: n - ms.size)
           (n - ms.size).times { create_machine(a, rel, base) }

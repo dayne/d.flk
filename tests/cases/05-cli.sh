@@ -115,7 +115,7 @@ test_deploy_checks_volumes_before_building() {
   toml_append '[[mounts]]' '  source = "data"' '  destination = "/data"'
   flk launch --no-deploy >/dev/null
   local out
-  out=$(flk deploy 2>&1) && fail "deployed without the volume [[mounts]] needs"
+  out=$(cd "$WORK" && "$FLK_BIN" -a "$APP" deploy 2>&1) && fail "deployed without the volume [[mounts]] needs"
   assert_contains "$out" "not enough free volumes for [[mounts]] source 'data'"
   assert_contains "$out" "flk volumes create data --size 1"
   [[ $out != *"==> Building"* && $out != *"==> Release"* ]] || fail "started building before checking volumes"
@@ -267,4 +267,20 @@ test_reads_dont_block_on_the_lock() {
   "$FLK_BIN" -a "$APP" status >/dev/null
   [[ ! -e $mdir/pid ]] || fail "not reaped once the lock was free"
   rm -rf "$mdir"
+}
+
+# G2: flk remembers where an app's config lives, so -a APP works from any
+# directory for commands that need it (deploy, config show, scale).
+test_config_path_recorded_and_used() {
+  assert_eq "$APP_DIR/flk.toml" "$(flk status --json | json_get app.config_path)" "status --json config_path"
+  local elsewhere; elsewhere=$(mktemp -d "$WORK/elsewhere.XXXX")
+  local out
+  out=$(cd "$elsewhere" && "$FLK_BIN" -a "$APP" config show) || fail "config show -a from another dir: $out"
+  assert_eq "$APP" "$(json_get parsed.app <<<"$out")" "config from the recorded path"
+  assert_contains "$(cd "$elsewhere" && "$FLK_BIN" -a "$APP" context)" "config:" "context -a from elsewhere"
+  # a moved app dir: a clear error that says what to do
+  mv "$APP_DIR/flk.toml" "$APP_DIR/flk.toml.moved"
+  out=$(cd "$elsewhere" && "$FLK_BIN" -a "$APP" config show 2>&1) && { mv "$APP_DIR/flk.toml.moved" "$APP_DIR/flk.toml"; fail "used a config that's gone"; }
+  mv "$APP_DIR/flk.toml.moved" "$APP_DIR/flk.toml"
+  assert_contains "$out" "which is gone; run flk deploy in its new directory"
 }

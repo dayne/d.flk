@@ -68,8 +68,10 @@ and secrets.
   `flk help COMMAND`. Nothing is silently ignored.
 - **Errors** go to stderr as `Error: ...`, usually ending with the command
   that fixes them. The exit code is 1.
-- **Run deploy from the app directory.** `deploy` and `launch` read the
-  config from the current directory. `-a` alone isn't enough for them.
+- **Where the config is.** `launch` uses the current directory. After an
+  app's first `launch` or `deploy` there, flk remembers its config file
+  (`config_path` in `status --json`), so `flk -a APP deploy` and
+  `flk -a APP config show` work from anywhere.
 - **Slow commands:** `deploy` builds an image and boots each machine, waiting
   up to 30s per machine for `internal_port`. Expect a minute or more.
 - **"short-name ... did not resolve"** on deploy: podman has no search

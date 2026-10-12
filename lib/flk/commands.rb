@@ -79,7 +79,7 @@ module Flk
       { name: "deploy", group: "Apps",
         opts: [["--image IMAGE", "Deploy this image instead of building"]],
         summary: "Build the image and roll machines to a new release",
-        notes: ["Run from the app directory (it reads flk.toml / fly.toml there).",
+        notes: ["Reads flk.toml / fly.toml in the current directory, or with -a APP the file flk recorded at the app's last launch/deploy, so it works from anywhere.",
                 "Creates machines on the first deploy (count from `flk scale count`, default 1); later deploys stop, update and reboot each machine in turn.",
                 "Waits up to 30s per machine for internal_port to accept connections, then warns but carries on.",
                 "Volumes named in [[mounts]] must exist first: flk volumes create NAME --size 1 (one per machine)."] },

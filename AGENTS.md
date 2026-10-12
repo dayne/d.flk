@@ -21,7 +21,8 @@ Things to know:
   machine IPs are reachable from the host.
 - Listing commands take `--json`. Unknown options and extra arguments are
   errors, never silently ignored.
-- `flk deploy` and `flk launch` read `flk.toml` from the current directory.
+- `flk launch` reads `flk.toml` from the current directory; after that,
+  `flk -a APP deploy` works from anywhere (flk records the config path).
 - Only `sudo ./setup-host.sh` needs root. Don't run it unless `flk context`
   or `flk doctor` says to, and ask the user first.
 
