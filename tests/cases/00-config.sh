@@ -145,3 +145,13 @@ test_out_of_range_host_port_rejected() {
   out=$(config 2>&1) && fail "accepted host port 70000"
   assert_contains "$out" "isn't a valid port"
 }
+
+# flk-sanity.sh reads doctor through --json; keep the shape stable.
+test_doctor_json() {
+  local out; out=$("$FLK_BIN" doctor --json)
+  ruby -rjson -e 'd = JSON.parse(ARGV[0])
+    abort "ok missing" unless [true, false].include?(d["ok"])
+    abort "no checks" if d["checks"].empty?
+    d["checks"].each { |c| abort "bad check #{c}" unless c["label"].is_a?(String) && %w[pass fail warn].include?(c["status"]) }
+    abort "ok disagrees with checks" unless d["ok"] == d["checks"].none? { _1["status"] == "fail" }' "$out"
+}

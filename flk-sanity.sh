@@ -367,22 +367,26 @@ check_url() { # LABEL URL: any HTTP response counts as reachable
 }
 
 # ---------- flk doctor ----------
-# Runtime health is doctor's job; fold its ✔/✘ lines into our counts.
+# Runtime health is doctor's job; fold its checks (doctor --json) into our
+# counts. Ruby is a core check, so it's there by the time this runs.
 run_doctor() {
   ((QUIET)) || echo $'\n'"$(c 1 "flk doctor")"
   if ((N_FAIL)); then skip "skipped: fix the core failures above first"; return; fi
-  local out line hint
-  if ! out=$(NO_COLOR=1 "$FLK_BIN" doctor 2>&1); then
+  local out rows st label hint
+  if ! out=$("$FLK_BIN" doctor --json 2>&1); then
     fail "flk doctor crashed: ${out##*$'\n'}"; return
   fi
-  while IFS= read -r line; do
-    case $line in
-      ✔*) pass "${line#✔ }" ;;
-      ✘*) line=${line#✘ }; hint=""
-          [[ $line == *"  -> "* ]] && { hint=${line#*  -> }; line=${line%%  -> *}; }
-          fail "$line" "$hint" ;;
+  if ! rows=$(ruby -rjson -e 'JSON.parse($stdin.read).fetch("checks").each { |c|
+      puts [c.fetch("status"), c.fetch("label"), c["hint"]].join("\t") }' <<<"$out" 2>&1); then
+    fail "flk doctor --json gave unreadable output: ${out%%$'\n'*}"; return
+  fi
+  while IFS=$'\t' read -r st label hint; do
+    case $st in
+      pass) pass "$label" ;;
+      warn) warn "$label" "$hint" ;;
+      *)    fail "$label" "$hint" ;;
     esac
-  done <<<"$out"
+  done <<<"$rows"
 }
 
 # ---------- driver ----------

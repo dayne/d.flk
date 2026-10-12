@@ -20,8 +20,6 @@ Each entry says where the issue is caught today, and where a fix could go.
   adds `ufw route allow` rules or puts the bridge in firewalld's trusted zone.
   Only the Docker path existed before. Test both, and the matching
   `flk-sanity.sh` checks, on a host where they're enabled.
-- [ ] **`flk-sanity.sh` parses `flk doctor` output** (✔/✘ lines and the
-  `  -> ` hint separator). A `flk doctor --json` would make that robust.
 - [ ] **pacman/dnf package names** in `flk-sanity.sh` haven't been tried on Arch
   or Fedora.
 
@@ -36,8 +34,6 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Machines
 
-- [ ] **No upper bound on `kill_timeout`.** A typo like `kill_timeout = 3000`
-  makes `flk machine stop` hang for 50 minutes. Consider a cap with a warning.
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
@@ -59,3 +55,8 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [x] Machines that exit on their own are reaped by the listing commands, and
   their host ports are handed to the next machine or dropped.
 - [x] Tests forward a random free host port instead of 25565.
+- [x] `kill_timeout` capped at 300s (config rejects more; stop clamps old
+  machines' stored value).
+- [x] `flk doctor --json`; `flk-sanity.sh` reads that instead of ✔/✘ lines.
+  Doctor also reports the port helper (missing / needs a password /
+  predates the host port guard) as a warning.

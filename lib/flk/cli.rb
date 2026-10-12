@@ -9,7 +9,7 @@ module Flk
 
       Setup
         setup                       Download firecracker + guest kernel into #{ROOT}
-        doctor                      Check host readiness
+        doctor [--json]             Check host readiness
 
       Apps
         launch [--name N] [--image I] [--port P] [--no-deploy]
@@ -43,7 +43,7 @@ module Flk
       when nil, "help", "-h", "--help" then puts HELP
       when "version", "--version" then puts "flk #{VERSION}"
       when "setup" then cmd_setup
-      when "doctor" then cmd_doctor
+      when "doctor" then cmd_doctor(argv)
       when "launch" then cmd_launch(argv)
       when "deploy" then cmd_deploy(argv)
       when "status" then cmd_status
@@ -118,12 +118,20 @@ module Flk
       cmd_doctor
     end
 
-    def cmd_doctor
+    # --json prints {"ok", "checks": [{"label", "status", "hint"}]} for
+    # scripts (flk-sanity.sh). status: pass, fail, or warn (works, but a
+    # feature like port forwarding is off). ok is false only on a fail.
+    def cmd_doctor(argv = [])
+      json = argv.delete("--json")
+      raise Error, "usage: flk doctor [--json]" unless argv.empty?
       results = []
-      check = lambda do |label, ok, hint = nil|
-        puts "#{ok ? Util.green('✔') : Util.red('✘')} #{label}#{ok || hint.nil? ? '' : "  -> #{hint}"}"
-        results << ok
+      icons = { "pass" => Util.green("✔"), "fail" => Util.red("✘"), "warn" => Util.yellow("!") }
+      record = lambda do |label, status, hint|
+        hint = nil if status == "pass"
+        results << { "label" => label, "status" => status, "hint" => hint }
+        puts "#{icons[status]} #{label}#{hint ? "  -> #{hint}" : ''}" unless json
       end
+      check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
       check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
             "sudo ./setup-host.sh (adds you to kvm group; log out/in)"]
       fc = begin; VM.firecracker_bin; rescue Error; nil; end
@@ -139,7 +147,27 @@ module Flk
       end
       eng = begin; Image.engine; rescue Error; nil; end
       check["container engine (#{eng || 'none'})", !eng.nil?, "install podman (or docker)"]
-      puts(results.all? ? "\nReady to fly, locally." : "\nFix the ✘ items above.")
+      port_helper_check(record)
+
+      ok = results.none? { _1["status"] == "fail" }
+      return puts(JSON.pretty_generate("ok" => ok, "checks" => results)) if json
+      puts(ok ? "\nReady to fly, locally." : "\nFix the ✘ items above.")
+    end
+
+    # Optional: without it machines run, but [[services.ports]] isn't forwarded.
+    def port_helper_check(record)
+      fix = "sudo ./setup-host.sh"
+      if !Ports.available?
+        record["port helper (forwarding [[services.ports]])", "warn", fix]
+      elsif !system("sudo", "-n", "-l", Ports::HELPER, out: File::NULL, err: File::NULL)
+        record["port helper usable without a password", "warn", fix]
+      elsif !File.read(Ports::HELPER).match?(/^min_port=/)
+        record["port helper up to date (host port guard)", "warn", fix]
+      else
+        record["port helper (host ports from #{Ports.min_port})", "pass", nil]
+      end
+    rescue SystemCallError => e
+      record["port helper: #{e.message}", "warn", fix]
     end
 
     # ---------- apps ----------
