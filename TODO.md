@@ -75,6 +75,12 @@ Each entry says where the issue is caught today, and where a fix could go.
 
 ## Machines
 
+- [ ] **The tmux exit hook follows the last flk that started a VM.** It's a
+  global hook holding that flk's absolute path, so running tests from a
+  second checkout (a git worktree) repoints it, and removing that checkout
+  breaks reaping until a VM is started from the main one. Fix: point the
+  hook at a stable path (e.g. the one in `flk-machines.service`), or have
+  `flk doctor` check that the hook's binary exists.
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
