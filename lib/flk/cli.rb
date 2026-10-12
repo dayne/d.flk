@@ -582,7 +582,7 @@ module Flk
 
     # Every listing command tidies machines that exited on their own, so the
     # host port map follows them (ports are global, hence all apps).
-    def reap_exited = VM.reap(App.all.flat_map(&:machines))
+    def reap_exited(wait: false) = VM.reap(App.all.flat_map(&:machines), wait: wait)
 
     def cmd_status(_args, o)
       reap_exited
@@ -850,10 +850,10 @@ module Flk
       end
     end
 
-    def ports_reap(_args, _o) = reap_exited
+    def ports_reap(_args, _o) = reap_exited(wait: true) # the tmux exit hook: no hurry, must not skip
 
     def ports_sync(_args, _o)
-      reap_exited
+      reap_exited(wait: true)
       Ports.sync! or raise Error, "port forwarding not applied"
       puts "Port forwarding synced"
     end

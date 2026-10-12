@@ -176,15 +176,22 @@ module Flk
     # their host ports to the next machine, or drop them, so the port map
     # never points at a dead IP. machine.json is left alone: another flk
     # process may be mid-update on it.
-    def reap(machines)
+    #
+    # wait: false (read commands): if another flk holds the lock, e.g. a
+    # deploy mid-roll, skip the whole reap rather than hang, and leave the
+    # pid files so the next look (or the tmux exit hook, which waits)
+    # finishes it. Tidying without syncing would strand the port mapping.
+    def reap(machines, wait: true)
       dead = machines.select(&:exited?)
       return if dead.empty?
-      dead.each do |m|
-        next unless m.exited? # re-check: another flk may have just restarted it
-        tmux_quiet("kill-session", "-t", m.session)
-        FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
+      Util.with_lock(wait: wait) do
+        dead.each do |m|
+          next unless m.exited? # re-check: another flk may have just restarted it
+          tmux_quiet("kill-session", "-t", m.session)
+          FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
+        end
+        Ports.sync! if dead.any? { Array(_1.config["ports"]).any? }
       end
-      Ports.sync! if dead.any? { Array(_1.config["ports"]).any? }
     end
 
     def wait_port(m, port, timeout = 30)

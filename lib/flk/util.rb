@@ -42,11 +42,13 @@ module Flk
 
     # One global lock for anything that allocates taps/volumes.
     # Re-entrant within a process (flock on a second fd would deadlock).
-    def with_lock
+    # wait: false returns :busy instead of waiting (a deploy holds the lock
+    # for its whole roll; read commands mustn't hang on it).
+    def with_lock(wait: true)
       return yield if @locked
       FileUtils.mkdir_p(ROOT)
       File.open(File.join(ROOT, ".lock"), File::RDWR | File::CREAT, 0o644) do |f|
-        f.flock(File::LOCK_EX)
+        return :busy unless f.flock(wait ? File::LOCK_EX : File::LOCK_EX | File::LOCK_NB)
         @locked = true
         yield
       ensure

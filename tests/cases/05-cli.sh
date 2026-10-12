@@ -244,3 +244,27 @@ test_hand_edited_volume_path_is_external() {
   assert_contains "$(flk volumes destroy hand)" "file kept at $d/hand.ext4"
   [[ -f $d/hand.ext4 ]] || fail "deleted a hand-placed volume file"
 }
+
+# G1: while another flk holds the lock (a deploy mid-roll), read commands
+# return at once instead of waiting to tidy an exited machine; the tidy-up
+# happens on the next look.
+test_reads_dont_block_on_the_lock() {
+  local mdir="$FLK_HOME/apps/$APP/machines/fakedead" marker="$WORK/locked.$$"
+  mkdir -p "$mdir"
+  printf '{"id":"fakedead","name":"fakedead","tap_index":98,"ip":"172.30.0.108","created_at":"2000-01-01T00:00:00Z","config":{"mounts":[],"ports":[{"proto":"tcp","port":45999,"internal_port":80}]}}' >"$mdir/machine.json"
+  echo 1 >"$mdir/pid" # pid 1 isn't firecracker: the machine "exited on its own"
+  ruby -e 'File.open(ARGV[0], File::RDWR | File::CREAT) { |f| f.flock(File::LOCK_EX); File.write(ARGV[1], "x"); sleep 20 }' \
+    "$FLK_HOME/.lock" "$marker" &
+  local holder=$!
+  wait_until 5 test -e "$marker" || { kill "$holder"; fail "lock holder never started"; }
+  local t0=$SECONDS rc=0
+  timeout 8 "$FLK_BIN" apps list --json >/dev/null || rc=$?
+  timeout 8 "$FLK_BIN" -a "$APP" status --json >/dev/null || rc=$?
+  local took=$((SECONDS - t0))
+  [[ -e $mdir/pid ]] || { kill "$holder"; fail "reaped without the lock"; }
+  kill "$holder"; wait "$holder" 2>/dev/null || true
+  ((rc == 0 && took < 4)) || fail "read commands waited on the lock (${took}s, rc=$rc)"
+  "$FLK_BIN" -a "$APP" status >/dev/null
+  [[ ! -e $mdir/pid ]] || fail "not reaped once the lock was free"
+  rm -rf "$mdir"
+}
