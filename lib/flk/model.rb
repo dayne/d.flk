@@ -79,6 +79,10 @@ module Flk
     def secrets      = Util.read_json(secrets_path, {})
     def save_secrets(h) = Util.write_json(secrets_path, h, mode: 0o600)
 
+    # A volume flk didn't create in its own state dir (--path, import, or a
+    # path edited by hand): flk never deletes its file.
+    def self.external_volume?(v) = v["external"] || !File.expand_path(v["path"].to_s).start_with?("#{ROOT}/")
+
     def volumes_path = File.join(dir, "volumes.json")
     def volumes      = Util.read_json(volumes_path, [])
     def save_volumes(v) = Util.write_json(volumes_path, v)

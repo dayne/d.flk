@@ -105,6 +105,22 @@ while kill -0 "$child" 2>/dev/null; do
 done
 
 log "app exited with status $status; powering off"
+
+# Leave every filesystem clean, so a stop never looks like a crash (no
+# journal to replay, and the host can inspect a stopped volume): stop
+# whatever the app left behind, unmount volumes in reverse order, then make
+# the rootfs read-only.
+kill -TERM -1 2>/dev/null; sleep 1; kill -KILL -1 2>/dev/null
+sync
+if [ -f /flk/config/mounts ]; then
+  sed -n '1!G;h;$p' /flk/config/mounts | while read -r dev path; do
+    [ -n "$path" ] || continue
+    umount "$path" 2>/dev/null || mount -o remount,ro "$path" 2>/dev/null ||
+      log "WARNING: couldn't unmount or remount read-only $path; it will need journal recovery"
+  done
+fi
+umount /flk/config 2>/dev/null
+mount -o remount,ro / 2>/dev/null || { sync; echo u > /proc/sysrq-trigger; } # u: emergency remount read-only
 sync
 echo b > /proc/sysrq-trigger   # guest reboot makes firecracker exit (reboot=k)
 sleep 5

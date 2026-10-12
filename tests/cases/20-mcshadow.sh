@@ -227,3 +227,14 @@ test_resume_skips_machines_stopped_on_purpose() {
   flk machine start "$(machine_id)"
   assert_eq started "$(desired)" "desired state after machine start"
 }
+
+# A stop unmounts volumes cleanly: no journal left to replay, so the host
+# can inspect (or back up) a stopped volume.
+test_stop_leaves_volume_clean() {
+  ensure_up
+  flk machine stop "$(machine_id)"
+  local vol; vol=$(flk volumes list --json | json_get 0.path)
+  ! /usr/sbin/dumpe2fs -h "$vol" 2>/dev/null | grep -qi needs_recovery || fail "volume needs journal recovery after a clean stop"
+  /usr/sbin/e2fsck -fn "$vol" >/dev/null 2>&1 || fail "e2fsck -fn found problems in the stopped volume"
+  flk machine start "$(machine_id)"
+}

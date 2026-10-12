@@ -231,3 +231,16 @@ test_context_all() {
     fail "context --all lacks $APP"
   assert_contains "$("$FLK_BIN" context --all)" "## $APP" "text overview"
 }
+
+# A volume whose file lives outside flk's state dir is external even
+# without the flag (hand-edited volumes.json): destroy must not delete it.
+test_hand_edited_volume_path_is_external() {
+  local d; d=$(mktemp -d "$WORK/hand.XXXX")
+  flk volumes create hand --size 1 >/dev/null
+  local vj="$FLK_HOME/apps/$APP/volumes.json"
+  local old; old=$(json_get 0.path <"$vj")
+  mv "$old" "$d/hand.ext4"
+  ruby -rjson -e 'v = JSON.parse(File.read(ARGV[0])); v[0]["path"] = ARGV[1]; File.write(ARGV[0], JSON.generate(v))' "$vj" "$d/hand.ext4"
+  assert_contains "$(flk volumes destroy hand)" "file kept at $d/hand.ext4"
+  [[ -f $d/hand.ext4 ]] || fail "deleted a hand-placed volume file"
+}

@@ -37,7 +37,10 @@ running machine; the next takes over when it stops.
 **Disk.** Everything is under `{{ROOT}}`: two release images per app,
 volumes (unless created with `--path`), logs. `flk apps prune` removes
 images of destroyed apps. To back up a volume, stop its machine and copy
-the file (`flk volumes list --json` shows the path).
+the file (`flk volumes list --json` shows the path): a stop unmounts it
+cleanly, so the copy is consistent. Volumes on other disks (`--path`):
+re-run `sudo {{SRC}}/setup-host.sh --install-service` once so reboots wait
+for that disk (`flk doctor` reminds you).
 
 **Updating flk.** `git -C {{SRC}} pull`, then `flk setup` for a newer
 firecracker or kernel. Running machines pick changes up on their next

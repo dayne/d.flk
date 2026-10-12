@@ -109,6 +109,12 @@ Each entry says where the issue is caught today, and where a fix could go.
   volumes with `--path` / `--from-dir` / `import` that flk never deletes;
   forwarded ports say they don't answer on 127.0.0.1 and show the address
   that does.
+- [x] From the bug report, part 2: a stop unmounts volumes and remounts the
+  rootfs read-only before the guest reboots (no journal replay; host tools
+  see a clean volume). `flk-machines.service` gets `RequiresMountsFor=` the
+  state dir and every external volume's dir; doctor warns when a volume's
+  disk isn't covered. Volumes outside the state dir count as external even
+  without the flag (a hand-edited path is never deleted).
 - [x] No more image and log leaks: release pruning and `apps destroy` untag
   `flk.local/APP:vN`; `flk apps prune` clears tags of apps already gone
   (doctor warns about them); `console.log` rotates to `console.log.1` past

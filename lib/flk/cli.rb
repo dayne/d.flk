@@ -208,15 +208,31 @@ module Flk
       results
     end
 
+    # Directories whose disks must be mounted while machines run: flk's
+    # state dir and every external volume's. flk-machines.service lists
+    # them as RequiresMountsFor= (start after the mounts, stop before them).
+    def mount_dirs
+      ext = App.all.flat_map(&:volumes).select { App.external_volume?(_1) }.map { File.dirname(_1["path"]) }
+      ([ROOT] + ext).uniq
+    end
+
+    def boot_unit_mount_dirs
+      out, st = Open3.capture2("systemctl", "show", "-p", "RequiresMountsFor", "--value", "flk-machines.service")
+      st.success? ? out.split : []
+    end
+
     # Optional: without it nothing comes back after a reboot.
     def boot_service_check(record)
       unit = "/etc/systemd/system/flk-machines.service"
       ok = File.exist?(unit) && system("systemctl", "is-enabled", "--quiet", "flk-machines.service", err: File::NULL)
-      if ok
-        record["boot service (machines come back after a reboot)", "pass", nil]
+      fix = "sudo #{SETUP_HOST} --install-service"
+      if !ok
+        record["boot service: after a reboot the network and machines stay down", "warn", fix]
+      elsif (missing = mount_dirs - boot_unit_mount_dirs).any?
+        record["boot service doesn't wait for the disk(s) of #{missing.join(', ')}: a reboot could start or stop machines without them",
+               "warn", "#{fix} (regenerates it)"]
       else
-        record["boot service: after a reboot the network and machines stay down", "warn",
-               "sudo #{SETUP_HOST} --install-service"]
+        record["boot service (machines come back after a reboot)", "pass", nil]
       end
     rescue SystemCallError
       record["boot service: systemctl not found", "warn", "after a reboot: sudo #{SETUP_HOST} && flk resume"]
@@ -260,6 +276,7 @@ module Flk
         h
       end
       { "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
+        "mount_dirs" => mount_dirs,
         "host" => { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
                     "lan_ip" => Net.host_lan_ip, "boot_service" => host.any? { _1["label"].start_with?("boot service (") } },
         "apps" => apps, "next_steps" => steps }
@@ -617,7 +634,7 @@ module Flk
         print "Destroy #{name}, its #{a.machines.size} machine(s) and #{a.volumes.size} volume(s)? [y/N] "
         return puts("Aborted") unless $stdin.gets.to_s.strip.downcase == "y"
       end
-      kept = a.volumes.select { _1["external"] }
+      kept = a.volumes.select { App.external_volume?(_1) }
       Util.with_lock { a.machines.each { destroy_machine(_1, force: true) } }
       FileUtils.rm_rf(a.dir) # external volume files live outside it
       Image.untag(name)
@@ -978,10 +995,10 @@ module Flk
       v = app.volumes
       return puts(JSON.pretty_generate(v)) if o[:json]
       return puts("No volumes") if v.empty?
-      ext = v.any? { _1["external"] }
+      ext = v.any? { App.external_volume?(_1) }
       Util.table(%w[ID NAME SIZE ATTACHED CREATED] + (ext ? ["FILE (external)"] : []),
                  v.map { [_1["id"], _1["name"], "#{_1['size_gb']}GB", _1["attached_machine"] || "-", Util.ago(_1["created_at"])] +
-                         (ext ? [_1["external"] ? _1["path"] : "-"] : []) })
+                         (ext ? [App.external_volume?(_1) ? _1["path"] : "-"] : []) })
     end
 
     def volume_name!(name)
@@ -1028,7 +1045,15 @@ module Flk
       register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path }.merge(o[:path] ? { "external" => true } : {}))
       puts "Created #{id} (#{name}, #{size}GB sparse#{", at #{path}" if o[:path]}#{", from #{from}" if from})"
       puts "Note: files keep their owner/group IDs from #{from}; the app may need to run as that user (or chown inside)." if from
+      boot_unit_note(path) if o[:path]
       next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
+    end
+
+    # A volume on another disk: the boot service must wait for that mount.
+    def boot_unit_note(path)
+      return unless File.exist?("/etc/systemd/system/flk-machines.service")
+      return if boot_unit_mount_dirs.include?(File.dirname(path))
+      puts Util.yellow("Run once so reboots wait for this disk: sudo #{SETUP_HOST} --install-service")
     end
 
     # --from-dir must fit with headroom: ext4 metadata takes a few percent.
@@ -1057,6 +1082,7 @@ module Flk
       register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path, "external" => true })
       puts "Imported #{path} as #{id} (#{name}, #{size}GB). flk won't delete this file."
       puts "Don't mount it on the host while a machine uses it."
+      boot_unit_note(path)
       next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
     end
 
@@ -1070,7 +1096,7 @@ module Flk
         if v["attached_machine"]
           raise Error, "#{v['id']} is attached to machine #{v['attached_machine']}; destroy that machine first"
         end
-        keep = v["external"] && !o[:delete_data]
+        keep = App.external_volume?(v) && !o[:delete_data]
         FileUtils.rm_f(v["path"]) unless keep
         a.save_volumes(a.volumes.reject { _1["id"] == v["id"] })
         puts keep ? "Unregistered #{v['id']}; file kept at #{v['path']} (--delete-data deletes it)" : "Destroyed #{v['id']}"
