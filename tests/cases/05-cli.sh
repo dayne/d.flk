@@ -144,3 +144,13 @@ test_short_image_names_explained() {
   assert_contains "$out" "FROM docker.io/library/ruby:3.3"
   assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from the failed build"
 }
+
+test_logpipe_rotates() {
+  local d; d=$(mktemp -d "$WORK/logpipe.XXXX")
+  seq 1 5000 | "$FLK_SRC/libexec/flk-logpipe" "$d/console.log" 10000
+  (($(stat -c %s "$d/console.log") <= 10010)) || fail "console.log grew past the limit"
+  [[ -s $d/console.log.1 ]] || fail "no console.log.1"
+  assert_eq 5000 "$(tail -n 1 "$d/console.log")" "last line kept"
+  printf 'partial' | "$FLK_SRC/libexec/flk-logpipe" "$d/p.log" 100
+  assert_eq partial "$(cat "$d/p.log")" "unterminated last line"
+}

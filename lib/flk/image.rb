@@ -90,9 +90,40 @@ module Flk
       File.chmod(0o755, File.join(fdir, "init"), File.join(fdir, "cmd"))
     end
 
+    def repo(app_name) = "flk.local/#{app_name}"
+
+    # Keep the last `keep` releases: their rootfs files and their engine tags.
     def prune(app, keep: 2)
       imgs = Dir.glob(File.join(app.dir, "images", "v*.ext4")).sort_by { File.basename(_1)[/\d+/].to_i }
       imgs[0...-keep].to_a.each { FileUtils.rm_f(_1) }
+      kept = imgs.last(keep).map { File.basename(_1, ".ext4") }
+      untag(app.name) { !kept.include?(_1) }
+    end
+
+    # flk's vN tags for an app (never other tags someone added by hand).
+    def tags(app_name)
+      out, st = Open3.capture2e(engine, "images", "--format", "{{.Tag}}", repo(app_name))
+      st.success? ? out.split.grep(/\Av\d+\z/).uniq : []
+    rescue Error, SystemCallError
+      []
+    end
+
+    # Untags (the image goes too once nothing else names it). Returns the count.
+    def untag(app_name, &keep_if_false)
+      gone = tags(app_name).select { keep_if_false ? keep_if_false.call(_1) : true }
+      gone.each { system(engine, "rmi", "#{repo(app_name)}:#{_1}", out: File::NULL, err: File::NULL) }
+      gone.size
+    end
+
+    # App names with flk.local tags but no app directory: leftovers from
+    # before apps destroy removed tags.
+    def orphan_repos
+      out, st = Open3.capture2e(engine, "images", "--format", "{{.Repository}}")
+      return [] unless st.success?
+      out.split.filter_map { _1.delete_prefix("flk.local/") if _1.start_with?("flk.local/") }.uniq
+         .reject { App::NAME_RE.match?(_1) && App.new(_1).exists? }
+    rescue Error, SystemCallError
+      []
     end
   end
 end

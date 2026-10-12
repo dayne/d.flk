@@ -142,6 +142,7 @@ everywhere.
 - `FLK_BRIDGE`, `FLK_SUBNET`, `FLK_TAPS`: must match what `setup-host.sh` used
 - `FLK_DNS`: resolvers handed to machines (default `1.1.1.1 9.9.9.9`)
 - `FLK_TMUX_SOCKET`: name of flk's own tmux server (default `flk`)
+- `FLK_LOG_MAX_MB`: size at which a machine's `console.log` rotates to `console.log.1` (default 10)
 - `NO_COLOR`: plain output
 
 ## Files
@@ -154,7 +155,7 @@ everywhere.
         volumes/vol_xxx.ext4
         machines/ID/
           machine.json  vm.json  rootfs.ext4  config.ext4
-          console.log  firecracker.log  fc.sock  pid
+          console.log  console.log.1  firecracker.log  fc.sock  pid
 
 The flk source is at `{{SRC}}`. Host setup lives in `setup-host.sh`, the host
 checker in `flk-sanity.sh`, and end-to-end tests in `tests/run.sh`. Known rough

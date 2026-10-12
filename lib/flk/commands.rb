@@ -67,7 +67,8 @@ module Flk
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "All apps on this host" },
           { name: "destroy", args: "NAME", opts: [["-y", "--yes", "Don't ask for confirmation"]],
             summary: "Destroy an app, its machines and volumes",
-            notes: ["Without a terminal (agents, scripts) --yes is required; otherwise it asks."] }
+            notes: ["Without a terminal (agents, scripts) --yes is required; otherwise it asks."] },
+          { name: "prune", summary: "Remove container images left behind by apps that no longer exist" }
         ] },
       { name: "config", group: "Apps", default_sub: "show", summary: "Inspect the app config",
         subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
@@ -97,7 +98,8 @@ module Flk
                ["-f", "--follow", "Keep following, even without a terminal"],
                ["--no-tail", "Print and exit, even in a terminal"]],
         summary: "Serial console output (app stdout/stderr and boot messages)",
-        notes: ["Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits."] },
+        notes: ["Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits.",
+                "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB."] },
       { name: "console", group: "Machines", args: "[ID]",
         blocks: "attaches an interactive terminal; agents should use `flk logs` instead",
         summary: "Attach to a machine's serial console",

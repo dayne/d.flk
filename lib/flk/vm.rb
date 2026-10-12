@@ -9,6 +9,8 @@ module Flk
     # groups it started with, so sharing a long-lived personal one can leave
     # firecracker without the kvm group even after the user logs back in.
     TMUX = ["tmux", "-L", ENV.fetch("FLK_TMUX_SOCKET", "flk")].freeze
+    # console.log rotates to console.log.1 past this (see libexec/flk-logpipe)
+    LOG_MAX_BYTES = Integer(ENV.fetch("FLK_LOG_MAX_MB", "10")) * 1024 * 1024
 
     def firecracker_bin
       ENV["FLK_FIRECRACKER"] ||
@@ -118,7 +120,8 @@ module Flk
       Util.run!(*TMUX, "new-session", "-d", "-s", m.session, "-x", "200", "-y", "50",
                 "exec #{[bin, '--api-sock', sock, '--log-path', fclog, '--level', 'Warning'].shelljoin}")
       install_exit_hook
-      Util.run!(*TMUX, "pipe-pane", "-t", m.session, "-o", "cat >> #{m.path('console.log').shellescape}")
+      Util.run!(*TMUX, "pipe-pane", "-t", m.session, "-o",
+                [File.join(LIBEXEC, "flk-logpipe"), m.path("console.log"), LOG_MAX_BYTES.to_s].shelljoin)
       File.write(m.path("pid"), Util.run!(*TMUX, "display-message", "-p", "-t", m.session, '#{pane_pid}').strip)
 
       Util.wait_for(5) { File.socket?(sock) } or

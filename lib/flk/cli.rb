@@ -180,6 +180,9 @@ module Flk
           record["podman can't resolve short image names like FROM ruby:3.3 (full names work)", "warn", Image::REGISTRIES_FIX]
         end
       end
+      if eng && (orphans = Image.orphan_repos).any?
+        record["#{orphans.size} destroyed app#{'s' if orphans.size > 1} still have container images", "warn", "flk apps prune"]
+      end
       port_helper_check(record)
       results
     end
@@ -429,7 +432,10 @@ module Flk
           end
         end
       ensure
-        FileUtils.rm_f(File.join(a.dir, "images", "v#{version}.ext4")) unless recorded
+        unless recorded
+          FileUtils.rm_f(File.join(a.dir, "images", "v#{version}.ext4"))
+          Image.untag(a.name) { _1 == "v#{version}" }
+        end
       end
       Image.prune(a)
 
@@ -526,7 +532,15 @@ module Flk
       end
       Util.with_lock { a.machines.each { destroy_machine(_1, force: true) } }
       FileUtils.rm_rf(a.dir)
+      Image.untag(name)
       puts "Destroyed app #{name}"
+    end
+
+    def apps_prune(_args, _o)
+      names = Image.orphan_repos
+      return puts("Nothing to prune") if names.empty?
+      n = names.sum { Image.untag(_1) }
+      puts "Removed #{n} image tag#{'s' unless n == 1} of #{names.size} destroyed app#{'s' unless names.size == 1}: #{names.join(', ')}"
     end
 
     def config_show(_args, _o)
