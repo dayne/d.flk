@@ -1,0 +1,12 @@
+# Smallest possible flk app: boots, prints, exits, and the VM powers off.
+app = "hello"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  GREETING = "hello world"
+
+[[vm]]
+  cpus = 1
+  memory_mb = 128

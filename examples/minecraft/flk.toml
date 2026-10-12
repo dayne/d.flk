@@ -1,0 +1,40 @@
+# A real Minecraft Java server (itzg/minecraft-server), reachable on
+# <your host's LAN IP>:25565 once `sudo ./setup-host.sh` has installed port
+# forwarding. The same file works as a fly.toml.
+#
+#   cd examples/minecraft
+#   flk launch --no-deploy
+#   flk volumes create world --size 10
+#   flk deploy
+#   flk logs              # wait for "Done (...)! For help, type "help""
+#
+# Image options: https://docker-minecraft-server.readthedocs.io
+app = "minecraft"
+
+# World saves on shutdown can take a while; give the server time before
+# flk kills the VM.
+kill_timeout = 60
+
+[build]
+  image = "docker.io/itzg/minecraft-server:latest"
+
+[env]
+  EULA = "TRUE"            # you accept the Minecraft EULA: https://aka.ms/MinecraftEULA
+  TYPE = "PAPER"           # or VANILLA, FABRIC, FORGE...
+  MEMORY = "3G"            # JVM heap; keep ~1GB below the VM's memory
+  MOTD = "flk minecraft"
+  ENABLE_RCON = "false"
+
+[[vm]]
+  cpus = 2
+  memory = "4gb"
+
+[[mounts]]
+  source = "world"
+  destination = "/data"    # world, configs, plugins
+
+[[services]]
+  internal_port = 25565
+  protocol = "tcp"
+  [[services.ports]]
+    port = 25565

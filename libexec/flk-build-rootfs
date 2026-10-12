@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# flk-build-rootfs ENGINE IMAGE OVERLAY_DIR OUT.ext4 [EXTRA_MB]
+#
+# Flattens an OCI image into a bootable ext4 file without root:
+# `fakeroot` records file ownership from the tar, and `mkfs.ext4 -d`
+# (e2fsprogs >= 1.43) reads it back while populating the filesystem.
+set -euo pipefail
+export PATH="$PATH:/usr/sbin:/sbin"
+
+engine=$1 image=$2 overlay=$3 out=$4 extra_mb=${5:-512}
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/flk-rootfs.XXXXXX")
+cid=""
+cleanup() {
+  [[ -n $cid ]] && "$engine" rm -f "$cid" >/dev/null 2>&1 || true
+  rm -rf "$work"
+}
+trap cleanup EXIT
+
+# The trailing command lets `create` work for images with no CMD (scratch etc).
+cid=$("$engine" create "$image" /bin/true)
+"$engine" export "$cid" > "$work/rootfs.tar"
+
+fr=()
+if command -v fakeroot >/dev/null; then
+  fr=(fakeroot)
+else
+  echo "flk: WARNING: fakeroot not found; every file in the rootfs will be owned by uid $(id -u)" >&2
+fi
+
+${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
+  root=$1 tar=$2 overlay=$3 out=$4 extra=$5
+  mkdir -p "$root"
+  tar -xpf "$tar" -C "$root" --numeric-owner 2>/dev/null || tar -xpf "$tar" -C "$root" --numeric-owner
+  cp -a "$overlay"/. "$root"/
+  chown -R 0:0 "$root/flk"
+  mkdir -p "$root"/{proc,sys,dev,run,tmp,etc}
+  chmod 1777 "$root/tmp"
+  used=$(du -sm "$root" | cut -f1)
+  size=$(( used + used / 4 + extra ))
+  rm -f "$out"
+  truncate -s "${size}M" "$out"
+  mkfs.ext4 -F -q -L flk-root -d "$root" "$out"
+  echo "    rootfs: ${used}MB used, ${size}MB image -> $out"
+' _ "$work/root" "$work/rootfs.tar" "$overlay" "$out" "$extra_mb"

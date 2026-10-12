@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# flk-fetch-assets: download firecracker + a guest kernel into $FLK_HOME (no root).
+#   FC_VERSION=v1.x.y    pin a firecracker release (default: latest)
+#   FLK_KERNEL_URL=...   use your own vmlinux instead of Firecracker's CI kernel
+set -euo pipefail
+
+dest=${FLK_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/flk}
+arch=$(uname -m)
+mkdir -p "$dest/bin" "$dest/kernel"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+ver=${FC_VERSION:-}
+if [[ -z $ver ]]; then
+  ver=$(curl -fsSL https://api.github.com/repos/firecracker-microvm/firecracker/releases/latest |
+        sed -n 's/.*"tag_name": *"\(v[^"]*\)".*/\1/p' | head -1)
+  [[ -n $ver ]] || { echo "could not determine latest firecracker release; set FC_VERSION" >&2; exit 1; }
+fi
+
+tgz="firecracker-${ver}-${arch}.tgz"
+base="https://github.com/firecracker-microvm/firecracker/releases/download/${ver}"
+echo "==> firecracker ${ver} (${arch})"
+curl -fsSL -o "$tmp/$tgz" "$base/$tgz"
+if curl -fsSL -o "$tmp/$tgz.sha256.txt" "$base/$tgz.sha256.txt"; then
+  (cd "$tmp" && sha256sum -c "$tgz.sha256.txt")
+else
+  echo "    WARNING: no checksum file published for $tgz; skipping verification" >&2
+fi
+tar -xzf "$tmp/$tgz" -C "$tmp"
+install -m 0755 "$tmp/release-${ver}-${arch}/firecracker-${ver}-${arch}" "$dest/bin/firecracker"
+"$dest/bin/firecracker" --version | head -1
+
+echo "==> guest kernel"
+if [[ -n ${FLK_KERNEL_URL:-} ]]; then
+  url=$FLK_KERNEL_URL
+else
+  # Firecracker's CI kernels. Up to v1.15 they live under firecracker-ci/vX.Y/;
+  # since 2026 CI publishes dated dirs (firecracker-ci/YYYYMMDD-sha-N/) and the
+  # getting-started guide just takes the newest. Try the versioned dir first so
+  # a pinned older FC_VERSION gets its matching kernel.
+  s3="https://s3.amazonaws.com/spec.ccfc.min"
+  newest_kernel() { # PREFIX -> newest plain vmlinux-X.Y.Z key under it
+    curl -fsSL "$s3/?list-type=2&prefix=${1}${arch}/vmlinux-" |
+      grep -oE "<Key>${1}${arch}/vmlinux-[0-9]+\.[0-9]+\.[0-9]+</Key>" |
+      sed 's#</\{0,1\}Key>##g' | sort -V | tail -1 || true
+  }
+  key=$(newest_kernel "firecracker-ci/${ver%.*}/")   # v1.12.1 -> v1.12
+  if [[ -z $key ]]; then
+    for prefix in $(curl -fsSL "$s3/?list-type=2&prefix=firecracker-ci/&delimiter=/" |
+                    grep -oE '<Prefix>firecracker-ci/[0-9]{8}-[^/]+/</Prefix>' |
+                    sed 's#</\{0,1\}Prefix>##g' | sort -r | head -5); do
+      key=$(newest_kernel "$prefix")
+      [[ -n $key ]] && break
+    done
+  fi
+  [[ -n $key ]] || { echo "no CI kernel found for ${ver%.*} or recent CI builds (${arch}); set FLK_KERNEL_URL" >&2; exit 1; }
+  url="$s3/${key}"
+fi
+echo "    $url"
+curl -fsSL -o "$dest/kernel/vmlinux.new" "$url"
+mv "$dest/kernel/vmlinux.new" "$dest/kernel/vmlinux"
+
+# Keep the kernel's build config when published: flk's guest networking
+# relies on the kernel `ip=` boot arg, which needs CONFIG_IP_PNP.
+rm -f "$dest/kernel/vmlinux.config"
+if curl -fsSL -o "$dest/kernel/vmlinux.config" "$url.config" 2>/dev/null; then
+  grep -q '^CONFIG_IP_PNP=y' "$dest/kernel/vmlinux.config" ||
+    echo "    WARNING: kernel lacks CONFIG_IP_PNP; guests will need 'ip' in the image for networking" >&2
+else
+  rm -f "$dest/kernel/vmlinux.config"
+fi
+echo "==> assets ready in $dest"

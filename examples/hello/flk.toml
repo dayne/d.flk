@@ -1,0 +1,17 @@
+app = "hello"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  GREETING = "hi from flk"
+
+[http_service]
+  internal_port = 8080
+
+[[vm]]
+  size = "shared-cpu-1x"
+
+[[mounts]]
+  source = "data"
+  destination = "/data"

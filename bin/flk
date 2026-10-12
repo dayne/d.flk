@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# flk: fly.io-style CLI for local Firecracker microVMs
+$LOAD_PATH.unshift File.expand_path("../lib", File.dirname(File.realpath(__FILE__)))
+ENV["PATH"] = "#{ENV['PATH']}:/usr/sbin:/sbin" # mkfs.ext4 lives here on Debian/Ubuntu
+require "flk"
+Flk::CLI.start(ARGV)

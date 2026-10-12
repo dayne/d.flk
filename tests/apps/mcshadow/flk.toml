@@ -1,0 +1,25 @@
+# A stand-in for a Minecraft server: speaks the server-list-ping protocol,
+# keeps its "world" on a volume, and takes SAVE_SECONDS to save on shutdown.
+app = "mcshadow"
+kill_timeout = 30
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  MOTD = "flk shadow server"
+  SAVE_SECONDS = "2"
+
+[[vm]]
+  cpus = 1
+  memory = "512mb"
+
+[[mounts]]
+  source = "world"
+  destination = "/data"
+
+[[services]]
+  internal_port = 25565
+  protocol = "tcp"
+  [[services.ports]]
+    port = 25565

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# flk-ports: the one root operation flk needs at runtime: replacing the
+# host-port -> machine DNAT map in nft table `ip flk`.
+#
+#   flk-ports replace < lines of "PROTO HOST_PORT MACHINE_IP MACHINE_PORT"
+#   flk-ports list
+#
+# setup-host.sh installs a root-owned copy at /usr/local/libexec/flk-ports
+# (with the subnet and port floor baked in, since sudo drops the environment)
+# and a sudoers rule letting the flk user run just that copy without a
+# password. Never point sudoers at this repo copy: it's user-writable.
+#
+# This is the safety boundary, so it refuses host ports below min_port
+# (system services: ssh, http...) and ports a host process listens on:
+# DNAT would silently steal their inbound traffic. flk filters both out
+# before calling; these checks stop anything that calls the helper directly.
+set -euo pipefail
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
+subnet="@FLK_SUBNET@"   # replaced at install, e.g. 172.30.0
+min_port="@FLK_MIN_PORT@" # replaced at install; default 1024
+max_entries=256
+
+die() { echo "flk-ports: $*" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || die "must run as root (via sudo)"
+[[ $subnet =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]] || die "not installed by setup-host.sh (subnet placeholder unset)"
+[[ $min_port =~ ^[0-9]{1,5}$ ]] || die "not installed by setup-host.sh (min_port placeholder unset)"
+
+port_ok() { [[ $1 =~ ^[0-9]{1,5}$ ]] && ((10#$1 >= 1 && 10#$1 <= 65535)); }
+
+# " tcp/22 udp/53 ... ": ports a host process listens on, other than on
+# loopback (the DNAT rules skip 127.0.0.0/8). /proc/net addresses are hex;
+# IPv4 is little-endian, so 127.x.x.x ends in 7F.
+host_listeners() {
+  local proto want f _sl laddr _rem state out=" "
+  for proto in tcp udp; do
+    [[ $proto == tcp ]] && want=0A || want=07   # LISTEN / unconnected UDP
+    for f in /proc/net/$proto /proc/net/${proto}6; do
+      [[ -r $f ]] || continue
+      while read -r _sl laddr _rem state _; do
+        [[ $state == "$want" ]] || continue
+        case ${laddr%:*} in
+          ??????7F | 00000000000000000000000001000000 | 0000000000000000FFFF0000??????7F) continue ;;
+        esac
+        out+="$proto/$((16#${laddr#*:})) "
+      done < <(tail -n +2 "$f")
+    done
+  done
+  echo "$out"
+}
+
+replace() {
+  local elems=() seen=" " n=0 proto hport ip mport octet listening
+  listening=$(host_listeners)
+  while read -r proto hport ip mport extra; do
+    [[ -z ${proto:-} ]] && continue
+    ((++n <= max_entries)) || die "more than $max_entries entries"
+    [[ -z ${extra:-} ]] || die "line $n: too many fields"
+    [[ $proto == tcp || $proto == udp ]] || die "line $n: protocol must be tcp or udp"
+    port_ok "$hport" || die "line $n: bad host port '$hport'"
+    port_ok "$mport" || die "line $n: bad machine port '$mport'"
+    ((10#$hport >= 10#$min_port)) || die "line $n: host port $hport is below $min_port (re-run setup-host.sh with FLK_MIN_PORT to allow it)"
+    [[ $listening != *" $proto/$((10#$hport)) "* ]] || die "line $n: a host process is listening on $proto port $hport"
+    [[ $ip == "$subnet".* ]] || die "line $n: $ip is outside $subnet.0/24"
+    octet=${ip##*.}
+    [[ $octet =~ ^[0-9]{1,3}$ ]] && ((10#$octet >= 2 && 10#$octet <= 254)) || die "line $n: bad machine ip '$ip'"
+    [[ $seen != *" $proto/$((10#$hport)) "* ]] || die "line $n: $proto port $hport listed twice"
+    seen+="$proto/$((10#$hport)) "
+    elems+=("$proto . $((10#$hport)) : $subnet.$((10#$octet)) . $((10#$mport))")
+  done
+
+  # One nft transaction: flush + refill, so the map is never half-updated.
+  {
+    echo "flush map ip flk ports"
+    if ((${#elems[@]})); then
+      local IFS=,
+      echo "add element ip flk ports { ${elems[*]} }"
+    fi
+  } | nft -f - || die "nft rejected the update (has setup-host.sh created table ip flk?)"
+}
+
+case ${1:-} in
+  replace) replace ;;
+  list)    nft list map ip flk ports ;;
+  *)       die "usage: flk-ports replace|list" ;;
+esac

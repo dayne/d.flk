@@ -1,0 +1,131 @@
+module Flk
+  # Reads flk.toml, or an existing fly.toml unchanged.
+  # Fly-only keys (primary_region, concurrency, checks...) are ignored.
+  class AppConfig
+    FILES = %w[flk.toml fly.toml].freeze
+
+    attr_reader :path, :data
+
+    def self.find(dir = Dir.pwd)
+      f = FILES.map { File.join(dir, _1) }.find { File.exist?(_1) }
+      f && new(f)
+    end
+
+    def initialize(path)
+      @path = path
+      @data = TOML.load_file(path)
+    rescue TOML::ParseError => e
+      raise Error, "#{File.basename(path)}: #{e.message}"
+    end
+
+    def dir = File.dirname(File.expand_path(path))
+
+    def app
+      name = data["app"].to_s
+      raise Error, "#{File.basename(path)} has no 'app' name" if name.empty?
+      name
+    end
+
+    def build      = data["build"].is_a?(Hash) ? data["build"] : {}
+    def image      = build["image"]
+    def dockerfile = build["dockerfile"] || "Dockerfile"
+    def build_args = (build["args"] || {}).to_h { |k, v| [k.to_s, v.to_s] }
+    def env        = (data["env"] || {}).to_h { |k, v| [k.to_s, v.to_s] }
+
+    # fly's [experimental] cmd / entrypoint overrides
+    def entrypoint = argv(data.dig("experimental", "entrypoint"))
+    def cmd        = argv(data.dig("experimental", "cmd"))
+
+    def mounts
+      [data["mounts"]].flatten.compact.map do |m|
+        { "source" => m["source"].to_s, "destination" => m["destination"].to_s }
+      end
+    end
+
+    def internal_port
+      data.dig("http_service", "internal_port") ||
+        [data["services"]].flatten.compact.first&.dig("internal_port")
+    end
+
+    def vm = [data["vm"]].flatten.compact.first || {}
+
+    def cpus
+      return vm["cpus"].to_i if vm["cpus"]
+      vm["size"].to_s =~ /-cpu-(\d+)x\z/ ? $1.to_i : 1
+    end
+
+    # Mirrors fly presets: shared-cpu-Nx = 256MB*N, performance-Nx = 2GB*N
+    def memory_mb
+      return vm["memory_mb"].to_i if vm["memory_mb"]
+      return parse_mem(vm["memory"]) if vm["memory"]
+      case vm["size"].to_s
+      when /\Aperformance-cpu-(\d+)x\z/ then 2048 * $1.to_i
+      when /\Ashared-cpu-(\d+)x\z/ then 256 * $1.to_i
+      else 256
+      end
+    end
+
+    def rootfs_extra_mb = (data.dig("flk", "rootfs_extra_mb") || 512).to_i
+
+    # fly's kill_timeout: seconds between the stop signal and a hard kill.
+    # Accepts 30 or "30s"/"2m", like fly. Default 10 (flk's old fixed value).
+    def kill_timeout
+      v = data["kill_timeout"]
+      return 10 if v.nil?
+      s = v.to_s.strip.downcase
+      raise Error, "can't parse kill_timeout '#{v}' (want seconds, e.g. 30 or \"30s\")" unless s =~ /\A(\d+)(s|m)?\z/
+      $2 == "m" ? $1.to_i * 60 : $1.to_i
+    end
+
+    # Host ports from [[services]] + [[services.ports]], forwarded from every
+    # host address to the machine (see Ports). [http_service] is not exposed:
+    # on Fly it means public 80/443, which a laptop shouldn't grab implicitly.
+    # Ports below the helper's floor (1024 unless setup-host.sh was given
+    # FLK_MIN_PORT) are refused here, so deploy fails before anything boots.
+    def ports
+      [data["services"]].flatten.compact.flat_map do |svc|
+        proto = (svc["protocol"] || "tcp").to_s.downcase
+        raise Error, "[[services]] protocol '#{proto}' not supported (tcp or udp)" unless %w[tcp udp].include?(proto)
+        internal = svc["internal_port"] or raise Error, "[[services]] needs internal_port"
+        [svc["ports"]].flatten.compact.map do |p|
+          port = Integer(p["port"] || raise(Error, "[[services.ports]] needs port"))
+          raise Error, "[[services.ports]] port #{port} isn't a valid port" unless port.between?(1, 65_535)
+          if port < (min = Ports.min_port)
+            raise Error, "[[services.ports]] port #{port} is below #{min}, where host services live; " \
+                         "use a higher port, or allow it: sudo FLK_MIN_PORT=#{port} ./setup-host.sh"
+          end
+          { "proto" => proto, "port" => port, "internal_port" => Integer(internal) }
+        end
+      end
+    end
+
+    # The snapshot each machine keeps, like a Fly machine's own config.
+    def machine_config
+      env.each_key { |k| raise Error, "[env] key '#{k}' isn't a valid variable name" unless k.match?(ENV_KEY) }
+      {
+        "cpus" => cpus,
+        "memory_mb" => memory_mb,
+        "env" => env,
+        "mount_specs" => mounts,
+        "internal_port" => internal_port,
+        "ports" => ports,
+        "kill_timeout" => kill_timeout,
+        "kernel_args" => data.dig("flk", "kernel_args")
+      }
+    end
+
+    private
+
+    def argv(v)
+      return nil if v.nil?
+      v.is_a?(String) ? v.shellsplit : Array(v).map(&:to_s)
+    end
+
+    def parse_mem(v)
+      return v if v.is_a?(Integer) # fly treats bare ints as MB
+      s = v.to_s.strip.downcase
+      raise Error, "can't parse memory '#{v}'" unless s =~ /\A(\d+(?:\.\d+)?)\s*(gb|g|mb|m)?\z/
+      ($2.to_s.start_with?("g") ? $1.to_f * 1024 : $1.to_f).to_i
+    end
+  end
+end
