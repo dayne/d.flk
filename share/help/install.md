@@ -26,10 +26,12 @@ says which step you're at.
    podman can't resolve `FROM ruby:3.3`, run the one-liner it shows. It adds
    a user-level drop-in, no root.
 
-5. **Optional: shell completion.**
+5. **Optional: shell completion** (commands, options, app names, machine IDs).
 
-       mkdir -p ~/.local/share/bash-completion/completions
-       flk completion bash > ~/.local/share/bash-completion/completions/flk
+       echo 'source <(flk completion bash)' >> ~/.bashrc
+
+   Or, where the bash-completion package is loaded, drop it in its folder:
+   `flk completion bash > ~/.local/share/bash-completion/completions/flk`.
 
 6. **Check.** `flk doctor` should end with "Ready to fly, locally."
    `{{SRC}}/tests/run.sh` runs the end-to-end tests (a few minutes).

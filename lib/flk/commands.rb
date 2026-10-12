@@ -44,7 +44,7 @@ module Flk
         notes: ["`flk COMMAND --help` is the same as `flk help COMMAND`."] },
       { name: "completion", group: "Start here", args: "SHELL",
         summary: "Print a tab-completion script (bash; zsh via bashcompinit)",
-        notes: ["Install: flk completion bash > ~/.local/share/bash-completion/completions/flk",
+        notes: ["Install: echo 'source <(flk completion bash)' >> ~/.bashrc  (or, with bash-completion loaded: flk completion bash > ~/.local/share/bash-completion/completions/flk)",
                 "zsh: autoload -U bashcompinit && bashcompinit && source <(flk completion bash)"] },
 
       { name: "setup", group: "Setup",
