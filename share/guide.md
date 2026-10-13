@@ -117,6 +117,11 @@ also its own help page: {{TOPICS}}.
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
   (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
+- `[flk] bind` (flk only): forward this app's host ports only on these host
+  addresses (`"10.47.11.3"` or a list) instead of on every host address;
+  `"all"` overrides a host-wide `bind`. Apps can then share a port on
+  different addresses. Needs the port helper from a current
+  `sudo {{SRC}}/setup-host.sh`.
 - `[flk]` (flk only): `http_port` (host port for `[http_service]`), `kernel_args`,
   `rootfs_extra_mb` (default 512), `stdin` (`"console"`, the default: the app
   reads what you type in `flk console`; `"null"`: /dev/null, like

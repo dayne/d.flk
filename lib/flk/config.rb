@@ -136,6 +136,26 @@ module Flk
       list
     end
 
+    # [flk] bind: forward this app's host ports only on these host
+    # addresses ("10.47.11.3" or a list), or on all of them ("all", which
+    # also overrides a host-wide bind). nil: the host default.
+    def bind = AppConfig.bind_list(data.dig("flk", "bind"), "[flk] bind")
+
+    def self.bind_list(v, label)
+      return nil if v.nil?
+      list = Array(v).map(&:to_s)
+      raise Error, "#{label} is empty" if list.empty?
+      return ["all"] if list == ["all"]
+      list.each do |a|
+        ok = a.match?(/\A\d{1,3}(\.\d{1,3}){3}\z/) && a.split(".").all? { _1.to_i <= 255 }
+        raise Error, "#{label} '#{a}' isn't an IPv4 address (or \"all\")" unless ok
+        raise Error, "#{label} #{a}: loopback isn't forwarded; use the host's LAN address" if a.start_with?("127.", "0.")
+        raise Error, "#{label} #{a} is a machine address (#{Net::SUBNET}.0/24), not the host's" if a.start_with?("#{Net::SUBNET}.")
+      end
+      raise Error, "#{label} lists an address twice" if list.uniq.size < list.size
+      list
+    end
+
     # Ports below the helper's floor (1024 unless setup-host.sh was given
     # FLK_MIN_PORT) are refused here, so deploy fails before anything boots.
     def host_port(v, label)
@@ -163,7 +183,8 @@ module Flk
         "kill_timeout" => kill_timeout,
         "kernel_args" => data.dig("flk", "kernel_args"),
         "stdin" => app_stdin,
-        "restart" => restart
+        "restart" => restart,
+        "bind" => bind
       }
     end
 
@@ -221,10 +242,13 @@ module Flk
   # Settings for this host (not an app): ~/.config/flk/host.toml.
   #   backup_dir  = "/data/flk-backups"   # where flk volumes backup copies to
   #   backup_keep = 7                     # backups kept per volume
+  #   address     = "10.47.11.3"          # the address flk tells people to use
+  #   bind        = "10.47.11.3"          # forward ports only there (default
+  #                                       # for apps without [flk] bind)
   module Host
     PATH = ENV["FLK_HOST_CONFIG"] ||
            File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
-    KEYS = %w[backup_dir backup_keep].freeze
+    KEYS = %w[backup_dir backup_keep address bind].freeze
 
     module_function
 
@@ -233,6 +257,10 @@ module Flk
       h = TOML.load_file(PATH)
       unknown = h.keys - KEYS
       raise Error, "#{PATH}: unknown setting(s) #{unknown.join(', ')} (known: #{KEYS.join(', ')})" if unknown.any?
+      AppConfig.bind_list(h["address"], "#{PATH}: address")&.then do |a|
+        raise Error, "#{PATH}: address is one address" unless a.size == 1 && a != ["all"]
+      end
+      h["bind"] = AppConfig.bind_list(h["bind"], "#{PATH}: bind") if h.key?("bind")
       h
     rescue TOML::ParseError => e
       raise Error, "#{PATH}: #{e.message}"

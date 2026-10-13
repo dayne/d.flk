@@ -308,8 +308,8 @@ test_context_no_host_is_cheap() {
   local fast full
   fast=$(PATH="$bin:$PATH" flk context --all --json --no-host)
   [[ ! -s $bin/calls ]] || fail "--no-host ran: $(cat "$bin/calls")"
-  assert_eq '{"lan_ip":'"$(json_get host.lan_ip <<<"$fast" | ruby -rjson -e 'print JSON.generate($stdin.read.strip)')"'}' \
-    "$(json_get host <<<"$fast")" "host is just lan_ip"
+  assert_eq '["address","lan_ip"]' "$(json_get host <<<"$fast" | ruby -rjson -e 'print JSON.generate(JSON.parse($stdin.read).keys.sort)')" \
+    "host is just lan_ip and address"
   full=$(flk context --all --json)
   assert_eq "$(json_get apps <<<"$full")" "$(json_get apps <<<"$fast")" "same apps"
   assert_contains "$(PATH="$bin:$PATH" flk context --no-host)" "$APP" "one app, text"

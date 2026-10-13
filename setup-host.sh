@@ -214,18 +214,25 @@ nft -f - <<EOF
 table ip flk
 delete table ip flk
 table ip flk {
-  # host port -> machine ip . port, refilled by flk through the port helper
+  # host port -> machine ip . port, refilled by flk through the port helper:
+  # addr_ports for ports bound to one host address ([flk] bind), ports for
+  # the rest (any host address). A miss in addr_ports falls through.
+  map addr_ports {
+    type ipv4_addr . inet_proto . inet_service : ipv4_addr . inet_service
+  }
   map ports {
     type inet_proto . inet_service : ipv4_addr . inet_service
   }
-  # Traffic to any host address (LAN IP etc.), except loopback.
+  # Traffic to a host address (LAN IP etc.), except loopback.
   chain prerouting {
     type nat hook prerouting priority dstnat; policy accept;
+    fib daddr type local ip daddr != 127.0.0.0/8 dnat ip to ip daddr . meta l4proto . th dport map @addr_ports
     fib daddr type local ip daddr != 127.0.0.0/8 dnat ip to meta l4proto . th dport map @ports
   }
   # The same for connections made from the host itself.
   chain output {
     type nat hook output priority dstnat; policy accept;
+    fib daddr type local ip daddr != 127.0.0.0/8 dnat ip to ip daddr . meta l4proto . th dport map @addr_ports
     fib daddr type local ip daddr != 127.0.0.0/8 dnat ip to meta l4proto . th dport map @ports
   }
   chain postrouting {

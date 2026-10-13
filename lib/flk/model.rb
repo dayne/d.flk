@@ -26,6 +26,22 @@ module Flk
       nil
     end
 
+    # Where people should connect: the host setting `address`, else the
+    # default route's source (host_lan_ip).
+    def host_address
+      Host.settings["address"] || host_lan_ip
+    rescue Error
+      host_lan_ip
+    end
+
+    # IPv4 addresses on this host's interfaces (not loopback).
+    def local_addresses
+      out, st = Open3.capture2e("ip", "-o", "-4", "addr", "show")
+      st.success? ? out.scan(%r{\binet (\d+\.\d+\.\d+\.\d+)/}).flatten.reject { _1.start_with?("127.") } : []
+    rescue SystemCallError
+      []
+    end
+
     # Kernel-level IP config: works even in images without iproute2.
     def kernel_ip_arg(i, hostname) = "ip=#{ip(i)}::#{GATEWAY}:255.255.255.0:#{hostname}:eth0:off"
 

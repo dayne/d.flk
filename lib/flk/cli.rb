@@ -250,6 +250,7 @@ module Flk
       exit_hook_check(record)
       backup_check(record)
       services_check(record)
+      address_check(record)
       results
     end
 
@@ -309,6 +310,36 @@ module Flk
       else
         record["exit hook (#{bin})", "pass", nil]
       end
+    end
+
+    # The host address setting and every bind address in use should be on
+    # this host; one that isn't answers nothing (fine for a floating
+    # address another host holds right now, so only a warn).
+    def address_check(record)
+      s = Host.settings
+      local = Net.local_addresses
+      wanted = s["address"] ? { s["address"] => "address in #{Host::PATH}" } : {}
+      Array(s["bind"]).each { wanted[_1] ||= "bind in #{Host::PATH}" }
+      App.all.each do |a|
+        a.machines.each { |m| Array(m.config["bind"]).each { wanted[_1] ||= "[flk] bind of #{a.name}" } }
+      end
+      wanted.delete("all")
+      bound = (Array(s["bind"]) - ["all"]).any? ||
+              App.all.any? { |a| a.machines.any? { (Array(_1.config["bind"]) - ["all"]).any? } }
+      if bound && Ports.available? && !Ports.per_address?
+        record["bind is set, but the port helper predates it: ports still answer on every host address", "warn",
+               "sudo #{SETUP_HOST}"]
+      end
+      wanted.each do |addr, why|
+        if local.include?(addr)
+          record["#{addr} (#{why}) is on this host", "pass", nil]
+        else
+          record["#{addr} (#{why}) isn't on this host: nothing answers there", "warn",
+                 "add it to the interface (netplan), or ignore while another host holds it (floating address)"]
+        end
+      end
+    rescue Error => e
+      record[e.message, "warn", "fix #{Host::PATH}"]
     end
 
     FLK_UNITS = %w[flk-net.service flk-machines.service].freeze
@@ -412,10 +443,10 @@ module Flk
         "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
         "mount_dirs" => mount_dirs,
         "host" => if no_host
-                    { "lan_ip" => Net.host_lan_ip }
+                    { "lan_ip" => Net.host_lan_ip, "address" => Net.host_address }
                   else
                     { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
-                      "lan_ip" => Net.host_lan_ip, "boot_service" => host.any? { _1["label"].start_with?("boot service (") },
+                      "lan_ip" => Net.host_lan_ip, "address" => Net.host_address, "boot_service" => host.any? { _1["label"].start_with?("boot service (") },
                       "services" => services_status }
                   end,
         "apps" => apps, "next_steps" => steps }
@@ -424,10 +455,10 @@ module Flk
     def host_context_text(c)
       h = c["host"]
       health = if h.key?("ok")
-                 "#{h['ok'] ? 'ready' : 'NOT ready'}, LAN IP #{h['lan_ip'] || '?'}, " \
+                 "#{h['ok'] ? 'ready' : 'NOT ready'}, address #{h['address'] || h['lan_ip'] || '?'}, " \
                    "boot service #{h['boot_service'] ? 'installed' : 'missing'}"
                else
-                 "not checked (--no-host), LAN IP #{h['lan_ip'] || '?'}"
+                 "not checked (--no-host), address #{h['address'] || h['lan_ip'] || '?'}"
                end
       out = ["# flk host overview", "",
              "flk #{c['flk']['version']}  state: #{c['flk']['state_dir']}  source: #{c['flk']['source']}",
@@ -441,7 +472,7 @@ module Flk
           flag = m["state"] != "started" && m["desired_state"] == "started" ? "  <- should be running" : ""
           out << "  #{m['id']} [#{m['name']}] #{m['state']} #{m['ip']}#{m['internal_port'] ? ":#{m['internal_port']}" : ''}#{flag}"
         end
-        Array(a.dig("ports", "active")).each { out << "  port #{_1['key']} -> #{_1['address'] || "LAN IP:#{_1['port']}"}" }
+        Array(a.dig("ports", "active")).each { out << "  port #{Ports.label(_1)} -> #{_1['address'] || "LAN IP:#{_1['port']}"}" }
         Array(a.dig("ports", "blocked")).each { out << "  port #{_1['key']} blocked: #{_1['blocked']}" }
         vols = Array(a["volumes"])
         out << "  volumes: #{vols.map { "#{_1['name']} #{_1['size_gb']}GB#{' (external)' if _1['external']}" }.join(', ')}" if vols.any?
@@ -462,7 +493,7 @@ module Flk
             "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE),
                        "reference" => "flk help --all" },
             "host" => if no_host
-                        { "lan_ip" => Net.host_lan_ip }
+                        { "lan_ip" => Net.host_lan_ip, "address" => Net.host_address }
                       else
                         { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" } }
                       end,
@@ -578,7 +609,7 @@ module Flk
           out << "volumes: #{a['volumes'].map { "#{_1['name']}=#{_1['id']}(#{_1['attached_machine'] || 'free'})" }.join(', ').then { _1.empty? ? 'none' : _1 }}"
           out << "secrets: #{a['secrets'].empty? ? 'none' : a['secrets'].join(', ')}"
           ports = a["ports"]
-          rows = ports["active"].map { "#{_1['key']} -> #{_1['ip']}:#{_1['internal_port']} (active; connect to #{_1['address'] || "host LAN IP:#{_1['port']}"}, not 127.0.0.1)" } +
+          rows = ports["active"].map { "#{Ports.label(_1)} -> #{_1['ip']}:#{_1['internal_port']} (active; connect to #{_1['address'] || "host LAN IP:#{_1['port']}"}, not 127.0.0.1)" } +
                  ports["waiting"].map { "#{_1['key']} (waiting: held by another machine)" } +
                  ports["blocked"].map { "#{_1['key']} (blocked: #{_1['blocked']})" }
           out << "host ports: #{rows.empty? ? 'none' : rows.join('; ')}"
@@ -1057,17 +1088,19 @@ module Flk
     end
 
     def show_ports(m)
-      Array(m.config["ports"]).each do |p|
+      Array(m.config["ports"]).product(Ports.binds(m)).each do |p, bind|
         key = "#{p['proto']}/#{p['port']}"
-        o = Ports.owner(key)
-        if (why = Ports.blocked_reason(p["proto"], p["port"]))
-          puts Util.yellow("    ⚠ host port #{key} not forwarded: #{why}")
+        label = bind ? "#{bind}:#{key}" : key
+        o = Ports.owner(key, bind)
+        if (why = Ports.blocked_reason(p["proto"], p["port"], bind: bind))
+          puts Util.yellow("    ⚠ host port #{label} not forwarded: #{why}")
         elsif o.nil? || !Ports.available?
           next
         elsif o["machine"] == m.id
-          puts "    host port #{key} -> #{m.ip}:#{p['internal_port']}  (reach it at #{Net.host_lan_ip || 'the host LAN IP'}:#{p['port']}, not 127.0.0.1)"
+          puts "    host port #{label} -> #{m.ip}:#{p['internal_port']}  " \
+               "(reach it at #{bind || Net.host_address || 'the host LAN IP'}:#{p['port']}, not 127.0.0.1)"
         else
-          puts Util.yellow("    ⚠ host port #{key} is taken by #{o['app']} (#{o['machine']}); this machine gets it when that one stops")
+          puts Util.yellow("    ⚠ host port #{label} is taken by #{o['app']} (#{o['machine']}); this machine gets it when that one stops")
         end
       end
     end
@@ -1083,9 +1116,10 @@ module Flk
     # active rows get "address": where to connect (host LAN IP:port)
     def ports_json
       active, waiting, blocked = Ports.table
-      lan = Net.host_lan_ip
+      lan = Net.host_address
       { "helper_installed" => Ports.available?, "min_port" => Ports.min_port, "host_address" => lan,
-        "active" => active.map { _1.merge("address" => lan && "#{lan}:#{_1['port']}") },
+        "per_address" => Ports.per_address?,
+        "active" => active.map { _1.merge("address" => (a = _1["bind"] || lan) && "#{a}:#{_1['port']}") },
         "waiting" => waiting, "blocked" => blocked }
     end
 
@@ -1095,12 +1129,13 @@ module Flk
       active, waiting, blocked = Ports.table
       puts Util.yellow("Port helper not installed; run: sudo #{SETUP_HOST}\n") unless Ports.available?
       return puts("No forwarded ports (add [[services.ports]] to flk.toml)") if [active, waiting, blocked].all?(&:empty?)
-      row = ->(r, status) { [r["key"], r["machine"], "#{r['ip']}:#{r['internal_port']}", r["app"], status] }
+      row = ->(r, status) { [Ports.label(r), r["machine"], "#{r['ip']}:#{r['internal_port']}", r["app"], status] }
       Util.table(%w[HOST_PORT MACHINE TARGET APP STATUS],
                  active.map { row[_1, "active"] } + waiting.map { row[_1, "waiting (port taken)"] } +
                  blocked.map { row[_1, "blocked: #{_1['blocked']}"] })
       return if active.empty?
-      puts "\nConnect to #{Net.host_lan_ip || 'the host LAN IP'}:PORT (from the host too) or the TARGET directly; " \
+      where = active.any? { _1["bind"].nil? } ? "#{Net.host_address || 'the host LAN IP'}:PORT" : "the address shown:PORT"
+      puts "\nConnect to #{where} (from the host too) or the TARGET directly; " \
            "not 127.0.0.1, which isn't forwarded (for TCP: flk proxy PORT)."
     end
 

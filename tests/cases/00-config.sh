@@ -196,3 +196,35 @@ test_stdin_option() {
   out=$(config 2>&1) && fail "accepted stdin = tty"
   assert_contains "$out" '[flk] stdin must be "console" or "null"'
 }
+
+test_bind_option() {
+  stage_app hello
+  assert_eq null "$(config | json_get machine_config.bind)" "default: host setting / all"
+  toml_append '[flk]' '  bind = "10.47.11.3"'
+  assert_eq '["10.47.11.3"]' "$(config | json_get machine_config.bind)" "one address"
+  toml_set 'bind' 'bind = ["10.47.11.3", "192.168.1.5"]'
+  assert_eq '["10.47.11.3","192.168.1.5"]' "$(config | json_get machine_config.bind)" "a list"
+  toml_set 'bind' 'bind = "all"'
+  assert_eq '["all"]' "$(config | json_get machine_config.bind)" "all"
+  local bad out
+  for bad in '"127.0.0.1"' '"172.30.0.12"' '"10.47.11.300"' '"lan"' '["10.0.0.1", "10.0.0.1"]'; do
+    toml_set 'bind' "bind = $bad"
+    out=$(config 2>&1) && fail "accepted bind = $bad"
+    assert_contains "$out" "[flk] bind" "error names the setting ($bad)"
+  done
+}
+
+test_host_settings_address_and_bind() {
+  stage_app hello
+  local h="$WORK/host-bind-$RUN_ID.toml" out
+  printf 'address = "10.99.0.7"\nbind = "10.99.0.7"\n' >"$h"
+  assert_eq 10.99.0.7 "$(FLK_HOST_CONFIG="$h" flk context --json --no-host | json_get host.address)" "address shown"
+  out=$(FLK_HOST_CONFIG="$h" flk doctor 2>&1)
+  assert_contains "$out" "10.99.0.7 (address in $h) isn't on this host"
+  printf 'address = "nope"\n' >"$h"
+  out=$(FLK_HOST_CONFIG="$h" flk doctor 2>&1)
+  assert_contains "$out" "address 'nope' isn't an IPv4 address"
+  printf 'adress = "10.99.0.7"\n' >"$h"
+  out=$(FLK_HOST_CONFIG="$h" flk doctor 2>&1)
+  assert_contains "$out" "unknown setting(s) adress"
+}

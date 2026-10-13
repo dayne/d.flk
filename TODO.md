@@ -120,17 +120,13 @@ rule matches `fib daddr type local`), so a second address added with
 netplan (e.g. 10.47.11.3 next to the DHCP one) works with no flk change.
 To consider:
 
-- [ ] **Advertised address.** flk prints `host_lan_ip` (the default
-  route's source, the DHCP address) in hints, `ports`, `context`. A host
-  setting (`FLK_PUBLIC_IP` or `~/.config/flk/host.toml`) for the address
-  to show, checked by doctor ("not on any interface" / "floating, held by
-  another host").
-- [ ] **Forward only on chosen addresses.** Per app (`[flk] bind =
-  "10.47.11.3"`) or per host: the map key becomes `daddr . proto . port`,
-  so apps can share a port on different IPs (two Minecraft servers on
-  :25565, each with its own LAN IP), and games stop answering on the
-  host's own address. The helper must check the address is local (or
-  floating) and keep the min_port/listener guards per address.
+- [x] **Advertised address** (`address` in `~/.config/flk/host.toml`; doctor
+  checks it's on this host) and **forwarding on chosen addresses**
+  (`[flk] bind` per app, `bind` per host; nft map `addr_ports` keyed by
+  address, tried before the any-address map; the helper checks listeners
+  per address). Tested for real in a private network namespace
+  (tests/cases/06-ports-netns.sh). An old helper keeps forwarding on every
+  address rather than dropping ports.
 - [ ] **Managed extra addresses.** Instead of hand-editing netplan, flk-net
   could add/remove listed LAN addresses (`ip addr add ... ` + gratuitous
   ARP) from a root-owned config; doctor checks nobody else answers ARP for
@@ -146,6 +142,16 @@ To consider:
   Must make split brain impossible: never start an app whose volume
   another host may hold (a lease/fence, or refuse unless this host holds
   the floating address).
+
+## Builds
+
+- [ ] **An interrupted build leaves buildah working containers.** Ctrl-C
+  during `flk deploy`'s podman build (seen by the lazyflk session:
+  `ruby-working-container`, `4b61b6598784-working-container`, status
+  Storage in `podman ps -a --external`) leaves them pinning layers;
+  `apps destroy` and `apps prune` don't see them. Build with `--force-rm`,
+  remove the build's working containers on Interrupt, and have
+  `apps prune` / doctor report leftover external containers.
 
 ## Bigger features
 

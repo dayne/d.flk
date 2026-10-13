@@ -41,6 +41,21 @@ config flk derived, `flk machine status ID` what a machine runs with.
 per `[[mounts]]` entry: create them first. Host ports go to the first
 running machine; the next takes over when it stops.
 
+**LAN addresses.** Forwarded ports answer on every address the host has,
+so a second address (say 10.47.11.3 next to the DHCP one, added with
+netplan) works with no flk change. In `~/.config/flk/host.toml`:
+
+    address = "10.47.11.3"   # what flk shows people (hints, ports, context)
+    bind    = "10.47.11.3"   # forward ports only there, for every app
+
+or per app, `[flk] bind = "10.47.11.3"` in flk.toml (a list works; `"all"`
+undoes a host-wide bind), then `flk deploy`. Host settings apply at the
+next `flk ports sync`. Two apps can then use the same port on different
+addresses. `bind` needs the port helper from a current
+`sudo {{SRC}}/setup-host.sh`; until then flk keeps forwarding on every
+address and `flk doctor` says so. doctor also warns about an address
+that isn't on this host (expected for a floating one another host holds).
+
 **Disk.** Everything is under `{{ROOT}}`: two release images per app,
 volumes (unless created with `--path`), logs. `flk apps prune` removes
 images of destroyed apps. Volumes on other disks (`--path`):

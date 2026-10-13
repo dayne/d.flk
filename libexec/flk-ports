@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # flk-ports: the one root operation flk needs at runtime: replacing the
-# host-port -> machine DNAT map in nft table `ip flk`.
+# host-port -> machine DNAT maps in nft table `ip flk`.
 #
-#   flk-ports replace < lines of "PROTO HOST_PORT MACHINE_IP MACHINE_PORT"
+#   flk-ports replace < lines of "PROTO HOST_PORT MACHINE_IP MACHINE_PORT [HOST_ADDRESS]"
+#     (with HOST_ADDRESS: only traffic to that address, map addr_ports;
+#     without: traffic to any host address, map ports)
 #   flk-ports list
 #
 # setup-host.sh installs a root-owned copy at /usr/local/libexec/flk-ports
@@ -28,59 +30,99 @@ die() { echo "flk-ports: $*" >&2; exit 1; }
 
 port_ok() { [[ $1 =~ ^[0-9]{1,5}$ ]] && ((10#$1 >= 1 && 10#$1 <= 65535)); }
 
-# " tcp/22 udp/53 ... ": ports a host process listens on, other than on
-# loopback (the DNAT rules skip 127.0.0.0/8). /proc/net addresses are hex;
-# IPv4 is little-endian, so 127.x.x.x ends in 7F.
+# " tcp/22/* udp/53/10.0.0.5 ... ": proto/port/address of the sockets a
+# host process listens on, other than loopback (the DNAT rules skip
+# 127.0.0.0/8). address is * for all addresses (0.0.0.0, or :: which takes
+# IPv4 too), dotted IPv4, or v6 for an IPv6-only one. /proc/net addresses
+# are little-endian hex words, so 127.x.x.x ends in 7F.
+v4() { printf '%d.%d.%d.%d' "0x${1:6:2}" "0x${1:4:2}" "0x${1:2:2}" "0x${1:0:2}"; }
 host_listeners() {
-  local proto want f _sl laddr _rem state out=" "
+  local proto want f _sl laddr _rem state hex addr out=" "
   for proto in tcp udp; do
     [[ $proto == tcp ]] && want=0A || want=07   # LISTEN / unconnected UDP
     for f in /proc/net/$proto /proc/net/${proto}6; do
       [[ -r $f ]] || continue
       while read -r _sl laddr _rem state _; do
         [[ $state == "$want" ]] || continue
-        case ${laddr%:*} in
+        hex=${laddr%:*}
+        case $hex in
           ??????7F | 00000000000000000000000001000000 | 0000000000000000FFFF0000??????7F) continue ;;
+          00000000 | 00000000000000000000000000000000) addr="*" ;;
+          ????????) addr=$(v4 "$hex") ;;
+          0000000000000000FFFF0000????????) addr=$(v4 "${hex:24:8}") ;;
+          *) addr=v6 ;;
         esac
-        out+="$proto/$((16#${laddr#*:})) "
+        out+="$proto/$((16#${laddr#*:}))/$addr "
       done < <(tail -n +2 "$f")
     done
   done
   echo "$out"
 }
 
+# A host address a port may be bound to: dotted IPv4, not loopback, not
+# 0.0.0.0, not a machine's. Being local isn't required: a floating address
+# (keepalived) may be on another host for now; DNAT only matches local ones.
+addr_ok() {
+  local IFS=. o
+  [[ $1 =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || return 1
+  for o in $1; do ((10#$o <= 255)) || return 1; done
+  [[ $1 != 127.* && $1 != 0.* && $1 != "$subnet".* ]]
+}
+
 replace() {
-  local elems=() seen=" " n=0 proto hport ip mport octet listening
+  local elems=() addr_elems=() seen=" " n=0 proto hport ip mport addr extra octet listening key
   listening=$(host_listeners)
-  while read -r proto hport ip mport extra; do
+  while read -r proto hport ip mport addr extra; do
     [[ -z ${proto:-} ]] && continue
     ((++n <= max_entries)) || die "more than $max_entries entries"
     [[ -z ${extra:-} ]] || die "line $n: too many fields"
     [[ $proto == tcp || $proto == udp ]] || die "line $n: protocol must be tcp or udp"
     port_ok "$hport" || die "line $n: bad host port '$hport'"
     port_ok "$mport" || die "line $n: bad machine port '$mport'"
-    ((10#$hport >= 10#$min_port)) || die "line $n: host port $hport is below $min_port (re-run setup-host.sh with FLK_MIN_PORT to allow it)"
-    [[ $listening != *" $proto/$((10#$hport)) "* ]] || die "line $n: a host process is listening on $proto port $hport"
+    hport=$((10#$hport))
+    ((hport >= 10#$min_port)) || die "line $n: host port $hport is below $min_port (re-run setup-host.sh with FLK_MIN_PORT to allow it)"
+    if [[ -n ${addr:-} ]]; then
+      addr_ok "$addr" || die "line $n: bad host address '$addr'"
+      [[ $listening != *" $proto/$hport/* "* && $listening != *" $proto/$hport/$addr "* ]] ||
+        die "line $n: a host process is listening on $proto port $hport ($addr)"
+    else
+      [[ $listening != *" $proto/$hport/"* ]] || die "line $n: a host process is listening on $proto port $hport"
+    fi
     [[ $ip == "$subnet".* ]] || die "line $n: $ip is outside $subnet.0/24"
     octet=${ip##*.}
     [[ $octet =~ ^[0-9]{1,3}$ ]] && ((10#$octet >= 2 && 10#$octet <= 254)) || die "line $n: bad machine ip '$ip'"
-    [[ $seen != *" $proto/$((10#$hport)) "* ]] || die "line $n: $proto port $hport listed twice"
-    seen+="$proto/$((10#$hport)) "
-    elems+=("$proto . $((10#$hport)) : $subnet.$((10#$octet)) . $((10#$mport))")
+    key="$proto/$hport/${addr:-*}"
+    [[ $seen != *" $key "* ]] || die "line $n: $proto port $hport${addr:+ on $addr} listed twice"
+    seen+="$key "
+    if [[ -n ${addr:-} ]]; then
+      addr_elems+=("$addr . $proto . $hport : $subnet.$((10#$octet)) . $((10#$mport))")
+    else
+      elems+=("$proto . $hport : $subnet.$((10#$octet)) . $((10#$mport))")
+    fi
   done
 
-  # One nft transaction: flush + refill, so the map is never half-updated.
+  # One nft transaction: flush + refill, so the maps are never half-updated.
+  # A table from an older setup-host.sh has no addr_ports map.
+  local has_addr=0
+  nft list map ip flk addr_ports >/dev/null 2>&1 && has_addr=1
+  ((has_addr || ${#addr_elems[@]} == 0)) || die "this host's nft table predates per-address ports; re-run setup-host.sh"
   {
     echo "flush map ip flk ports"
-    if ((${#elems[@]})); then
-      local IFS=,
-      echo "add element ip flk ports { ${elems[*]} }"
-    fi
+    ((has_addr)) && echo "flush map ip flk addr_ports"
+    local IFS=,
+    ((${#elems[@]})) && echo "add element ip flk ports { ${elems[*]} }"
+    ((${#addr_elems[@]})) && echo "add element ip flk addr_ports { ${addr_elems[*]} }"
+    true
   } | nft -f - || die "nft rejected the update (has setup-host.sh created table ip flk?)"
+}
+
+list() {
+  nft list map ip flk ports
+  nft list map ip flk addr_ports 2>/dev/null || true
 }
 
 case ${1:-} in
   replace) replace ;;
-  list)    nft list map ip flk ports ;;
+  list)    list ;;
   *)       die "usage: flk-ports replace|list" ;;
 esac
