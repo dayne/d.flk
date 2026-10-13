@@ -238,6 +238,11 @@ To consider:
   (`--no-copy` skips); `flk volumes copy [NAME] [--dest D] [--backup B]
   [--keep N]` by hand, skipping what's there. Each backup records
   `copies: [{ to, at, ok, seconds, error? }]`; doctor warns about stale ones.
+- [x] Backup space (PLAN.md M1.3): a backup that doesn't fit prunes the
+  backups it would push past `keep` first (keep >= 2), else refuses with
+  what's there; it warns when `keep` copies won't fit. Doctor estimates all
+  volumes at their keep counts. `flk disk --json` has
+  `backups.apps.APP.volumes.VOL = { bytes, apparent, count }`.
 
 - [x] Graceful stop: `/flk/init` now disables the kernel's Ctrl-Alt-Del hard
   reboot, so stop sends the app SIGTERM instead of pulling the plug.

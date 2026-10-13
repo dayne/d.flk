@@ -143,3 +143,47 @@ test_failed_copy_is_reported_and_recorded() {
   assert_contains "$out" "$APP/data (never copied)" "doctor warns"
   host_conf
 }
+
+# ---------- space ----------
+
+# In a user+mount namespace (no root): backup_dir on a small tmpfs. flk
+# wants the volume's used size U + 5% + 1GB free; a copy takes C (less:
+# zero blocks stay holes). Sized so that three copies fit, the fourth only
+# once older ones go; then, with C more taken by something else, nothing
+# fits, and a lone backup (--keep 1) never goes.
+test_low_space_prunes_first_then_refuses() {
+  command -v podman >/dev/null || skip_test "needs podman unshare"
+  mkdir -p "$WORK/seed30-$RUN_ID"
+  head -c 30M /dev/urandom >"$WORK/seed30-$RUN_ID/blob"
+  flk volumes create bulk30 --size 1 --from-dir "$WORK/seed30-$RUN_ID" >/dev/null
+  rm -rf "$WORK/seed30-$RUN_ID"
+  local small="$WORK/small-$RUN_ID" out rc=0 u
+  u=$(( $(stat -c '%b * %B' "$(vol_path bulk30)") / 1024 )) # KB
+  mkdir -p "$small"
+  out=$(cd "$APP_DIR" && podman unshare unshare -m sh -c '
+    mount -t tmpfs -o size=2g tmpfs "$1" || exit 77
+    b() { d=$1 f=$2; shift 2; FLK_HOST_CONFIG=/dev/null "$f" volumes backup bulk30 --to "$d" --no-check "$@"; }
+    b "$1" "$2" || exit 1
+    c=$(du -sk "$1" | cut -f1)
+    mount -o remount,size=$((1048576 + $3 * 105 / 100 + 2 * c + c / 2))k "$1" || exit 4
+    for i in 2 3; do sleep 1; b "$1" "$2" || exit 1; done
+    sleep 1; echo "== 4th"; b "$1" "$2" --keep 2 || exit 2
+    echo "count=$(ls "$1"/*/bulk30/*.ext4 | wc -l)"
+    head -c $((c * 1024)) /dev/urandom >"$1/filler"
+    sleep 1; echo "== 5th"; b "$1" "$2" --keep 1 && exit 3
+    echo "count=$(ls "$1"/*/bulk30/*.ext4 | wc -l)"
+  ' sh "$small" "$FLK_BIN" "$u" 2>&1) || rc=$?
+  flk volumes destroy bulk30 >/dev/null
+  [[ $rc == 77 ]] && skip_test "can't mount tmpfs in a user namespace here"
+  [[ $rc == 0 ]] || fail "exit $rc: $out"
+  assert_contains "$out" "pruned 2 old backups first"
+  assert_contains "$out" "not enough space in"
+  assert_contains "$out" "fewer with --keep"
+  [[ $(grep -c "count=2" <<<"$out") == 2 ]] || fail "expected 2 backups after the 4th and after the refused 5th: $out"
+}
+
+test_disk_json_has_backups_per_volume() {
+  local out; out=$(flk disk --json)
+  assert_eq "$BK" "$(json_get backups.dir <<<"$out")"
+  [[ $(json_get "backups.apps.$APP.volumes.data.count" <<<"$out") -ge 1 ]] || fail "no per-volume count: $out"
+}

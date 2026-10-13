@@ -63,11 +63,38 @@ module Flk
 
     def same_fs?(a, b) = File.stat(a).dev == File.stat(b).dev
 
+    def room?(need, free) = free > need * 1.05 + 1024**3
+
     def room!(src, dir)
       need = used_bytes(src)
       free = free_bytes(dir)
-      return if free > need * 1.05 + 1024**3
+      return if room?(need, free)
       raise Error, "not enough space in #{dir}: the copy needs about #{gb(need)}, #{gb(free)} is free"
+    end
+
+    # Space for a new backup of src, before copying. When it doesn't fit
+    # but would once the backups this one pushes past `keep` are gone,
+    # those go first (only with keep >= 2, so one older backup always
+    # stays). Returns { pruned: [files], steady:, available: } where
+    # steady is roughly what `keep` backups of this volume will take and
+    # available what they can have (free space plus the existing ones).
+    def make_room!(src, root, app, vol, keep)
+      dir = dir_for(root, app, vol)
+      need = used_bytes(src)
+      have = list(root, app, vol)
+      free = free_bytes(dir)
+      pruned = []
+      unless room?(need, free)
+        going = have.drop(keep - 1)
+        if keep >= 2 && going.any? && room?(need, free + going.sum { _1["bytes_used"] })
+          pruned = prune(root, app, vol, keep - 1)
+          free = free_bytes(dir)
+        else
+          raise Error, "not enough space in #{dir}: the copy needs about #{gb(need)}, #{gb(free)} is free" \
+                       "#{" (#{have.size} older backups there take #{gb(have.sum { _1['bytes_used'] })}; fewer with --keep)" if have.any?}"
+        end
+      end
+      { pruned: pruned, steady: need * keep, available: free + list(root, app, vol).sum { _1["bytes_used"] } }
     end
 
     # Copy to a .partial file, renamed into place only when complete, so a

@@ -407,11 +407,37 @@ module Flk
       elsif !File.directory?(dir) || !File.writable?(dir)
         record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn", "mount it, or fix #{Host::PATH}"]
       else
-        record["backups go to #{dir} (#{Backup.gb(Backup.free_bytes(dir))} free)", "pass", nil]
+        backup_space_check(record, dir)
         backup_copy_check(record, dir)
       end
     rescue Error => e
       record[e.message, "warn", "fix #{Host::PATH}"]
+    end
+
+    # Will `keep` backups of every volume that has backups fit? Each takes
+    # about its volume's used space; they can have the free space plus
+    # what flk's backups there take now.
+    def backup_space_check(record, root)
+      free = Backup.free_bytes(root)
+      host_keep = Backup.keep(nil)
+      now = 0
+      steady = App.all.sum do |a|
+        keep = ((config_for(a.name)&.backup || {})["keep"] rescue nil) || host_keep
+        a.volumes.sum do |v|
+          bs = Backup.list(root, a.name, v)
+          now += bs.sum { _1["bytes_used"] }
+          bs.empty? || !File.exist?(v["path"].to_s) ? 0 : keep * Backup.used_bytes(v["path"])
+        end
+      end
+      room = free + now
+      label = "backups go to #{root}: #{Backup.gb(now)} now, about #{Backup.gb(steady)} at their keep counts; " \
+              "#{Backup.gb(free)} free"
+      if steady > room * 0.9
+        record["#{label}: that's tight (#{(100.0 * steady / room).round}% of #{Backup.gb(room)})", "warn",
+               "lower backup_keep / [flk.backup] keep, or give #{root} more space"]
+      else
+        record[label, "pass", nil]
+      end
     end
 
     # With backup_copy_to: is every backed-up volume's newest copy recent?
@@ -1590,7 +1616,13 @@ module Flk
       backups = begin
         dir = Host.settings["backup_dir"]
         if dir && File.directory?(dir)
-          per = App.all.to_h { |a| [a.name, du_tree(File.join(dir, a.name))] }
+          per = App.all.to_h do |a|
+            vols = a.volumes.map { _1["name"] }.uniq.to_h do |n|
+              files = Dir[File.join(dir, a.name, n, "*.ext4")].grep(%r{/#{n}-\d{8}T\d{6}Z\.ext4\z})
+              [n, du(Dir[File.join(dir, a.name, n, "*")]).merge("count" => files.size)]
+            end
+            [a.name, du_tree(File.join(dir, a.name)).merge("volumes" => vols)]
+          end
           { "dir" => dir, "apps" => per }.merge(per.values.reduce(zero) { add_du(_1, _2) })
         end
       rescue Error
@@ -1772,10 +1804,19 @@ module Flk
       raise Error, "#{src} is missing (is its disk mounted?)" unless File.exist?(src)
       dir = Backup.dir_for(root, a.name, v)
       FileUtils.mkdir_p(dir)
-      Backup.room!(src, dir)
+      space = Backup.make_room!(src, root, a.name, v, keep)
+      if space[:pruned].any?
+        puts Util.yellow("  low on space in #{root}: pruned #{space[:pruned].size} old backup#{'s' if space[:pruned].size > 1} first " \
+                         "(#{space[:pruned].join(', ')})")
+      end
+      if space[:steady] > space[:available]
+        puts Util.yellow("  ⚠ #{keep} backups of #{v['name']} will take about #{Backup.gb(space[:steady])}; " \
+                         "#{root} has room for about #{Backup.gb(space[:available])} (lower keep, or free space)")
+      end
       m = volume_user(a, v)
       mode = m ? plan["mode"] : "offline"
       dst = File.join(dir, "#{v['name']}-#{Time.now.utc.strftime(Backup::STAMP)}.ext4")
+      raise Error, "#{File.basename(dst)} already exists (two backups in one second); try again" if File.exist?(dst)
       puts "==> #{a.name}/#{v['name']}: #{Backup.gb(Backup.used_bytes(src))} used, " \
            "#{m ? "machine #{m.id} running, mode #{mode}" : 'no machine running'} -> #{dst}"
       t0 = Time.now
