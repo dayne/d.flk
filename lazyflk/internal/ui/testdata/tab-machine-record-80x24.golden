@@ -12,11 +12,11 @@
 │ Host                       │   "tap_index": 0,                               │
 │   health ✔                 │   "ip": "172.30.0.10",                          │
 │                            │   "mac": "06:00:ac:1e:00:0a",                   │
-│ Storage                    │   "release": 8,                                 │
-│   / 20%                    │   "config": {                                   │
+│ Storage                    │   "release": 9,                                 │
+│   / 21%                    │   "config": {                                   │
 │   /data/minecraft 66%      │     "cpus": 4,                                  │
 │   /data/vintagestory 56%   │     "memory_mb": 11264,                         │
-│                            │ … 50 more (pgdn)                                │
+│                            │ … 66 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

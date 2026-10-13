@@ -103,7 +103,7 @@ func fixtureFor(args []string) (string, bool) {
 		return "secrets-" + app + ".json", true
 	case cmd == "volumes backups --json":
 		return "backups-" + app + ".json", true
-	case cmd == "config show":
+	case cmd == "config show", cmd == "config show --json":
 		return "config-" + app + ".json", true
 	case len(args) == 3 && args[0] == "machine" && args[1] == "status":
 		return "machine-status.json", true

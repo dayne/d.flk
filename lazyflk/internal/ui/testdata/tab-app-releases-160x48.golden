@@ -3,18 +3,18 @@
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk releases --json                                                                              │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ v8   2026-10-12 07:08Z  Dockerfile  current                                                                         │
-│ ▾ vintagestory-flk  1/1 ●              │      running on mellow-aurora-7882                                                                                  │
-│   ● frosty-river-2714                  │ v7   2026-10-12 06:58Z  Dockerfile                                                                                  │
-│   ▢ vsdata 40GB (external)             │ v6   2026-10-12 06:41Z  Dockerfile                                                                                  │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ v5   2026-10-12 06:34Z  Dockerfile                                                                                  │
-│                                        │ v4   2026-10-12 05:35Z  Dockerfile                                                                                  │
-│ Host                                   │ v3   2026-10-12 05:30Z  Dockerfile                                                                                  │
-│   health ✔                             │ v2   2026-10-12 05:20Z  Dockerfile                                                                                  │
-│                                        │ v1   2026-10-12 05:01Z  Dockerfile                                                                                  │
-│ Storage                                │                                                                                                                     │
-│   / 20%                                │                                                                                                                     │
-│   /data/minecraft 66%                  │                                                                                                                     │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ v9   2026-10-13 08:31Z  Dockerfile  current                                                                         │
+│ ▾ vintagestory-flk  1/1 ●              │      on mellow-aurora-7882                                                                                          │
+│   ● frosty-river-2714                  │ v8   2026-10-12 07:08Z  Dockerfile  kept                                                                            │
+│   ▢ vsdata 40GB (external)             │ v7   2026-10-12 06:58Z  Dockerfile  kept                                                                            │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ v6   2026-10-12 06:41Z  Dockerfile  image pruned                                                                    │
+│                                        │ v5   2026-10-12 06:34Z  Dockerfile  image pruned                                                                    │
+│ Host                                   │ v4   2026-10-12 05:35Z  Dockerfile  image pruned                                                                    │
+│   health ✔                             │ v3   2026-10-12 05:30Z  Dockerfile  image pruned                                                                    │
+│                                        │ v2   2026-10-12 05:20Z  Dockerfile  image pruned                                                                    │
+│ Storage                                │ v1   2026-10-12 05:01Z  Dockerfile  image pruned                                                                    │
+│   / 21%                                │                                                                                                                     │
+│   /data/minecraft 66%                  │ kept: its image is still here, so it can be rolled back to (enter, r)                                               │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
+│   4 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │

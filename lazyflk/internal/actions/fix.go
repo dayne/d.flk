@@ -8,9 +8,10 @@ import (
 )
 
 var (
-	flkRE   = regexp.MustCompile(`\bflk [a-z]`)
-	parenRE = regexp.MustCompile(`\([^()]*\)`)
-	tokenRE = regexp.MustCompile(`^[A-Za-z0-9._/:=@+-]+$`)
+	flkRE     = regexp.MustCompile(`\bflk [a-z]`)
+	parenRE   = regexp.MustCompile(`\([^()]*\)`)
+	tokenRE   = regexp.MustCompile(`^[A-Za-z0-9._/:=@+-]+$`)
+	versionRE = regexp.MustCompile(`^v[0-9]+$`)
 )
 
 // flk's top-level commands (flk help --all), so prose like "flk doesn't
@@ -68,6 +69,9 @@ func Fix(step string, apps []flk.App) (act Action, ok bool) {
 		}
 		if w := command(m); len(w) > 0 {
 			words = w
+			if len(w) >= 2 && w[0] == "releases" && w[1] == "rollback" { // the fix offered first ("then flk releases rollback, or ...")
+				break
+			}
 		}
 	}
 	if words == nil {
@@ -110,6 +114,8 @@ func runnable(words []string, a *flk.App) (args []string, long bool, disabled st
 	case n == 3 && words[0] == "scale" && words[1] == "count" && a != nil:
 		return scoped(), true, ""
 	case n == 5 && words[0] == "volumes" && words[1] == "create" && words[3] == "--size" && a != nil:
+		return scoped(), true, ""
+	case (shape == "releases rollback" || n == 3 && words[1] == "rollback" && versionRE.MatchString(words[2])) && words[0] == "releases" && a != nil:
 		return scoped(), true, ""
 	case shape == "deploy" && a != nil:
 		if a.ConfigPath == "" {

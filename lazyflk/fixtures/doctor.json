@@ -68,12 +68,12 @@
       "hint": null
     },
     {
-      "label": "exit hook (/home/dayne/flk-wt-deploy/bin/flk)",
+      "label": "exit hook (/home/dayne/flk/bin/flk)",
       "status": "pass",
       "hint": null
     },
     {
-      "label": "backups go to /data/flk-backups (296.1GB free)",
+      "label": "backups go to /data/flk-backups (227.0GB free)",
       "status": "pass",
       "hint": null
     },

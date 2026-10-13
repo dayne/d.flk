@@ -4,55 +4,89 @@
     "tag": "flk.local/minecraft-flk:v1",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v1.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T05:01:50Z"
+    "created_at": "2026-10-12T05:01:50Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 2,
     "tag": "flk.local/minecraft-flk:v2",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v2.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T05:20:51Z"
+    "created_at": "2026-10-12T05:20:51Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 3,
     "tag": "flk.local/minecraft-flk:v3",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v3.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T05:30:15Z"
+    "created_at": "2026-10-12T05:30:15Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 4,
     "tag": "flk.local/minecraft-flk:v4",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v4.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T05:35:33Z"
+    "created_at": "2026-10-12T05:35:33Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 5,
     "tag": "flk.local/minecraft-flk:v5",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v5.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T06:34:31Z"
+    "created_at": "2026-10-12T06:34:31Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 6,
     "tag": "flk.local/minecraft-flk:v6",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v6.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T06:41:10Z"
+    "created_at": "2026-10-12T06:41:10Z",
+    "current": false,
+    "image": false,
+    "machines": 0
   },
   {
     "version": 7,
     "tag": "flk.local/minecraft-flk:v7",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v7.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T06:58:32Z"
+    "created_at": "2026-10-12T06:58:32Z",
+    "current": false,
+    "image": true,
+    "machines": 0
   },
   {
     "version": 8,
     "tag": "flk.local/minecraft-flk:v8",
     "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v8.ext4",
     "source": "Dockerfile",
-    "created_at": "2026-10-12T07:08:34Z"
+    "created_at": "2026-10-12T07:08:34Z",
+    "current": false,
+    "image": true,
+    "machines": 0
+  },
+  {
+    "version": 9,
+    "tag": "flk.local/minecraft-flk:v9",
+    "path": "/home/dayne/.local/share/flk/apps/minecraft-flk/images/v9.ext4",
+    "source": "Dockerfile",
+    "created_at": "2026-10-13T08:31:22Z",
+    "current": true,
+    "image": true,
+    "machines": 1
   }
 ]

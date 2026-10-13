@@ -9,6 +9,7 @@
     "env": {
       "TZ": "America/Anchorage",
       "MC_HEAP": "8G",
+      "MC_JAVA_OPTS": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -XX:+UseCompactObjectHeaders",
       "RESTART_DELAY": "10",
       "MAX_RESTARTS": "5",
       "RESTART_WINDOW": "600",
@@ -39,8 +40,20 @@
           {
             "console": "save-on"
           }
-        ],
-        "settle": 35
+        ]
+      },
+      "keep_releases": 3
+    },
+    "checks": {
+      "ready": {
+        "type": "log",
+        "match": "Started Geyser on UDP port 19132",
+        "grace_period": "5m"
+      },
+      "port": {
+        "type": "tcp",
+        "port": 25565,
+        "grace_period": "5m"
       }
     },
     "vm": [
@@ -82,6 +95,7 @@
     "env": {
       "TZ": "America/Anchorage",
       "MC_HEAP": "8G",
+      "MC_JAVA_OPTS": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -XX:+UseCompactObjectHeaders",
       "RESTART_DELAY": "10",
       "MAX_RESTARTS": "5",
       "RESTART_WINDOW": "600",
@@ -115,6 +129,24 @@
       "policy": "on-failure",
       "retries": 1
     },
-    "bind": null
-  }
+    "bind": null,
+    "checks": [
+      {
+        "name": "ready",
+        "type": "log",
+        "grace_period": 300,
+        "match": "Started Geyser on UDP port 19132"
+      },
+      {
+        "name": "port",
+        "type": "tcp",
+        "grace_period": 300,
+        "port": 25565
+      }
+    ],
+    "huge_pages": null
+  },
+  "warnings": [
+
+  ]
 }

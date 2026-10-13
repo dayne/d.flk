@@ -4,8 +4,8 @@
 │   ● mellow-aurora-7882                 │ $ df -k --output=target,size,used,avail,pcent /home/dayne/.local/share/flk /data/minecraft/flk                      │
 │   ▢ world 40GB (external)              │   /data/vintagestory/flk                                                                                            │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │                                                                                                                     │
-│ ▾ vintagestory-flk  1/1 ●              │  20% ██░░░░░░░░ /                                                                                                   │
-│   ● frosty-river-2714                  │      75G free of 98G                                                                                                │
+│ ▾ vintagestory-flk  1/1 ●              │  21% ██░░░░░░░░ /                                                                                                   │
+│   ● frosty-river-2714                  │      74G free of 98G                                                                                                │
 │   ▢ vsdata 40GB (external)             │      holds /home/dayne/.local/share/flk                                                                             │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │                                                                                                                     │
 │                                        │  66% ██████░░░░ /data/minecraft                                                                                     │
@@ -13,21 +13,21 @@
 │   health ✔                             │      holds /data/minecraft/flk                                                                                      │
 │                                        │                                                                                                                     │
 │ Storage                                │  56% █████░░░░░ /data/vintagestory                                                                                  │
-│   / 20%                                │      62G free of 147G                                                                                               │
+│   / 21%                                │      62G free of 147G                                                                                               │
 │   /data/minecraft 66%                  │      holds /data/vintagestory/flk                                                                                   │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │ $ flk disk --json                                                                                                   │
 │ Podman                                 │ What flk uses  (allocated; sparse files count what's written)                                                       │
-│   ◇ itzg/minecraft-server:latest 868M  │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
+│   ◇ itzg/minecraft-server:latest 868M  │ state     3.1G in /home/dayne/.local/share/flk                                                                      │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │ app                images   rootfs  volumes     logs external                                                       │
-│   ◇ ruby:3.3-alpine 69M                │ minecraft-flk        736M     373M        -     572K      21G                                                       │
-│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     544M        -     644K     8.1G                                                       │
-│   3 flk images: host Images tab        │ all                  1.8G     917M        -     1.2M      29G                                                       │
+│   ◇ ruby:3.3-alpine 69M                │ minecraft-flk        1.1G     357M        -     640K      21G                                                       │
+│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     545M        -     836K     8.1G                                                       │
+│   4 flk images: host Images tab        │ all                  2.2G     903M        -     1.4M      29G                                                       │
 │                                        │                                                                                                                     │
-│ Services                               │ backups   76G in /data/flk-backups                                                                                  │
-│   ● flk-net                            │           minecraft-flk    61G                                                                                      │
-│   ● flk-machines                       │           vintagestory-flk 15G                                                                                      │
+│ Services                               │ backups   146G in /data/flk-backups                                                                                 │
+│   ● flk-net                            │           minecraft-flk    122G                                                                                     │
+│   ● flk-machines                       │           vintagestory-flk 23G                                                                                      │
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
 │   ● chrony                             │                                                                                                                     │

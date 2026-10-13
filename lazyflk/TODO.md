@@ -28,22 +28,21 @@ lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
   `--no-mouse` flag, or off by default with `--mouse`; decide when
   building it.
 
-## From flk 1d428f4 (deploy batch), not used yet
+## From flk 1d428f4 (deploy batch) and 553b1a3
 
-All additive; lazyflk works with it as is (checked 2026-10-13).
-- [ ] **Rollback:** a "roll back" action on the app (`flk releases
-  rollback [vN]`, confirm), and `--no-rollback` in deploy's form.
-- [ ] **Releases tab:** show `image` (rollback possible), `machines`, and
-  failed releases (`status`, `failure`, `failed_at`); `rollback_of`.
-- [ ] **Health checks:** a deploy can fail after its checks; the job
-  output already shows why, but the Overview could show the app's
-  `checks` (from `config show` machine_config).
-- [ ] **Config warnings:** `config show` `warnings` (unknown keys, with
-  did-you-mean) on the Config tab and in Needs attention.
-
-- [ ] **Huge pages** (flk 553b1a3): show machine `huge_pages` ("2M")
-  on the machine Overview; doctor's "huge pages: A of T free" already
-  shows on Health.
+Done; checked end to end on a test app (deploy --no-rollback failed, the
+attention fix rolled it back).
+- [x] **Rollback:** app menu `r` (kept, healthy releases; `--no-rollback`
+  as "failing checks: leave it"), also in deploy's form.
+- [x] **Releases tab:** failed (and why), current, kept, image pruned.
+- [x] **Health checks** and **config warnings** lead the Config tab
+  (`config show --json`); warnings are in Needs attention via G11.
+- [x] A machine left on a failed release: Needs attention, fix = roll back.
+- [x] **Huge pages** on the machine Overview's size line.
+- [ ] Waiting on flk: plain `releases rollback` after a failed
+  `--no-rollback` deploy goes to the release *before* current, not
+  current (reported to the flk session 2026-10-13). lazyflk's fix runs
+  whatever the step says (`rollback` or `rollback vN`).
 
 ## Known gaps
 

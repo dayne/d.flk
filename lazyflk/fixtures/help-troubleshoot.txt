@@ -29,6 +29,14 @@ problems show up there with the fix. Then find the symptom below.
   hooks that make it save and stop writing, or use `mode = "pause"` or the
   default `stop`; if a `stop` backup shows it too, check the volume
   (machine stopped): `e2fsck -f FILE`. Older backups are kept.
+- `vN failed its health checks`: the machine went back to its previous
+  release and is running. `flk releases` shows which check failed;
+  `flk logs -i ID --no-tail` shows why. To debug the new release in
+  place: `flk deploy --no-rollback`. A check that's too strict: raise its
+  `grace_period` (slow starts, e.g. a big world).
+- `The interrupted build left N build containers`: Ctrl-C during the
+  image build leaves podman's working containers mounted; run the
+  `buildah rm ...` it prints (doctor reports ones older than an hour).
 - `tap pool exhausted` / `flktapN missing`: `sudo /home/dayne/flk/setup-host.sh`
   (with `FLK_TAPS=32` for more machines).
 - The build itself fails: the same Dockerfile should fail under `podman build`.

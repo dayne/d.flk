@@ -168,7 +168,7 @@ docs are one key away and always match the installed flk.
 | Ports (all apps) | `flk ports list --json` | Ports tabs |
 | App detail | `flk -a APP context --json`, `status --json`, `releases --json`, `volumes list --json`, `secrets list --json` | when shown |
 | Machine record | `flk -a APP machine status ID` | when shown |
-| App config | `flk -a APP config show` (needs the app's dir: G2) | Config tab |
+| App config | `flk -a APP config show --json` (warnings, health checks; G2) | Config tab |
 | Logs | `flk -a APP logs [-i ID] -n N [-f]` | Logs view (streamed) |
 | Command table, guides | `flk help --all --json`, `flk help TOPIC` | start |
 
@@ -258,6 +258,7 @@ before the matching lazyflk milestone.
 | G8 no disk breakdown | Show what flk uses (release images, rootfs copies, volumes, logs) when a disk fills. | `flk disk [--json]`: bytes per app and category, actual (sparse-aware) and apparent. |
 | G9 no unit status | Host Services tab: is `flk-net` / `flk-machines` running or failed, not just installed. | Unit state (installed, enabled, active, since) in `doctor --json`, and a warn for a failed unit. |
 | G10 no image list | Host Images tab: flk's container images, which are in use, which are orphans. | `flk images --json` (repo, tag, app, release, in_use, orphan, size). |
+| G11 config warnings only in `config show` | Needs attention for a typo in flk.toml without running `config show` per app per poll. | `config_warnings` per app in `context` JSON, and each as an `optional:` next step (flk 78f2084, 821f84b). Also a step for a machine left on a failed release, whose fix is `flk releases rollback`. |
 
 Also visible on the reference host: the Minecraft app runs its own restart
 loop inside the image because flk has no restart policy (flk `TODO.md`).
@@ -308,7 +309,7 @@ shows its command, and nothing runs as root.
 ## 11. Milestones
 
 All done (2026-10-13): M0 24af5a0, M1 a444a67, M2 d0cc8f5, M3 e3aec5e,
-M4 065e0c6, M5 c31c05f (plus mouse support). Gaps G1–G6 and G8–G10 landed
+M4 065e0c6, M5 c31c05f (plus mouse support). Gaps G1–G6 and G8–G11 landed
 in flk; G7 (events) is later. Open items: `TODO.md`.
 
 1. **M0 skeleton:** client and types, fake flk serving `fixtures/`, `--demo`

@@ -3,31 +3,31 @@
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk volumes backups --json                                                                       │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ world-20261013T062733Z.ext4                                                                                         │
-│ ▾ vintagestory-flk  1/1 ●              │   2026-10-13 06:28Z · 20G used · checked clean (journal replayed)                                                   │
-│   ● frosty-river-2714                  │   mode live · release v8 · took 49s                                                                                 │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ world-20261013T111353Z.ext4                                                                                         │
+│ ▾ vintagestory-flk  1/1 ●              │   2026-10-13 11:14Z · 20G used · checked clean (journal replayed)                                                   │
+│   ● frosty-river-2714                  │   mode live · release v9 · took 24s                                                                                 │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ world-20261013T062240Z.ext4                                                                                         │
-│                                        │   2026-10-13 06:23Z · 20G used · repaired                                                                           │
-│ Host                                   │   mode live · release v8 · took 49s                                                                                 │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ world-20261013T100001Z.ext4                                                                                         │
+│                                        │   2026-10-13 10:00Z · 20G used · checked clean (journal replayed)                                                   │
+│ Host                                   │   mode live · release v9 · took 20s                                                                                 │
 │   health ✔                             │                                                                                                                     │
-│                                        │ world-20261013T055118Z.ext4                                                                                         │
-│ Storage                                │   2026-10-13 05:52Z · 20G used · repaired                                                                           │
-│   / 20%                                │   mode live · release v8 · took 50s                                                                                 │
+│                                        │ world-20261013T082359Z.ext4                                                                                         │
+│ Storage                                │   2026-10-13 08:24Z · 20G used · checked clean (journal replayed)                                                   │
+│   / 21%                                │   mode live · release v8 · took 49s                                                                                 │
 │   /data/minecraft 66%                  │                                                                                                                     │
-│   /data/vintagestory 56%               │ restore: stop the machine first                                                                                     │
-│                                        │                                                                                                                     │
-│ Podman                                 │                                                                                                                     │
+│   /data/vintagestory 56%               │ world-20261013T062733Z.ext4                                                                                         │
+│                                        │   2026-10-13 06:28Z · 20G used · checked clean (journal replayed)                                                   │
+│ Podman                                 │   mode live · release v8 · took 49s                                                                                 │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
-│   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
-│   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
-│   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
+│   ◇ dotnet/runtime:10.0 197M           │ world-20261013T062240Z.ext4                                                                                         │
+│   ◇ eclipse-temurin:25-jre 341M        │   2026-10-13 06:23Z · 20G used · repaired                                                                           │
+│   ◇ ruby:3.3-alpine 69M                │   mode live · release v8 · took 49s                                                                                 │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│ Services                               │                                                                                                                     │
+│   4 flk images: host Images tab        │ world-20261013T055118Z.ext4                                                                                         │
+│                                        │   2026-10-13 05:52Z · 20G used · repaired                                                                           │
+│ Services                               │   mode live · release v8 · took 50s                                                                                 │
 │   ● flk-net                            │                                                                                                                     │
-│   ● flk-machines                       │                                                                                                                     │
+│   ● flk-machines                       │ restore: stop the machine first                                                                                     │
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │

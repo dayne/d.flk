@@ -33,7 +33,7 @@ func TestDecodeFixtures(t *testing.T) {
 	if hc.Flk.Version != "0.1.0" || !hc.Host.OK || hc.Host.LanIP != "10.47.11.116" || !hc.Host.BootService {
 		t.Errorf("host context: %+v", hc)
 	}
-	if len(hc.Apps) != 2 || hc.Schema != Schema || hc.Apps[0].Name != app || hc.Apps[0].Release.Version != 8 || hc.Apps[0].Scale != nil || hc.Apps[0].ConfigPath != "/home/dayne/minecraft.flk/flk.toml" {
+	if len(hc.Apps) != 2 || hc.Schema != Schema || hc.Apps[0].Name != app || hc.Apps[0].Release == nil || hc.Apps[0].Release.Version != hc.Apps[0].Machines[0].Release || hc.Apps[0].Scale != nil || hc.Apps[0].ConfigPath != "/home/dayne/minecraft.flk/flk.toml" {
 		t.Fatalf("apps: %+v", hc.Apps)
 	}
 	a := hc.Apps[0]
@@ -73,7 +73,7 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("disk: %+v, %v", du, err)
 	}
 	imgs, err := c.Images(ctx)
-	if err != nil || len(imgs) != 4 || imgs[0].Release == nil || !imgs[0].Running || imgs[1].InUse || imgs[0].SizeBytes == 0 {
+	if err != nil || len(imgs) != 5 || imgs[0].Release == nil || !imgs[0].Running || imgs[2].InUse || imgs[0].SizeBytes == 0 {
 		t.Errorf("images: %+v, %v", imgs, err)
 	}
 	apps, err := c.Apps(ctx)
@@ -89,7 +89,7 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("status: %+v, %v", st, err)
 	}
 	rels, err := c.Releases(ctx, app)
-	if err != nil || len(rels) != 8 || rels[7].Tag != "flk.local/minecraft-flk:v8" {
+	if err != nil || len(rels) != 9 || rels[8].Tag != "flk.local/minecraft-flk:v9" {
 		t.Errorf("releases: %+v, %v", rels, err)
 	}
 	vols, err := c.Volumes(ctx, app)
@@ -118,7 +118,7 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("console command: %+v", console)
 	}
 	logs, err := c.Logs(ctx, app, "", 40)
-	if err != nil || !strings.Contains(logs, "Started Geyser on UDP port 19132") {
+	if err != nil || strings.Count(logs, "\n") != 40 || !strings.Contains(logs, "/INFO]") {
 		t.Errorf("logs: %q, %v", logs, err)
 	}
 }
@@ -141,13 +141,19 @@ func TestEveryFixtureServed(t *testing.T) {
 	c.MachineStatus(ctx, "minecraft-flk", "mellow-aurora-7882")
 	c.Help(ctx)
 	c.Logs(ctx, "minecraft-flk", "", 40)
-	c.Run(ctx, "-a", "minecraft-flk", "config", "show")
+	if cs, err := c.ConfigShow(ctx, "minecraft-flk"); err != nil || cs.Warnings == nil || len(cs.Warnings) != 0 ||
+		len(cs.MachineConfig.Checks) != 2 || cs.MachineConfig.Checks[0].Type != "log" || cs.MachineConfig.Checks[1].Port != 25565 {
+		t.Errorf("config show: %+v %v", cs, err)
+	}
+	if rs, err := c.Releases(ctx, "minecraft-flk"); err != nil || !rs[len(rs)-1].Current || !rs[len(rs)-1].Image || rs[len(rs)-1].Machines != 1 || rs[0].Image {
+		t.Errorf("releases: %+v %v", rs, err)
+	}
 	for _, topic := range []string{"cheatsheet", "install", "first-app", "operate", "troubleshoot", "uninstall"} {
 		if out, err := c.Run(ctx, "help", topic); err != nil || len(out) == 0 {
 			t.Errorf("help %s: %v", topic, err)
 		}
 	}
-	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || len(b) != 3 || !b[0].Journal || b[1].Check != "repaired" {
+	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || len(b) != 6 || !b[0].Journal || b[4].Check != "repaired" {
 		t.Errorf("backups: %v %v", b, err)
 	}
 	c.QuickContext(ctx)
@@ -169,7 +175,7 @@ func TestEveryFixtureServed(t *testing.T) {
 		// decoded below; the host tools' fixtures are the providers' (their
 		// tests check those)
 		hostTool := strings.HasPrefix(name, "podman-") || strings.HasPrefix(name, "journal-") ||
-			name == "lsblk.json" || name == "systemctl-show.txt" || name == "id-groups.txt" || name == "buildah-version.txt"
+			strings.HasPrefix(name, "lsblk") || name == "systemctl-show.txt" || name == "id-groups.txt" || name == "buildah-version.txt"
 		if !served[name] && name != "df.txt" && name != "backups-sample.json" && !hostTool {
 			t.Errorf("fixture %s is never served", name)
 		}

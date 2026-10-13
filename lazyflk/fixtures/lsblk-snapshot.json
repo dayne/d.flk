@@ -1,0 +1,149 @@
+{
+   "blockdevices": [
+      {
+         "name": "nvme0n1",
+         "path": "/dev/nvme0n1",
+         "type": "disk",
+         "size": 2000398934016,
+         "fstype": null,
+         "fssize": null,
+         "fsavail": null,
+         "mountpoints": [],
+         "model": "WD_BLACK SN770 2TB",
+         "children": [
+            {
+               "name": "nvme0n1p1",
+               "path": "/dev/nvme0n1p1",
+               "type": "part",
+               "size": 1127219200,
+               "fstype": "vfat",
+               "fssize": 1124999168,
+               "fsavail": 1118392320,
+               "mountpoints": [
+                   "/boot/efi"
+               ],
+               "model": null
+            },{
+               "name": "nvme0n1p2",
+               "path": "/dev/nvme0n1p2",
+               "type": "part",
+               "size": 2147483648,
+               "fstype": "ext4",
+               "fssize": 2040373248,
+               "fsavail": 1814843392,
+               "mountpoints": [
+                   "/boot"
+               ],
+               "model": null
+            },{
+               "name": "nvme0n1p3",
+               "path": "/dev/nvme0n1p3",
+               "type": "part",
+               "size": 1997122043904,
+               "fstype": "LVM2_member",
+               "fssize": null,
+               "fsavail": null,
+               "mountpoints": [],
+               "model": null,
+               "children": [
+                  {
+                     "name": "ubuntu--vg-ubuntu--lv",
+                     "path": "/dev/mapper/ubuntu--vg-ubuntu--lv",
+                     "type": "lvm",
+                     "size": 107374182400,
+                     "fstype": "ext4",
+                     "fssize": 105089261568,
+                     "fsavail": 80150679552,
+                     "mountpoints": [
+                         "/"
+                     ],
+                     "model": null
+                  },{
+                     "name": "ubuntu--vg-vs--data",
+                     "path": "/dev/mapper/ubuntu--vg-vs--data",
+                     "type": "lvm",
+                     "size": 161061273600,
+                     "fstype": "ext4",
+                     "fssize": 157396975616,
+                     "fsavail": 66393227264,
+                     "mountpoints": [
+                         "/data/vintagestory"
+                     ],
+                     "model": null
+                  },{
+                     "name": "ubuntu--vg-flk--backups",
+                     "path": "/dev/mapper/ubuntu--vg-flk--backups",
+                     "type": "lvm",
+                     "size": 429496729600,
+                     "fstype": "ext4",
+                     "fssize": 421606629376,
+                     "fsavail": 317975547904,
+                     "mountpoints": [
+                         "/data/flk-backups"
+                     ],
+                     "model": null
+                  },{
+                     "name": "ubuntu--vg-mc--data-real",
+                     "path": "/dev/mapper/ubuntu--vg-mc--data-real",
+                     "type": "lvm",
+                     "size": 107374182400,
+                     "fstype": null,
+                     "fssize": null,
+                     "fsavail": null,
+                     "mountpoints": [],
+                     "model": null,
+                     "children": [
+                        {
+                           "name": "ubuntu--vg-mc--data",
+                           "path": "/dev/mapper/ubuntu--vg-mc--data",
+                           "type": "lvm",
+                           "size": 107374182400,
+                           "fstype": "ext4",
+                           "fssize": 105089261568,
+                           "fsavail": 33928019968,
+                           "mountpoints": [
+                               "/data/minecraft"
+                           ],
+                           "model": null
+                        },{
+                           "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012",
+                           "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012",
+                           "type": "lvm",
+                           "size": 107374182400,
+                           "fstype": "ext4",
+                           "fssize": null,
+                           "fsavail": null,
+                           "mountpoints": [],
+                           "model": null
+                        }
+                     ]
+                  },{
+                     "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012-cow",
+                     "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012-cow",
+                     "type": "lvm",
+                     "size": 32212254720,
+                     "fstype": null,
+                     "fssize": null,
+                     "fsavail": null,
+                     "mountpoints": [],
+                     "model": null,
+                     "children": [
+                        {
+                           "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012",
+                           "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012",
+                           "type": "lvm",
+                           "size": 107374182400,
+                           "fstype": "ext4",
+                           "fssize": null,
+                           "fsavail": null,
+                           "mountpoints": [],
+                           "model": null
+                        }
+                     ]
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}

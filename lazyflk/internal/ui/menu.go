@@ -52,6 +52,7 @@ func (m *Model) target(n node) (actions.Target, string, bool) {
 	switch n.kind {
 	case kindApp:
 		t.Kind = actions.App
+		t.Releases = m.releases(t.App.Name)
 	case kindMachine:
 		t.Kind, t.Machine = actions.Machine, t.App.Machines[n.machine]
 		title += " / " + or(t.Machine.Name, t.Machine.ID)
@@ -103,10 +104,16 @@ func (m *Model) openMenu() tea.Cmd {
 	switch n.kind {
 	case kindVolume: // restore needs the list of backups
 		return m.want(m.backupSource(m.apps[n.app].Name))
-	case kindApp, kindMachine: // the app's own actions
-		if a := m.apps[n.app]; a.ConfigPath != "" {
-			return m.want(m.appActionsSource(a))
+	case kindApp, kindMachine: // the app's own actions; roll back's releases
+		a := m.apps[n.app]
+		var cmds []tea.Cmd
+		if n.kind == kindApp {
+			cmds = append(cmds, m.want(m.releasesSource(a.Name)))
 		}
+		if a.ConfigPath != "" {
+			cmds = append(cmds, m.want(m.appActionsSource(a)))
+		}
+		return tea.Batch(cmds...)
 	}
 	return nil
 }

@@ -2,21 +2,21 @@
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  1/1 ●     │ ‹ Ports  Volumes  Releases  Secrets  Config     │
 │   ● mellow-aurora-7882     │                                                 │
-│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk config show              │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk config show --json       │
 │   ⇄ 10.47.11.3: tcp/25565… │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ {                                               │
-│   ● frosty-river-2714      │   "file": "/home/dayne/minecraft.flk/flk.toml", │
-│   ▢ vsdata 40GB (external) │   "parsed": {                                   │
-│   ⇄ 10.47.11.3: tcp/42420… │     "app": "minecraft-flk",                     │
+│ ▾ vintagestory-flk  1/1 ●  │ checks    ready: log line "Started Geyser on U… │
+│   ● frosty-river-2714      │           port: tcp :25565 within 300s          │
+│   ▢ vsdata 40GB (external) │                                                 │
+│   ⇄ 10.47.11.3: tcp/42420… │ {                                               │
+│                            │   "file": "/home/dayne/minecraft.flk/flk.toml", │
+│ Host                       │   "parsed": {                                   │
+│   health ✔                 │     "app": "minecraft-flk",                     │
 │                            │     "kill_timeout": 120,                        │
-│ Host                       │     "build": {                                  │
-│   health ✔                 │       "dockerfile": "Dockerfile"                │
-│                            │     },                                          │
-│ Storage                    │     "env": {                                    │
-│   / 20%                    │       "TZ": "America/Anchorage",                │
-│   /data/minecraft 66%      │       "MC_HEAP": "8G",                          │
-│   /data/vintagestory 56%   │       "RESTART_DELAY": "10",                    │
-│                            │ … 108 more (pgdn)                               │
+│ Storage                    │     "build": {                                  │
+│   / 21%                    │       "dockerfile": "Dockerfile"                │
+│   /data/minecraft 66%      │     },                                          │
+│   /data/vintagestory 56%   │     "env": {                                    │
+│                            │ … 143 more (pgdn)                               │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

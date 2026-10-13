@@ -11,12 +11,12 @@
 │                            │   /dev/nvme0n1p3  part, 1.8T, LVM2_member       │
 │ Host                       │   /dev/nvme0n1  disk, 1.8T · WD_BLACK SN770 2TB │
 │   health ✔                 │                                                 │
-│                            │ snapshot /dev/mapper/ubuntu--vg-mc--data--pre-… │
-│ Storage                    │   a snapshot slows writes and stops working on… │
-│   / 20%                    │   remove it when it's no longer needed (sudo l… │
+│                            │ 1.1T of /dev/nvme0n1p3 isn't in any logical vo… │
+│ Storage                    │   (e.g. sudo lvextend -r -L +10G /dev/mapper/u… │
+│   / 21%                    │                                                 │
 │   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │ 1.1T of /dev/nvme0n1p3 isn't in any logical vo… │
-│                            │   (e.g. sudo lvextend -r -L +10G /dev/mapper/u… │
+│   /data/vintagestory 56%   │                                                 │
+│                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

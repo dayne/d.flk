@@ -2,43 +2,43 @@
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●      ┌ flk commands ─ from flk help --all --json ───────────────────────────────────────────────────────┐                             │
 │   ● mellow-aurora-7882      │ : ▏                                                                                              │                             │
-│   ▢ world 40GB (external)   │ context          What flk sees right now: host health, the current app, machines, ports, next s… │                             │
-│   ⇄ 10.47.11.3: tcp/25565 ud│ help             Show help for flk, a command, or a topic (cheatsheet, install, first-app, oper… │                             │
-│ ▾ vintagestory-flk  1/1 ●   │ completion       Print a tab-completion script (bash; zsh via bashcompinit)                      │                             │
-│   ● frosty-river-2714       │ setup            Download firecracker + guest kernel (no root), then run doctor                  │                             │
-│   ▢ vsdata 40GB (external)  │ doctor           Check host readiness                                                            │                             │
-│   ⇄ 10.47.11.3: tcp/42420 ud│ version          Print the flk version                                                           │                             │
-│                             │ resume           Start every machine that should be running (after a reboot, or after stop-all)  │                             │
-│ Host                        │ stop-all         Gracefully stop every running machine, remembering to resume them               │                             │
-│   health ✔                  │ launch           Create flk.toml (if missing) in the current directory, register the app, deploy │                             │
-│                             │ deploy           Build the image and roll machines to a new release                              │                             │
-│ Storage                     │ status           App and machine overview                                                        │                             │
-│   / 20%                     │ releases         Release history                                                                 │                             │
-│   /data/minecraft 66%       │ disk             Disk space flk uses, per app: release images, machine disks, volumes, logs; an… │                             │
-│   /data/vintagestory 56%    │ images           flk's container images (flk.local/APP:vN): size, whether a machine runs that r… │                             │
-│                             │ apps list        All apps on this host                                                           │                             │
-│ Podman                      │ apps destroy     Destroy an app, its machines and volumes                                        │                             │
-│   ◇ itzg/minecraft-server:la│ apps prune       Remove container images left behind by apps that no longer exist                │                             │
-│   ◇ dotnet/runtime:10.0 197M│ config show      Print the parsed flk.toml / fly.toml and the machine config flk derives from it │                             │
-│   ◇ eclipse-temurin:25-jre 3│ machine list     Machines of the app                                                             │                             │
-│   ◇ ruby:3.3-alpine 69M     │ machine start    Boot machines                                                                   │                             │
-│   ◇ alpine:3.20 7.7M        │ machine stop     Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they s… │                             │
-│   3 flk images: host Images │ machine restart  Stop, then boot                                                                 │                             │
-│                             │ machine destroy  Delete machines (their volumes are kept, unattached)                            │                             │
-│ Services                    │ machine revive   Restart a machine that exited on its own, per its restart policy (run by flk i… │                             │
-│   ● flk-net                 │ machine stats    CPU and memory use of machines (default: all of the app's)                      │                             │
-│   ● flk-machines            │ machine status   Machine record and state as JSON (an array when given several IDs)              │                             │
-│   ● ssh                     │ machine config   The Firecracker VM config as JSON (an array when given several IDs)             │                             │
-│   ● snap.mosquitto.mosquitto│ scale count      Create or destroy machines to reach N                                           │                             │
-│   ● chrony                  │ logs             Serial console output (app stdout/stderr and boot messages)                     │                             │
-│                             │ console          Attach to a machine's serial console, or --send one line to the app's stdin     │                             │
-│                             │ ssh console      Same as flk console                                                             │                             │
-│                             │ proxy            Forward a local TCP port to a machine                                           │                             │
-│                             │ ports list       Forwarded ports: active, waiting (another machine has it) or blocked (and why)  │                             │
-│                             │ ports sync       Rewrite the host's port map from the running machines                           │                             │
-│                             │ ports reap       Tidy machines that exited on their own and hand their ports on (run automatica… │                             │
-│                             │ secrets list     Names and digests (never values)                                                │                             │
-│                             │ secrets set      Set secrets (VALUE '-' reads it from stdin)                                     │                             │
+│   ▢ world 40GB (external)   │ context            What flk sees right now: host health, the current app, machines, ports, next… │                             │
+│   ⇄ 10.47.11.3: tcp/25565 ud│ help               Show help for flk, a command, or a topic (cheatsheet, install, first-app, op… │                             │
+│ ▾ vintagestory-flk  1/1 ●   │ completion         Print a tab-completion script (bash; zsh via bashcompinit)                    │                             │
+│   ● frosty-river-2714       │ setup              Download firecracker + guest kernel (no root), then run doctor                │                             │
+│   ▢ vsdata 40GB (external)  │ doctor             Check host readiness                                                          │                             │
+│   ⇄ 10.47.11.3: tcp/42420 ud│ version            Print the flk version                                                         │                             │
+│                             │ resume             Start every machine that should be running (after a reboot, or after stop-al… │                             │
+│ Host                        │ stop-all           Gracefully stop every running machine, remembering to resume them             │                             │
+│   health ✔                  │ launch             Create flk.toml (if missing) in the current directory, register the app, dep… │                             │
+│                             │ deploy             Build the image and roll machines to a new release                            │                             │
+│ Storage                     │ status             App and machine overview                                                      │                             │
+│   / 21%                     │ releases list      Releases, newest first: current, failed (and why), kept for rollback, or pru… │                             │
+│   /data/minecraft 66%       │ releases rollback  Roll machines back to an older release's image and config (default: the one … │                             │
+│   /data/vintagestory 56%    │ disk               Disk space flk uses, per app: release images, machine disks, volumes, logs; … │                             │
+│                             │ images             flk's container images (flk.local/APP:vN): size, whether a machine runs that… │                             │
+│ Podman                      │ apps list          All apps on this host                                                         │                             │
+│   ◇ itzg/minecraft-server:la│ apps destroy       Destroy an app, its machines and volumes                                      │                             │
+│   ◇ dotnet/runtime:10.0 197M│ apps prune         Remove container images left behind by apps that no longer exist              │                             │
+│   ◇ eclipse-temurin:25-jre 3│ config show        Print the parsed flk.toml / fly.toml and the machine config flk derives from… │                             │
+│   ◇ ruby:3.3-alpine 69M     │ machine list       Machines of the app                                                           │                             │
+│   ◇ alpine:3.20 7.7M        │ machine start      Boot machines                                                                 │                             │
+│   4 flk images: host Images │ machine stop       Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they… │                             │
+│                             │ machine restart    Stop, then boot                                                               │                             │
+│ Services                    │ machine destroy    Delete machines (their volumes are kept, unattached)                          │                             │
+│   ● flk-net                 │ machine revive     Restart a machine that exited on its own, per its restart policy (run by flk… │                             │
+│   ● flk-machines            │ machine stats      CPU and memory use of machines (default: all of the app's)                    │                             │
+│   ● ssh                     │ machine status     Machine record and state as JSON (an array when given several IDs)            │                             │
+│   ● snap.mosquitto.mosquitto│ machine config     The Firecracker VM config as JSON (an array when given several IDs)           │                             │
+│   ● chrony                  │ scale count        Create or destroy machines to reach N                                         │                             │
+│                             │ logs               Serial console output (app stdout/stderr and boot messages)                   │                             │
+│                             │ console            Attach to a machine's serial console, or --send one line to the app's stdin   │                             │
+│                             │ ssh console        Same as flk console                                                           │                             │
+│                             │ proxy              Forward a local TCP port to a machine                                         │                             │
+│                             │ ports list         Forwarded ports: active, waiting (another machine has it) or blocked (and wh… │                             │
+│                             │ ports sync         Rewrite the host's port map from the running machines                         │                             │
+│                             │ ports reap         Tidy machines that exited on their own and hand their ports on (run automati… │                             │
+│                             │ secrets list       Names and digests (never values)                                              │                             │
 │                             │                                                                                                  │                             │
 │                             │ flk context [--all] [--json] [--no-host]                                                         │                             │
 ├ Needs attention ────────────├──────────────────────────────────────────────────────────────────────────────────────────────────┤─────────────────────────────┤

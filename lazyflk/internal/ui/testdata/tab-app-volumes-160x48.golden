@@ -10,10 +10,10 @@
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │             external: outside flk's state dir                                                                       │
 │                                        │   attached  mellow-aurora-7882 (225d58f615e7e6)                                                                     │
 │ Host                                   │   created   2026-10-12 05:01Z                                                                                       │
-│   health ✔                             │   backup    2026-10-13 06:28Z (checked clean (journal replayed), 3 kept)                                            │
+│   health ✔                             │   backup    2026-10-13 11:14Z (checked clean (journal replayed), 6 kept)                                            │
 │                                        │                                                                                                                     │
 │ Storage                                │ enter on a volume: back up, restore, extend                                                                         │
-│   / 20%                                │                                                                                                                     │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
+│   4 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │

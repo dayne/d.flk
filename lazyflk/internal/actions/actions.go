@@ -32,9 +32,10 @@ type Target struct {
 	Volume     flk.Volume  // Volume
 	Apps       []flk.App   // Host: every app
 	Problems   []flk.DoctorCheck
-	Backups    []flk.Backup // the app's backups; nil until loaded
-	BackupsErr string       // why they couldn't be listed
-	StateDir   string       // flk's state dir: volumes outside it are external
+	Backups    []flk.Backup  // the app's backups; nil until loaded
+	BackupsErr string        // why they couldn't be listed
+	Releases   []flk.Release // the app's releases; nil until loaded
+	StateDir   string        // flk's state dir: volumes outside it are external
 }
 
 // External reports a volume whose file lives outside flk's state dir
@@ -240,7 +241,8 @@ func appActions(t Target) []Action {
 	}
 	deploy := Action{Key: "d", Label: "deploy", Help: "build the image and roll machines to a new release",
 		Long: true, Confirm: Ask,
-		Fields: []Field{{Name: "image", Label: "image", Help: "deploy this image instead of building (empty: build from the app's Dockerfile)"}},
+		Fields: []Field{{Name: "image", Label: "image", Help: "deploy this image instead of building (empty: build from the app's Dockerfile)"},
+			checksField()},
 		build: func(v map[string]string) Command {
 			args := app(a, "deploy")
 			if img := strings.TrimSpace(v["image"]); img != "" {
@@ -250,7 +252,7 @@ func appActions(t Target) []Action {
 			if running > 0 {
 				warn += fmt.Sprintf(" Restarts %s.", plural(running, "running machine"))
 			}
-			return Command{Args: args, Warn: warn}
+			return withChecks(Command{Args: args, Warn: warn}, v)
 		}}
 	if a.ConfigPath == "" {
 		deploy.Disabled = "flk doesn't know where its flk.toml is: run flk deploy once in its directory"
@@ -297,7 +299,7 @@ func appActions(t Target) []Action {
 			}
 			return Command{Args: []string{"apps", "destroy", a.Name, "--yes"}, Warn: warn + " This can't be undone."}
 		}}
-	acts := []Action{deploy,
+	acts := []Action{deploy, rollback(a, t.Releases, running),
 		{Key: "c", Label: "scale", Help: "set the number of machines",
 			Confirm: Ask, Long: true,
 			Fields: []Field{{Name: "count", Label: "machines", Default: scale, Required: true, Number: true}},
@@ -326,6 +328,63 @@ func appActions(t Target) []Action {
 		destroy,
 	}
 	return acts
+}
+
+// checksField is --no-rollback: what happens to a machine that fails its
+// health checks.
+func checksField() Field {
+	return Field{Name: "checks", Label: "failing checks", Choices: []string{"roll back", "leave it"},
+		Help: "a machine that fails its health checks goes back to its old release; leave it: stays on the new one, to debug (--no-rollback)"}
+}
+
+func withChecks(c Command, v map[string]string) Command {
+	if v["checks"] == "leave it" {
+		c.Args = append(c.Args, "--no-rollback")
+		c.Warn += " A machine that fails its health checks stays on the new release (--no-rollback)."
+	}
+	return c
+}
+
+// rollback makes a new release from an older one's image and config, and
+// rolls it out like a deploy (flk releases rollback).
+func rollback(a flk.App, rels []flk.Release, running int) Action {
+	cur := 0
+	if a.Release != nil {
+		cur = a.Release.Version
+	}
+	// releases it can go to, newest first: kept image, not failed, not current
+	var to []string
+	for i := len(rels) - 1; i >= 0; i-- {
+		if r := rels[i]; r.Image && !r.Failed() && r.Version != cur {
+			to = append(to, fmt.Sprintf("v%d", r.Version))
+		}
+	}
+	act := Action{Key: "r", Label: "roll back", Help: "back to an older release's image and config, rolled out like a deploy",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "to", Label: "to", Choices: to,
+			Help: "a release whose image is kept ([flk] keep_releases); volumes stay as they are"}, checksField()},
+		build: func(v map[string]string) Command {
+			args := app(a, "releases", "rollback")
+			what := "the release before the current one"
+			if r := strings.TrimSpace(v["to"]); r != "" {
+				args, what = append(args, r), r
+			}
+			warn := fmt.Sprintf("Makes a new release with %s's image and machine config, then replaces each machine like a deploy.", what)
+			if running > 0 {
+				warn += fmt.Sprintf(" Restarts %s.", plural(running, "running machine"))
+			}
+			warn += " Volumes stay as they are: data written since isn't rolled back."
+			return withChecks(Command{Args: args, Warn: warn}, v)
+		}}
+	switch {
+	case cur == 0:
+		act.Disabled = "no release yet"
+	case rels != nil && len(to) == 0:
+		act.Disabled = "no kept release to go back to (keep more with [flk] keep_releases)"
+	case rels == nil:
+		act.Fields[0].Help = "loading the releases… (empty: the one before the current)"
+	}
+	return act
 }
 
 func stageField(running int) Field {

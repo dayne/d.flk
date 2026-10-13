@@ -2,7 +2,8 @@
 # Recapture fixtures/ from this host: every command here only reads. Run
 # it on a quiet host (no flkt-* test apps, nothing in next_steps), then
 # review the diff and the goldens (go test ./internal/ui -update).
-# backups-sample.json isn't recaptured: it came from a test app.
+# backups-sample.json and lsblk-snapshot.json aren't recaptured: they came
+# from a test app and a snapshot that's gone.
 set -eu
 cd "$(dirname "$0")"
 APP=minecraft-flk
@@ -25,7 +26,7 @@ F -a $APP secrets list --json > secrets-$APP.json
 ID=$(python3 -c "import json; print(json.load(open('context-$APP.json'))['app']['machines'][0]['id'])")
 F -a $APP machine status "$ID" > machine-status.json
 F -a $APP logs -n 40 --no-tail > logs-$APP.txt
-F -a $APP config show > config-$APP.json
+F -a $APP config show --json > config-$APP.json
 F -a $APP volumes backups --json > backups-$APP.json
 F machine stats --all --json > machine-stats.json
 F disk --json > disk.json

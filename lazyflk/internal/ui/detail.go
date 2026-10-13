@@ -40,7 +40,7 @@ func (m *Model) appOverview(a flk.App) []string {
 		out = append(out, styleBad.Render("not registered")+" (flk launch --no-deploy)")
 	}
 	if r := a.Release; r != nil {
-		out = append(out, fmt.Sprintf("%s v%d (%d kept) · %s", styleLabel.Render("release"),
+		out = append(out, fmt.Sprintf("%s v%d (of %d) · %s", styleLabel.Render("release"),
 			r.Version, a.Releases, when(r.CreatedAt)))
 	} else {
 		out = append(out, styleLabel.Render("release")+" none yet: flk deploy")
@@ -85,7 +85,7 @@ func (m *Model) machineOverview(a flk.App, mc flk.Machine) []string {
 		field("state", machineIcon(mc)+" "+stateText(mc)),
 		field("release", fmt.Sprintf("v%d", mc.Release)),
 		field("ip", mc.IP+portSuffix(mc.InternalPort)),
-		field("size", size(mc.CPUs, mc.MemoryMB)),
+		field("size", size(mc.CPUs, mc.MemoryMB)+hugePages(mc.HugePages)),
 	}
 	out = append(out, m.liveLines(mc)...)
 	if r := mc.Restart; r != nil {
@@ -112,6 +112,14 @@ func (m *Model) machineOverview(a flk.App, mc flk.Machine) []string {
 		out = append(out, field(label, name+" → "+mt.Destination))
 	}
 	return append(out, field("created", when(mc.CreatedAt)), field("updated", when(mc.UpdatedAt)))
+}
+
+// hugePages notes guest memory backed by huge pages ([[vm]] huge_pages).
+func hugePages(hp string) string {
+	if hp == "" {
+		return ""
+	}
+	return styleDim.Render(" · " + hp + " huge pages")
 }
 
 // forwardedTo says where a machine port is reachable from outside: every

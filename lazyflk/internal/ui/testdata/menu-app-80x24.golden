@@ -1,5 +1,6 @@
 ┌ ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────┐ ┐
 │ │ d  deploy         build the image and roll machines to a new release     │ │
+│ │ r  roll back      back to an older release's image and config, rolled o… │ │
 │ │ c  scale          set the number of machines                             │ │
 │ │ u  resume         nothing to resume                                      │ │
 │ │ S  stop all       stop its running machines; resume brings them back     │ │
@@ -16,9 +17,8 @@
 │ │ 4  backup         the nightly backup, now: live (no restart, ~50s), che… │ │
 │ │ 5  backup-check   preflight only: mounts, flk, lock, status; makes no b… │ │
 │ │ 6  whitelist      let a player in: type their name (RCON)                │ │
-│ │                                                                          │ │
-├ │ build the image and roll machines to a new release                       │─┤
-│ │ $ flk -a minecraft-flk deploy                                            │ │
-├─├──────────────────────────────────────────────────────────────────────────┤─┤
-│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
-└─└──────────────────────────────────────────────────────────────────────────┘─┘
+├ │                                                                          │─┤
+│ │ build the image and roll machines to a new release                       │ │
+├─│ $ flk -a minecraft-flk deploy                                            │─┤
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+└─│ ↑↓ enter choose (or press its key)  esc close                            │─┘

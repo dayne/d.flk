@@ -4,16 +4,16 @@
 │   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
 │   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ state     ● started                                                                                                 │
-│ ▾ vintagestory-flk  1/1 ●              │ release   v8                                                                                                        │
+│ ▾ vintagestory-flk  1/1 ●              │ release   v9                                                                                                        │
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       2% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    3007MB used of 11264MB                                                                                    │
-│ Host                                   │ up        1h 49m                                                                                                    │
-│   health ✔                             │ pid       1473109 (firecracker)                                                                                     │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       6% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    9956MB used of 11264MB                                                                                    │
+│ Host                                   │ up        8h 15m                                                                                                    │
+│   health ✔                             │ pid       1676117 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
 │ Storage                             ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────────────┐                                     │
-│   / 20%                             │ s  start         already running                                                 │                                     │
+│   / 21%                             │ s  start         already running                                                 │                                     │
 │   /data/minecraft 66%               │ S  stop          stop gracefully; it stays stopped, also after reboots           │                                     │
 │   /data/vintagestory 56%            │ r  restart       stop, then boot                                                 │                                     │
 │                                     │ l  logs          follow its console output                                       │                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M     │ 1  who           who's online (RCON)                                             │                                     │
 │   ◇ ruby:3.3-alpine 69M             │ 2  say           broadcast a message to the players (RCON)                       │                                     │
 │   ◇ alpine:3.20 7.7M                │ 3  save          write the world to disk now and wait until it's saved           │                                     │
-│   3 flk images: host Images tab     │ 4  backup        the nightly backup, now: live (no restart, ~50s), checked, new… │                                     │
+│   4 flk images: host Images tab     │ 4  backup        the nightly backup, now: live (no restart, ~50s), checked, new… │                                     │
 │                                     │ 5  backup-check  preflight only: mounts, flk, lock, status; makes no backup      │                                     │
 │ Services                            │ 6  whitelist     let a player in: type their name (RCON)                         │                                     │
 │   ● flk-net                         │                                                                                  │                                     │

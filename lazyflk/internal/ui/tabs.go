@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -84,13 +85,12 @@ func (m *Model) tabSource(n node, tab string) *source {
 		case "Logs":
 			return m.textSource(logArgs(app, ""), 5*time.Second)
 		case "Releases":
-			return flkSource([]string{"-a", app, "releases", "--json"}, 15*time.Second,
-				func(ctx context.Context) ([]flk.Release, error) { return c.Releases(ctx, app) })
+			return m.releasesSource(app)
 		case "Secrets":
 			return flkSource([]string{"-a", app, "secrets", "list", "--json"}, 15*time.Second,
 				func(ctx context.Context) ([]flk.Secret, error) { return c.Secrets(ctx, app) })
 		case "Config":
-			return m.textSource([]string{"-a", app, "config", "show"}, 15*time.Second)
+			return m.textSource([]string{"-a", app, "config", "show", "--json"}, 15*time.Second)
 		case "Volumes":
 			if len(m.apps[n.app].Volumes) > 0 {
 				return m.backupSource(app)
@@ -120,6 +120,23 @@ func (m *Model) tabSource(n node, tab string) *source {
 		case "Disk":
 			return m.diskSource()
 		}
+	}
+	return nil
+}
+
+// releasesSource lists an app's releases: the Releases tab, and the
+// versions roll back offers.
+func (m *Model) releasesSource(app string) *source {
+	c := m.opt.Client
+	return flkSource([]string{"-a", app, "releases", "--json"}, 15*time.Second,
+		func(ctx context.Context) ([]flk.Release, error) { return c.Releases(ctx, app) })
+}
+
+// releases is an app's releases if loaded, else nil.
+func (m *Model) releases(app string) []flk.Release {
+	if f := m.cache[m.releasesSource(app).cmd]; f != nil {
+		r, _ := f.val.([]flk.Release)
+		return r
 	}
 	return nil
 }
@@ -239,12 +256,15 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 	out = append(out, "")
 	switch v := f.val.(type) {
 	case string:
-		if tab == "Logs" {
+		switch tab {
+		case "Logs":
 			return append(out, m.logPreview(v, h-len(out))...)
+		case "Config":
+			return append(out, configLines(v, w)...)
 		}
 		return append(out, strings.Split(strings.TrimRight(cleanText(v), "\n"), "\n")...)
 	case []flk.Release:
-		return append(out, m.releaseLines(m.apps[n.app], v)...)
+		return append(out, m.releaseLines(m.apps[n.app], v, w)...)
 	case []flk.Secret:
 		return append(out, secretLines(v)...)
 	case []flk.Backup:
@@ -410,7 +430,7 @@ func backupLines(v flk.Volume, all []flk.Backup) []string {
 	return out
 }
 
-func (m *Model) releaseLines(a flk.App, rels []flk.Release) []string {
+func (m *Model) releaseLines(a flk.App, rels []flk.Release, w int) []string {
 	running := map[int][]string{}
 	for _, mc := range a.Machines {
 		running[mc.Release] = append(running[mc.Release], or(mc.Name, mc.ID))
@@ -421,21 +441,82 @@ func (m *Model) releaseLines(a flk.App, rels []flk.Release) []string {
 	}
 	sorted := append([]flk.Release(nil), rels...)
 	sort.Slice(sorted, func(i, j int) bool { return sorted[i].Version > sorted[j].Version })
+	kept := 0
 	var out []string
 	for _, r := range sorted {
 		s := fmt.Sprintf("v%-3d %s  %s", r.Version, when(r.CreatedAt), or(r.Source, "?"))
-		if r.Version == current {
+		switch {
+		case r.Failed():
+			s += styleBad.Render("  failed")
+		case r.Version == current:
 			s = styleTitle.Render(s) + styleOK.Render("  current")
+		case r.Image:
+			s += styleDim.Render("  kept")
+			kept++
+		default:
+			s = styleDim.Render(s + "  image pruned")
 		}
 		out = append(out, s)
+		if r.Failed() {
+			for _, l := range wrap(r.Failure, w-5) {
+				out = append(out, "     "+styleBad.Render(l))
+			}
+		}
 		if names := running[r.Version]; len(names) > 0 {
-			out = append(out, styleDim.Render("     running on "+strings.Join(names, ", ")))
+			out = append(out, styleDim.Render("     on "+strings.Join(names, ", ")))
 		}
 	}
 	if len(out) == 0 {
-		out = append(out, styleDim.Render("no releases yet: flk deploy"))
+		return append(out, styleDim.Render("no releases yet: flk deploy"))
+	}
+	if kept > 0 {
+		out = append(out, "", styleDim.Render("kept: its image is still here, so it can be rolled back to (enter, r)"))
 	}
 	return out
+}
+
+// configLines is `flk config show --json`: its warnings and checks up
+// top, then the JSON as flk printed it.
+func configLines(text string, w int) []string {
+	var cs flk.ConfigShow
+	var out []string
+	if json.Unmarshal([]byte(text), &cs) == nil {
+		for _, warn := range cs.Warnings {
+			for i, l := range wrap(warn, w-2) {
+				if i == 0 {
+					out = append(out, styleWarn.Render("! ")+l)
+				} else {
+					out = append(out, "  "+l)
+				}
+			}
+		}
+		for i, c := range cs.MachineConfig.Checks {
+			label := ""
+			if i == 0 {
+				label = "checks"
+			}
+			out = append(out, field(label, checkLine(c)))
+		}
+		if len(cs.MachineConfig.Checks) == 0 {
+			out = append(out, field("checks", styleDim.Render("none: deploy waits up to 30s for internal_port")))
+		}
+		out = append(out, "")
+	}
+	return append(out, strings.Split(strings.TrimRight(cleanText(text), "\n"), "\n")...)
+}
+
+// checkLine is one health check, as a deploy waits for it.
+func checkLine(c flk.Check) string {
+	what := ""
+	switch c.Type {
+	case "log":
+		what = fmt.Sprintf("log line %q", c.Match)
+	case "http":
+		what = fmt.Sprintf("http :%d%s", c.Port, c.Path)
+	default:
+		what = fmt.Sprintf("%s :%d", c.Type, c.Port)
+	}
+	return fmt.Sprintf("%s: %s within %ds", c.Name, what, c.GracePeriod)
 }
 
 func secretLines(secs []flk.Secret) []string {

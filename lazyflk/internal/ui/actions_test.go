@@ -364,5 +364,5 @@ func isRead(argv []string) bool {
 			return true
 		}
 	}
-	return false
+	return strings.HasSuffix(line, " releases --json")
 }

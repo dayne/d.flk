@@ -13,7 +13,7 @@
 │   health ✔                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Storage                                │                                                                                                                     │
-│   / 20%                                │                                                                                                                     │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%            ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────────────┐                                     │
 │                                     │ b  back up            copy world to the backup dir, then prune old copies        │                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M     │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that machine … │                                     │
 │   ◇ ruby:3.3-alpine 69M             │ n  new volume         create a volume for [[mounts]] source = NAME               │                                     │
 │   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
-│   3 flk images: host Images tab     │ copy world to the backup dir, then prune old copies                              │                                     │
+│   4 flk images: host Images tab     │ copy world to the backup dir, then prune old copies                              │                                     │
 │                                     │ $ flk -a minecraft-flk volumes backup world                                      │                                     │
 │ Services                            ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
 │   ● flk-net                         │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │

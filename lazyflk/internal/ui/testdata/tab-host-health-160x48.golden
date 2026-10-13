@@ -13,7 +13,7 @@
 │   health ✔                             │ data dirs /home/dayne/.local/share/flk                                                                              │
 │                                        │           /data/minecraft/flk                                                                                       │
 │ Storage                                │           /data/vintagestory/flk                                                                                    │
-│   / 20%                                │                                                                                                                     │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │ ✔ /dev/kvm read/write                                                                                               │
 │   /data/vintagestory 56%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
 │                                        │ ✔ guest kernel /home/dayne/.local/share/flk/kernel/vmlinux                                                          │
@@ -23,12 +23,12 @@
 │   ◇ eclipse-temurin:25-jre 341M        │ ✔ tmux                                                                                                              │
 │   ◇ ruby:3.3-alpine 69M                │ ✔ mkfs.ext4                                                                                                         │
 │   ◇ alpine:3.20 7.7M                   │ ✔ fakeroot                                                                                                          │
-│   3 flk images: host Images tab        │ ✔ container engine (podman)                                                                                         │
+│   4 flk images: host Images tab        │ ✔ container engine (podman)                                                                                         │
 │                                        │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
 │ Services                               │ ✔ port helper (host ports from 1024)                                                                                │
 │   ● flk-net                            │ ✔ boot service (machines come back after a reboot)                                                                  │
-│   ● flk-machines                       │ ✔ exit hook (/home/dayne/flk-wt-deploy/bin/flk)                                                                     │
-│   ● ssh                                │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
+│   ● flk-machines                       │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
+│   ● ssh                                │ ✔ backups go to /data/flk-backups (227.0GB free)                                                                    │
 │   ● snap.mosquitto.mosquitto           │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │

@@ -13,7 +13,7 @@
 │   health ✔                 │ data dirs /home/dayne/.local/share/flk          │
 │                            │           /data/minecraft/flk                   │
 │ Storage                    │           /data/vintagestory/flk                │
-│   / 20%                    │                                                 │
+│   / 21%                    │                                                 │
 │   /data/minecraft 66%      │ ✔ /dev/kvm read/write                           │
 │   /data/vintagestory 56%   │ ✔ firecracker /home/dayne/.local/share/flk/bin… │
 │                            │ … 14 more (pgdn)                                │

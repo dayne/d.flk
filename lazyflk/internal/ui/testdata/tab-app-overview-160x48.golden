@@ -1,11 +1,11 @@
 ┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
-│   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ● mellow-aurora-7882                 │ release v9 (of 9) · 2026-10-13 08:31Z                                                                               │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
-│ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
-│   ● frosty-river-2714                  │   cpu 2% · 3007MB used · up 1h 49m                                                                                  │
+│ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
+│   ● frosty-river-2714                  │   cpu 6% · 9956MB used · up 8h 15m                                                                                  │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                      │
 │                                        │        10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                      │
@@ -13,7 +13,7 @@
 │   health ✔                             │   /data/minecraft/flk/world.ext4                                                                                    │
 │                                        │                                                                                                                     │
 │ Storage                                │                                                                                                                     │
-│   / 20%                                │                                                                                                                     │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
+│   4 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │

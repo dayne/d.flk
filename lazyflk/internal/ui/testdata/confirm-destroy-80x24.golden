@@ -2,7 +2,7 @@
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
 │   ● mellow-aurora-7882     │                                                 │
-│   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
+│   ▢ world 40GB (external)  │ release v9 (of 9) · 2026-10-13 08:31Z           │
 │   ⇄ 10.47.11.3: tcp/25565… │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ● started 172.30.0.10    │
 │ ┌ destroy app ─ minecraft-flk ─────────────────────────────────────────────┐ │

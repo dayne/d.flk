@@ -4,16 +4,16 @@
 │   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
 │   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ state     ● started                                                                                                 │
-│ ▾ vintagestory-flk  1/1 ●              │ release   v8                                                                                                        │
+│ ▾ vintagestory-flk  1/1 ●              │ release   v9                                                                                                        │
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       2% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    3007MB used of 11264MB                                                                                    │
-│ Host                                   │ up        1h 49m                                                                                                    │
-│   health ✔                             │ pid       1473109 (firecracker)                                                                                     │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       6% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    9956MB used of 11264MB                                                                                    │
+│ Host                                   │ up        8h 15m                                                                                                    │
+│   health ✔                             │ pid       1676117 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
 │ Storage                                │ ports     tcp/25565 → 10.47.11.3:25565                                                                              │
-│   / 20%                                │           udp/19132 → 10.47.11.3:19132                                                                              │
+│   / 21%                                │           udp/19132 → 10.47.11.3:19132                                                                              │
 │   /data/minecraft 66%                  │ volumes   world → /server                                                                                           │
 │   /data/vintagestory 56%               │ created   2026-10-12 05:01Z                                                                                         │
 │                                     ┌ console ─ minecraft-flk / mellow-aurora-7882 ────────────────────────────────────┐                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M     │ output, and what you type goes to its stdin. It isn't a shell, and Ctrl-C there  │                                     │
 │   ◇ ruby:3.3-alpine 69M             │ doesn't stop the app (use stop).                                                 │                                     │
 │   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
-│   3 flk images: host Images tab     │ To come back to lazyflk, detach: Ctrl-b d.                                       │                                     │
+│   4 flk images: host Images tab     │ To come back to lazyflk, detach: Ctrl-b d.                                       │                                     │
 │                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
 │ Services                            │ enter attach  esc cancel                                                         │                                     │
 │   ● flk-net                         └──────────────────────────────────────────────────────────────────────────────────┘                                     │

@@ -297,8 +297,8 @@ func TestTabFetchCaching(t *testing.T) {
 	if count() != 2 {
 		t.Errorf("stale releases fetched %d times in all", count())
 	}
-	if s := ansi.Strip(m.Render()); !strings.Contains(s, "v8   2026-10-12 07:08Z  Dockerfile  current") ||
-		!strings.Contains(s, "     running on mellow-aurora-7882") {
+	if s := ansi.Strip(m.Render()); !strings.Contains(s, "v9   2026-10-13 08:31Z  Dockerfile  current") ||
+		!strings.Contains(s, "     on mellow-aurora-7882") {
 		t.Errorf("releases tab:\n%s", ansi.Strip(m.Render()))
 	}
 }
@@ -420,5 +420,63 @@ func TestTabBar(t *testing.T) {
 		if got := ansi.Strip(tabBar(names, c.active, c.w)); got != c.want {
 			t.Errorf("active %d, w %d: %q, want %q", c.active, c.w, got, c.want)
 		}
+	}
+}
+
+// A failed release says why; kept and pruned ones say whether they can be
+// rolled back to (flk 1d428f4).
+func TestReleaseLines(t *testing.T) {
+	m := newDemo(fixtures.FS)
+	send(m, tea.WindowSizeMsg{Width: 80, Height: 24})
+	send(m, runCmd(m.Init())...)
+	a := m.apps[0]
+	rels := []flk.Release{
+		{Version: 1, Source: "Dockerfile"},
+		{Version: 2, Source: "Dockerfile", Image: true},
+		{Version: 3, Source: "Dockerfile", Image: true, Status: "failed", Failure: "check port: nothing answered on :25565 within 300s"},
+		{Version: a.Release.Version, Source: "rollback to v2", RollbackOf: 2, Image: true, Current: true},
+	}
+	s := ansi.Strip(strings.Join(m.releaseLines(a, rels, 60), "\n"))
+	for _, want := range []string{"rollback to v2  current", "v3", "failed\n     check port: nothing answered on :25565 within",
+		"Dockerfile  kept", "Dockerfile  image pruned", "can be rolled back to (enter, r)"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("no %q in:\n%s", want, s)
+		}
+	}
+}
+
+// The Config tab leads with flk's warnings and the deploy health checks.
+func TestConfigLines(t *testing.T) {
+	raw, _ := fixtures.FS.ReadFile("config-minecraft-flk.json")
+	s := ansi.Strip(strings.Join(configLines(string(raw), 80), "\n"))
+	if !strings.HasPrefix(s, `checks    ready: log line "Started Geyser on UDP port 19132" within 300s`+"\n          port: tcp :25565 within 300s\n\n{") {
+		t.Errorf("fixture:\n%s", s)
+	}
+	s = ansi.Strip(strings.Join(configLines(`{"warnings": ["unknown key kill_timout; flk ignores it (did you mean kill_timeout?)"], "machine_config": {}}`, 80), "\n"))
+	if !strings.HasPrefix(s, "! unknown key kill_timout") || !strings.Contains(s, "checks    none: deploy waits up to 30s") {
+		t.Errorf("warnings:\n%s", s)
+	}
+	if s := strings.Join(configLines("not json", 80), "\n"); s != "not json" {
+		t.Errorf("plain: %q", s)
+	}
+	if hugePages("") != "" || !strings.Contains(hugePages("2M"), "2M huge pages") {
+		t.Error("huge pages")
+	}
+}
+
+// Opening the app's menu loads its releases, so roll back can offer them.
+func TestMenuLoadsReleases(t *testing.T) {
+	fake := flk.NewFake(fixtures.FS)
+	m := New(Options{Client: flk.New(fake)})
+	send(m, tea.WindowSizeMsg{Width: 160, Height: 48})
+	send(m, runCmd(m.Init())...)
+	goTo(m, kindApp)
+	press(m, "enter")
+	if m.releases(m.apps[0].Name) == nil {
+		t.Fatal("releases not loaded")
+	}
+	press(m, "r")
+	if s := ansi.Strip(m.Render()); !strings.Contains(s, "roll back") || !strings.Contains(s, "v8") {
+		t.Errorf("roll back form:\n%s", s)
 	}
 }

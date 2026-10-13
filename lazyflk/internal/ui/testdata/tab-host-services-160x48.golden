@@ -13,7 +13,7 @@
 │   health ✔                             │                                                                                                                     │
 │                                        │ oneshot units: healthy is active (exited)                                                                           │
 │ Storage                                │                                                                                                                     │
-│   / 20%                                │                                                                                                                     │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
+│   4 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │

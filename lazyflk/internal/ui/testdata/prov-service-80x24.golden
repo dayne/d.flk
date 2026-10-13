@@ -1,7 +1,7 @@
 ┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │                            │ service ssh.service ─  Overview                 │
 │ Storage                    │                                                 │
-│   / 20%                    │ $ systemctl show --timestamp=utc -p ... UNIT... │
+│   / 21%                    │ $ systemctl show --timestamp=utc -p ... UNIT... │
 │   /data/minecraft 66%      │   · journalctl -u UNIT                          │
 │   /data/vintagestory 56%   │                                                 │
 │                            │ unit      ssh.service                           │
@@ -11,7 +11,7 @@
 │   ◇ eclipse-temurin:25-jr… │ since     Sat 2026-10-10 04:46:52 UTC           │
 │   ◇ ruby:3.3-alpine 69M    │ pid       9022                                  │
 │   ◇ alpine:3.20 7.7M       │                                                 │
-│   3 flk images: host Imag… │ pinned by default; edit ~/.config/lazyflk/pins… │
+│   4 flk images: host Imag… │ pinned by default; edit ~/.config/lazyflk/pins… │
 │                            │                                                 │
 │ Services                   │                                                 │
 │   ● flk-net                │                                                 │

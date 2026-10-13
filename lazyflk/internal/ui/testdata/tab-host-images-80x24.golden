@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882     │ $ flk images --json                             │
 │   ▢ world 40GB (external)  │                                                 │
 │   ⇄ 10.47.11.3: tcp/25565… │ minecraft-flk                                   │
-│ ▾ vintagestory-flk  1/1 ●  │   v8     352M  running · current                │
-│   ● frosty-river-2714      │               built 2026-10-12 06:41Z · 7f0a02… │
-│   ▢ vsdata 40GB (external) │   v7     352M  same image as v8                 │
+│ ▾ vintagestory-flk  1/1 ●  │   v9     352M  running · current                │
+│   ● frosty-river-2714      │               built 2026-10-13 08:31Z · cb1853… │
+│   ▢ vsdata 40GB (external) │   v8     352M  older release                    │
 │   ⇄ 10.47.11.3: tcp/42420… │               built 2026-10-12 06:41Z · 7f0a02… │
-│                            │                                                 │
-│ Host                       │ vintagestory-flk                                │
-│   health ✔                 │   v3     560M  running · current                │
-│                            │               built 2026-10-13 05:19Z · e2e7f9… │
-│ Storage                    │   v2     558M  older release                    │
-│   / 20%                    │               built 2026-10-13 04:47Z · b54f5b… │
-│   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │ 1.4G in 3 images                                │
-│                            │                                                 │
+│                            │   v7     352M  same image as v8                 │
+│ Host                       │               built 2026-10-12 06:41Z · 7f0a02… │
+│   health ✔                 │                                                 │
+│                            │ vintagestory-flk                                │
+│ Storage                    │   v3     560M  running · current                │
+│   / 21%                    │               built 2026-10-13 05:19Z · e2e7f9… │
+│   /data/minecraft 66%      │   v2     558M  older release                    │
+│   /data/vintagestory 56%   │               built 2026-10-13 04:47Z · b54f5b… │
+│                            │ … 2 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

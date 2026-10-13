@@ -69,7 +69,18 @@ type Release struct {
 	Path      string `json:"path"`
 	Source    string `json:"source"`
 	CreatedAt string `json:"created_at"`
+	// releases list only (flk 1d428f4)
+	Current    bool   `json:"current"`
+	Image      bool   `json:"image"`    // its image is kept: it can be rolled back to
+	Machines   int    `json:"machines"` // machines on it now
+	Status     string `json:"status"`   // "failed", or empty
+	Failure    string `json:"failure"`  // why it failed its health checks
+	FailedAt   string `json:"failed_at"`
+	RollbackOf int    `json:"rollback_of"` // the release it copies, for a rollback
 }
+
+// Failed reports a release that failed its health checks on deploy.
+func (r Release) Failed() bool { return r.Status == "failed" }
 
 type Machine struct {
 	ID           string        `json:"id"`
@@ -83,6 +94,7 @@ type Machine struct {
 	IP           string        `json:"ip"`
 	CPUs         int           `json:"cpus"`
 	MemoryMB     int           `json:"memory_mb"`
+	HugePages    string        `json:"huge_pages"` // "2M", or empty for normal pages
 	InternalPort int           `json:"internal_port"`
 	Ports        []MachinePort `json:"ports"`
 	Volumes      []Mount       `json:"volumes"`
@@ -241,6 +253,25 @@ type MachineConfig struct {
 	Stdin        string            `json:"stdin"`
 	Restart      *Restart          `json:"restart"`
 	Mounts       []Mount           `json:"mounts"`
+	Checks       []Check           `json:"checks"`
+	HugePages    string            `json:"huge_pages"`
+}
+
+// Check is a health check a machine must pass on deploy (flk 1d428f4).
+type Check struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"` // tcp, http, log
+	GracePeriod int    `json:"grace_period"`
+	Port        int    `json:"port"`
+	Path        string `json:"path"`
+	Match       string `json:"match"` // log: the line to wait for
+}
+
+// ConfigShow is `flk config show`: what flk understood of the app's config.
+type ConfigShow struct {
+	File          string        `json:"file"`
+	MachineConfig MachineConfig `json:"machine_config"`
+	Warnings      []string      `json:"warnings"`
 }
 
 // Help is `flk help --all --json`: the command table.

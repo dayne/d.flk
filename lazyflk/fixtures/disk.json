@@ -1,18 +1,18 @@
 {
   "state_dir": {
     "path": "/home/dayne/.local/share/flk",
-    "bytes": 2958835712,
-    "apparent": 6695558758
+    "bytes": 3330408448,
+    "apparent": 7685682050
   },
   "apps": [
     {
       "app": "minecraft-flk",
       "images": {
-        "bytes": 772022272,
-        "apparent": 1979711488
+        "bytes": 1158033408,
+        "apparent": 2969567232
       },
       "rootfs": {
-        "bytes": 390762496,
+        "bytes": 374521856,
         "apparent": 998244352
       },
       "volumes": {
@@ -20,16 +20,16 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 585728,
-        "apparent": 580247
+        "bytes": 655360,
+        "apparent": 650640
       },
       "external_volumes": {
-        "bytes": 22167695360,
+        "bytes": 22187872256,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1163370496,
-        "apparent": 2978536087
+        "bytes": 1533210624,
+        "apparent": 3968462224
       }
     },
     {
@@ -39,7 +39,7 @@
         "apparent": 2450522112
       },
       "rootfs": {
-        "bytes": 570429440,
+        "bytes": 571965440,
         "apparent": 1234173952
       },
       "volumes": {
@@ -47,26 +47,26 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 659456,
-        "apparent": 656423
+        "bytes": 856064,
+        "apparent": 850648
       },
       "external_volumes": {
         "bytes": 8651468800,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1763749888,
-        "apparent": 3685352487
+        "bytes": 1765482496,
+        "apparent": 3685546712
       }
     }
   ],
   "totals": {
     "images": {
-      "bytes": 1964683264,
-      "apparent": 4430233600
+      "bytes": 2350694400,
+      "apparent": 5420089344
     },
     "rootfs": {
-      "bytes": 961191936,
+      "bytes": 946487296,
       "apparent": 2232418304
     },
     "volumes": {
@@ -74,11 +74,11 @@
       "apparent": 0
     },
     "logs": {
-      "bytes": 1245184,
-      "apparent": 1236670
+      "bytes": 1511424,
+      "apparent": 1501288
     },
     "external_volumes": {
-      "bytes": 30819164160,
+      "bytes": 30839341056,
       "apparent": 85899345920
     }
   },
@@ -86,15 +86,15 @@
     "dir": "/data/flk-backups",
     "apps": {
       "minecraft-flk": {
-        "bytes": 65676931072,
-        "apparent": 128849019802
+        "bytes": 131487404032,
+        "apparent": 257698039654
       },
       "vintagestory-flk": {
-        "bytes": 16460394496,
-        "apparent": 85899346520
+        "bytes": 24865378304,
+        "apparent": 128849019813
       }
     },
-    "bytes": 82137325568,
-    "apparent": 214748366322
+    "bytes": 156352782336,
+    "apparent": 386547059467
   }
 }

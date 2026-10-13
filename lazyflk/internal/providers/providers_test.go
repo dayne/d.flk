@@ -38,11 +38,32 @@ func TestStorage(t *testing.T) {
 	if s := joined(mc); !strings.Contains(s, "lvm") || !strings.Contains(s, "WD_BLACK") || !strings.Contains(s, "isn't in any logical volume yet") {
 		t.Errorf("devices:\n%s", s)
 	}
-	if !strings.Contains(joined(mc), "snapshot /dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012 (30G copy-on-write space)") {
-		t.Errorf("no snapshot:\n%s", joined(mc))
-	}
 	if len(mc.Actions) != 1 || mc.Actions[0].View != actions.ViewCopy || !strings.HasPrefix(mc.Actions[0].Copy, "sudo lvextend -r -L +10G /dev/mapper/") {
 		t.Errorf("grow: %+v", mc.Actions)
+	}
+}
+
+// An LVM snapshot shows under its origin (lsblk-snapshot.json: the
+// reference host on 2026-10-13 with one).
+func TestStorageSnapshot(t *testing.T) {
+	files := map[string]string{}
+	for k, v := range DemoFiles {
+		if v == "lsblk.json" {
+			v = "lsblk-snapshot.json"
+		}
+		files[k] = v
+	}
+	_, env := demo()
+	items, err := Storage{}.Load(context.Background(), (&Fake{FS: fixtures.FS, Files: files}).For, env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var all []string
+	for _, it := range items {
+		all = append(all, joined(it))
+	}
+	if s := strings.Join(all, "\n"); !strings.Contains(s, "snapshot /dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012 (30G copy-on-write space)") {
+		t.Errorf("no snapshot:\n%s", s)
 	}
 }
 

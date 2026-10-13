@@ -1,5 +1,18 @@
 [
   {
+    "repo": "flk.local/minecraft-flk",
+    "tag": "v9",
+    "id": "cb185335b4e7",
+    "size_bytes": 369583266,
+    "created_at": "2026-10-13T08:31:20Z",
+    "app": "minecraft-flk",
+    "release": 9,
+    "orphan": false,
+    "current": true,
+    "in_use": true,
+    "running": true
+  },
+  {
     "repo": "flk.local/vintagestory-flk",
     "tag": "v3",
     "id": "e2e7f90d5314",
@@ -34,9 +47,9 @@
     "app": "minecraft-flk",
     "release": 8,
     "orphan": false,
-    "current": true,
-    "in_use": true,
-    "running": true
+    "current": false,
+    "in_use": false,
+    "running": false
   },
   {
     "repo": "flk.local/minecraft-flk",

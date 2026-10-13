@@ -11,19 +11,19 @@
 │                                        │   /dev/nvme0n1p3  part, 1.8T, LVM2_member                                                                           │
 │ Host                                   │   /dev/nvme0n1  disk, 1.8T · WD_BLACK SN770 2TB                                                                     │
 │   health ✔                             │                                                                                                                     │
-│                                        │ snapshot /dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012 (30G copy-on-write space)                       │
-│ Storage                                │   a snapshot slows writes and stops working once its space fills;                                                   │
-│   / 20%                                │   remove it when it's no longer needed (sudo lvremove /dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012)   │
+│                                        │ 1.1T of /dev/nvme0n1p3 isn't in any logical volume yet: room to grow /data/minecraft                                │
+│ Storage                                │   (e.g. sudo lvextend -r -L +10G /dev/mapper/ubuntu--vg-mc--data)                                                   │
+│   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
-│   /data/vintagestory 56%               │ 1.1T of /dev/nvme0n1p3 isn't in any logical volume yet: room to grow /data/minecraft                                │
-│                                        │   (e.g. sudo lvextend -r -L +10G /dev/mapper/ubuntu--vg-mc--data)                                                   │
+│   /data/vintagestory 56%               │                                                                                                                     │
+│                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   3 flk images: host Images tab        │                                                                                                                     │
+│   4 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │

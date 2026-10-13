@@ -3,7 +3,7 @@
 flk 0.1.0  state: /home/dayne/.local/share/flk  source: /home/dayne/flk
 host: ready, address 10.47.11.3, boot service installed
 
-## minecraft-flk  (v8, 1/1 started)
+## minecraft-flk  (v9, 1/1 started)
   225d58f615e7e6 [mellow-aurora-7882] started 172.30.0.10:25565
   port 10.47.11.3:tcp/25565 -> 10.47.11.3:25565
   port 10.47.11.3:udp/19132 -> 10.47.11.3:19132

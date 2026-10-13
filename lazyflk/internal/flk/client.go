@@ -157,6 +157,11 @@ func (c *Client) Releases(ctx context.Context, app string) ([]Release, error) {
 	return decode[[]Release](c, ctx, "-a", app, "releases", "--json")
 }
 
+// ConfigShow is what flk understood of the app's flk.toml, with warnings.
+func (c *Client) ConfigShow(ctx context.Context, app string) (ConfigShow, error) {
+	return decode[ConfigShow](c, ctx, "-a", app, "config", "show", "--json")
+}
+
 func (c *Client) Volumes(ctx context.Context, app string) ([]Volume, error) {
 	return decode[[]Volume](c, ctx, "-a", app, "volumes", "list", "--json")
 }

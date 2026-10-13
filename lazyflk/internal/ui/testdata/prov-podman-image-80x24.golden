@@ -11,7 +11,7 @@
 │   health ✔                 │ names     docker.io/itzg/minecraft-server:late… │
 │                            │ used      no container uses it                  │
 │ Storage                    │                                                 │
-│   / 20%                    │ Not one of flk's (flk.local/*). A Dockerfile's… │
+│   / 21%                    │ Not one of flk's (flk.local/*). A Dockerfile's… │
 │   /data/minecraft 66%      │ the build cache, so later deploys don't downlo… │
 │   /data/vintagestory 56%   │                                                 │
 │                            │                                                 │

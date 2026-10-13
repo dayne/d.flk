@@ -2,6 +2,7 @@ package actions
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -114,6 +115,51 @@ func TestAppActions(t *testing.T) {
 	}
 }
 
+// Roll back offers kept, healthy, older releases, and passes --no-rollback.
+func TestRollback(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	var rels []flk.Release
+	b, _ := fixtures.FS.ReadFile("releases-minecraft-flk.json")
+	json.Unmarshal(b, &rels)
+	cur := a.Release.Version
+	r := find(t, For(Target{Kind: App, App: a}), "roll back") // releases not loaded yet
+	if r.Disabled != "" || r.Fields[0].Choices != nil || strings.Join(r.Command(nil).Args, " ") != "-a minecraft-flk releases rollback" {
+		t.Errorf("unloaded: %+v %v", r, r.Command(nil).Args)
+	}
+	// a failed release is never offered
+	rels = append(rels, flk.Release{Version: cur + 1, Image: true, Status: "failed", Failure: "check port: nothing on :25565"})
+	r = find(t, For(Target{Kind: App, App: a, Releases: rels}), "roll back")
+	var want []string
+	for i := len(rels) - 1; i >= 0; i-- {
+		if rels[i].Image && !rels[i].Failed() && rels[i].Version != cur {
+			want = append(want, "v"+strconv.Itoa(rels[i].Version))
+		}
+	}
+	if len(want) == 0 || strings.Join(r.Fields[0].Choices, " ") != strings.Join(want, " ") || r.Confirm != Ask || !r.Long {
+		t.Errorf("choices %v, want %v", r.Fields[0].Choices, want)
+	}
+	c := r.Command(map[string]string{"checks": "leave it"})
+	if strings.Join(c.Args, " ") != "-a minecraft-flk releases rollback "+want[0]+" --no-rollback" ||
+		!strings.Contains(c.Warn, "Volumes stay as they are") || !strings.Contains(c.Warn, "--no-rollback") {
+		t.Errorf("%v / %s", c.Args, c.Warn)
+	}
+	var none []flk.Release
+	for _, x := range rels {
+		x.Image = x.Version == cur
+		none = append(none, x)
+	}
+	if d := find(t, For(Target{Kind: App, App: a, Releases: none}), "roll back").Disabled; !strings.Contains(d, "keep_releases") {
+		t.Errorf("nothing kept: %q", d)
+	}
+	d := find(t, For(Target{Kind: App, App: a}), "deploy")
+	if got := strings.Join(d.Command(map[string]string{"checks": "leave it"}).Args, " "); got != "-a minecraft-flk deploy --no-rollback" {
+		t.Errorf("deploy: %s", got)
+	}
+	if got := strings.Join(d.Command(nil).Args, " "); got != "-a minecraft-flk deploy" {
+		t.Errorf("deploy default: %s", got)
+	}
+}
+
 func TestVolumeActions(t *testing.T) {
 	a := hostContext(t).Apps[0]
 	v := a.Volumes[0] // external, attached to the running machine
@@ -204,6 +250,23 @@ func TestFix(t *testing.T) {
 	// a hostile-looking command is never run
 	if act, _ := Fix("x: flk machine start $(reboot)", hc.Apps); act.View != ViewCopy {
 		t.Errorf("ran %+v", act)
+	}
+}
+
+// flk 821f84b: a machine left on a failed release; roll back is the fix.
+func TestFixFailedRelease(t *testing.T) {
+	apps := hostContext(t).Apps
+	step := apps[0].Name + ": machine 225d58f615e7e6 [mellow-aurora-7882] is on v10, which failed its health checks (left by --no-rollback): " +
+		"see flk logs -i 225d58f615e7e6 --no-tail; then flk releases rollback, or fix and flk deploy"
+	f, ok := Fix(step, apps)
+	if !ok || f.Label != "fix: flk -a minecraft-flk releases rollback" || f.Confirm != Ask || !f.Long {
+		t.Errorf("%+v", f)
+	}
+	if f, ok := Fix(strings.Replace(step, "flk releases rollback,", "flk releases rollback v2,", 1), apps); !ok || f.Label != "fix: flk -a minecraft-flk releases rollback v2" {
+		t.Errorf("with a version: %+v", f)
+	}
+	if _, ok := Fix(apps[0].Name+": optional: flk.toml: unknown key kill_timout (did you mean kill_timeout?); flk ignores it", apps); ok {
+		t.Error("a config warning has no command to run")
 	}
 }
 

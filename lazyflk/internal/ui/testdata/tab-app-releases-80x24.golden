@@ -4,18 +4,18 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk releases --json          │
 │   ⇄ 10.47.11.3: tcp/25565… │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ v8   2026-10-12 07:08Z  Dockerfile  current     │
-│   ● frosty-river-2714      │      running on mellow-aurora-7882              │
-│   ▢ vsdata 40GB (external) │ v7   2026-10-12 06:58Z  Dockerfile              │
-│   ⇄ 10.47.11.3: tcp/42420… │ v6   2026-10-12 06:41Z  Dockerfile              │
-│                            │ v5   2026-10-12 06:34Z  Dockerfile              │
-│ Host                       │ v4   2026-10-12 05:35Z  Dockerfile              │
-│   health ✔                 │ v3   2026-10-12 05:30Z  Dockerfile              │
-│                            │ v2   2026-10-12 05:20Z  Dockerfile              │
-│ Storage                    │ v1   2026-10-12 05:01Z  Dockerfile              │
-│   / 20%                    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ v9   2026-10-13 08:31Z  Dockerfile  current     │
+│   ● frosty-river-2714      │      on mellow-aurora-7882                      │
+│   ▢ vsdata 40GB (external) │ v8   2026-10-12 07:08Z  Dockerfile  kept        │
+│   ⇄ 10.47.11.3: tcp/42420… │ v7   2026-10-12 06:58Z  Dockerfile  kept        │
+│                            │ v6   2026-10-12 06:41Z  Dockerfile  image prun… │
+│ Host                       │ v5   2026-10-12 06:34Z  Dockerfile  image prun… │
+│   health ✔                 │ v4   2026-10-12 05:35Z  Dockerfile  image prun… │
+│                            │ v3   2026-10-12 05:30Z  Dockerfile  image prun… │
+│ Storage                    │ v2   2026-10-12 05:20Z  Dockerfile  image prun… │
+│   / 21%                    │ v1   2026-10-12 05:01Z  Dockerfile  image prun… │
 │   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │                                                 │
+│   /data/vintagestory 56%   │ kept: its image is still here, so it can be ro… │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

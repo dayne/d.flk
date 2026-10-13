@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
 │   ⇄ 10.47.11.3: tcp/25565… │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ world-20261013T062733Z.ext4                     │
-│   ● frosty-river-2714      │   2026-10-13 06:28Z · 20G used · checked clean… │
-│   ▢ vsdata 40GB (external) │   mode live · release v8 · took 49s             │
+│ ▾ vintagestory-flk  1/1 ●  │ world-20261013T111353Z.ext4                     │
+│   ● frosty-river-2714      │   2026-10-13 11:14Z · 20G used · checked clean… │
+│   ▢ vsdata 40GB (external) │   mode live · release v9 · took 24s             │
 │   ⇄ 10.47.11.3: tcp/42420… │                                                 │
-│                            │ world-20261013T062240Z.ext4                     │
-│ Host                       │   2026-10-13 06:23Z · 20G used · repaired       │
-│   health ✔                 │   mode live · release v8 · took 49s             │
+│                            │ world-20261013T100001Z.ext4                     │
+│ Host                       │   2026-10-13 10:00Z · 20G used · checked clean… │
+│   health ✔                 │   mode live · release v9 · took 20s             │
 │                            │                                                 │
-│ Storage                    │ world-20261013T055118Z.ext4                     │
-│   / 20%                    │   2026-10-13 05:52Z · 20G used · repaired       │
-│   /data/minecraft 66%      │   mode live · release v8 · took 50s             │
+│ Storage                    │ world-20261013T082359Z.ext4                     │
+│   / 21%                    │   2026-10-13 08:24Z · 20G used · checked clean… │
+│   /data/minecraft 66%      │   mode live · release v8 · took 49s             │
 │   /data/vintagestory 56%   │                                                 │
-│                            │ restore: stop the machine first                 │
+│                            │ … 13 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

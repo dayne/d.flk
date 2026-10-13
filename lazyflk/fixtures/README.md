@@ -1,6 +1,6 @@
 # Fixtures
 
-Real output from the reference host (flk 0.1.0, commit 6183c62, 2026-10-13),
+Real output from the reference host (flk 0.1.0, commit 821f84b, 2026-10-13),
 captured with the commands below by `./capture.sh` (read-only; run it on a
 quiet host, then review the diff). Never edit them by hand. No secret values: `secrets list --json` has names and
 digests only.
@@ -22,7 +22,7 @@ digests only.
 | secrets-minecraft-flk.json | `flk -a minecraft-flk secrets list --json` |
 | machine-status.json | `flk -a minecraft-flk machine status ID` |
 | logs-minecraft-flk.txt | `flk -a minecraft-flk logs -n 40 --no-tail` |
-| config-minecraft-flk.json | `flk -a minecraft-flk config show` |
+| config-minecraft-flk.json | `flk -a minecraft-flk config show --json` (same as without --json) |
 | backups-minecraft-flk.json | `flk -a minecraft-flk volumes backups --json` |
 | backups-sample.json | `flk -a flkt-lazyflk-m2 volumes backups --json` at flk 407ff4d: a test app (since destroyed) after one offline and one stop-mode backup |
 | df.txt | `df -k --output=target,size,used,avail,pcent MOUNT_DIRS...` (the `mount_dirs` of context-all.json, which start with the state dir) |
@@ -37,6 +37,7 @@ Host commands for the providers (SPEC 10), as run by lazyflk:
 | podman-ps.json | `podman ps -a --external --format json` (none at capture; the tests use a stub for leftovers) |
 | podman-images.json | `podman images --format json` |
 | lsblk.json | `lsblk -e7 -b --json -o NAME,PATH,TYPE,SIZE,FSTYPE,FSSIZE,FSAVAIL,MOUNTPOINTS,MODEL` |
+| lsblk-snapshot.json | the same, at flk 6183c62, while an LVM snapshot of /data/minecraft existed (since removed); not recaptured |
 | systemctl-show.txt | `systemctl show --timestamp=utc -p Id,Description,LoadState,ActiveState,SubState,UnitFileState,ActiveEnterTimestamp,StateChangeTimestamp,MainPID,Result,NRestarts` for flk's units and the default pins |
 | id-groups.txt | `id -Gn` |
 | buildah-version.txt | `buildah --version` (present: build containers are removed with buildah rm) |

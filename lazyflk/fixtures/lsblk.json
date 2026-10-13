@@ -53,7 +53,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 80150679552,
+                     "fsavail": 79594651648,
                      "mountpoints": [
                          "/"
                      ],
@@ -71,75 +71,29 @@
                      ],
                      "model": null
                   },{
+                     "name": "ubuntu--vg-mc--data",
+                     "path": "/dev/mapper/ubuntu--vg-mc--data",
+                     "type": "lvm",
+                     "size": 107374182400,
+                     "fstype": "ext4",
+                     "fssize": 105089261568,
+                     "fsavail": 33907843072,
+                     "mountpoints": [
+                         "/data/minecraft"
+                     ],
+                     "model": null
+                  },{
                      "name": "ubuntu--vg-flk--backups",
                      "path": "/dev/mapper/ubuntu--vg-flk--backups",
                      "type": "lvm",
                      "size": 429496729600,
                      "fstype": "ext4",
                      "fssize": 421606629376,
-                     "fsavail": 317975547904,
+                     "fsavail": 243760091136,
                      "mountpoints": [
                          "/data/flk-backups"
                      ],
                      "model": null
-                  },{
-                     "name": "ubuntu--vg-mc--data-real",
-                     "path": "/dev/mapper/ubuntu--vg-mc--data-real",
-                     "type": "lvm",
-                     "size": 107374182400,
-                     "fstype": null,
-                     "fssize": null,
-                     "fsavail": null,
-                     "mountpoints": [],
-                     "model": null,
-                     "children": [
-                        {
-                           "name": "ubuntu--vg-mc--data",
-                           "path": "/dev/mapper/ubuntu--vg-mc--data",
-                           "type": "lvm",
-                           "size": 107374182400,
-                           "fstype": "ext4",
-                           "fssize": 105089261568,
-                           "fsavail": 33928019968,
-                           "mountpoints": [
-                               "/data/minecraft"
-                           ],
-                           "model": null
-                        },{
-                           "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012",
-                           "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012",
-                           "type": "lvm",
-                           "size": 107374182400,
-                           "fstype": "ext4",
-                           "fssize": null,
-                           "fsavail": null,
-                           "mountpoints": [],
-                           "model": null
-                        }
-                     ]
-                  },{
-                     "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012-cow",
-                     "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012-cow",
-                     "type": "lvm",
-                     "size": 32212254720,
-                     "fstype": null,
-                     "fssize": null,
-                     "fsavail": null,
-                     "mountpoints": [],
-                     "model": null,
-                     "children": [
-                        {
-                           "name": "ubuntu--vg-mc--data--pre--edit--2159--20261012",
-                           "path": "/dev/mapper/ubuntu--vg-mc--data--pre--edit--2159--20261012",
-                           "type": "lvm",
-                           "size": 107374182400,
-                           "fstype": "ext4",
-                           "fssize": null,
-                           "fsavail": null,
-                           "mountpoints": [],
-                           "model": null
-                        }
-                     ]
                   }
                ]
             }

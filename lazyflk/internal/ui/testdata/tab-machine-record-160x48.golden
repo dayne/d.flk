@@ -10,27 +10,28 @@
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │   "tap_index": 0,                                                                                                   │
 │                                        │   "ip": "172.30.0.10",                                                                                              │
 │ Host                                   │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
-│   health ✔                             │   "release": 8,                                                                                                     │
+│   health ✔                             │   "release": 9,                                                                                                     │
 │                                        │   "config": {                                                                                                       │
 │ Storage                                │     "cpus": 4,                                                                                                      │
-│   / 20%                                │     "memory_mb": 11264,                                                                                             │
+│   / 21%                                │     "memory_mb": 11264,                                                                                             │
 │   /data/minecraft 66%                  │     "env": {                                                                                                        │
 │   /data/vintagestory 56%               │       "TZ": "America/Anchorage",                                                                                    │
 │                                        │       "MC_HEAP": "8G",                                                                                              │
-│ Podman                                 │       "RESTART_DELAY": "10",                                                                                        │
-│   ◇ itzg/minecraft-server:latest 868M  │       "MAX_RESTARTS": "5",                                                                                          │
-│   ◇ dotnet/runtime:10.0 197M           │       "RESTART_WINDOW": "600",                                                                                      │
-│   ◇ eclipse-temurin:25-jre 341M        │       "STOP_TIMEOUT": "100",                                                                                        │
-│   ◇ ruby:3.3-alpine 69M                │       "DISCORD_NAME": "Minecraft",                                                                                  │
-│   ◇ alpine:3.20 7.7M                   │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
-│   3 flk images: host Images tab        │     },                                                                                                              │
-│                                        │     "mount_specs": [                                                                                                │
-│ Services                               │       {                                                                                                             │
-│   ● flk-net                            │         "source": "world",                                                                                          │
-│   ● flk-machines                       │         "destination": "/server"                                                                                    │
-│   ● ssh                                │       }                                                                                                             │
-│   ● snap.mosquitto.mosquitto           │     ],                                                                                                              │
-│   ● chrony                             │     "internal_port": 25565,                                                                                         │
+│ Podman                                 │       "MC_JAVA_OPTS": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVM… │
+│   ◇ itzg/minecraft-server:latest 868M  │       "RESTART_DELAY": "10",                                                                                        │
+│   ◇ dotnet/runtime:10.0 197M           │       "MAX_RESTARTS": "5",                                                                                          │
+│   ◇ eclipse-temurin:25-jre 341M        │       "RESTART_WINDOW": "600",                                                                                      │
+│   ◇ ruby:3.3-alpine 69M                │       "STOP_TIMEOUT": "100",                                                                                        │
+│   ◇ alpine:3.20 7.7M                   │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│   4 flk images: host Images tab        │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│                                        │     },                                                                                                              │
+│ Services                               │     "mount_specs": [                                                                                                │
+│   ● flk-net                            │       {                                                                                                             │
+│   ● flk-machines                       │         "source": "world",                                                                                          │
+│   ● ssh                                │         "destination": "/server"                                                                                    │
+│   ● snap.mosquitto.mosquitto           │       }                                                                                                             │
+│   ● chrony                             │     ],                                                                                                              │
+│                                        │     "internal_port": 25565,                                                                                         │
 │                                        │     "ports": [                                                                                                      │
 │                                        │       {                                                                                                             │
 │                                        │         "proto": "tcp",                                                                                             │
@@ -39,8 +40,7 @@
 │                                        │       },                                                                                                            │
 │                                        │       {                                                                                                             │
 │                                        │         "proto": "udp",                                                                                             │
-│                                        │         "port": 19132,                                                                                              │
-│                                        │ … 24 more (pgdn)                                                                                                    │
+│                                        │ … 40 more (pgdn)                                                                                                    │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
