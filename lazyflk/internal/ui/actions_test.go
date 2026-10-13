@@ -87,7 +87,7 @@ func TestActionSnapshots(t *testing.T) {
 		press(m, strings.Split("API_KEY", "")...)
 		press(m, "tab", "s", "3", "c", "r", "3", "t")
 		snap(t, m, "form-secret")
-		press(m, "esc", "enter", "D", "m", "i", "n")
+		press(m, "esc", "enter", "D", "enter", "m", "i", "n")
 		snap(t, m, "confirm-destroy")
 		press(m, "esc")
 
@@ -196,7 +196,7 @@ func TestFormChecks(t *testing.T) {
 // Destroying needs the name typed exactly.
 func TestTypedConfirm(t *testing.T) {
 	m := demoModel(t, 80, 24)
-	press(m, "enter", "D")
+	press(m, "enter", "D", "enter") // the form: keep its backups
 	press(m, strings.Split("minecraft", "")...)
 	press(m, "enter")
 	if m.confirm == nil || len(m.jobs) != 0 {

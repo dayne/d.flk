@@ -9,7 +9,7 @@
 │ │ $ flk apps destroy minecraft-flk --yes                                   │ │
 │ │                                                                          │ │
 │ │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External    │ │
-│ │ volume files are kept. This can't be undone.                             │ │
+│ │ volume files are kept. Its backups are kept. This can't be undone.       │ │
 │ │                                                                          │ │
 │ │ Type minecraft-flk to confirm: min▏                                      │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │

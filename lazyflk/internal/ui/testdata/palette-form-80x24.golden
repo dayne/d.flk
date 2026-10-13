@@ -6,7 +6,6 @@
 │ │   (see flk help --all): by default its machine is stopped for the copy   │ │
 │ │   and started again; mode = "live" with pre/post hooks (e.g. save-off /  │ │
 │ │   save-on) copies while it runs.                                         │ │
-│ │ · Copies are sparse, and instant on XFS/btrfs when the backup dir shares │ │
 │ │   … (flk help volumes backup)                                            │ │
 │ │                                                                          │ │
 │ │ app         [minecraft-flk▏                                            ] │ │
@@ -16,6 +15,7 @@
 │ │ --keep N    [                                                          ] │ │
 │ │ --mode MODE [                                                          ] │ │
 │ │ --no-check  ‹ no ›                                                       │ │
+│ │ --no-copy   ‹ no ›                                                       │ │
 │ │                                                                          │ │
 ├ │ $ flk -a minecraft-flk volumes backup                                    │─┤
 │ ├──────────────────────────────────────────────────────────────────────────┤ │

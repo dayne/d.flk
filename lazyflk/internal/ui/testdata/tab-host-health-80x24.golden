@@ -16,7 +16,7 @@
 │   / 21%                    │           /data/vintagestory/flk                │
 │   /data/minecraft 66%      │                                                 │
 │   /data/vintagestory 56%   │ ✔ /dev/kvm read/write                           │
-│                            │ … 22 more (pgdn)                                │
+│                            │ … 23 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

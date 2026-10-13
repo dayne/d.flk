@@ -28,7 +28,7 @@
 │ Services                               │ ✔ port helper (host ports from 1024)                                                                                │
 │   ● flk-net                            │ ✔ boot service (machines come back after a reboot)                                                                  │
 │   ● flk-machines                       │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
-│   ● ssh                                │ ✔ backups go to /data/flk-backups (227.0GB free)                                                                    │
+│   ● ssh                                │ ✔ backups go to /data/flk-backups: 145.6GB now, about 201.1GB at their keep counts; 227.0GB free                    │
 │   ● snap.mosquitto.mosquitto           │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │

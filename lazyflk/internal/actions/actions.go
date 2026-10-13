@@ -288,7 +288,10 @@ func appActions(t Target) []Action {
 		unset.Disabled = "no secrets"
 	}
 	destroy := Action{Key: "D", Label: "destroy app", Help: "delete the app, its machines, releases and volumes",
-		Confirm: Type, TypeName: a.Name, build: func(map[string]string) Command {
+		Confirm: Type, TypeName: a.Name,
+		Fields: []Field{{Name: "backups", Label: "its backups", Choices: []string{"keep", "delete"},
+			Help: "keep: they stay in the backup dir, so a volume can be restored later (flk apps prune --backups deletes them)"}},
+		build: func(v map[string]string) Command {
 			warn := fmt.Sprintf("Deletes %s: %s, %s and its releases.", a.Name,
 				plural(len(a.Machines), "machine"), plural(len(a.Volumes), "volume"))
 			for _, v := range a.Volumes {
@@ -297,7 +300,14 @@ func appActions(t Target) []Action {
 					break
 				}
 			}
-			return Command{Args: []string{"apps", "destroy", a.Name, "--yes"}, Warn: warn + " This can't be undone."}
+			args := []string{"apps", "destroy", a.Name, "--yes"}
+			if v["backups"] == "delete" {
+				args = append(args, "--with-backups")
+				warn += " Its backups are deleted too."
+			} else {
+				warn += " Its backups are kept."
+			}
+			return Command{Args: args, Warn: warn + " This can't be undone."}
 		}}
 	acts := []Action{deploy, rollback(a, t.Releases, running),
 		{Key: "c", Label: "scale", Help: "set the number of machines",
@@ -460,7 +470,8 @@ func backup(t Target, v *flk.Volume) Action {
 	}
 	act := Action{Key: "b", Label: "back up", Help: "copy " + what + " to the backup dir, then prune old copies",
 		Confirm: Ask, Long: true, build: func(map[string]string) Command {
-			warn := "Copies " + what + ". In stop mode (the default) the machine using a volume stops for the copy and starts again; [flk.backup] mode in flk.toml can make it live or pause."
+			warn := "Copies " + what + ". In stop mode (the default) the machine using a volume stops for the copy and starts again; [flk.backup] mode in flk.toml can make it live or pause." +
+				" If the backup dir is short on space, the oldest backups beyond keep go first; if it still won't fit, nothing is copied."
 			return Command{Args: args, Warn: warn}
 		}}
 	if len(a.Volumes) == 0 {
@@ -670,6 +681,11 @@ func hostActions(t Target) []Action {
 		{Key: "P", Label: "prune images", Help: "remove container images of apps that no longer exist",
 			Confirm: Ask, build: func(map[string]string) Command {
 				return Command{Args: []string{"apps", "prune"}, Warn: "Removes image tags of destroyed apps."}
+			}},
+		{Key: "B", Label: "prune backups", Help: "delete the backups of apps that no longer exist",
+			Confirm: Type, TypeName: "backups", build: func(map[string]string) Command {
+				return Command{Args: []string{"apps", "prune", "--backups"},
+					Warn: "Deletes the per-app backup dirs of apps that no longer exist (only dirs holding nothing but flk's backups), and images of destroyed apps. Restoring a destroyed app's volume needs those backups. This can't be undone."}
 			}},
 		{Key: "h", Label: "health", Help: "flk doctor: every host check", View: ViewHealth},
 	}

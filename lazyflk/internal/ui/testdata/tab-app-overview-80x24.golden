@@ -6,7 +6,7 @@
 │   ⇄ tcp/25565 udp/19132    │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ● started 172.30.0.10    │
 │   ● frosty-river-2714      │   mellow-aurora-7882 · 4 cpus · 11264MB · v9    │
-│   ▢ vsdata 40GB (external) │   cpu 4% · 9956MB used · up 8h 18m              │
+│   ▢ vsdata 40GB (external) │   cpu 4% · 10489MB used · up 13h 12m            │
 │   ⇄ tcp/42420 udp/42420    │                                                 │
 │                            │ ports  tcp/25565 → 10.47.11.3:25565             │
 │ Host                       │        udp/19132 → 10.47.11.3:19132             │

@@ -39,7 +39,7 @@
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
-│                             │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check]                 │                             │
+│                             │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check] [--no-copy]     │                             │
 │                             ├──────────────────────────────────────────────────────────────────────────────────────────────────┤                             │
 ├ Needs attention ────────────│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │─────────────────────────────┤
 │ ✔ nothing needs attention   └──────────────────────────────────────────────────────────────────────────────────────────────────┘                             │

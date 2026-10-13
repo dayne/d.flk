@@ -73,7 +73,7 @@
       "hint": null
     },
     {
-      "label": "backups go to /data/flk-backups (227.0GB free)",
+      "label": "backups go to /data/flk-backups: 145.6GB now, about 201.1GB at their keep counts; 227.0GB free",
       "status": "pass",
       "hint": null
     },

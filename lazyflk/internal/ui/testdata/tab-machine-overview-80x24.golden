@@ -9,8 +9,8 @@
 │   ▢ vsdata 40GB (external) │ ip        172.30.0.10:25565                     │
 │   ⇄ tcp/42420 udp/42420    │ size      4 cpus · 11264MB                      │
 │                            │ cpu       4% (100% = one host CPU; it has 4)    │
-│ Host                       │ memory    9956MB used of 11264MB                │
-│   health ✔                 │ up        8h 18m                                │
+│ Host                       │ memory    10489MB used of 11264MB               │
+│   health ✔                 │ up        13h 12m                               │
 │                            │ pid       1676117 (firecracker)                 │
 │ Storage                    │ restart   on-failure · 1 retry                  │
 │   / 21%                    │ ports     tcp/25565 → 10.47.11.3:25565          │

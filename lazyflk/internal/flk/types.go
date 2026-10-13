@@ -378,8 +378,17 @@ type DiskUse struct {
 	Backups *struct {
 		Dir string `json:"dir"`
 		Size
-		Apps map[string]Size `json:"apps"`
+		Apps map[string]BackupUse `json:"apps"`
 	} `json:"backups"` // null without a backup_dir
+}
+
+// BackupUse is one app's backups; Volumes is per volume name (flk 4b26b65).
+type BackupUse struct {
+	Size
+	Volumes map[string]struct {
+		Size
+		Count int `json:"count"`
+	} `json:"volumes"`
 }
 
 // AppDisk is one app's use; Total is inside the state dir (external

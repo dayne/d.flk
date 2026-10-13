@@ -3,43 +3,43 @@
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 200 --no-tail                                                      │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ [00:32:13] [spark-worker-pool-1-thread-2/INFO]: [⚡]  1%, 14%, 14%  (system)                                        │
-│ ▾ vintagestory-flk  1/1 ●              │ [00:32:13] [spark-worker-pool-1-thread-2/INFO]: [⚡]  1%, 13%, 13%  (process)                                       │
-│   ● frosty-river-2714                  │ [00:32:47] [Server thread/INFO]: Server empty for 60 seconds, pausing                                               │
-│   ▢ vsdata 40GB (external)             │ [00:42:16] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ [01:39:37] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ save-off                                                                                                            │
-│ Host                                   │ save-all flush                                                                                                      │
-│   health ✔                             │ [02:00:01] [Server thread/INFO]: Automatic saving is now disabled                                                   │
-│                                        │ [02:00:01] [Server thread/INFO]: Saving the game (this may take a moment!)                                          │
-│ Storage                                │ [02:00:01] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved                            │
-│   / 21%                                │ [02:00:01] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved                            │
-│   /data/minecraft 66%                  │ [02:00:01] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved                             │
-│   /data/vintagestory 56%               │ [02:00:01] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved                                │
-│                                        │ [02:00:01] [Server thread/INFO]: Saved the game                                                                     │
-│ Podman                                 │ save-on                                                                                                             │
-│   ◇ itzg/minecraft-server:latest 868M  │ [02:00:21] [Server thread/INFO]: Automatic saving is now enabled                                                    │
-│   ◇ dotnet/runtime:10.0 197M           │ [02:00:22] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started                                          │
-│   ◇ eclipse-temurin:25-jre 341M        │ [02:00:22] [RCON Client /172.30.0.1 #5/INFO]: Thread RCON Client /172.30.0.1 shutting down                          │
-│   ◇ ruby:3.3-alpine 69M                │ [02:19:49] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│   ◇ alpine:3.20 7.7M                   │ save-off                                                                                                            │
-│   4 flk images: host Images tab        │ save-all flush[03:13:53] [Server thread/INFO]: Automatic saving is now disabled                                     │
-│                                        │                                                                                                                     │
-│ Services                               │ [03:13:53] [Server thread/INFO]: Saving the game (this may take a moment!)                                          │
-│   ● flk-net                            │ [03:13:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved                            │
-│   ● flk-machines                       │ [03:13:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved                            │
-│   ● ssh                                │ [03:13:53] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved                             │
-│   ● snap.mosquitto.mosquitto           │ [03:13:53] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved                                │
-│   ● chrony                             │ [03:13:53] [Server thread/INFO]: Saved the game                                                                     │
-│                                        │ save-on                                                                                                             │
-│                                        │ [03:14:18] [Server thread/INFO]: Automatic saving is now enabled                                                    │
-│                                        │ [03:14:18] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started                                          │
-│                                        │ [03:14:18] [RCON Client /172.30.0.1 #6/INFO]: Thread RCON Client /172.30.0.1 shutting down                          │
-│                                        │ [03:46:49] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Timed out                         │
-│                                        │ [03:59:19] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Timed out                         │
-│                                        │ [04:29:38] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ [06:30:34] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Timed out                         │
-│                                        │ [07:44:48] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Timed out                         │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │     at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:800)           │
+│ ▾ vintagestory-flk  1/1 ●              │     at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:737)           │
+│   ● frosty-river-2714                  │     at knot//io.netty.channel.ChannelOutboundHandlerAdapter.write(ChannelOutboundHandlerAdapter.java:113)           │
+│   ▢ vsdata 40GB (external)             │     at knot//net.minecraft.network.Connection$2.write(Connection.java:489)                                          │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │     at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:800)           │
+│                                        │     at knot//io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:776)   │
+│ Host                                   │     at knot//io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:859)   │
+│   health ✔                             │     at knot//io.netty.channel.DefaultChannelPipeline.writeAndFlush(DefaultChannelPipeline.java:1046)                │
+│                                        │     at knot//io.netty.channel.Channel.writeAndFlush(Channel.java:257)                                               │
+│ Storage                                │     at knot//net.minecraft.network.Connection.doSendPacket(Connection.java:325)                                     │
+│   / 21%                                │     at knot//net.minecraft.network.Connection.sendPacket(Connection.java:317)                                       │
+│   /data/minecraft 66%                  │     at knot//net.minecraft.network.Connection.send(Connection.java:299)                                             │
+│   /data/vintagestory 56%               │     at knot//net.minecraft.network.Connection.send(Connection.java:293)                                             │
+│                                        │     at knot//net.minecraft.network.Connection.exceptionCaught(Connection.java:144)                                  │
+│ Podman                                 │     at knot//io.netty.channel.AbstractChannelHandlerContext.invokeExceptionCaught(AbstractChannelHandlerContext.ja… │
+│   ◇ itzg/minecraft-server:latest 868M  │     at knot//io.netty.channel.AbstractChannelHandlerContext.fireExceptionCaught(AbstractChannelHandlerContext.java… │
+│   ◇ dotnet/runtime:10.0 197M           │     at knot//io.netty.channel.DefaultChannelPipeline$HeadContext.exceptionCaught(DefaultChannelPipeline.java:1396)  │
+│   ◇ eclipse-temurin:25-jre 341M        │     at knot//io.netty.channel.DefaultChannelPipeline.fireExceptionCaught(DefaultChannelPipeline.java:890)           │
+│   ◇ ruby:3.3-alpine 69M                │     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.handleReadException(AbstractEpoll… │
+│   ◇ alpine:3.20 7.7M                   │     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamC… │
+│   4 flk images: host Images tab        │     at knot//io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)  │
+│                                        │     at knot//io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)       │
+│ Services                               │     at knot//io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:546)                            │
+│   ● flk-net                            │     at knot//io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)                                     │
+│   ● flk-machines                       │     at knot//io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)                       │
+│   ● ssh                                │     at knot//io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)                         │
+│   ● snap.mosquitto.mosquitto           │     at knot//io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1195)          │
+│   ● chrony                             │     at knot//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)                              │
+│                                        │     at java.base/java.lang.Thread.run(Unknown Source)                                                               │
+│                                        │ [09:57:25] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
+│                                        │ [11:02:15] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
+│                                        │ [12:01:02] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
+│                                        │ [12:58:25] [Server thread/INFO]: FaintWolf7391 (/178.63.179.212:18325) lost connection: Disconnected                │
+│                                        │ [13:08:24] [Server thread/INFO]: HollowWolf7134 (/178.63.179.210:58571) lost connection: Disconnected               │
+│                                        │ [13:18:25] [Server thread/INFO]: GrandLynx0904 (/178.63.179.212:62139) lost connection: Disconnected                │
+│                                        │ [13:30:11] [Server thread/INFO]: SlyOwl0456 (/178.63.123.78:16721) lost connection: Disconnected                    │
+│                                        │ [13:41:37] [Server thread/INFO]: EpicOwl9598 (/176.65.148.253:39620) lost connection: Disconnected                  │
 │                                        │ l: follow, search, wrap (full screen)                                                                               │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │

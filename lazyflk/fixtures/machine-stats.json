@@ -8,8 +8,8 @@
     "cpus": 4,
     "memory_mb": 11264,
     "cpu_percent": 4.0,
-    "rss_mb": 9956,
-    "uptime_s": 29927
+    "rss_mb": 10489,
+    "uptime_s": 47565
   },
   {
     "app": "vintagestory-flk",
@@ -21,6 +21,6 @@
     "memory_mb": 6144,
     "cpu_percent": 8.0,
     "rss_mb": 3384,
-    "uptime_s": 26401
+    "uptime_s": 44039
   }
 ]

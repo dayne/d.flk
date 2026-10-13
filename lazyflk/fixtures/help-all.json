@@ -359,7 +359,7 @@
         },
         {
           "name": "destroy",
-          "usage": "flk apps destroy NAME [--yes]",
+          "usage": "flk apps destroy NAME [--yes] [--with-backups]",
           "summary": "Destroy an app, its machines and volumes",
           "args": "NAME",
           "options": [
@@ -369,19 +369,37 @@
                 "--yes"
               ],
               "description": "Don't ask for confirmation"
+            },
+            {
+              "switches": [
+                "--with-backups"
+              ],
+              "description": "Also delete its backups in backup_dir (kept by default)"
             }
           ],
           "json": false,
           "notes": [
-            "Without a terminal (agents, scripts) --yes is required; otherwise it asks."
+            "Without a terminal (agents, scripts) --yes is required; otherwise it asks.",
+            "Its volume backups stay in backup_dir unless --with-backups: launch an app of the same name and flk volumes restore VOLUME --as NEW brings one back. Copies elsewhere (backup_copy_to) are never deleted."
           ]
         },
         {
           "name": "prune",
-          "usage": "flk apps prune",
-          "summary": "Remove container images left behind by apps that no longer exist",
+          "usage": "flk apps prune [--backups] [--to DIR]",
+          "summary": "Remove container images (and with --backups, backups) left behind by apps that no longer exist",
           "options": [
-
+            {
+              "switches": [
+                "--backups"
+              ],
+              "description": "Also delete backups (in backup_dir, or --to) of apps that no longer exist"
+            },
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            }
           ],
           "json": false
         }
@@ -940,7 +958,7 @@
         },
         {
           "name": "backup",
-          "usage": "flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check]",
+          "usage": "flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check] [--no-copy]",
           "summary": "Copy volumes (default: all of the app's) to the backup dir, then prune old copies",
           "args": "[ID|NAME...]",
           "options": [
@@ -967,12 +985,56 @@
                 "--no-check"
               ],
               "description": "Skip the e2fsck of the copy"
+            },
+            {
+              "switches": [
+                "--no-copy"
+              ],
+              "description": "Don't copy it to backup_copy_to (host.toml) this time"
             }
           ],
           "json": false,
           "notes": [
             "How the app is kept from writing comes from [flk.backup] in flk.toml (see flk help --all): by default its machine is stopped for the copy and started again; mode = \"live\" with pre/post hooks (e.g. save-off / save-on) copies while it runs.",
-            "Copies are sparse, and instant on XFS/btrfs when the backup dir shares the volume's filesystem. The copy is checked with e2fsck (a copy of a running machine gets its journal replayed)."
+            "Copies are sparse, and instant on XFS/btrfs when the backup dir shares the volume's filesystem. The copy is checked with e2fsck (a copy of a running machine gets its journal replayed).",
+            "With backup_copy_to in ~/.config/flk/host.toml, the new backup is then copied there too (see flk volumes copy); a failed copy makes the command fail, but the backup is kept."
+          ]
+        },
+        {
+          "name": "copy",
+          "usage": "flk volumes copy [ID|NAME...] [--to DIR] [--dest DEST] [--backup BACKUP] [--keep N]",
+          "summary": "Copy backups to another disk or host (off this machine), then prune old copies there",
+          "args": "[ID|NAME...]",
+          "options": [
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--dest DEST"
+              ],
+              "description": "Where to: a dir (another disk) or HOST:DIR (rsync over ssh) (default: backup_copy_to in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--backup BACKUP"
+              ],
+              "description": "Which backup (default: the latest)"
+            },
+            {
+              "switches": [
+                "--keep N"
+              ],
+              "description": "Copies kept at DEST per volume (default: backup_copy_keep, else backup_keep, 7)"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "Copies go to DEST/APP/VOLUME/, like the backup dir. Ones already there are skipped, so it's safe to rerun. Remote copies use rsync over ssh with keys (BatchMode: no password prompts), resume when cut off, and run at idle I/O priority.",
+            "Each backup records its copies (copies in flk volumes backups --json); flk doctor warns when the newest copy is older than backup_copy_warn_days (8)."
           ]
         },
         {
@@ -998,7 +1060,7 @@
         },
         {
           "name": "restore",
-          "usage": "flk volumes restore ID|NAME [BACKUP] [--to DIR]",
+          "usage": "flk volumes restore ID|NAME [BACKUP] [--to DIR] [--as NEW] [--path FILE]",
           "summary": "Replace a volume's data with a backup (default: the latest); its machine must be stopped",
           "args": "ID|NAME [BACKUP]",
           "options": [
@@ -1007,11 +1069,61 @@
                 "--to DIR"
               ],
               "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--as NEW"
+              ],
+              "description": "Restore into a new volume NEW instead (no stop, the volume is untouched); names are lowercase letters, digits and underscores (e.g. world_restored)"
+            },
+            {
+              "switches": [
+                "--path FILE"
+              ],
+              "description": "With --as: create the new volume's image at FILE (flk never deletes it)"
             }
           ],
           "json": false,
           "notes": [
-            "BACKUP is a file name from flk volumes backups, or part of it (e.g. its date). The current image is kept beside it as FILE.before-restore-TIME, not deleted."
+            "BACKUP is a file name from flk volumes backups, or part of it (e.g. its date). The current image is kept beside it as FILE.before-restore-TIME, not deleted.",
+            "--as NEW copies the backup into a new, unattached volume while everything keeps running: to test a restore, look inside (debugfs), or mount it in another app. NAME may be a volume that's gone (its backups remain). If NEW is a [[mounts]] source, the next machine that needs one may attach it."
+          ]
+        },
+        {
+          "name": "verify",
+          "usage": "flk volumes verify [ID|NAME...] [--to DIR] [--backup BACKUP] [--all] [--json]",
+          "summary": "Check backups without changing them: e2fsck -n, then the [flk.backup] verify hook",
+          "args": "[ID|NAME...]",
+          "options": [
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--backup BACKUP"
+              ],
+              "description": "Which backup (default: the latest); part of its file name works"
+            },
+            {
+              "switches": [
+                "--all"
+              ],
+              "description": "Every backup of each volume"
+            },
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "The hook is a host command run in the flk.toml's directory with FLK_BACKUP (the image file), FLK_APP and FLK_VOLUME; exit 0 means good. It can read files with debugfs, e.g. debugfs -R 'stat /world/level.dat' \"$FLK_BACKUP\". flk volumes backup runs it too, after its own check.",
+            "The result is kept with the backup (verify, verified_at in flk volumes backups --json). Exits 1 when any backup isn't clean."
           ]
         },
         {

@@ -1,8 +1,8 @@
 {
   "state_dir": {
     "path": "/home/dayne/.local/share/flk",
-    "bytes": 3330420736,
-    "apparent": 7685683124
+    "bytes": 3331350528,
+    "apparent": 7685755664
   },
   "apps": [
     {
@@ -12,7 +12,7 @@
         "apparent": 2969567232
       },
       "rootfs": {
-        "bytes": 374521856,
+        "bytes": 374657024,
         "apparent": 998244352
       },
       "volumes": {
@@ -20,16 +20,16 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 655360,
-        "apparent": 650640
+        "bytes": 663552,
+        "apparent": 659814
       },
       "external_volumes": {
-        "bytes": 22188068864,
+        "bytes": 22193471488,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1533210624,
-        "apparent": 3968462224
+        "bytes": 1533353984,
+        "apparent": 3968471398
       }
     },
     {
@@ -39,7 +39,7 @@
         "apparent": 2450522112
       },
       "rootfs": {
-        "bytes": 571977728,
+        "bytes": 572702720,
         "apparent": 1234173952
       },
       "volumes": {
@@ -47,16 +47,16 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 856064,
-        "apparent": 851722
+        "bytes": 917504,
+        "apparent": 915088
       },
       "external_volumes": {
         "bytes": 8651468800,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1765494784,
-        "apparent": 3685547786
+        "bytes": 1766281216,
+        "apparent": 3685611152
       }
     }
   ],
@@ -66,7 +66,7 @@
       "apparent": 5420089344
     },
     "rootfs": {
-      "bytes": 946499584,
+      "bytes": 947359744,
       "apparent": 2232418304
     },
     "volumes": {
@@ -74,11 +74,11 @@
       "apparent": 0
     },
     "logs": {
-      "bytes": 1511424,
-      "apparent": 1502362
+      "bytes": 1581056,
+      "apparent": 1574902
     },
     "external_volumes": {
-      "bytes": 30839537664,
+      "bytes": 30844940288,
       "apparent": 85899345920
     }
   },
@@ -87,11 +87,25 @@
     "apps": {
       "minecraft-flk": {
         "bytes": 131487404032,
-        "apparent": 257698039654
+        "apparent": 257698039654,
+        "volumes": {
+          "world": {
+            "bytes": 131487404032,
+            "apparent": 257698039654,
+            "count": 6
+          }
+        }
       },
       "vintagestory-flk": {
         "bytes": 24865378304,
-        "apparent": 128849019813
+        "apparent": 128849019813,
+        "volumes": {
+          "vsdata": {
+            "bytes": 24865378304,
+            "apparent": 128849019813,
+            "count": 3
+          }
+        }
       }
     },
     "bytes": 156352782336,

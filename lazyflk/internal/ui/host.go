@@ -308,6 +308,14 @@ func diskUseLines(du flk.DiskUse) []string {
 	for _, a := range du.Apps {
 		nameW = max(nameW, len(a.App))
 	}
+	if du.Backups != nil {
+		for n, ba := range du.Backups.Apps {
+			nameW = max(nameW, len(n))
+			for v := range ba.Volumes {
+				nameW = max(nameW, len(v)+2)
+			}
+		}
+	}
 	row := func(name string, cells ...string) string {
 		s := fmt.Sprintf("%-*s", nameW, name)
 		for _, c := range cells {
@@ -333,7 +341,20 @@ func diskUseLines(du flk.DiskUse) []string {
 		}
 		sort.Strings(names)
 		for _, n := range names {
-			out = append(out, field("", fmt.Sprintf("%s %s", fit(n, nameW), human(b.Apps[n].Bytes))))
+			ba := b.Apps[n]
+			if ba.Bytes == 0 && len(ba.Volumes) == 0 {
+				continue // an app whose backups are gone
+			}
+			out = append(out, field("", fmt.Sprintf("%s %s", fit(n, nameW), human(ba.Bytes))))
+			var vols []string
+			for v := range ba.Volumes {
+				vols = append(vols, v)
+			}
+			sort.Strings(vols)
+			for _, v := range vols {
+				bv := ba.Volumes[v]
+				out = append(out, field("", styleDim.Render(fmt.Sprintf("  %s %s in %s", fit(v, nameW-2), human(bv.Bytes), plural(bv.Count, "backup")))))
+			}
 		}
 	}
 	return append(out, "", styleDim.Render("images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir"))

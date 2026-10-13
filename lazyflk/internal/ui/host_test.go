@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -117,5 +118,22 @@ func TestBoundPorts(t *testing.T) {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing %q:\n%s", want, s)
 		}
+	}
+}
+
+// flk disk --json lists backups per volume (flk 4b26b65); apps whose
+// backups are all gone are left out.
+func TestDiskBackupsPerVolume(t *testing.T) {
+	var du flk.DiskUse
+	err := json.Unmarshal([]byte(`{"state_dir": {"path": "/s", "bytes": 1}, "apps": [], "totals": {},
+	  "backups": {"dir": "/data/flk-backups", "bytes": 156352782336, "apparent": 1, "apps": {
+	    "flkt-gone": {"bytes": 0, "apparent": 0, "volumes": {}},
+	    "minecraft-flk": {"bytes": 131487404032, "apparent": 2, "volumes": {"world": {"bytes": 131487404032, "apparent": 2, "count": 6}}}}}}`), &du)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := strings.Join(strings.Fields(ansi.Strip(strings.Join(diskUseLines(du), "\n"))), " ")
+	if !strings.Contains(s, "minecraft-flk 122G") || !strings.Contains(s, "world 122G in 6 backups") || strings.Contains(s, "flkt-gone") {
+		t.Errorf("%s", s)
 	}
 }

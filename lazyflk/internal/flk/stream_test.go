@@ -37,7 +37,11 @@ func TestFakeStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := collect(t, s, 1000)
-	if len(lines) != 40 || !strings.HasPrefix(lines[0].Text, "[") || s.Err() != nil {
+	stamped := false // the capture may start inside a stack trace
+	for _, l := range lines {
+		stamped = stamped || strings.HasPrefix(l.Text, "[")
+	}
+	if len(lines) != 40 || !stamped || s.Err() != nil {
 		t.Errorf("%d lines, first %q, err %v", len(lines), lines[0].Text, s.Err())
 	}
 

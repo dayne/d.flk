@@ -15,20 +15,20 @@
 │ Storage                                │           /data/vintagestory/flk                                                                                    │
 │   / 21%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │ ✔ /dev/kvm read/write                                                                                               │
-│   /data/vintagestory 56%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
-│                                     ┌ host ─ actions ──────────────────────────────────────────────────────────────────┐                                     │
-│ Podman                              │ u  resume all    nothing to resume                                               │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ S  stop all      stop every running machine, remembering to resume them          │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │ p  sync ports    rewrite the host's port map from the running machines           │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ P  prune images  remove container images of apps that no longer exist            │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ h  health        flk doctor: every host check                                    │                                     │
+│   /data/vintagestory 56%            ┌ host ─ actions ──────────────────────────────────────────────────────────────────┐                                     │
+│                                     │ u  resume all     nothing to resume                                              │                                     │
+│ Podman                              │ S  stop all       stop every running machine, remembering to resume them         │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ p  sync ports     rewrite the host's port map from the running machines          │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ P  prune images   remove container images of apps that no longer exist           │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ B  prune backups  delete the backups of apps that no longer exist                │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ h  health         flk doctor: every host check                                   │                                     │
 │   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
 │   4 flk images: host Images tab     │ start every machine that should be running                                       │                                     │
 │                                     │ not now: nothing to resume                                                       │                                     │
 │ Services                            ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
 │   ● flk-net                         │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
 │   ● flk-machines                    └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│   ● ssh                                │ ✔ backups go to /data/flk-backups (227.0GB free)                                                                    │
+│   ● ssh                                │ ✔ backups go to /data/flk-backups: 145.6GB now, about 201.1GB at their keep counts; 227.0GB free                    │
 │   ● snap.mosquitto.mosquitto           │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │

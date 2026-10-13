@@ -5,36 +5,36 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
-│   ● frosty-river-2714                  │   cpu 4% · 9956MB used · up 8h 18m                                                                                  │
+│   ● frosty-river-2714                  │   cpu 4% · 10489MB used · up 13h 12m                                                                                │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  tcp/25565 → 10.47.11.3:25565                                                                                 │
-│                                        │        udp/19132 → 10.47.11.3:19132                                                                                 │
-│ Host                                   │ volume world 40GB (external)                                                                                        │
-│   health ✔                          ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │
-│                                     │ Copy volumes (default: all of the app's) to the backup dir, then prune old       │                                     │
-│ Storage                             │ copies                                                                           │                                     │
-│   / 21%                             │ · How the app is kept from writing comes from [flk.backup] in flk.toml (see flk  │                                     │
-│   /data/minecraft 66%               │   help --all): by default its machine is stopped for the copy and started again; │                                     │
-│   /data/vintagestory 56%            │   mode = "live" with pre/post hooks (e.g. save-off / save-on) copies while it    │                                     │
-│                                     │   runs.                                                                          │                                     │
-│ Podman                              │ · Copies are sparse, and instant on XFS/btrfs when the backup dir shares the     │                                     │
-│   ◇ itzg/minecraft-server:latest 868│   volume's filesystem. The copy is checked with e2fsck (a copy of a running      │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │   machine gets its journal replayed).                                            │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │                                                                                  │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ app         [minecraft-flk▏                                                    ] │                                     │
-│   ◇ alpine:3.20 7.7M                │             the app (-a); the selection's app by default                         │                                     │
-│   4 flk images: host Images tab     │ ID|NAME...  [                                                                  ] │                                     │
-│                                     │ --to DIR    [                                                                  ] │                                     │
-│ Services                            │ --keep N    [                                                                  ] │                                     │
-│   ● flk-net                         │ --mode MODE [                                                                  ] │                                     │
-│   ● flk-machines                    │ --no-check  ‹ no ›                                                               │                                     │
-│   ● ssh                             │                                                                                  │                                     │
-│   ● snap.mosquitto.mosquitto        │ $ flk -a minecraft-flk volumes backup                                            │                                     │
-│   ● chrony                          ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│                                     ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │
+│ Host                                │ Copy volumes (default: all of the app's) to the backup dir, then prune old       │                                     │
+│   health ✔                          │ copies                                                                           │                                     │
+│                                     │ · How the app is kept from writing comes from [flk.backup] in flk.toml (see flk  │                                     │
+│ Storage                             │   help --all): by default its machine is stopped for the copy and started again; │                                     │
+│   / 21%                             │   mode = "live" with pre/post hooks (e.g. save-off / save-on) copies while it    │                                     │
+│   /data/minecraft 66%               │   runs.                                                                          │                                     │
+│   /data/vintagestory 56%            │ · Copies are sparse, and instant on XFS/btrfs when the backup dir shares the     │                                     │
+│                                     │   volume's filesystem. The copy is checked with e2fsck (a copy of a running      │                                     │
+│ Podman                              │   machine gets its journal replayed).                                            │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ · With backup_copy_to in ~/.config/flk/host.toml, the new backup is then copied  │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │   there too (see flk volumes copy); a failed copy makes the command fail, but    │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │   the backup is kept.                                                            │                                     │
+│   ◇ ruby:3.3-alpine 69M             │                                                                                  │                                     │
+│   ◇ alpine:3.20 7.7M                │ app         [minecraft-flk▏                                                    ] │                                     │
+│   4 flk images: host Images tab     │             the app (-a); the selection's app by default                         │                                     │
+│                                     │ ID|NAME...  [                                                                  ] │                                     │
+│ Services                            │ --to DIR    [                                                                  ] │                                     │
+│   ● flk-net                         │ --keep N    [                                                                  ] │                                     │
+│   ● flk-machines                    │ --mode MODE [                                                                  ] │                                     │
+│   ● ssh                             │ --no-check  ‹ no ›                                                               │                                     │
+│   ● snap.mosquitto.mosquitto        │ --no-copy   ‹ no ›                                                               │                                     │
+│   ● chrony                          │                                                                                  │                                     │
+│                                     │ $ flk -a minecraft-flk volumes backup                                            │                                     │
+│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
 │                                     │ tab ↑↓ field  ←→ choose  enter next step  esc cancel                             │                                     │
 │                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

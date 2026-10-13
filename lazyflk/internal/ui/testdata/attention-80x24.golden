@@ -7,7 +7,7 @@
 │ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ! stopped, should be     │
 │   ● frosty-river-2714      │   started 172.30.0.10                           │
 │   ▢ vsdata 40GB (external) │   mellow-aurora-7882 · 4 cpus · 11264MB · v9    │
-│   ⇄ tcp/42420 udp/42420    │   cpu 4% · 9956MB used · up 8h 18m              │
+│   ⇄ tcp/42420 udp/42420    │   cpu 4% · 10489MB used · up 13h 12m            │
 │                            │                                                 │
 │ Host                       │ ports  tcp/25565 → 10.47.11.3:25565             │
 │   health ✔                 │        udp/19132 → 10.47.11.3:19132             │

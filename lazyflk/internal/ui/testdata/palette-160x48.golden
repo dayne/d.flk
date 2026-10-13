@@ -19,7 +19,7 @@
 │                             │ images             flk's container images (flk.local/APP:vN): size, whether a machine runs that… │                             │
 │ Podman                      │ apps list          All apps on this host                                                         │                             │
 │   ◇ itzg/minecraft-server:la│ apps destroy       Destroy an app, its machines and volumes                                      │                             │
-│   ◇ dotnet/runtime:10.0 197M│ apps prune         Remove container images left behind by apps that no longer exist              │                             │
+│   ◇ dotnet/runtime:10.0 197M│ apps prune         Remove container images (and with --backups, backups) left behind by apps th… │                             │
 │   ◇ eclipse-temurin:25-jre 3│ config show        Print the parsed flk.toml / fly.toml and the machine config flk derives from… │                             │
 │   ◇ ruby:3.3-alpine 69M     │ machine list       Machines of the app                                                           │                             │
 │   ◇ alpine:3.20 7.7M        │ machine start      Boot machines                                                                 │                             │

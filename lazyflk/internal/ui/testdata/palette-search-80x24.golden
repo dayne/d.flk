@@ -15,7 +15,7 @@
 │ │                                                                          │ │
 │ │                                                                          │ │
 │ │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE]      │ │
-│ │   [--no-check]                                                           │ │
+│ │   [--no-check] [--no-copy]                                               │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 ├ │ type to find  ↑↓ choose  enter fill in and run  esc close                │─┤
 │ └──────────────────────────────────────────────────────────────────────────┘ │

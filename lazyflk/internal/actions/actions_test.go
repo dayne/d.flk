@@ -212,6 +212,22 @@ func TestVerifyAndRestoreAs(t *testing.T) {
 	}
 }
 
+// Backups of destroyed apps: kept unless asked (flk 1bdb910).
+func TestDestroyBackups(t *testing.T) {
+	hc := hostContext(t)
+	d := find(t, For(Target{Kind: App, App: hc.Apps[0]}), "destroy app")
+	if c := d.Command(nil); strings.Join(c.Args, " ") != "apps destroy minecraft-flk --yes" || !strings.Contains(c.Warn, "backups are kept") {
+		t.Errorf("%v %s", c.Args, c.Warn)
+	}
+	if c := d.Command(map[string]string{"backups": "delete"}); strings.Join(c.Args, " ") != "apps destroy minecraft-flk --yes --with-backups" {
+		t.Errorf("%v", c.Args)
+	}
+	p := find(t, For(Target{Kind: Host, Apps: hc.Apps}), "prune backups")
+	if p.Confirm != Type || strings.Join(p.Command(nil).Args, " ") != "apps prune --backups" {
+		t.Errorf("%+v", p)
+	}
+}
+
 func TestVolumeActions(t *testing.T) {
 	a := hostContext(t).Apps[0]
 	v := a.Volumes[0] // external, attached to the running machine

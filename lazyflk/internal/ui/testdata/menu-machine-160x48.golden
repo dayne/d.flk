@@ -8,8 +8,8 @@
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       4% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    9956MB used of 11264MB                                                                                    │
-│ Host                                   │ up        8h 18m                                                                                                    │
+│                                        │ memory    10489MB used of 11264MB                                                                                   │
+│ Host                                   │ up        13h 12m                                                                                                   │
 │   health ✔                             │ pid       1676117 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
 │ Storage                             ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────────────┐                                     │

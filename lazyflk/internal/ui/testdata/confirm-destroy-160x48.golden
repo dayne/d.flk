@@ -5,7 +5,7 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
-│   ● frosty-river-2714                  │   cpu 4% · 9956MB used · up 8h 18m                                                                                  │
+│   ● frosty-river-2714                  │   cpu 4% · 10489MB used · up 13h 12m                                                                                │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  tcp/25565 → 10.47.11.3:25565                                                                                 │
 │                                        │        udp/19132 → 10.47.11.3:19132                                                                                 │
@@ -21,7 +21,7 @@
 │   ◇ itzg/minecraft-server:latest 868│ $ flk apps destroy minecraft-flk --yes                                           │                                     │
 │   ◇ dotnet/runtime:10.0 197M        │                                                                                  │                                     │
 │   ◇ eclipse-temurin:25-jre 341M     │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External volume     │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ files are kept. This can't be undone.                                            │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ files are kept. Its backups are kept. This can't be undone.                      │                                     │
 │   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
 │   4 flk images: host Images tab     │ Type minecraft-flk to confirm: min▏                                              │                                     │
 │                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │

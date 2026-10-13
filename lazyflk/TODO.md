@@ -51,7 +51,11 @@ attention fix rolled it back).
 - [x] M1.2 (a04fcc6): volume menu `c` copy (`--dest`, else
   backup_copy_to); copies (ok, or why not) under each backup; the
   doctor's copy check shows on Health and in Needs attention.
-- [ ] M1.3 space checks, per-volume backup bytes in `disk --json`.
+- [x] M1.3 (4b26b65): Disk tab lists backups per volume (size, count);
+  the doctor's space estimate is on Health (a warn when tight goes to
+  Needs attention); back up's confirm says what happens when short.
+- [x] 1bdb910: destroy app asks keep/delete backups (`--with-backups`);
+  host menu `B` prune backups of destroyed apps (typed confirm).
 - [ ] M1.4 before_deploy backups, `releases rollback --with-volumes`.
 - [ ] M1.5 `volumes move`.
 
