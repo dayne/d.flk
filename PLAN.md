@@ -4,6 +4,24 @@ This plan is based on `TODO.md`, the flk items in `~/minecraft.flk` and
 `~/vintagestory.flk` (TODO.md, BUGS.flk.md) and `lazyflk/TODO.md`.
 `TODO.md` still holds the details of each item. This file sets the order.
 
+## Ground rule: leave the game servers running
+
+Dayne, 2026-10-13: `minecraft-flk` and `vintagestory-flk` keep running.
+Any change that would mean stopping, restarting or redeploying them waits
+for a later maintenance window. Those parts are marked **(window)** below
+and are collected at the end of this file.
+
+What this means while building:
+- New flk code is fine. It must not change what the running servers do
+  until someone opts in. Their cron backups and the boot service run
+  `/home/dayne/flk/bin/flk` from master, so new behaviour in `backup` or
+  the exit hook needs a setting to switch it on, or must be a no-op for
+  them.
+- Changes to the guest (`/flk/init`, a vsock agent) reach a machine only
+  when it boots again. Build and test them on `flkt-*` apps, and let the
+  game servers pick them up in the window.
+- Test with `flkt-*` apps only, as before.
+
 ## Where things stand
 
 - Two real game servers run on flk. lazyflk v1 is done.
@@ -68,8 +86,13 @@ without downtime, and space use that stays predictable.
    - LVM thin snapshots, which minecraft's TODO mentions, are the
      alternative. They need root on every snapshot, so XFS comes first.
 
+Doable now, with no stop: items 1–3, item 4's code, and item 5's flk
+part plus creating the LV. **(window)**: enabling `before_deploy` for a
+game (it applies on its next deploy) and moving a game volume to XFS.
+
 Done when: both games have a weekly copy on another disk or host, a
-restore test run with `--as`, and a doctor check for each.
+restore test run with `--as` (a backup restores while the server keeps
+running), and a doctor check for each.
 
 ### M2: Volume files without sudo
 
@@ -84,7 +107,9 @@ needed.
     directory's owner). That fixes the VS root-owned `/` gotcha.
   - Every write ends with an e2fsck of the image.
 - Tests on a scratch volume. Then offer the two game sessions the commands
-  as a replacement for their scripts.
+  as a replacement for their scripts. Reading their backups works now.
+  Writing to their live volumes needs the server stopped **(window)**,
+  and that includes the VS `chown /` fix.
 
 ### M3: Talk to running machines
 
@@ -104,6 +129,9 @@ needed.
     the 1s writeback).
 - **Static init** (same toolchain as the agent): distroless/scratch
   images boot.
+- The game servers get the agent on their next deploy **(window)**. Until
+  then, flk has to keep working with guests that don't have it
+  (`console --send` and RCON).
 
 ### M4: Networking between apps
 
@@ -135,12 +163,23 @@ Start with a written design in `share/` before any code.
 
 1. **Off-host target for M1.2**: which machine or disk (NAS, USB disk,
    another host over ssh)?
-2. **XFS LV for volumes (M1.5)**: OK to create one (root, in `ubuntu-vg`)
-   and later move the two game volumes onto it in a maintenance window?
-3. **Huge pages for Minecraft (BUGS #8)**:
-   - Reserve 5632 pages, or not. That's about 1.8G more in practice, but
-     11G is held even when the VM is stopped.
-   - After that, the minecraft session adds the setting and deploys.
-4. **Order**: M1 then M2 is the suggestion, because the risk to data
+2. **XFS LV for volumes (M1.5)**: OK to create one now (root, in
+   `ubuntu-vg`; no stop needed)? Moving the game volumes onto it waits
+   for the window.
+3. **Order**: M1 then M2 is the suggestion, because the risk to data
    comes first and both games want M2. M3 could go first if lazyflk's
    polling or exec matter more to you.
+
+## Maintenance window (later, Dayne picks the time)
+
+These need the game servers stopped or redeployed:
+- Huge pages for Minecraft (BUGS #8):
+  - Reserve the pages: `vm.nr_hugepages=5632`. That's about 1.8G more
+    in practice, but 11G stays held even while the VM is stopped.
+  - Then add `huge_pages = "2M"` and `flk deploy`.
+- Move `world` and `vsdata` to the XFS LV (`flk volumes move`, M1.5).
+- Turn on `[flk.backup] before_deploy` for each game (M1.4).
+- Vintage Story: the volume root is owned by root. Fix it with
+  `flk volumes chown` (M2) or debugfs, with the VM stopped.
+- Redeploy both games to pick up the guest changes that have landed by
+  then (the M3 agent).
