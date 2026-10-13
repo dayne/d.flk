@@ -5,7 +5,7 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ! stopped, should be started 172.30.0.10                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
-│   ● frosty-river-2714                  │   cpu 6% · 9956MB used · up 8h 15m                                                                                  │
+│   ● frosty-river-2714                  │   cpu 4% · 9956MB used · up 8h 18m                                                                                  │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                      │
 │                                        │        10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                      │

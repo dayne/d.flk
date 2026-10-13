@@ -143,6 +143,14 @@ func TestRollback(t *testing.T) {
 		!strings.Contains(c.Warn, "Volumes stay as they are") || !strings.Contains(c.Warn, "--no-rollback") {
 		t.Errorf("%v / %s", c.Args, c.Warn)
 	}
+	// stranded on the failed release: current comes first
+	stuck := a
+	stuck.Machines = append([]flk.Machine(nil), a.Machines...)
+	stuck.Machines[0].Release = cur + 1
+	r = find(t, For(Target{Kind: App, App: stuck, Releases: rels}), "roll back")
+	if r.Fields[0].Choices[0] != "v"+strconv.Itoa(cur) || len(r.Fields[0].Choices) != len(want)+1 {
+		t.Errorf("stranded: %v", r.Fields[0].Choices)
+	}
 	var none []flk.Release
 	for _, x := range rels {
 		x.Image = x.Version == cur

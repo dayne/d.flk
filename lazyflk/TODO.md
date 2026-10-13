@@ -39,10 +39,9 @@ attention fix rolled it back).
   (`config show --json`); warnings are in Needs attention via G11.
 - [x] A machine left on a failed release: Needs attention, fix = roll back.
 - [x] **Huge pages** on the machine Overview's size line.
-- [ ] Waiting on flk: plain `releases rollback` after a failed
-  `--no-rollback` deploy goes to the release *before* current, not
-  current (reported to the flk session 2026-10-13). lazyflk's fix runs
-  whatever the step says (`rollback` or `rollback vN`).
+- [x] After a failed `--no-rollback` deploy, roll back goes to the current
+  (last good) release (flk 3fd7177); the form offers it first and the
+  attention fix runs `releases rollback vN`. Checked end to end.
 
 ## Known gaps
 

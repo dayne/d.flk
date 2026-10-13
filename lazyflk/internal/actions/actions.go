@@ -352,10 +352,20 @@ func rollback(a flk.App, rels []flk.Release, running int) Action {
 	if a.Release != nil {
 		cur = a.Release.Version
 	}
+	// a machine left on a failed release (deploy --no-rollback) goes back
+	// to the current release, so it's offered first (flk 3fd7177)
+	stranded := false
+	for _, m := range a.Machines {
+		for _, r := range rels {
+			if r.Version == m.Release && r.Version > cur && r.Failed() {
+				stranded = true
+			}
+		}
+	}
 	// releases it can go to, newest first: kept image, not failed, not current
 	var to []string
 	for i := len(rels) - 1; i >= 0; i-- {
-		if r := rels[i]; r.Image && !r.Failed() && r.Version != cur {
+		if r := rels[i]; r.Image && !r.Failed() && (r.Version != cur || stranded) {
 			to = append(to, fmt.Sprintf("v%d", r.Version))
 		}
 	}

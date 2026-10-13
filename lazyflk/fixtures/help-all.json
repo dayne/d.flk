@@ -288,6 +288,7 @@
           "json": false,
           "notes": [
             "Makes a new release (vN+1) from the old one, without building, and rolls it out like a deploy, health checks included.",
+            "If deploy --no-rollback left machines on a failed release, the default is the current (last good) release instead.",
             "Only releases whose image is still kept can be used: the last two by default ([flk] keep_releases = N keeps more).",
             "Volumes aren't touched: restore data with flk volumes restore."
           ]

@@ -6,7 +6,7 @@
 │   ⇄ 10.47.11.3: tcp/25565… │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ! stopped, should be st… │
 │   ● frosty-river-2714      │   mellow-aurora-7882 · 4 cpus · 11264MB · v9    │
-│   ▢ vsdata 40GB (external) │   cpu 6% · 9956MB used · up 8h 15m              │
+│   ▢ vsdata 40GB (external) │   cpu 4% · 9956MB used · up 8h 18m              │
 │   ⇄ 10.47.11.3: tcp/42420… │                                                 │
 │                            │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565  │
 │ Host                       │        10.47.11.3:udp/19132 → 10.47.11.3:19132  │
