@@ -5,36 +5,35 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
-│   ● frosty-river-2714                  │   cpu 2% · 2976MB used · up 38m                                                                                     │
+│   ● frosty-river-2714                  │   cpu 4% · 2983MB used · up 59m                                                                                     │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ tcp/42420 udp/42420                │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
 │                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
 │ Host                                   │ volume world 40GB (external)                                                                                        │
 │   health ✔                             │   /data/minecraft/flk/world.ext4                                                                                    │
 │                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                     ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────────────┐                                     │
-│                                     │ d  deploy         build the image and roll machines to a new release             │                                     │
-│                                     │ c  scale          set the number of machines                                     │                                     │
+│ Storage                                │                                                                                                                     │
+│   / 20%                             ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────────────┐                                     │
+│   /data/minecraft 66%               │ d  deploy         build the image and roll machines to a new release             │                                     │
+│   /data/vintagestory 56%            │ c  scale          set the number of machines                                     │                                     │
 │                                     │ u  resume         nothing to resume                                              │                                     │
-│                                     │ S  stop all       stop its running machines; resume brings them back             │                                     │
-│                                     │ e  set secret     set a secret; the value goes to flk on stdin, never on the co… │                                     │
-│                                     │ U  unset secret   no secrets                                                     │                                     │
-│                                     │ n  new volume     create a volume for [[mounts]] source = NAME                   │                                     │
-│                                     │ i  import volume  register an existing ext4 image; flk never deletes it          │                                     │
-│                                     │ b  back up        copy all of minecraft-flk's volumes to the backup dir, then p… │                                     │
-│                                     │ l  logs           follow all its machines' console output                        │                                     │
-│                                     │ D  destroy app    delete the app, its machines, releases and volumes             │                                     │
-│                                     │                                                                                  │                                     │
-│                                     │ build the image and roll machines to a new release                               │                                     │
+│ Podman                              │ S  stop all       stop its running machines; resume brings them back             │                                     │
+│   ▢ ruby-working-container (build)  │ e  set secret     set a secret; the value goes to flk on stdin, never on the co… │                                     │
+│   ▢ 4b61b6598784-working-container (│ U  unset secret   no secrets                                                     │                                     │
+│   ◇ 4b61b6598784 (untagged) 69M     │ n  new volume     create a volume for [[mounts]] source = NAME                   │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ i  import volume  register an existing ext4 image; flk never deletes it          │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ b  back up        copy all of minecraft-flk's volumes to the backup dir, then p… │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ l  logs           follow all its machines' console output                        │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ D  destroy app    delete the app, its machines, releases and volumes             │                                     │
+│   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
+│   3 flk images: host Images tab     │ build the image and roll machines to a new release                               │                                     │
 │                                     │ $ flk -a minecraft-flk deploy                                                    │                                     │
-│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│                                     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
-│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│ Services                            ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● flk-net                         │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│   ● flk-machines                    └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│   ● ssh                                │                                                                                                                     │
+│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -42,7 +41,8 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

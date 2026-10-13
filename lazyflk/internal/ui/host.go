@@ -51,15 +51,16 @@ func (m *Model) loadContext(c *flk.Client, quick bool) func(context.Context) (fl
 // loaded, else from the last full one. flk's own rule for the host's
 // next_steps is "fix:"/"optional:" LABEL -> HINT, first.
 func (m *Model) withHost(hc flk.HostContext) flk.HostContext {
-	lan := hc.Host.LanIP
+	lan, addr := hc.Host.LanIP, hc.Host.Address
 	if m.hc != nil {
 		hc.Host = m.hc.Host
 	}
-	hc.Host.LanIP = lan
+	hc.Host.LanIP, hc.Host.Address = lan, addr
 	var hostSteps []string
 	if f := m.cache[m.doctorSource().cmd]; f != nil {
 		if d, ok := f.val.(flk.Doctor); ok {
 			hc.Host = hostFromDoctor(d, lan)
+			hc.Host.Address = addr
 		}
 	}
 	for _, p := range hc.Host.Problems {

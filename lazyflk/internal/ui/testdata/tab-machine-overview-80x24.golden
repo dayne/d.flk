@@ -8,17 +8,17 @@
 │   ● frosty-river-2714      │ release   v8                                    │
 │   ▢ vsdata 40GB (external) │ ip        172.30.0.10:25565                     │
 │   ⇄ tcp/42420 udp/42420    │ size      4 cpus · 11264MB                      │
-│                            │ cpu       2% (100% = one host CPU; it has 4)    │
-│ Host                       │ memory    2976MB used of 11264MB                │
-│   health ✔                 │ up        38m                                   │
+│                            │ cpu       4% (100% = one host CPU; it has 4)    │
+│ Host                       │ memory    2983MB used of 11264MB                │
+│   health ✔                 │ up        59m                                   │
 │                            │ pid       1473109 (firecracker)                 │
-│                            │ restart   on-failure · 1 retry                  │
-│                            │ ports     tcp/25565 → 10.47.11.116:25565        │
-│                            │           udp/19132 → 10.47.11.116:19132        │
-│                            │ volumes   world → /server                       │
-│                            │ … 2 more (pgdn)                                 │
+│ Storage                    │ restart   on-failure · 1 retry                  │
+│   / 20%                    │ … 5 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                    │
+│ ! podman: build container ruby-working-container was left behind (an         │
+│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an │
+│   interrupted build?): podman rm --storage 58883446ce9b                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q qu… │
 └──────────────────────────────────────────────────────────────────────────────┘

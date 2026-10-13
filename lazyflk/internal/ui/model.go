@@ -14,16 +14,22 @@ import (
 	"lazyflk/internal/actions"
 	"lazyflk/internal/flk"
 	"lazyflk/internal/host"
+	"lazyflk/internal/providers"
 )
 
 const minWidth, minHeight = 80, 24
 
 type Options struct {
-	Client   *flk.Client
-	Disk     func(ctx context.Context, paths []string) ([]host.Disk, error) // nil: no disk usage
-	Demo     bool
-	ReadOnly bool
-	Refresh  time.Duration // 0: load once
+	Client *flk.Client
+	Disk   func(ctx context.Context, paths []string) ([]host.Disk, error) // nil: no disk usage
+	Demo   bool
+	// Host runs other tools on the host (podman, systemctl...) for the
+	// providers; nil: no providers.
+	Host      providers.Host
+	Providers []providers.Provider
+	ReadOnly  bool
+	NoMouse   bool          // leave the mouse to the terminal (its own selection)
+	Refresh   time.Duration // 0: load once
 }
 
 type Model struct {
@@ -65,6 +71,13 @@ type Model struct {
 
 	attn       bool // the Needs attention panel has focus
 	attnCursor int
+	attnMap    []int // per attention line: its item, or -1
+	tabSpans   []tabSpan
+
+	// mouse: where things were drawn last (see mouse.go)
+	zones     []zone
+	boxZones  []boxZone
+	footPairs []string
 
 	loadGen   int  // the newest context load; older answers are dropped
 	quitting  bool // quit once the running job ends
@@ -136,6 +149,7 @@ func (m *Model) sync() tea.Cmd {
 	if n.kind == kindHost && tab == "Disk" && m.hc.Schema >= 1 {
 		cmds = append(cmds, m.want(m.diskUseSource()))
 	}
+	cmds = append(cmds, m.wantProviders())
 	return tea.Batch(cmds...)
 }
 
@@ -168,6 +182,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		if msg.key == m.doctorSource().cmd && m.raw != nil {
 			m.setContext(m.withHost(*m.raw))
 		}
+		if m.isProviderKey(msg.key) && m.hc != nil && m.cursor >= 0 {
+			m.rebuild(m.nodes[m.cursor].key(m.apps))
+		}
 	case logStartMsg:
 		if msg.v == m.logs {
 			return m.logs.handleStart(msg)
@@ -190,6 +207,10 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 			return nil
 		}
 		return m.sendLine(msg)
+	case tea.MouseClickMsg:
+		return m.mouse(msg)
+	case tea.MouseWheelMsg:
+		return m.mouse(msg)
 	case tea.PasteMsg:
 		m.paste(msg.Content)
 	case tea.KeyPressMsg:
@@ -356,6 +377,13 @@ func (m *Model) openLogs() tea.Cmd {
 		return nil
 	}
 	n := m.nodes[m.cursor]
+	if n.kind == kindProvider {
+		if it := m.providerItem(n); it.Logs != nil {
+			return m.openCommandLogs(*it.Logs, it.Title)
+		}
+		m.note = "no logs for this one"
+		return nil
+	}
 	if n.kind < kindApp || n.kind > kindPorts {
 		return nil
 	}
@@ -432,7 +460,7 @@ func (m *Model) setContext(hc flk.HostContext) {
 }
 
 func (m *Model) rebuild(key string) {
-	m.nodes = buildTree(m.hc, m.apps, m.collapsed)
+	m.nodes = buildTree(m.hc, m.apps, m.collapsed, m.providerNodes()...)
 	m.cursor = -1
 	for i, n := range m.nodes {
 		if !n.selectable() {
@@ -481,6 +509,9 @@ func (m *Model) View() tea.View {
 	v := tea.NewView(m.Render())
 	v.AltScreen = true
 	v.WindowTitle = "lazyflk"
+	if !m.opt.NoMouse {
+		v.MouseMode = tea.MouseModeCellMotion
+	}
 	return v
 }
 
@@ -514,6 +545,7 @@ func (m *Model) attnItems() []attnItem {
 	for _, s := range m.diskWarnings() {
 		items = append(items, attnItem{icon: styleWarn.Render("!"), text: s})
 	}
+	items = append(items, m.providerAttention()...)
 	if s := m.schemaWarning(); s != "" {
 		items = append(items, attnItem{icon: styleWarn.Render("!"), text: s})
 	}
@@ -528,6 +560,7 @@ func (m *Model) attention() []string {
 		return nil
 	}
 	items := m.attnItems()
+	m.attnMap = m.attnMap[:0]
 	if len(items) == 0 {
 		return []string{styleOK.Render("✔") + " nothing needs attention"}
 	}
@@ -539,6 +572,7 @@ func (m *Model) attention() []string {
 	var out []string
 	if first > 0 {
 		out = append(out, styleDim.Render(fmt.Sprintf("… %d above", first)))
+		m.attnMap = append(m.attnMap, -1)
 	}
 	for i := first; i < len(items); i++ {
 		it := items[i]
@@ -571,8 +605,15 @@ func (m *Model) attention() []string {
 					more += " (a: go through them)"
 				}
 				out = append(out, styleDim.Render(more))
+				m.attnMap = append(m.attnMap, -1)
 				break
 			}
+		}
+		for range lines {
+			m.attnMap = append(m.attnMap, i)
+		}
+		if hint != "" {
+			m.attnMap = append(m.attnMap, i)
 		}
 		for j, l := range lines {
 			switch {
@@ -625,7 +666,9 @@ func (m *Model) Render() string {
 	if m.width < minWidth || m.height < minHeight {
 		return fmt.Sprintf("lazyflk needs a %dx%d terminal (this one is %dx%d)", minWidth, minHeight, m.width, m.height)
 	}
+	m.zones, m.boxZones, m.footPairs = nil, nil, nil
 	if m.help {
+		m.addWheel(0, m.height, func(d int) { m.helpTop = max(m.helpTop+d, 0) })
 		return m.helpScreen()
 	}
 	var base string
@@ -638,6 +681,8 @@ func (m *Model) Render() string {
 		base = m.guideScreen()
 	case m.logs != nil:
 		base = m.logs.render(m.width, m.height)
+		v := m.logs
+		m.addWheel(2, m.height-3, func(d int) { v.scroll(d, m.width-4, m.height-5) })
 	default:
 		base = m.mainScreen()
 	}
@@ -653,6 +698,12 @@ func (m *Model) Render() string {
 		top = m.formBox()
 	case m.menu != nil:
 		top = m.menuBox()
+	}
+	if top != nil {
+		boxes := m.boxZones
+		m.zones = nil // only the overlay takes clicks
+		m.boxZones = boxes
+		m.overlayZones(top, m.footPairs)
 	}
 	return overlay(base, top, m.width, m.height)
 }
@@ -678,6 +729,7 @@ func (m *Model) mainScreen() string {
 	}
 	line("├" + rule("", m.width-2) + "┤")
 	line("│ " + fit(m.footer(), m.width-4) + " │")
+	m.mainZones(lw, body, len(attn))
 	b.WriteString("└" + rule("", m.width-2) + "┘")
 	return b.String()
 }
@@ -692,7 +744,10 @@ func (m *Model) topRule(w int) string {
 		} else {
 			title += "host NOT ready (" + plural(len(h.Problems), "problem") + ")"
 		}
-		if h.LanIP != "" {
+		switch {
+		case h.Address != "" && h.Address != h.LanIP:
+			title += " · address " + h.Address + " (LAN " + h.LanIP + ")"
+		case h.LanIP != "":
 			title += " · LAN " + h.LanIP
 		}
 		if h.BootService {
@@ -734,11 +789,16 @@ func keyHints(pairs ...string) string {
 }
 
 func (m *Model) footer() string {
-	switch {
-	case m.note != "":
+	if m.note != "" {
 		return styleWarn.Render(m.note)
-	case m.attn:
-		return keyHints("↑↓", "move", "enter", "fix", "esc", "back")
+	}
+	return keyHints(m.footerKeys()...)
+}
+
+// footerKeys are the main view's key hints, as key/label pairs.
+func (m *Model) footerKeys() []string {
+	if m.attn {
+		return []string{"↑↓", "move", "enter", "fix", "esc", "back"}
 	}
 	keys := []string{"↑↓", "move", "tab", "tabs"}
 	if !m.opt.ReadOnly {
@@ -761,7 +821,7 @@ func (m *Model) footer() string {
 	if len(m.jobs) > 0 {
 		keys = append(keys, "L", "cmd log")
 	}
-	return keyHints(append(keys, "?", "help", "q", "quit", ":", "commands", "H", "guides", "←→", "fold", "pgup/dn", "scroll")...)
+	return append(keys, "?", "help", "q", "quit", ":", "commands", "H", "guides", "←→", "fold", "pgup/dn", "scroll")
 }
 
 // treeLines renders exactly h lines of tree, scrolled to keep the cursor in view.
@@ -793,6 +853,16 @@ func (m *Model) treeLines(w, h int) []string {
 
 // tabBar renders the tabs, windowed around the active one if they don't fit.
 func tabBar(names []string, active, w int) string {
+	s, _ := tabBarSpans(names, active, w)
+	return s
+}
+
+// tabSpan is where a tab is drawn: cells [x0, x1) of a row of the detail
+// pane (for clicks).
+type tabSpan struct{ tab, row, x0, x1 int }
+
+// tabBarSpans is tabBar, plus where each shown tab is in it.
+func tabBarSpans(names []string, active, w int) (string, []tabSpan) {
 	parts := make([]string, len(names))
 	for i, n := range names {
 		parts[i] = " " + n + " "
@@ -821,13 +891,20 @@ func tabBar(names []string, active, w int) string {
 		}
 	}
 	s := strings.Join(parts[lo:hi], "")
+	x := 0
 	if lo > 0 {
-		s = "‹" + s
+		s, x = "‹"+s, 1
 	}
 	if hi < len(parts) {
 		s += "›"
 	}
-	return s
+	var spans []tabSpan
+	for i := lo; i < hi; i++ {
+		w := ansi.StringWidth(parts[i])
+		spans = append(spans, tabSpan{tab: i, x0: x, x1: x + w})
+		x += w
+	}
+	return s, spans
 }
 
 // detailLines renders exactly h lines of the right pane.
@@ -841,10 +918,17 @@ func (m *Model) detailLines(w, h int) []string {
 		names := tabNames(n.kind)
 		active := min(m.tabs[n.kind], len(names)-1)
 		title = styleTitle.Render(title)
-		if bar := tabBar(names, active, w); ansi.StringWidth(title)+3+ansi.StringWidth(bar) <= w {
+		bar, spans := tabBarSpans(names, active, w)
+		row, off := 1, 0
+		if ansi.StringWidth(title)+3+ansi.StringWidth(bar) <= w {
 			head = []string{title + " ─ " + bar}
+			row, off = 0, ansi.StringWidth(title)+3
 		} else {
 			head = []string{title, bar}
+		}
+		m.tabSpans = m.tabSpans[:0]
+		for _, sp := range spans {
+			m.tabSpans = append(m.tabSpans, tabSpan{sp.tab, row, sp.x0 + off, sp.x1 + off})
 		}
 		body = m.tabBody(n, names[active], w, h-len(head)-1)
 	case m.err != nil:
@@ -904,4 +988,84 @@ func wrap(s string, w int) []string {
 		out = append(out, line)
 	}
 	return out
+}
+
+// mainZones makes the main view clickable: tree rows, tabs, the detail
+// pane's wheel, attention entries and the footer's keys.
+func (m *Model) mainZones(lw, body, attnRows int) {
+	if m.hc == nil {
+		return
+	}
+	rightX := lw + 3
+	for i := range body {
+		j := m.top + i
+		if j >= len(m.nodes) || !m.nodes[j].selectable() {
+			continue
+		}
+		n := m.nodes[j]
+		m.addZone(2, 2+lw-2, 1+i, func() tea.Cmd {
+			if m.cursor == j && n.kind == kindApp {
+				m.cursor = j
+				m.fold(!m.collapsed["app/"+m.apps[n.app].Name])
+				return nil
+			}
+			m.cursor, m.attn = j, false
+			return nil
+		})
+	}
+	for y := 1; y <= body; y++ {
+		m.zones = append(m.zones, zone{x0: 0, x1: rightX - 1, y: y, wheel: func(d int) {
+			for range abs(d) {
+				m.move(sign(d))
+			}
+		}})
+		m.zones = append(m.zones, zone{x0: rightX - 1, x1: m.width, y: y, wheel: func(d int) {
+			m.detailTop = max(m.detailTop+d, 0)
+		}})
+	}
+	n := m.nodes[m.cursor]
+	names := tabNames(n.kind)
+	for _, t := range m.tabSpans {
+		i := t.tab
+		m.addZone(rightX+t.x0, rightX+t.x1, 1+t.row, func() tea.Cmd {
+			if i < len(names) {
+				m.tabs[n.kind] = i
+			}
+			return nil
+		})
+	}
+	y0 := body + 2
+	for i, item := range m.attnMap {
+		if i >= attnRows {
+			break
+		}
+		if item < 0 {
+			continue
+		}
+		it := item
+		m.addZone(2, m.width-2, y0+i, func() tea.Cmd {
+			if m.attn && m.attnCursor == it {
+				return m.attnKey("enter")
+			}
+			m.attn, m.attnCursor = true, it
+			return nil
+		})
+	}
+	if m.note == "" {
+		m.hintZones(m.footerKeys(), 2, m.height-2, m.width-2)
+	}
+}
+
+func abs(n int) int {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+func sign(n int) int {
+	if n < 0 {
+		return -1
+	}
+	return 1
 }

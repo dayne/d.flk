@@ -59,7 +59,7 @@ func (m *Model) runJob(title string, c actions.Command) tea.Cmd {
 	j := &job{id: m.jobSeq, title: title, args: c.Args, line: c.Line(), started: m.now()}
 	m.addJob(j)
 	m.shown = j
-	client, args, stdin := m.opt.Client, c.Args, c.Stdin
+	client, args, stdin := m.runnerFor(c.Program), c.Args, c.Stdin
 	return func() tea.Msg {
 		s, err := client.StreamInput(context.Background(), stdin, args...)
 		return jobStartMsg{j, s, err}
@@ -249,13 +249,15 @@ func (m *Model) jobScreen(j *job) string {
 	}
 	var keys string
 	if j.running() {
-		keys = keyHints("ctrl+c", "interrupt", "esc", "hide (it keeps running)", "↑↓ pgup/dn", "scroll", "y", "copy command")
+		keys = m.hints("ctrl+c", "interrupt", "esc", "hide (it keeps running)", "↑↓ pgup/dn", "scroll", "y", "copy command")
 	} else {
-		keys = keyHints("esc", "close", "↑↓ pgup/dn", "scroll", "w", "wrap", "y", "copy command", "L", "command log")
+		keys = m.hints("esc", "close", "↑↓ pgup/dn", "scroll", "w", "wrap", "y", "copy command", "L", "command log")
 	}
 	if m.note != "" {
 		keys = m.note
 	}
+	m.addWheel(1, h-3, func(d int) { j.back = max(j.back-d, 0) })
+	m.screenZones(m.footPairs)
 	return strings.Join(box(j.title+" ─ "+j.status(m.now()), shown, keys, w), "\n")
 }
 
@@ -313,6 +315,11 @@ func (m *Model) cmdlogLines(w, h int) []string {
 		if i == v.cursor {
 			s = styleSelected.Render(fit(ansi.Strip(s), w))
 		}
+		idx := i
+		m.bodyZone(len(out), func() tea.Cmd {
+			v.cursor = idx
+			return m.cmdlogKey("enter")
+		})
 		out = append(out, s)
 	}
 	if len(out) > h {
@@ -328,7 +335,8 @@ func (m *Model) cmdlogScreen() string {
 	for len(body) < h-4 {
 		body = append(body, "")
 	}
-	keys := keyHints("↑↓", "move", "enter", "output", "y", "copy command", "esc", "back")
+	keys := m.hints("↑↓", "move", "enter", "output", "y", "copy command", "esc", "back")
+	m.screenZones(m.footPairs)
 	return strings.Join(box("Command log ─ what lazyflk ran this session", body, keys, w), "\n")
 }
 

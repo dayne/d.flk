@@ -19,6 +19,7 @@ const (
 	kindVolume
 	kindPorts
 	kindHost
+	kindProvider // an item of a provider's section (Storage, Podman, Services)
 )
 
 // node is one line of the left tree. app, machine and volume index into
@@ -29,6 +30,9 @@ type node struct {
 	app     int
 	machine int
 	volume  int
+	prov    int // kindProvider: the provider, and its item
+	item    int
+	pkey    string // kindProvider: the item's stable key
 }
 
 func (n node) selectable() bool { return n.kind >= kindApp }
@@ -46,6 +50,8 @@ func (n node) key(apps []flk.App) string {
 		return "ports/" + apps[n.app].Name
 	case kindHost:
 		return "host"
+	case kindProvider:
+		return "prov/" + n.pkey
 	}
 	return ""
 }
@@ -60,7 +66,7 @@ func appProblems(a flk.App, steps []string) []string {
 		}
 	}
 	for _, p := range a.Ports.Blocked {
-		out = append(out, fmt.Sprintf("port %s blocked: %s", p.Key, p.Blocked))
+		out = append(out, fmt.Sprintf("port %s blocked: %s", p.Shown(), p.Blocked))
 	}
 	for _, s := range steps {
 		if rest, ok := strings.CutPrefix(s, a.Name+": "); ok {
@@ -86,13 +92,13 @@ func sortApps(apps []flk.App, steps []string) []flk.App {
 func portKeys(t flk.PortTable) []string {
 	var keys []string
 	for _, p := range t.Active {
-		keys = append(keys, p.Key)
+		keys = append(keys, p.Shown())
 	}
 	for _, p := range t.Waiting {
-		keys = append(keys, p.Key+"?")
+		keys = append(keys, p.Shown()+"?")
 	}
 	for _, p := range t.Blocked {
-		keys = append(keys, p.Key+"!")
+		keys = append(keys, p.Shown()+"!")
 	}
 	return keys
 }
@@ -108,7 +114,7 @@ func startedCount(a flk.App) int {
 }
 
 // buildTree lays out apps (expanded unless collapsed) and the host.
-func buildTree(hc *flk.HostContext, apps []flk.App, collapsed map[string]bool) []node {
+func buildTree(hc *flk.HostContext, apps []flk.App, collapsed map[string]bool, extra ...node) []node {
 	nodes := []node{{kind: kindHeading, text: "Apps"}}
 	if len(apps) == 0 {
 		nodes = append(nodes, node{kind: kindInfo, text: "no apps: flk help first-app"})
@@ -129,7 +135,7 @@ func buildTree(hc *flk.HostContext, apps []flk.App, collapsed map[string]bool) [
 		}
 	}
 	nodes = append(nodes, node{kind: kindInfo}, node{kind: kindHeading, text: "Host"}, node{kind: kindHost})
-	return nodes
+	return append(nodes, extra...)
 }
 
 // treeLine renders one node, without the selection highlight.
@@ -139,6 +145,8 @@ func (m *Model) treeLine(n node) string {
 		return styleTitle.Render(n.text)
 	case kindInfo:
 		return styleDim.Render("  " + n.text)
+	case kindProvider:
+		return m.providerLine(n)
 	case kindHost:
 		if m.hc.Host.OK {
 			return "  health " + styleOK.Render("✔")

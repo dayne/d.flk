@@ -12,37 +12,37 @@
 │ Host                                   │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
 │   health ✔                             │   "release": 8,                                                                                                     │
 │                                        │   "config": {                                                                                                       │
-│                                        │     "cpus": 4,                                                                                                      │
-│                                        │     "memory_mb": 11264,                                                                                             │
-│                                        │     "env": {                                                                                                        │
-│                                        │       "TZ": "America/Anchorage",                                                                                    │
+│ Storage                                │     "cpus": 4,                                                                                                      │
+│   / 20%                                │     "memory_mb": 11264,                                                                                             │
+│   /data/minecraft 66%                  │     "env": {                                                                                                        │
+│   /data/vintagestory 56%               │       "TZ": "America/Anchorage",                                                                                    │
 │                                        │       "MC_HEAP": "8G",                                                                                              │
-│                                        │       "RESTART_DELAY": "10",                                                                                        │
-│                                        │       "MAX_RESTARTS": "5",                                                                                          │
-│                                        │       "RESTART_WINDOW": "600",                                                                                      │
-│                                        │       "STOP_TIMEOUT": "100",                                                                                        │
-│                                        │       "DISCORD_NAME": "Minecraft",                                                                                  │
-│                                        │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
-│                                        │     },                                                                                                              │
-│                                        │     "mount_specs": [                                                                                                │
-│                                        │       {                                                                                                             │
-│                                        │         "source": "world",                                                                                          │
+│ Podman                                 │       "RESTART_DELAY": "10",                                                                                        │
+│   ▢ ruby-working-container (build)     │       "MAX_RESTARTS": "5",                                                                                          │
+│   ▢ 4b61b6598784-working-container (b… │       "RESTART_WINDOW": "600",                                                                                      │
+│   ◇ 4b61b6598784 (untagged) 69M        │       "STOP_TIMEOUT": "100",                                                                                        │
+│   ◇ itzg/minecraft-server:latest 868M  │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│   ◇ dotnet/runtime:10.0 197M           │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│   ◇ eclipse-temurin:25-jre 341M        │     },                                                                                                              │
+│   ◇ ruby:3.3-alpine 69M                │     "mount_specs": [                                                                                                │
+│   ◇ alpine:3.20 7.7M                   │       {                                                                                                             │
+│   3 flk images: host Images tab        │         "source": "world",                                                                                          │
 │                                        │         "destination": "/server"                                                                                    │
-│                                        │       }                                                                                                             │
-│                                        │     ],                                                                                                              │
-│                                        │     "internal_port": 25565,                                                                                         │
-│                                        │     "ports": [                                                                                                      │
-│                                        │       {                                                                                                             │
-│                                        │         "proto": "tcp",                                                                                             │
+│ Services                               │       }                                                                                                             │
+│   ● flk-net                            │     ],                                                                                                              │
+│   ● flk-machines                       │     "internal_port": 25565,                                                                                         │
+│   ● ssh                                │     "ports": [                                                                                                      │
+│   ● snap.mosquitto.mosquitto           │       {                                                                                                             │
+│   ● chrony                             │         "proto": "tcp",                                                                                             │
 │                                        │         "port": 25565,                                                                                              │
 │                                        │         "internal_port": 25565                                                                                      │
 │                                        │       },                                                                                                            │
 │                                        │       {                                                                                                             │
 │                                        │         "proto": "udp",                                                                                             │
-│                                        │         "port": 19132,                                                                                              │
-│                                        │ … 24 more (pgdn)                                                                                                    │
+│                                        │ … 25 more (pgdn)                                                                                                    │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                              │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                 │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

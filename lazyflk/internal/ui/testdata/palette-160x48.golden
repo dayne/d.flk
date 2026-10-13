@@ -12,37 +12,37 @@
 │ Host                        │ stop-all         Gracefully stop every running machine, remembering to resume them               │                             │
 │   health ✔                  │ launch           Create flk.toml (if missing) in the current directory, register the app, deploy │                             │
 │                             │ deploy           Build the image and roll machines to a new release                              │                             │
-│                             │ status           App and machine overview                                                        │                             │
-│                             │ releases         Release history                                                                 │                             │
-│                             │ disk             Disk space flk uses, per app: release images, machine disks, volumes, logs; an… │                             │
-│                             │ images           flk's container images (flk.local/APP:vN): size, whether a machine runs that r… │                             │
+│ Storage                     │ status           App and machine overview                                                        │                             │
+│   / 20%                     │ releases         Release history                                                                 │                             │
+│   /data/minecraft 66%       │ disk             Disk space flk uses, per app: release images, machine disks, volumes, logs; an… │                             │
+│   /data/vintagestory 56%    │ images           flk's container images (flk.local/APP:vN): size, whether a machine runs that r… │                             │
 │                             │ apps list        All apps on this host                                                           │                             │
-│                             │ apps destroy     Destroy an app, its machines and volumes                                        │                             │
-│                             │ apps prune       Remove container images left behind by apps that no longer exist                │                             │
-│                             │ config show      Print the parsed flk.toml / fly.toml and the machine config flk derives from it │                             │
-│                             │ machine list     Machines of the app                                                             │                             │
-│                             │ machine start    Boot machines                                                                   │                             │
-│                             │ machine stop     Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they s… │                             │
-│                             │ machine restart  Stop, then boot                                                                 │                             │
-│                             │ machine destroy  Delete machines (their volumes are kept, unattached)                            │                             │
-│                             │ machine revive   Restart a machine that exited on its own, per its restart policy (run by flk i… │                             │
-│                             │ machine stats    CPU and memory use of machines (default: all of the app's)                      │                             │
+│ Podman                      │ apps destroy     Destroy an app, its machines and volumes                                        │                             │
+│   ▢ ruby-working-container (│ apps prune       Remove container images left behind by apps that no longer exist                │                             │
+│   ▢ 4b61b6598784-working-con│ config show      Print the parsed flk.toml / fly.toml and the machine config flk derives from it │                             │
+│   ◇ 4b61b6598784 (untagged) │ machine list     Machines of the app                                                             │                             │
+│   ◇ itzg/minecraft-server:la│ machine start    Boot machines                                                                   │                             │
+│   ◇ dotnet/runtime:10.0 197M│ machine stop     Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they s… │                             │
+│   ◇ eclipse-temurin:25-jre 3│ machine restart  Stop, then boot                                                                 │                             │
+│   ◇ ruby:3.3-alpine 69M     │ machine destroy  Delete machines (their volumes are kept, unattached)                            │                             │
+│   ◇ alpine:3.20 7.7M        │ machine revive   Restart a machine that exited on its own, per its restart policy (run by flk i… │                             │
+│   3 flk images: host Images │ machine stats    CPU and memory use of machines (default: all of the app's)                      │                             │
 │                             │ machine status   Machine record and state as JSON (an array when given several IDs)              │                             │
-│                             │ machine config   The Firecracker VM config as JSON (an array when given several IDs)             │                             │
-│                             │ scale count      Create or destroy machines to reach N                                           │                             │
-│                             │ logs             Serial console output (app stdout/stderr and boot messages)                     │                             │
-│                             │ console          Attach to a machine's serial console, or --send one line to the app's stdin     │                             │
-│                             │ ssh console      Same as flk console                                                             │                             │
-│                             │ proxy            Forward a local TCP port to a machine                                           │                             │
+│ Services                    │ machine config   The Firecracker VM config as JSON (an array when given several IDs)             │                             │
+│   ● flk-net                 │ scale count      Create or destroy machines to reach N                                           │                             │
+│   ● flk-machines            │ logs             Serial console output (app stdout/stderr and boot messages)                     │                             │
+│   ● ssh                     │ console          Attach to a machine's serial console, or --send one line to the app's stdin     │                             │
+│   ● snap.mosquitto.mosquitto│ ssh console      Same as flk console                                                             │                             │
+│   ● chrony                  │ proxy            Forward a local TCP port to a machine                                           │                             │
 │                             │ ports list       Forwarded ports: active, waiting (another machine has it) or blocked (and why)  │                             │
 │                             │ ports sync       Rewrite the host's port map from the running machines                           │                             │
 │                             │ ports reap       Tidy machines that exited on their own and hand their ports on (run automatica… │                             │
 │                             │ secrets list     Names and digests (never values)                                                │                             │
 │                             │ secrets set      Set secrets (VALUE '-' reads it from stdin)                                     │                             │
 │                             │                                                                                                  │                             │
-│                             │ flk context [--all] [--json] [--no-host]                                                         │                             │
-├ Needs attention ────────────├──────────────────────────────────────────────────────────────────────────────────────────────────┤─────────────────────────────┤
-│ ✔ nothing needs attention   │ type to find  ↑↓ choose  enter fill in and run  esc close                                        │                             │
+├ Needs attention ────────────│ flk context [--all] [--json] [--no-host]                                                         │─────────────────────────────┤
+│ ! podman: build container ru├──────────────────────────────────────────────────────────────────────────────────────────────────┤                             │
+│ ! podman: build container 4b│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │9b                           │
 ├─────────────────────────────└──────────────────────────────────────────────────────────────────────────────────────────────────┘─────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

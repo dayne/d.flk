@@ -16,6 +16,7 @@
 
     ],
     "lan_ip": "10.47.11.116",
+    "address": "10.47.11.116",
     "boot_service": true,
     "services": [
       {
@@ -109,6 +110,7 @@
         "active": [
           {
             "key": "tcp/25565",
+            "bind": null,
             "proto": "tcp",
             "port": 25565,
             "ip": "172.30.0.10",
@@ -119,6 +121,7 @@
           },
           {
             "key": "udp/19132",
+            "bind": null,
             "proto": "udp",
             "port": 19132,
             "ip": "172.30.0.10",
@@ -207,6 +210,7 @@
         "active": [
           {
             "key": "tcp/42420",
+            "bind": null,
             "proto": "tcp",
             "port": 42420,
             "ip": "172.30.0.11",
@@ -217,6 +221,7 @@
           },
           {
             "key": "udp/42420",
+            "bind": null,
             "proto": "udp",
             "port": 42420,
             "ip": "172.30.0.11",

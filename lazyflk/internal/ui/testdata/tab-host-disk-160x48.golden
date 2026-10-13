@@ -12,29 +12,28 @@
 │ Host                                   │      32G free of 98G                                                                                                │
 │   health ✔                             │      holds /data/minecraft/flk                                                                                      │
 │                                        │                                                                                                                     │
-│                                        │  56% █████░░░░░ /data/vintagestory                                                                                  │
-│                                        │      62G free of 147G                                                                                               │
-│                                        │      holds /data/vintagestory/flk                                                                                   │
-│                                        │                                                                                                                     │
+│ Storage                                │  56% █████░░░░░ /data/vintagestory                                                                                  │
+│   / 20%                                │      62G free of 147G                                                                                               │
+│   /data/minecraft 66%                  │      holds /data/vintagestory/flk                                                                                   │
+│   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │ $ flk disk --json                                                                                                   │
-│                                        │ What flk uses  (allocated; sparse files count what's written)                                                       │
-│                                        │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
-│                                        │                                                                                                                     │
-│                                        │ app                images   rootfs  volumes     logs external                                                       │
-│                                        │ minecraft-flk        736M     373M        -     572K      21G                                                       │
-│                                        │ vintagestory-flk     1.1G     544M        -     632K     8.1G                                                       │
-│                                        │ all                  1.8G     916M        -     1.2M      29G                                                       │
-│                                        │                                                                                                                     │
-│                                        │ backups   76G in /data/flk-backups                                                                                  │
-│                                        │           minecraft-flk    61G                                                                                      │
+│ Podman                                 │ What flk uses  (allocated; sparse files count what's written)                                                       │
+│   ▢ ruby-working-container (build)     │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
+│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
+│   ◇ 4b61b6598784 (untagged) 69M        │ app                images   rootfs  volumes     logs external                                                       │
+│   ◇ itzg/minecraft-server:latest 868M  │ minecraft-flk        736M     373M        -     572K      21G                                                       │
+│   ◇ dotnet/runtime:10.0 197M           │ vintagestory-flk     1.1G     544M        -     636K     8.1G                                                       │
+│   ◇ eclipse-temurin:25-jre 341M        │ all                  1.8G     917M        -     1.2M      29G                                                       │
+│   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
+│   ◇ alpine:3.20 7.7M                   │ backups   76G in /data/flk-backups                                                                                  │
+│   3 flk images: host Images tab        │           minecraft-flk    61G                                                                                      │
 │                                        │           vintagestory-flk 15G                                                                                      │
-│                                        │                                                                                                                     │
-│                                        │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│ Services                               │                                                                                                                     │
+│   ● flk-net                            │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
+│   ● flk-machines                       │                                                                                                                     │
+│   ● ssh                                │                                                                                                                     │
+│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -42,7 +41,8 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                                      │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

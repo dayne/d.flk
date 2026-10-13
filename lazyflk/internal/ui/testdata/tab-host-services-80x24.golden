@@ -12,13 +12,13 @@
 │ Host                       │   at boot: flk resume; at shutdown: stops mach… │
 │   health ✔                 │                                                 │
 │                            │ oneshot units: healthy is active (exited)       │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
+│ Storage                    │                                                 │
+│   / 20%                    │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                    │
+│ ! podman: build container ruby-working-container was left behind (an         │
+│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an │
+│   interrupted build?): podman rm --storage 58883446ce9b                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
 └──────────────────────────────────────────────────────────────────────────────┘

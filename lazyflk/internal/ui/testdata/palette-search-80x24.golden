@@ -14,11 +14,11 @@
 │ │                                                                          │ │
 │ │                                                                          │ │
 │ │                                                                          │ │
-│ │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE]      │ │
+├ │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE]      │─┤
 │ │   [--no-check]                                                           │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
-├ │ type to find  ↑↓ choose  enter fill in and run  esc close                │─┤
+│ │ type to find  ↑↓ choose  enter fill in and run  esc close                │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q … │
 └──────────────────────────────────────────────────────────────────────────────┘

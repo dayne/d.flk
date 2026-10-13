@@ -1,0 +1,72 @@
+[
+  {
+    "AutoRemove": false,
+    "Command": [
+      "buildah"
+    ],
+    "CreatedAt": "About an hour ago",
+    "CIDFile": "",
+    "Exited": false,
+    "ExitedAt": 0,
+    "ExitCode": 0,
+    "ExposedPorts": null,
+    "Id": "f7cd17e4bfbcde38fc0f8004e487566b35476a57b502a4ea6f7a703825b6695f",
+    "Image": "docker.io/library/ruby:3.3-alpine",
+    "ImageID": "bcb4ac884729525309f5eef7e42253caf915fa0ea8b35f9d677b3724625780d2",
+    "IsInfra": false,
+    "Labels": null,
+    "Mounts": null,
+    "Names": [
+      "ruby-working-container"
+    ],
+    "Namespaces": {
+      
+    },
+    "Networks": null,
+    "Pid": 0,
+    "Pod": "",
+    "PodName": "",
+    "Ports": null,
+    "Restarts": 0,
+    "Size": null,
+    "StartedAt": 0,
+    "State": "storage",
+    "Status": "Storage",
+    "Created": 1791870901
+  },
+  {
+    "AutoRemove": false,
+    "Command": [
+      "buildah"
+    ],
+    "CreatedAt": "About an hour ago",
+    "CIDFile": "",
+    "Exited": false,
+    "ExitedAt": 0,
+    "ExitCode": 0,
+    "ExposedPorts": null,
+    "Id": "58883446ce9b239a1f01ea7329fa275b776e38d2c4572f83079d386684b642ef",
+    "Image": "docker.io/library/1b5699e97dca329b5c0b7762400f2003c3552d09ecb13b297e7ee2c91f08e5ab-tmp:latest",
+    "ImageID": "4b61b659878443c71af903637f75fe61c1cdb3e5220388246028377aa69c31cf",
+    "IsInfra": false,
+    "Labels": null,
+    "Mounts": null,
+    "Names": [
+      "4b61b6598784-working-container"
+    ],
+    "Namespaces": {
+      
+    },
+    "Networks": null,
+    "Pid": 0,
+    "Pod": "",
+    "PodName": "",
+    "Ports": null,
+    "Restarts": 0,
+    "Size": null,
+    "StartedAt": 0,
+    "State": "storage",
+    "Status": "Storage",
+    "Created": 1791870901
+  }
+]

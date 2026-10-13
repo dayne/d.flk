@@ -1,7 +1,7 @@
 ┌ Help ─ main view ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Everything flk runs on this host. Left: apps, with their machines (● running, ○ stopped, ! should run but doesn't), volumes (▢) and forwarded ports (⇄),     │
-│ then the host. Right: tabs for the selection. Bottom: what needs attention, from flk context --all. Each tab shows the flk command that fills it, and every  │
-│ action shows the command it runs before running it (L lists them all).                                                                                       │
+│ then the host. Right: tabs for the selection. Bottom: what needs attention, from flk context --all. Below Host: Storage, Podman and Services, the rest of    │
+│ what this host runs. Each tab shows the command that fills it, and every action shows the command it runs before running it (L lists them all).              │
 │                                                                                                                                                              │
 │ ↑ ↓  k j           move in the tree                                                                                                                          │
 │ ← →                fold or unfold an app                                                                                                                     │
@@ -20,7 +20,7 @@
 │ H                  flk's guides (flk help TOPIC): cheatsheet, operate, troubleshoot…                                                                         │
 │ ?                  this help                                                                                                                                 │
 │ q  ctrl+c          quit (asks first while a command runs)                                                                                                    │
-│                                                                                                                                                              │
+│ mouse              click rows, tabs, entries and footer keys; the wheel scrolls (Shift selects text)                                                         │
 │                                                                                                                                                              │
 │                                                                                                                                                              │
 │                                                                                                                                                              │

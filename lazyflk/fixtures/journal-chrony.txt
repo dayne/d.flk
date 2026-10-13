@@ -1,0 +1,17 @@
+2026-10-09T20:45:19-08:00 mud systemd[1]: Starting chrony.service - chrony, an NTP client/server...
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: chronyd version 4.8 starting (+CMDMON +REFCLOCK +RTC +PRIVDROP +SCFILTER +SIGND +NTS +SECHASH +IPV6 -DEBUG)
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Loaded 0 symmetric keys
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Using leap second list /usr/share/zoneinfo/leap-seconds.list
+2026-10-09T20:45:19-08:00 mud systemd[1]: Started chrony.service - chrony, an NTP client/server.
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Loaded seccomp filter (level 1)
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Added pool 1.ntp.ubuntu.com
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Added pool 2.ntp.ubuntu.com
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Added pool 3.ntp.ubuntu.com
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Added pool 4.ntp.ubuntu.com
+2026-10-09T20:45:19-08:00 mud chronyd[1350]: Added pool ntp-bootstrap.ubuntu.com
+2026-10-09T20:45:27-08:00 mud chronyd[1350]: Selected source 91.189.91.112 (3.ntp.ubuntu.com)
+2026-10-09T20:45:27-08:00 mud chronyd[1350]: System clock TAI offset set to 37 seconds
+2026-10-09T20:46:33-08:00 mud chronyd[1350]: Selected source 185.125.190.123 (2.ntp.ubuntu.com)
+2026-10-09T20:57:20-08:00 mud chronyd[1350]: Selected source 91.189.91.113 (4.ntp.ubuntu.com)
+2026-10-10T12:53:09-08:00 mud chronyd[1350]: Selected source 91.189.91.112 (3.ntp.ubuntu.com)
+2026-10-11T09:35:04-08:00 mud chronyd[1350]: Selected source 91.189.91.113 (4.ntp.ubuntu.com)

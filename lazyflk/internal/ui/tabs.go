@@ -201,6 +201,10 @@ func (m *Model) gotFetched(msg fetchedMsg) {
 
 // tabBody renders a tab's lines, scrolled by the caller.
 func (m *Model) tabBody(n node, tab string, w, h int) []string {
+	if n.kind == kindProvider {
+		_, lines := m.providerDetail(n, w)
+		return lines
+	}
 	src := m.tabSource(n, tab)
 	if src == nil {
 		if n.kind == kindHost && tab == "Disk" {
@@ -468,8 +472,11 @@ func doctorLines(d flk.Doctor, w int) []string {
 
 func (m *Model) hostPortLines(p flk.PortsList) []string {
 	helper := styleOK.Render("installed")
-	if !p.HelperInstalled {
+	switch {
+	case !p.HelperInstalled:
 		helper = styleWarn.Render("missing") + " (ports aren't forwarded: sudo setup-host.sh)"
+	case p.PerAddress != nil && !*p.PerAddress:
+		helper += styleDim.Render(" (forwards on every address; bind needs a newer one: sudo setup-host.sh)")
 	}
 	out := []string{
 		field("helper", helper),
@@ -490,13 +497,13 @@ func (m *Model) hostPortLines(p flk.PortsList) []string {
 		return styleDim.Render(fmt.Sprintf("  %s / %s %s:%d", x.App, name(x.App, x.Machine), x.IP, x.InternalPort))
 	}
 	for _, x := range p.Active {
-		out = append(out, x.Key+" → "+x.Address, owner(x))
+		out = append(out, x.Shown()+" → "+x.Address, owner(x))
 	}
 	for _, x := range p.Waiting {
-		out = append(out, x.Key+" "+styleWarn.Render("waiting: another machine has it"), owner(x))
+		out = append(out, x.Shown()+" "+styleWarn.Render("waiting: another machine has it"), owner(x))
 	}
 	for _, x := range p.Blocked {
-		out = append(out, x.Key+" "+styleBad.Render("blocked: "+x.Blocked), owner(x))
+		out = append(out, x.Shown()+" "+styleBad.Render("blocked: "+x.Blocked), owner(x))
 	}
 	if len(p.Active)+len(p.Waiting)+len(p.Blocked) == 0 {
 		out = append(out, styleDim.Render("no ports forwarded"))

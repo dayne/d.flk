@@ -12,13 +12,13 @@
 │ Host                       │ vintagestory-flk                                │
 │   health ✔                 │   v3     560M  running · current                │
 │                            │               built 2026-10-13 05:19Z · e2e7f9… │
-│                            │   v2     558M  older release                    │
-│                            │               built 2026-10-13 04:47Z · b54f5b… │
-│                            │                                                 │
-│                            │ 1.4G in 3 images                                │
-│                            │                                                 │
+│ Storage                    │   v2     558M  older release                    │
+│   / 20%                    │ … 3 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                    │
+│ ! podman: build container ruby-working-container was left behind (an         │
+│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an │
+│   interrupted build?): podman rm --storage 58883446ce9b                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
 └──────────────────────────────────────────────────────────────────────────────┘

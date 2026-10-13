@@ -43,6 +43,10 @@ problems show up there with the fix. Then find the symptom below.
   it. Nothing listed: add `[flk] http_port` or `[[services.ports]]`, then deploy.
 - 127.0.0.1 never works for forwarded ports: use the host's LAN IP (shown
   by `flk ports`), or `flk proxy PORT`.
+- Works on one host address but not another: the app (or the host
+  settings) has `bind`, so `flk ports` shows `ADDRESS:proto/port` and only
+  that address answers. An address `flk doctor` says isn't on this host
+  answers nothing.
 - From another computer: check the host firewall allows that port
   (`flk-sanity.sh` checks ufw and firewalld).
 

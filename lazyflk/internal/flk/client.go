@@ -93,8 +93,12 @@ func decode[T any](c *Client, ctx context.Context, args ...string) (T, error) {
 }
 
 // CommandLine renders args the way the admin would type them.
-func CommandLine(args ...string) string {
-	parts := []string{"flk"}
+func CommandLine(args ...string) string { return CommandLineFor("flk", args...) }
+
+// CommandLineFor renders another program's command line (podman,
+// systemctl...) the same way.
+func CommandLineFor(prog string, args ...string) string {
+	parts := []string{prog}
 	for _, a := range args {
 		if a == "" || strings.ContainsAny(a, " \t\n'\"$\\;&|<>*?()[]{}#~`") {
 			a = "'" + strings.ReplaceAll(a, "'", `'\''`) + "'"

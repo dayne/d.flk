@@ -12,6 +12,8 @@ import (
 // detail returns the right pane's title and Overview lines for a node.
 func (m *Model) detail(n node) (string, []string) {
 	switch n.kind {
+	case kindProvider:
+		return m.providerDetail(n, 1<<20)
 	case kindApp:
 		a := m.apps[n.app]
 		return a.Name, m.appOverview(a)
@@ -112,13 +114,18 @@ func (m *Model) machineOverview(a flk.App, mc flk.Machine) []string {
 	return append(out, field("created", when(mc.CreatedAt)), field("updated", when(mc.UpdatedAt)))
 }
 
-// forwardedTo says where a machine port is reachable from outside.
+// forwardedTo says where a machine port is reachable from outside: every
+// address it's forwarded on (one per bind).
 func forwardedTo(t flk.PortTable, mc flk.Machine, p flk.MachinePort) string {
 	key := fmt.Sprintf("%s/%d", p.Proto, p.Port)
+	var addrs []string
 	for _, x := range t.Active {
 		if x.Key == key && x.Machine == mc.ID {
-			return x.Address
+			addrs = append(addrs, x.Address)
 		}
+	}
+	if len(addrs) > 0 {
+		return strings.Join(addrs, ", ")
 	}
 	for _, x := range t.Blocked {
 		if x.Key == key && x.Machine == mc.ID {
@@ -173,6 +180,7 @@ func (m *Model) hostOverview() []string {
 		field("state", m.hc.Flk.StateDir),
 		field("source", m.hc.Flk.Source),
 		field("LAN IP", or(h.LanIP, "?")),
+		field("address", or(h.Address, or(h.LanIP, "?"))+styleDim.Render(" (advertised; host.toml address)")),
 		field("boot", boot),
 		field("health", health),
 	}
@@ -197,13 +205,13 @@ func portLines(t flk.PortTable, label string) []string {
 		out = append(out, l+s)
 	}
 	for _, p := range t.Active {
-		add(fmt.Sprintf("%s → %s", p.Key, p.Address))
+		add(fmt.Sprintf("%s → %s", p.Shown(), p.Address))
 	}
 	for _, p := range t.Waiting {
-		add(fmt.Sprintf("%s %s (machine %s; another machine has it)", p.Key, styleWarn.Render("waiting"), p.Machine))
+		add(fmt.Sprintf("%s %s (machine %s; another machine has it)", p.Shown(), styleWarn.Render("waiting"), p.Machine))
 	}
 	for _, p := range t.Blocked {
-		add(fmt.Sprintf("%s %s: %s", p.Key, styleBad.Render("blocked"), p.Blocked))
+		add(fmt.Sprintf("%s %s: %s", p.Shown(), styleBad.Render("blocked"), p.Blocked))
 	}
 	if len(out) == 0 {
 		add(styleDim.Render("none forwarded"))

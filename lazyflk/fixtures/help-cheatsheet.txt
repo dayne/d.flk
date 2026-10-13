@@ -28,6 +28,7 @@ Reach it
   [flk] http_port = N                serve [http_service] on host port N (the LAN too)
   [[services.ports]] port = N        same for [[services]]; then: flk ports
   not 127.0.0.1                      use the host's LAN IP, or: flk proxy N [ID]
+  [flk] bind = "10.47.11.3"          forward only on that host address (host.toml: bind, address)
 
 Change things
   edit flk.toml, then flk deploy     flk config show: what flk understood

@@ -6,7 +6,8 @@ lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
 
 ## Future
 
-- [ ] **Mouse support (optional, the keys stay primary).** The admin
+- [x] **Mouse support (optional, the keys stay primary).** Done: on by
+  default, `--no-mouse` to leave it to the terminal. The admin
   reached for the mouse; clicking should do the obvious thing:
   - click a tree row to select it, click an app's ▾/▸ to fold it
   - click a tab to open it; wheel scrolls the tree, the tab, logs, job

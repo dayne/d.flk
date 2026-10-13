@@ -175,6 +175,11 @@ func (m *Model) paletteBox() []string {
 		if i == p.cursor {
 			line = styleSelected.Render(fit(ansi.Strip(line), inner))
 		}
+		idx := i
+		m.bodyZone(len(body), func() tea.Cmd {
+			p.cursor = idx
+			return m.paletteKey(tea.KeyPressMsg{Code: tea.KeyEnter})
+		})
 		body = append(body, line)
 	}
 	if len(list) == 0 && p.query != "" {
@@ -193,7 +198,7 @@ func (m *Model) paletteBox() []string {
 			}
 		}
 	}
-	foot := keyHints("type", "to find", "↑↓", "choose", "enter", "fill in and run", "esc", "close")
+	foot := m.hints("type", "to find", "↑↓", "choose", "enter", "fill in and run", "esc", "close")
 	if m.note != "" {
 		foot = styleWarn.Render(m.note)
 	}

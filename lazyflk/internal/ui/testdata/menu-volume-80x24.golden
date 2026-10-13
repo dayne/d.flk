@@ -14,11 +14,11 @@
 │ │ copy world to the backup dir, then prune old copies                      │ │
 │ │ $ flk -a minecraft-flk volumes backup world                              │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
-│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
+├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │                                                 │
-├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                    │
+│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an │
+│   interrupted build?): podman rm --storage 58883446ce9b                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : comm… │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  L cmd log  ? help  q… │
 └──────────────────────────────────────────────────────────────────────────────┘

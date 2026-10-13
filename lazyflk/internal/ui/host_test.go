@@ -50,8 +50,12 @@ func flatten(calls [][]string) []string {
 func TestSchema(t *testing.T) {
 	m := demoModel(t, 80, 24)
 	withState(t, m, func(hc *flk.HostContext) { hc.Schema = 2 })
-	if s := screen(m); !strings.Contains(s, "flk's JSON is schema 2, this lazyflk knows 1") {
-		t.Errorf("no warning:\n%s", s)
+	var texts []string
+	for _, it := range m.attnItems() {
+		texts = append(texts, it.text)
+	}
+	if !strings.Contains(strings.Join(texts, "\n"), "flk's JSON is schema 2, this lazyflk knows 1") {
+		t.Errorf("no warning: %v", texts)
 	}
 	withState(t, m, func(hc *flk.HostContext) { hc.Schema = 0 })
 	if m.quick() {
@@ -91,5 +95,27 @@ func TestImageLines(t *testing.T) {
 	}
 	if strings.Index(got, "gone  app gone") < strings.Index(got, "x") {
 		t.Error("orphans go last")
+	}
+}
+
+// A port bound to one address shows as flk shows it, and a machine port
+// forwarded on two addresses lists both.
+func TestBoundPorts(t *testing.T) {
+	m := demoModel(t, 160, 48)
+	b1, b2 := "10.47.11.3", "10.47.11.4"
+	withState(t, m, func(hc *flk.HostContext) {
+		hc.Host.Address = b1
+		p := hc.Apps[0].Ports.Active[0]
+		p.Bind, p.Address = &b1, b1+":25565"
+		q := p
+		q.Bind, q.Address = &b2, b2+":25565"
+		hc.Apps[0].Ports.Active = append([]flk.Port{p, q}, hc.Apps[0].Ports.Active[1:]...)
+	})
+	goTo(m, kindMachine)
+	s := screen(m)
+	for _, want := range []string{"10.47.11.3:tcp/25565", "tcp/25565 → 10.47.11.3:25565, 10.47.11.4:25565", "address 10.47.11.3 (LAN 10.47.11.116)"} {
+		if !strings.Contains(s, want) {
+			t.Errorf("missing %q:\n%s", want, s)
+		}
 	}
 }

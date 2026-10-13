@@ -165,8 +165,12 @@ func TestEveryFixtureServed(t *testing.T) {
 	}
 	files, _ := fs.Glob(fixtures.FS, "*.*")
 	for _, name := range files {
-		// df.txt is host.DF's, not flk's; backups-sample.json is decoded below
-		if !served[name] && name != "df.txt" && name != "backups-sample.json" {
+		// df.txt is host.DF's and the providers'; backups-sample.json is
+		// decoded below; the host tools' fixtures are the providers' (their
+		// tests check those)
+		hostTool := strings.HasPrefix(name, "podman-") || strings.HasPrefix(name, "journal-") ||
+			name == "lsblk.json" || name == "systemctl-show.txt" || name == "id-groups.txt"
+		if !served[name] && name != "df.txt" && name != "backups-sample.json" && !hostTool {
 			t.Errorf("fixture %s is never served", name)
 		}
 	}

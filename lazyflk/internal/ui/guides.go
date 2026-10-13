@@ -180,11 +180,16 @@ func (m *Model) guideScreen() string {
 			if i == g.cursor {
 				line = styleSelected.Render(fit(ansi.Strip(line), inner))
 			}
+			idx := i
+			m.bodyZone(len(body), func() tea.Cmd {
+				g.cursor = idx
+				return m.guideKey(tea.KeyPressMsg{Code: tea.KeyEnter})
+			})
 			body = append(body, line)
 		}
 		body = append(body, "", styleDim.Render("Each is `flk help TOPIC`, from the flk you have. flk help --all is the full reference;"),
 			styleDim.Render("the command palette (:) has every command."))
-		foot = keyHints("↑↓", "choose", "enter", "read", "esc", "back")
+		foot = m.hints("↑↓", "choose", "enter", "read", "esc", "back")
 	} else {
 		title = "Guide ─ flk help " + g.topic
 		lines, status := m.guideLines()
@@ -204,7 +209,10 @@ func (m *Model) guideScreen() string {
 		if len(lines) > room {
 			title += fmt.Sprintf(" ─ %d%%", min(100, (g.top+room)*100/len(lines)))
 		}
-		foot = keyHints("↑↓ pgup/dn", "scroll", "/", "search", "n/N", "match", "esc", "topics")
+		foot = m.hints("↑↓ pgup/dn", "scroll", "/", "search", "n/N", "match", "esc", "topics")
+		m.addWheel(1, h-3, func(d int) {
+			g.top = max(min(g.top+d, len(lines)-room), 0)
+		})
 		if g.editing {
 			foot = "/" + g.input + "█" + styleDim.Render("   enter search · esc cancel")
 		} else if g.query != "" && g.match < 0 {
@@ -214,5 +222,6 @@ func (m *Model) guideScreen() string {
 	for len(body) < room {
 		body = append(body, "")
 	}
+	m.screenZones(m.footPairs)
 	return strings.Join(box(title, body, foot, w), "\n")
 }

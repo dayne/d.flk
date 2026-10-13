@@ -14,11 +14,11 @@
 │ │ l  logs           follow all its machines' console output                │ │
 │ │ D  destroy app    delete the app, its machines, releases and volumes     │ │
 │ │                                                                          │ │
-│ │ build the image and roll machines to a new release                       │ │
+├ │ build the image and roll machines to a new release                       │─┤
 │ │ $ flk -a minecraft-flk deploy                                            │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
-├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
+│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q … │
 └──────────────────────────────────────────────────────────────────────────────┘

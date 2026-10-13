@@ -75,10 +75,18 @@ type Command struct {
 	TypeName string
 	// Interactive commands get the terminal (console attach).
 	Interactive bool
+	// Program is what runs: "" for flk, else another tool on the host
+	// (podman, sh for an app's own actions).
+	Program string
 }
 
 // Line is the command as the admin would type it.
-func (c Command) Line() string { return flk.CommandLine(c.Args...) }
+func (c Command) Line() string {
+	if c.Program != "" {
+		return flk.CommandLineFor(c.Program, c.Args...)
+	}
+	return flk.CommandLine(c.Args...)
+}
 
 // View names an action the UI handles itself instead of running flk.
 type View string
@@ -104,6 +112,8 @@ type Action struct {
 	View     View
 	Copy     string   // for ViewCopy
 	Notes    []string // flk's notes on the command, shown in its form
+	Logs     *Command // for ViewLogs from a provider: the command to follow
+	check    func(vals map[string]string) string
 	build    func(vals map[string]string) Command
 }
 
@@ -127,6 +137,11 @@ func (a Action) Command(vals map[string]string) Command {
 
 // Check reports what's wrong with the form's values, or "".
 func (a Action) Check(vals map[string]string) string {
+	if a.check != nil {
+		if why := a.check(vals); why != "" {
+			return why
+		}
+	}
 	for _, f := range a.Fields {
 		v := strings.TrimSpace(vals[f.Name])
 		if v == "" {
@@ -529,4 +544,32 @@ func plural(n int, word string) string {
 		return "1 " + word
 	}
 	return fmt.Sprintf("%d %ss", n, word)
+}
+
+// Run is an action that runs c as is (for providers: podman, sh...).
+func Run(key, label, help string, confirm Confirm, typeName string, c Command) Action {
+	return Action{Key: key, Label: label, Help: help, Confirm: confirm, TypeName: typeName, Long: true,
+		build: func(map[string]string) Command { return c }}
+}
+
+// CopyOnly is an action that only copies a command (root steps).
+func CopyOnly(key, label, help, cmd string) Action {
+	return Action{Key: key, Label: label, Help: help, View: ViewCopy, Copy: cmd}
+}
+
+// FollowLogs is an action that follows c's output in the logs view.
+func FollowLogs(key, help string, c Command) Action {
+	return Action{Key: key, Label: "logs", Help: help, View: ViewLogs, Logs: &c}
+}
+
+// Custom is an action whose command is made from typed input (an app's
+// own actions): make returns the command, or why it can't run.
+func Custom(key, label, help string, needsInput bool, make func(input string) (Command, string)) Action {
+	a := Action{Key: key, Label: label, Help: help, Confirm: Ask, Long: true,
+		build: func(v map[string]string) Command { c, _ := make(v["input"]); return c },
+		check: func(v map[string]string) string { _, why := make(v["input"]); return why }}
+	if needsInput {
+		a.Fields = []Field{{Name: "input", Label: "input", Required: true, Help: "goes where the command says {input}"}}
+	}
+	return a
 }

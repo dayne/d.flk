@@ -12,29 +12,28 @@
 │ Host                                   │ vintagestory-flk                                                                                                    │
 │   health ✔                             │   v3     560M  running · current                                                                                    │
 │                                        │               built 2026-10-13 05:19Z · e2e7f90d5314                                                                │
-│                                        │   v2     558M  older release                                                                                        │
-│                                        │               built 2026-10-13 04:47Z · b54f5b0c0cc6                                                                │
+│ Storage                                │   v2     558M  older release                                                                                        │
+│   / 20%                                │               built 2026-10-13 04:47Z · b54f5b0c0cc6                                                                │
+│   /data/minecraft 66%                  │                                                                                                                     │
+│   /data/vintagestory 56%               │ 1.4G in 3 images                                                                                                    │
 │                                        │                                                                                                                     │
-│                                        │ 1.4G in 3 images                                                                                                    │
+│ Podman                                 │                                                                                                                     │
+│   ▢ ruby-working-container (build)     │                                                                                                                     │
+│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
+│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
+│   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
+│   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
+│   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
+│   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
+│   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
+│   3 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│ Services                               │                                                                                                                     │
+│   ● flk-net                            │                                                                                                                     │
+│   ● flk-machines                       │                                                                                                                     │
+│   ● ssh                                │                                                                                                                     │
+│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -42,7 +41,8 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                                      │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -31,6 +31,7 @@ type Host struct {
 	OK          bool          `json:"ok"`
 	Problems    []DoctorCheck `json:"problems"`
 	LanIP       string        `json:"lan_ip"`
+	Address     string        `json:"address"` // the address to advertise (host.toml), else lan_ip
 	BootService bool          `json:"boot_service"`
 	Services    []Service     `json:"services"`
 }
@@ -138,15 +139,16 @@ type PortTable struct {
 }
 
 type Port struct {
-	Key          string `json:"key"`
-	Proto        string `json:"proto"`
-	Port         int    `json:"port"`
-	IP           string `json:"ip"`
-	InternalPort int    `json:"internal_port"`
-	App          string `json:"app"`
-	Machine      string `json:"machine"`
-	Address      string `json:"address"`
-	Blocked      string `json:"blocked"`
+	Key          string  `json:"key"`  // proto/port; with binds, (Bind, Key) is the identity
+	Bind         *string `json:"bind"` // a host address, or null for every address
+	Proto        string  `json:"proto"`
+	Port         int     `json:"port"`
+	IP           string  `json:"ip"`
+	InternalPort int     `json:"internal_port"`
+	App          string  `json:"app"`
+	Machine      string  `json:"machine"`
+	Address      string  `json:"address"`
+	Blocked      string  `json:"blocked"`
 }
 
 // AppContext is `flk -a APP context --json`.
@@ -186,6 +188,7 @@ type DoctorCheck struct {
 // PortsList is `flk ports list --json`.
 type PortsList struct {
 	HelperInstalled bool   `json:"helper_installed"`
+	PerAddress      *bool  `json:"per_address"` // the helper supports bind
 	MinPort         int    `json:"min_port"`
 	HostAddress     string `json:"host_address"`
 	PortTable
@@ -357,4 +360,13 @@ type Image struct {
 	Current   bool   `json:"current"` // the app's latest release
 	InUse     bool   `json:"in_use"`  // a machine is on it
 	Running   bool   `json:"running"` // a running machine is on it
+}
+
+// Shown is a port as flk's text output shows it: "tcp/25565", or
+// "10.47.11.3:tcp/25565" when it's bound to one address.
+func (p Port) Shown() string {
+	if p.Bind != nil && *p.Bind != "" {
+		return *p.Bind + ":" + p.Key
+	}
+	return p.Key
 }

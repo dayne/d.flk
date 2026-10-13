@@ -7,18 +7,18 @@
 │ ▾ vintagestory-flk  1/1 ●  │ state     /home/dayne/.local/share/flk          │
 │   ● frosty-river-2714      │ source    /home/dayne/flk                       │
 │   ▢ vsdata 40GB (external) │ LAN IP    10.47.11.116                          │
-│   ⇄ tcp/42420 udp/42420    │ boot      installed                             │
-│                            │ health    ✔ ready                               │
-│ Host                       │ data dirs /home/dayne/.local/share/flk          │
-│   health ✔                 │           /data/minecraft/flk                   │
-│                            │           /data/vintagestory/flk                │
-│                            │                                                 │
-│                            │ ✔ /dev/kvm read/write                           │
-│                            │ ✔ firecracker /home/dayne/.local/share/flk/bin… │
-│                            │ ✔ guest kernel /home/dayne/.local/share/flk/ke… │
-│                            │ … 12 more (pgdn)                                │
+│   ⇄ tcp/42420 udp/42420    │ address   10.47.11.116 (advertised; host.toml … │
+│                            │ boot      installed                             │
+│ Host                       │ health    ✔ ready                               │
+│   health ✔                 │ data dirs /home/dayne/.local/share/flk          │
+│                            │           /data/minecraft/flk                   │
+│ Storage                    │           /data/vintagestory/flk                │
+│   / 20%                    │ … 16 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                    │
+│ ! podman: build container ruby-working-container was left behind (an         │
+│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an │
+│   interrupted build?): podman rm --storage 58883446ce9b                      │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
 └──────────────────────────────────────────────────────────────────────────────┘

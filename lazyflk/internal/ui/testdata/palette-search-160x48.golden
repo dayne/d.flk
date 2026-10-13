@@ -12,37 +12,37 @@
 │ Host                        │                                                                                                  │                             │
 │   health ✔                  │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
+│ Storage                     │                                                                                                  │                             │
+│   / 20%                     │                                                                                                  │                             │
+│   /data/minecraft 66%       │                                                                                                  │                             │
+│   /data/vintagestory 56%    │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
+│ Podman                      │                                                                                                  │                             │
+│   ▢ ruby-working-container (│                                                                                                  │                             │
+│   ▢ 4b61b6598784-working-con│                                                                                                  │                             │
+│   ◇ 4b61b6598784 (untagged) │                                                                                                  │                             │
+│   ◇ itzg/minecraft-server:la│                                                                                                  │                             │
+│   ◇ dotnet/runtime:10.0 197M│                                                                                                  │                             │
+│   ◇ eclipse-temurin:25-jre 3│                                                                                                  │                             │
+│   ◇ ruby:3.3-alpine 69M     │                                                                                                  │                             │
+│   ◇ alpine:3.20 7.7M        │                                                                                                  │                             │
+│   3 flk images: host Images │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
+│ Services                    │                                                                                                  │                             │
+│   ● flk-net                 │                                                                                                  │                             │
+│   ● flk-machines            │                                                                                                  │                             │
+│   ● ssh                     │                                                                                                  │                             │
+│   ● snap.mosquitto.mosquitto│                                                                                                  │                             │
+│   ● chrony                  │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check]                 │                             │
-│                             ├──────────────────────────────────────────────────────────────────────────────────────────────────┤                             │
-├ Needs attention ────────────│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │─────────────────────────────┤
-│ ✔ nothing needs attention   └──────────────────────────────────────────────────────────────────────────────────────────────────┘                             │
+├ Needs attention ────────────├──────────────────────────────────────────────────────────────────────────────────────────────────┤─────────────────────────────┤
+│ ! podman: build container ru│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │                             │
+│ ! podman: build container 4b└──────────────────────────────────────────────────────────────────────────────────────────────────┘9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

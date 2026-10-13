@@ -36,6 +36,11 @@ type logsView struct {
 	match   int // line of the current match, -1 for none
 	note    string
 
+	// a host command's output instead of flk logs (journalctl, podman logs)
+	prog  string
+	fixed []string
+	title string
+
 	canSend bool   // > types a line into the machine's console (not read-only)
 	sending bool   // the > prompt is open
 	line    string // what's typed at it
@@ -71,7 +76,23 @@ func newLogsView(c *flk.Client, app string, machines []flk.Machine, sel int) *lo
 	return &logsView{client: c, app: app, machines: machines, sel: sel, match: -1}
 }
 
+// newCommandLogs follows another program's output (a provider's logs).
+func newCommandLogs(c *flk.Client, prog string, args []string, title string) *logsView {
+	return &logsView{client: c, prog: prog, fixed: args, title: title, match: -1}
+}
+
+// commandLine is what the view runs, as shown.
+func (v *logsView) commandLine() string {
+	if v.prog != "" {
+		return flk.CommandLineFor(v.prog, v.args()...)
+	}
+	return flk.CommandLine(v.args()...)
+}
+
 func (v *logsView) args() []string {
+	if v.fixed != nil {
+		return v.fixed
+	}
 	args := []string{"-a", v.app, "logs"}
 	if v.sel >= 0 {
 		args = append(args, "-i", v.machines[v.sel].ID)
@@ -80,6 +101,9 @@ func (v *logsView) args() []string {
 }
 
 func (v *logsView) target() string {
+	if v.fixed != nil {
+		return v.title
+	}
 	if v.sel < 0 {
 		if len(v.machines) == 1 {
 			return or(v.machines[0].Name, v.machines[0].ID)
@@ -416,8 +440,11 @@ func (v *logsView) render(w, h int) string {
 	}
 	right := " " + strings.Join(status, " · ") + " "
 	title := "Logs ─ " + v.app + " / " + v.target()
+	if v.fixed != nil {
+		title = "Logs ─ " + v.title
+	}
 	line("┌" + rule(title, w-2-ansi.StringWidth(right)) + right + "┐")
-	line("│ " + fit(styleDim.Render("$ "+flk.CommandLine(v.args()...)), w-4) + " │")
+	line("│ " + fit(styleDim.Render("$ "+v.commandLine()), w-4) + " │")
 
 	var rows []string
 	for i := v.firstShown(bw, bh); i < len(v.lines) && len(rows) < bh; i++ {

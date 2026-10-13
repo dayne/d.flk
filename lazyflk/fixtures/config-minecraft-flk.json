@@ -114,6 +114,7 @@
     "restart": {
       "policy": "on-failure",
       "retries": 1
-    }
+    },
+    "bind": null
   }
 }

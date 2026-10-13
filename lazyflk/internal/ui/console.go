@@ -100,7 +100,7 @@ func (m *Model) attachBox() []string {
 	} {
 		body = append(body, wrap(p, inner)...)
 	}
-	return box(m.attach.title, body, keyHints("enter", "attach", "esc", "cancel"), w)
+	return box(m.attach.title, body, m.hints("enter", "attach", "esc", "cancel"), w)
 }
 
 func (m *Model) attachKey(k string) tea.Cmd {

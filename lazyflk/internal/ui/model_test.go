@@ -17,6 +17,7 @@ import (
 	"lazyflk/fixtures"
 	"lazyflk/internal/flk"
 	"lazyflk/internal/host"
+	"lazyflk/internal/providers"
 )
 
 var update = flag.Bool("update", false, "rewrite testdata/*.golden")
@@ -74,8 +75,13 @@ func press(m *Model, keys ...string) {
 }
 
 func newDemo(fsys fs.FS) *Model {
-	return New(Options{Client: flk.New(flk.NewFake(fsys)), Disk: fixtureDisk, Demo: true})
+	return New(Options{Client: flk.New(flk.NewFake(fsys)), Disk: fixtureDisk, Demo: true,
+		Host:      (&providers.Fake{FS: fsys, Files: providers.DemoFiles}).For,
+		Providers: []providers.Provider{providers.Storage{}, providers.Podman{Now: demoNow}, providers.Services{}}})
 }
+
+// demoNow is when the fixtures were captured, for anything showing ages.
+func demoNow() time.Time { return time.Date(2026, 10, 13, 7, 0, 0, 0, time.UTC) }
 
 // demoModel is the --demo model after its first load, sized w x h.
 func demoModel(t *testing.T, w, h int) *Model {
@@ -186,18 +192,25 @@ func TestNavigation(t *testing.T) {
 	if sel() != "app/minecraft-flk" {
 		t.Errorf("up from the top moved to %s", sel())
 	}
-	for range 10 {
+	for range 8 {
 		press(m, "j")
 	}
 	if sel() != "host" {
-		t.Errorf("bottom is %s", sel())
+		t.Errorf("after the apps is %s", sel())
 	}
+	for range 50 {
+		press(m, "j")
+	}
+	if sel() != "prov/service/chrony.service" {
+		t.Errorf("bottom is %s (the last provider item)", sel())
+	}
+	goTo(m, kindHost)
 	press(m, "k")
 	if sel() != "ports/vintagestory-flk" {
 		t.Errorf("above host is %s", sel())
 	}
 	press(m, "left") // collapse from a child selects the app
-	if sel() != "app/vintagestory-flk" || len(m.nodes) != 9 {
+	if sel() != "app/vintagestory-flk" || len(m.nodes) != 32 {
 		t.Errorf("collapsed: on %s, %d nodes", sel(), len(m.nodes))
 	}
 	if !strings.Contains(m.Render(), "▸ vintagestory-flk") {

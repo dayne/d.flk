@@ -243,13 +243,19 @@ func (f *Fake) Stream(ctx context.Context, stdin string, args ...string) (*Strea
 		}
 		out = []byte("demo mode: flk was not run\n")
 	}
+	return TextStream(ctx, string(out), follow), nil
+}
+
+// TextStream serves text line by line as a Stream; with follow it then
+// waits, like `tail -F` on a quiet log, until stopped. For fakes.
+func TextStream(ctx context.Context, text string, follow bool) *Stream {
 	s, ch := newStream()
 	stop := make(chan struct{})
 	var once sync.Once
 	s.interrupt = func() { once.Do(func() { close(stop) }) }
 	go func() {
 		defer close(ch)
-		for _, l := range strings.SplitAfter(string(out), "\n") {
+		for _, l := range strings.SplitAfter(text, "\n") {
 			if l == "" {
 				continue
 			}
@@ -270,7 +276,7 @@ func (f *Fake) Stream(ctx context.Context, stdin string, args ...string) (*Strea
 			}
 		}
 	}()
-	return s, nil
+	return s
 }
 
 // Interactive is a flk command for the admin's own terminal (console

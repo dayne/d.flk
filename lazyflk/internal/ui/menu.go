@@ -79,11 +79,15 @@ func (m *Model) menuActions() ([]actions.Action, string) {
 	if !ok || n.key(m.apps) != m.menu.key {
 		return nil, ""
 	}
+	if n.kind == kindProvider {
+		it := m.providerItem(n)
+		return it.Actions, it.Title
+	}
 	t, title, ok := m.target(n)
 	if !ok {
 		return nil, ""
 	}
-	return actions.For(t), title
+	return append(actions.For(t), m.appActions(n)...), title
 }
 
 func (m *Model) openMenu() tea.Cmd {
@@ -96,8 +100,13 @@ func (m *Model) openMenu() tea.Cmd {
 		return nil
 	}
 	m.menu = &menuView{key: n.key(m.apps)}
-	if n.kind == kindVolume { // restore needs the list of backups
+	switch n.kind {
+	case kindVolume: // restore needs the list of backups
 		return m.want(m.backupSource(m.apps[n.app].Name))
+	case kindApp, kindMachine: // the app's own actions
+		if a := m.apps[n.app]; a.ConfigPath != "" {
+			return m.want(m.appActionsSource(a))
+		}
 	}
 	return nil
 }
@@ -146,6 +155,9 @@ func (m *Model) choose(title string, a actions.Action) tea.Cmd {
 	}
 	switch a.View {
 	case actions.ViewLogs:
+		if a.Logs != nil {
+			return m.openCommandLogs(*a.Logs, title)
+		}
 		return m.openLogs()
 	case actions.ViewRecord:
 		m.setTabNamed("Record")
@@ -172,6 +184,10 @@ func (m *Model) choose(title string, a actions.Action) tea.Cmd {
 				m.form.vals[f.Name] = f.Choices[0]
 			}
 		}
+		return nil
+	}
+	if why := a.Check(nil); why != "" {
+		m.note = a.Label + ": " + why
 		return nil
 	}
 	return m.confirmOrRun(title, a, a.Command(nil))
@@ -227,6 +243,11 @@ func (m *Model) menuBox() []string {
 			key, label, desc = styleDim.Render(fmt.Sprintf("%-2s", a.Key)), styleDim.Render(label), styleDim.Render(a.Disabled)
 		}
 		line := key + " " + label + "  " + desc
+		act, idx := a, i
+		m.bodyZone(len(body), func() tea.Cmd {
+			m.menu.cursor = idx
+			return m.choose(title, act)
+		})
 		if i == m.menu.cursor {
 			line = styleSelected.Render(fit(ansi.Strip(line), inner))
 		}
@@ -252,7 +273,7 @@ func (m *Model) menuBox() []string {
 		}
 		body = append(body, styleDim.Render(l))
 	}
-	foot := keyHints("↑↓ enter", "choose (or press its key)", "esc", "close")
+	foot := m.hints("↑↓ enter", "choose (or press its key)", "esc", "close")
 	if m.note != "" {
 		foot = m.note
 	}
@@ -373,6 +394,14 @@ func (m *Model) formBox() []string {
 		if i == f.field {
 			label = styleSelected.Render(label)
 		}
+		fi, choices := i, fl.Choices
+		m.bodyZone(len(body), func() tea.Cmd {
+			if f.field == fi && len(choices) > 0 {
+				return m.formKey(tea.KeyPressMsg{Code: tea.KeyRight})
+			}
+			f.field = fi
+			return nil
+		})
 		body = append(body, label+" "+shown)
 		if i == f.field && fl.Help != "" {
 			for _, l := range wrap(fl.Help, boxW) {
@@ -397,7 +426,7 @@ func (m *Model) formBox() []string {
 			break
 		}
 	}
-	foot := keyHints(append(keys, "enter", "next step", "esc", "cancel")...)
+	foot := m.hints(append(keys, "enter", "next step", "esc", "cancel")...)
 	// notes fill the room that's left; the form itself always shows
 	if room := m.height - 6 - len(body); room > 0 && len(notes) > 0 {
 		if len(notes) > room {
@@ -463,10 +492,10 @@ func (m *Model) confirmBox() []string {
 			mark = styleOK.Render(" ✔ enter runs it")
 		}
 		body = append(body, styleBad.Render(prompt)+c.typed+"▏"+mark)
-		foot = keyHints("enter", "run (once it matches)", "esc", "cancel")
+		foot = m.hints("enter", "run (once it matches)", "esc", "cancel")
 	} else {
 		body = append(body, styleWarn.Render("Run it?"))
-		foot = keyHints("y", "run", "n esc", "cancel")
+		foot = m.hints("y", "run", "n esc", "cancel")
 	}
 	return box(c.title, body, foot, w)
 }

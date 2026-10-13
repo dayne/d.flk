@@ -1,4 +1,4 @@
-┌ Guide ─ flk help cheatsheet ─ 93% ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+┌ Guide ─ flk help cheatsheet ─ 91% ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ # flk cheat sheet                                                                                                                                            │
 │                                                                                                                                                              │
 │ What's going on?                                                                                                                                             │
@@ -29,6 +29,7 @@
 │   [flk] http_port = N                serve [http_service] on host port N (the LAN too)                                                                       │
 │   [[services.ports]] port = N        same for [[services]]; then: flk ports                                                                                  │
 │   not 127.0.0.1                      use the host's LAN IP, or: flk proxy N [ID]                                                                             │
+│   [flk] bind = "10.47.11.3"          forward only on that host address (host.toml: bind, address)                                                            │
 │                                                                                                                                                              │
 │ Change things                                                                                                                                                │
 │   edit flk.toml, then flk deploy     flk config show: what flk understood                                                                                    │
@@ -42,7 +43,6 @@
 │                                                                                                                                                              │
 │ Clean up                                                                                                                                                     │
 │   flk apps destroy APP --yes         machines, volumes, images (external volume files are kept)                                                              │
-│   flk apps prune                     images of apps that are already gone                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ pgup/dn scroll  / search  n/N match  esc topics                                                                                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

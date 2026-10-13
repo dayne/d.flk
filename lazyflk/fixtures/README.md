@@ -1,8 +1,8 @@
 # Fixtures
 
-Real output from the reference host (flk 0.1.0, commit e46a33f, 2026-10-12),
-captured with the commands below. Regenerate with the same commands; never
-edit them by hand. No secret values: `secrets list --json` has names and
+Real output from the reference host (flk 0.1.0, commit 5643a8b, 2026-10-12),
+captured with the commands below by `./capture.sh` (read-only; run it on a
+quiet host, then review the diff). Never edit them by hand. No secret values: `secrets list --json` has names and
 digests only.
 
 | File | Command |
@@ -29,3 +29,14 @@ digests only.
 | machine-stats.json | `flk machine stats --all --json` |
 | disk.json | `flk disk --json` |
 | images.json | `flk images --json` |
+
+Host commands for the providers (SPEC 10), as run by lazyflk:
+
+| File | Command |
+|---|---|
+| podman-ps.json | `podman ps -a --external --format json` (two build containers an interrupted flk deploy left behind) |
+| podman-images.json | `podman images --format json` |
+| lsblk.json | `lsblk -e7 -b --json -o NAME,PATH,TYPE,SIZE,FSTYPE,FSSIZE,FSAVAIL,MOUNTPOINTS,MODEL` |
+| systemctl-show.txt | `systemctl show --timestamp=utc -p Id,Description,LoadState,ActiveState,SubState,UnitFileState,ActiveEnterTimestamp,StateChangeTimestamp,MainPID,Result,NRestarts` for flk's units and the default pins |
+| id-groups.txt | `id -Gn` |
+| journal-chrony.txt | `journalctl -u chrony.service -n 40 --no-pager -o short-iso` |

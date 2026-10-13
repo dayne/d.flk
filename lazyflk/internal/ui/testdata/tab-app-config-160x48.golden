@@ -12,37 +12,37 @@
 │ Host                                   │       "dockerfile": "Dockerfile"                                                                                    │
 │   health ✔                             │     },                                                                                                              │
 │                                        │     "env": {                                                                                                        │
-│                                        │       "TZ": "America/Anchorage",                                                                                    │
-│                                        │       "MC_HEAP": "8G",                                                                                              │
-│                                        │       "RESTART_DELAY": "10",                                                                                        │
-│                                        │       "MAX_RESTARTS": "5",                                                                                          │
+│ Storage                                │       "TZ": "America/Anchorage",                                                                                    │
+│   / 20%                                │       "MC_HEAP": "8G",                                                                                              │
+│   /data/minecraft 66%                  │       "RESTART_DELAY": "10",                                                                                        │
+│   /data/vintagestory 56%               │       "MAX_RESTARTS": "5",                                                                                          │
 │                                        │       "RESTART_WINDOW": "600",                                                                                      │
-│                                        │       "STOP_TIMEOUT": "100",                                                                                        │
-│                                        │       "DISCORD_NAME": "Minecraft",                                                                                  │
-│                                        │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
-│                                        │     },                                                                                                              │
-│                                        │     "restart": [                                                                                                    │
-│                                        │       {                                                                                                             │
-│                                        │         "policy": "on-failure",                                                                                     │
-│                                        │         "retries": 1                                                                                                │
-│                                        │       }                                                                                                             │
-│                                        │     ],                                                                                                              │
+│ Podman                                 │       "STOP_TIMEOUT": "100",                                                                                        │
+│   ▢ ruby-working-container (build)     │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│   ▢ 4b61b6598784-working-container (b… │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│   ◇ 4b61b6598784 (untagged) 69M        │     },                                                                                                              │
+│   ◇ itzg/minecraft-server:latest 868M  │     "restart": [                                                                                                    │
+│   ◇ dotnet/runtime:10.0 197M           │       {                                                                                                             │
+│   ◇ eclipse-temurin:25-jre 341M        │         "policy": "on-failure",                                                                                     │
+│   ◇ ruby:3.3-alpine 69M                │         "retries": 1                                                                                                │
+│   ◇ alpine:3.20 7.7M                   │       }                                                                                                             │
+│   3 flk images: host Images tab        │     ],                                                                                                              │
 │                                        │     "flk": {                                                                                                        │
-│                                        │       "backup": {                                                                                                   │
-│                                        │         "mode": "live",                                                                                             │
-│                                        │         "pre": [                                                                                                    │
-│                                        │           {                                                                                                         │
-│                                        │             "console": "save-off"                                                                                   │
-│                                        │           },                                                                                                        │
+│ Services                               │       "backup": {                                                                                                   │
+│   ● flk-net                            │         "mode": "live",                                                                                             │
+│   ● flk-machines                       │         "pre": [                                                                                                    │
+│   ● ssh                                │           {                                                                                                         │
+│   ● snap.mosquitto.mosquitto           │             "console": "save-off"                                                                                   │
+│   ● chrony                             │           },                                                                                                        │
 │                                        │           {                                                                                                         │
 │                                        │             "console": "save-all flush",                                                                            │
 │                                        │             "wait": "Saved the game",                                                                               │
 │                                        │             "timeout": 300                                                                                          │
 │                                        │           }                                                                                                         │
-│                                        │         ],                                                                                                          │
-│                                        │ … 82 more (pgdn)                                                                                                    │
+│                                        │ … 84 more (pgdn)                                                                                                    │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

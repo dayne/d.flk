@@ -1,7 +1,7 @@
 # flk host overview
 
 flk 0.1.0  state: /home/dayne/.local/share/flk  source: /home/dayne/flk
-host: ready, LAN IP 10.47.11.116, boot service installed
+host: ready, address 10.47.11.116, boot service installed
 
 ## minecraft-flk  (v8, 1/1 started)
   225d58f615e7e6 [mellow-aurora-7882] started 172.30.0.10:25565

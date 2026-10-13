@@ -7,34 +7,33 @@
 │ ▾ vintagestory-flk  1/1 ●              │ state     /home/dayne/.local/share/flk                                                                              │
 │   ● frosty-river-2714                  │ source    /home/dayne/flk                                                                                           │
 │   ▢ vsdata 40GB (external)             │ LAN IP    10.47.11.116                                                                                              │
-│   ⇄ tcp/42420 udp/42420                │ boot      installed                                                                                                 │
-│                                        │ health    ✔ ready                                                                                                   │
-│ Host                                   │ data dirs /home/dayne/.local/share/flk                                                                              │
-│   health ✔                             │           /data/minecraft/flk                                                                                       │
-│                                        │           /data/vintagestory/flk                                                                                    │
-│                                        │                                                                                                                     │
-│                                        │ ✔ /dev/kvm read/write                                                                                               │
-│                                        │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
+│   ⇄ tcp/42420 udp/42420                │ address   10.47.11.116 (advertised; host.toml address)                                                              │
+│                                        │ boot      installed                                                                                                 │
+│ Host                                   │ health    ✔ ready                                                                                                   │
+│   health ✔                             │ data dirs /home/dayne/.local/share/flk                                                                              │
+│                                        │           /data/minecraft/flk                                                                                       │
+│ Storage                                │           /data/vintagestory/flk                                                                                    │
+│   / 20%                                │                                                                                                                     │
+│   /data/minecraft 66%                  │ ✔ /dev/kvm read/write                                                                                               │
+│   /data/vintagestory 56%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
 │                                        │ ✔ guest kernel /home/dayne/.local/share/flk/kernel/vmlinux                                                          │
-│                                        │ ✔ bridge flkbr0                                                                                                     │
-│                                        │ ✔ tap pool 16/16                                                                                                    │
-│                                        │ ✔ ipv4 forwarding                                                                                                   │
-│                                        │ ✔ tmux                                                                                                              │
-│                                        │ ✔ mkfs.ext4                                                                                                         │
-│                                        │ ✔ fakeroot                                                                                                          │
-│                                        │ ✔ container engine (podman)                                                                                         │
-│                                        │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
-│                                        │ ✔ port helper (host ports from 1024)                                                                                │
-│                                        │ ✔ boot service (machines come back after a reboot)                                                                  │
+│ Podman                                 │ ✔ bridge flkbr0                                                                                                     │
+│   ▢ ruby-working-container (build)     │ ✔ tap pool 16/16                                                                                                    │
+│   ▢ 4b61b6598784-working-container (b… │ ✔ ipv4 forwarding                                                                                                   │
+│   ◇ 4b61b6598784 (untagged) 69M        │ ✔ tmux                                                                                                              │
+│   ◇ itzg/minecraft-server:latest 868M  │ ✔ mkfs.ext4                                                                                                         │
+│   ◇ dotnet/runtime:10.0 197M           │ ✔ fakeroot                                                                                                          │
+│   ◇ eclipse-temurin:25-jre 341M        │ ✔ container engine (podman)                                                                                         │
+│   ◇ ruby:3.3-alpine 69M                │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
+│   ◇ alpine:3.20 7.7M                   │ ✔ port helper (host ports from 1024)                                                                                │
+│   3 flk images: host Images tab        │ ✔ boot service (machines come back after a reboot)                                                                  │
 │                                        │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
-│                                        │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│ Services                               │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
+│   ● flk-net                            │                                                                                                                     │
+│   ● flk-machines                       │                                                                                                                     │
+│   ● ssh                                │                                                                                                                     │
+│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -42,7 +41,8 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ✔ nothing needs attention                                                                                                                                    │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                                      │
+│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
