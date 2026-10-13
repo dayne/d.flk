@@ -59,6 +59,40 @@ Each entry says where the issue is caught today, and where a fix could go.
 - [ ] **G8: no disk breakdown.** `flk disk [--json]`: bytes per app and
   category (release images, rootfs copies, volumes, logs), sparse-aware.
 
+## LAN addresses and failover
+
+Today forwarded ports answer on every address the host owns (the DNAT
+rule matches `fib daddr type local`), so a second address added with
+netplan (e.g. 10.47.11.3 next to the DHCP one) works with no flk change.
+To consider:
+
+- [ ] **Advertised address.** flk prints `host_lan_ip` (the default
+  route's source, the DHCP address) in hints, `ports`, `context`. A host
+  setting (`FLK_PUBLIC_IP` or `~/.config/flk/host.toml`) for the address
+  to show, checked by doctor ("not on any interface" / "floating, held by
+  another host").
+- [ ] **Forward only on chosen addresses.** Per app (`[flk] bind =
+  "10.47.11.3"`) or per host: the map key becomes `daddr . proto . port`,
+  so apps can share a port on different IPs (two Minecraft servers on
+  :25565, each with its own LAN IP), and games stop answering on the
+  host's own address. The helper must check the address is local (or
+  floating) and keep the min_port/listener guards per address.
+- [ ] **Managed extra addresses.** Instead of hand-editing netplan, flk-net
+  could add/remove listed LAN addresses (`ip addr add ... ` + gratuitous
+  ARP) from a root-owned config; doctor checks nobody else answers ARP for
+  them (`arping -D`) and that they're outside the DHCP pool (warn only).
+- [ ] **keepalived (VRRP) hooks.** A floating address held by the active
+  host: `flk host activate` / `flk host deactivate` (resume or stop-all
+  the apps tied to that address) for keepalived's notify scripts, and
+  `flk host check --address IP` as its health check (machines running,
+  ports mapped). A sample keepalived.conf in `share/help/`.
+- [ ] **Data for failover.** The hard part: the standby needs the volumes.
+  Steps: copy volumes on a clean stop (`flk volumes sync --to HOST`,
+  rsync of the stopped sparse file), then maybe DRBD or shared storage.
+  Must make split brain impossible: never start an app whose volume
+  another host may hold (a lease/fence, or refuse unless this host holds
+  the floating address).
+
 ## Bigger features
 
 - [ ] **Exec into a machine.** A small vsock agent in the guest for a real
