@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ Host ─  Overview                                │
+│ ▾ minecraft-flk  1/1 ●     │                                                 │
+│   ● mellow-aurora-7882     │ flk       0.1.0                                 │
+│   ▢ world 40GB (external)  │ state     /home/dayne/.local/share/flk          │
+│   ⇄ tcp/25565 udp/19132    │ source    /home/dayne/flk                       │
+│                            │ LAN IP    10.47.11.116                          │
+│ Host                       │ boot      installed                             │
+│   health ✔                 │ health    ✔ ready                               │
+│                            │ data dirs /home/dayne/.local/share/flk          │
+│                            │           /data/minecraft/flk                   │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  q quit                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘

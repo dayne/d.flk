@@ -1,0 +1,105 @@
+package flk
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"strings"
+	"sync"
+)
+
+// Fake is a Runner that answers from captured flk output (fixtures/, see
+// its README for which command made which file) and records every call. A
+// command with no fixture fails the way flk does, with an "Error:" message.
+type Fake struct {
+	FS fs.FS
+
+	mu    sync.Mutex
+	calls [][]string
+}
+
+func NewFake(fsys fs.FS) *Fake { return &Fake{FS: fsys} }
+
+// Calls returns the argv of every command run so far.
+func (f *Fake) Calls() [][]string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([][]string(nil), f.calls...)
+}
+
+func (f *Fake) Run(ctx context.Context, args ...string) ([]byte, error) {
+	f.mu.Lock()
+	f.calls = append(f.calls, append([]string(nil), args...))
+	f.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return nil, &Error{Args: args, Err: err}
+	}
+	if name, ok := fixtureFor(args); ok {
+		out, err := fs.ReadFile(f.FS, name)
+		if err == nil && (name != "machine-status.json" || recordMatches(out, args[len(args)-1])) {
+			return out, nil
+		}
+	}
+	return nil, &Error{Args: args, Err: fs.ErrNotExist,
+		Stderr: fmt.Sprintf("Error: demo mode has no captured output for: %s", CommandLine(args...))}
+}
+
+// fixtureFor maps a command line to its fixture file name.
+func fixtureFor(args []string) (string, bool) {
+	app := ""
+	if len(args) >= 2 && (args[0] == "-a" || args[0] == "--app") {
+		app, args = args[1], args[2:]
+	}
+	cmd := strings.Join(args, " ")
+	if app == "" {
+		name, ok := map[string]string{
+			"context":              "context.txt",
+			"context --all":        "context-all.txt",
+			"context --all --json": "context-all.json",
+			"help --all --json":    "help-all.json",
+			"doctor --json":        "doctor.json",
+			"apps list --json":     "apps-list.json",
+			"ports list --json":    "ports-list.json",
+		}[cmd]
+		return name, ok
+	}
+	switch {
+	case cmd == "context --json":
+		return "context-" + app + ".json", true
+	case cmd == "status --json":
+		return "status-" + app + ".json", true
+	case cmd == "releases --json":
+		return "releases-" + app + ".json", true
+	case cmd == "volumes list --json":
+		return "volumes-" + app + ".json", true
+	case cmd == "secrets list --json":
+		return "secrets-" + app + ".json", true
+	case len(args) == 3 && args[0] == "machine" && args[1] == "status":
+		return "machine-status.json", true
+	case len(args) > 0 && args[0] == "logs" && !hasAny(args, "-f", "--follow"):
+		return "logs-" + app + ".txt", true
+	}
+	return "", false
+}
+
+// recordMatches reports whether a machine record answers to ref, which flk
+// accepts as an ID prefix or the machine name.
+func recordMatches(out []byte, ref string) bool {
+	var r MachineRecord
+	if json.Unmarshal(out, &r) != nil || ref == "" {
+		return false
+	}
+	return strings.HasPrefix(r.ID, ref) || r.Name == ref
+}
+
+func hasAny(args []string, opts ...string) bool {
+	for _, a := range args {
+		for _, o := range opts {
+			if a == o {
+				return true
+			}
+		}
+	}
+	return false
+}
