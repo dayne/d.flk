@@ -151,7 +151,10 @@ To consider:
   Storage in `podman ps -a --external`) leaves them pinning layers;
   `apps destroy` and `apps prune` don't see them. Build with `--force-rm`,
   remove the build's working containers on Interrupt, and have
-  `apps prune` / doctor report leftover external containers.
+  `apps prune` / doctor report leftover external containers. They stay
+  mounted, so `podman rm --storage ID` fails ("is mounted and cannot be
+  removed without using force"): clean up with `buildah rm ID` (unmounts
+  first) or `podman rm --force --storage ID`.
 
 ## Bigger features
 
