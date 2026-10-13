@@ -46,6 +46,14 @@ test_cp_out() {
   assert_eq "motd=hello" "$(cat "$d/server.properties")"
   flk files cp data:/logs "$d/logs-copy" >/dev/null
   assert_eq "line 1" "$(cat "$d/logs-copy/latest log.txt")" "a directory copied out"
+  # modes survive the trip out (minecraft.flk BUGS #10)
+  local x="$WORK/x-$RUN_ID.sh"; echo 'echo hi' >"$x"; chmod 755 "$x"
+  flk files cp "$x" data:/conf/ >/dev/null
+  flk files cp "data:/conf/x-$RUN_ID.sh" "$d/" >/dev/null
+  assert_eq 755 "$(stat -c %a "$d/x-$RUN_ID.sh")" "mode of a file copied out"
+  flk files cp data:/conf "$d/conf-copy" >/dev/null
+  assert_eq 755 "$(stat -c %a "$d/conf-copy/x-$RUN_ID.sh")" "mode inside a tree copied out"
+  flk files rm "data:/conf/x-$RUN_ID.sh" >/dev/null; rm -f "$x"
   local out
   out=$(flk files cp data:/conf/server.properties "$d/missing/deep/" 2>&1) && fail "copied into a missing dir"
   assert_contains "$out" "no such directory"

@@ -81,6 +81,10 @@ module Flk
     def write_overlay(fdir, cfg, icfg)
       FileUtils.mkdir_p(fdir)
       FileUtils.cp(File.join(SHARE, "init.sh"), File.join(fdir, "init"))
+      if (agent = Agent.ensure!)
+        FileUtils.cp(agent, File.join(fdir, "agent"))
+        File.chmod(0o755, File.join(fdir, "agent"))
+      end
 
       ep = cfg.entrypoint || Array(icfg["Entrypoint"])
       cmd = cfg.cmd || (cfg.entrypoint ? [] : Array(icfg["Cmd"]))

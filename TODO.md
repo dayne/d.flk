@@ -172,8 +172,14 @@ To consider:
   than an hour.
 ## Bigger features
 
-- [ ] **Exec into a machine.** A small vsock agent in the guest for a real
-  `flk ssh console` and `flk ssh console -C "cmd"` (like Fly's hallpass).
+- [x] **Exec into a machine** (PLAN.md M3): `agent/` (Go, stdlib, static)
+  is built by `flk setup` / deploy into STATE/bin/flk-agent and baked into
+  each release as /flk/agent, started by /flk/init; machines get a vsock
+  (`v.sock`). `flk exec [-i ID] [--user U] [--cwd D] [-t] [--stdin]
+  [--timeout S] -- CMD` (status, stdout/stderr apart) and `flk ssh console
+  [ID] [-C CMD]` (a shell with a pty; `--send` still types on the serial
+  console). Releases built before need a redeploy; no Go means no agent
+  (doctor says so).
 - [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
   from machine records).
 - [x] **Files in a volume without sudo** (PLAN.md M2): `flk files

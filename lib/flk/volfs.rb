@@ -88,6 +88,8 @@ module Flk
         end
       else
         File.binwrite(local, read(img, path))
+        File.chmod(e.mode.to_i(8), local) # the inode's mode and mtime, like cp -p
+        File.utime(Time.parse(e.mtime), Time.parse(e.mtime), local) if e.mtime
       end
     end
 

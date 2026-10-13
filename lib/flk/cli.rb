@@ -60,10 +60,15 @@ module Flk
 
     # Options from the command table; anything else is an error. Returns nil
     # for --help. Positionals stay in argv.
+    # Everything after "--" is positional (split off here: optparse with
+    # require_exact trips over short options past "--"). Commands with
+    # passthrough (exec) stop at their first positional, so the command's
+    # own options aren't taken for flk's.
     def parse_opts(entry, argv)
       opts = {}
       help = false
-      OptionParser.new do |p|
+      tail = (i = argv.index("--")) ? argv.slice!(i..)[1..] : []
+      parser = OptionParser.new do |p|
         p.require_exact = true # no --jso for --json: typos are errors, not guesses
         Array(entry[:opts]).each do |o|
           # a flag is true when given; OptionParser hands "--no-x" flags false
@@ -71,7 +76,9 @@ module Flk
           p.on(*o) { |v| opts[Commands.key(o)] = flag || v }
         end
         p.on("-h", "--help") { help = true }
-      end.parse!(argv)
+      end
+      entry[:passthrough] ? parser.order!(argv) : parser.parse!(argv)
+      argv.concat(tail)
       help ? nil : opts
     end
 
@@ -196,6 +203,7 @@ module Flk
 
     def cmd_setup(_args, _o)
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
+      puts "==> flk-agent (flk exec): #{Agent.ensure! || 'not built'}"
       puts
       cmd_doctor([], {})
     end
@@ -260,6 +268,7 @@ module Flk
       services_check(record)
       address_check(record)
       huge_pages_check(record)
+      agent_check(record)
       results
     end
 
@@ -459,6 +468,18 @@ module Flk
                "flk -a APP volumes copy (and check that backups run: flk -a APP volumes backups)"]
       else
         record["backups are copied to #{dest}", "pass", nil]
+      end
+    end
+
+    # Optional: flk exec / ssh console need the agent in new releases.
+    def agent_check(record)
+      if File.exist?(Agent.path) && !Agent.stale?
+        record["flk-agent built (flk exec in releases deployed from now on)", "pass", nil]
+      elsif Agent.go
+        record["flk-agent #{File.exist?(Agent.path) ? 'is older than its source' : 'not built yet'} (built at the next deploy)", "pass", nil]
+      else
+        record["no flk-agent and no Go to build it: releases get no flk exec / flk ssh console", "warn",
+               "install Go (or set FLK_GO), then flk setup"]
       end
     end
 
@@ -1617,6 +1638,28 @@ module Flk
       puts "Attaching to #{m.name} serial console (detach: #{detach})"
       sleep 0.5
       exec({ "TMUX" => nil }, *VM::TMUX, "attach", "-t", m.session)
+    end
+
+    def cmd_exec(argv, o)
+      raise Error, "exec needs a command, e.g. flk exec -- ls /" if argv.empty?
+      raise Error, "--tty needs a terminal here (stdin and stdout)" if o[:tty] && !($stdin.tty? && $stdout.tty?)
+      m = console_machine(o[:instance] ? [o[:instance]] : [])
+      req = { argv: argv, tty: o[:tty] || false, user: o[:user].to_s, cwd: o[:cwd].to_s }
+      exit Agent.run(m, req, stdin: o[:stdin], timeout: o[:timeout])
+    end
+
+    def ssh_console(argv, o)
+      return console_send(argv, o) if o[:send]
+      raise Error, "--wait-log and --timeout go with --send" if o[:wait_log] || o[:timeout]
+      m = console_machine(argv)
+      if o[:command]
+        exit Agent.run(m, { argv: ["sh", "-c", o[:command]], tty: false, user: o[:user].to_s }, stdin: !$stdin.tty?)
+      end
+      unless $stdin.tty? && $stdout.tty?
+        raise Error, "an interactive shell needs a terminal; to run a command: flk ssh console -C CMD, or flk exec -- CMD"
+      end
+      puts "Connecting to #{m.name} (#{m.id}); exit the shell to leave"
+      exit Agent.run(m, { argv: [], tty: true, user: o[:user].to_s })
     end
 
     def console_machine(argv)

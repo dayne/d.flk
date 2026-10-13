@@ -145,6 +145,7 @@ module Flk
       api(sock, "PUT", "/machine-config", s["machine-config"])
       s["drives"].each { api(sock, "PUT", "/drives/#{_1['drive_id']}", _1) }
       s["network-interfaces"].each { api(sock, "PUT", "/network-interfaces/#{_1['iface_id']}", _1) }
+      add_vsock(m, sock)
       api(sock, "PUT", "/actions", { "action_type" => "InstanceStart" })
 
       m.h["started_at"] = Util.now
@@ -155,6 +156,17 @@ module Flk
       tmux_quiet("kill-session", "-t", m.session)
       FileUtils.rm_f(m.path("pid"))
       raise
+    end
+
+    # The guest's vsock, for flk exec (Agent). Optional: a machine boots
+    # without it (a Unix socket path over 107 bytes, an old firecracker).
+    def add_vsock(m, sock)
+      v = Agent.sock(m)
+      FileUtils.rm_f(v)
+      return if v.bytesize > 107
+      api(sock, "PUT", "/vsock", { "guest_cid" => 3, "uds_path" => v })
+    rescue StandardError => e
+      warn Util.yellow("    ⚠ no vsock for #{m.id} (flk exec won't work on it): #{e.message}")
     end
 
     # Graceful: Ctrl-Alt-Del -> guest kernel SIGINTs /flk/init -> app gets
@@ -181,7 +193,7 @@ module Flk
         end
       end
       tmux_quiet("kill-session", "-t", m.session)
-      FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
+      FileUtils.rm_f([m.path("pid"), m.path("fc.sock"), Agent.sock(m)])
       m.h["stopped_at"] = Util.now
       m.h["desired_state"] = "stopped" unless keep_desired
       m.save!

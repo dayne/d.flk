@@ -66,6 +66,10 @@ if [ -f /flk/config/mounts ]; then
   done < /flk/config/mounts
 fi
 
+# flk exec / flk ssh console: the agent listens on vsock (it's in releases
+# built since flk had it; it reports to the console only if it fails)
+[ -x /flk/agent ] && (cd / && exec /flk/agent </dev/null >/dev/console 2>&1) &
+
 cd "$(cat /flk/workdir 2>/dev/null || echo /)" 2>/dev/null || cd /
 
 start_app() {
