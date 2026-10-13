@@ -89,18 +89,59 @@ func (m *Model) attachBox() []string {
 	w := min(m.width-4, 84)
 	inner := w - 4
 	body := []string{styleTitle.Render("$ " + flk.CommandLine(m.attach.args...)), ""}
+	for _, p := range attachAbout(m.attach.args) {
+		body = append(body, wrap(p, inner)...)
+	}
+	return box(m.attach.title, body, m.hints("enter", "attach", "esc", "cancel"), w)
+}
+
+// attachAbout says what gets the terminal and how to come back.
+func attachAbout(args []string) []string {
+	top := ""
+	for i, a := range args {
+		if a == "-a" || (i > 0 && args[i-1] == "-a") {
+			continue
+		}
+		top = a
+		break
+	}
+	switch top {
+	case "ssh":
+		return []string{"This hands the terminal to a shell inside the machine (bash, else sh), through flk's agent. What you change there is changed in the machine (files on its volumes stay; the rest is reset by its next deploy).",
+			"", "To come back to lazyflk, leave the shell: exit, or Ctrl-D."}
+	case "exec":
+		return []string{"This runs the command inside the machine with this terminal, through flk's agent.",
+			"", "lazyflk comes back when the command ends."}
+	}
 	detach := "Ctrl-b d"
 	if os.Getenv("TMUX") != "" {
 		detach = "Ctrl-b Ctrl-b d (you're inside tmux: the first Ctrl-b goes to yours)"
 	}
-	for _, p := range []string{
-		"This hands the terminal to the machine's serial console: you see the app's output, and what you type goes to its stdin. It isn't a shell, and Ctrl-C there doesn't stop the app (use stop).",
-		"",
-		"To come back to lazyflk, detach: " + detach + ".",
-	} {
-		body = append(body, wrap(p, inner)...)
+	return []string{"This hands the terminal to the machine's serial console: you see the app's output, and what you type goes to its stdin. It isn't a shell (h opens one), and Ctrl-C there doesn't stop the app (use stop).",
+		"", "To come back to lazyflk, detach: " + detach + "."}
+}
+
+// openShell offers a shell in the selected machine (flk ssh console,
+// flk 25b23ad).
+func (m *Model) openShell() tea.Cmd {
+	if m.opt.ReadOnly {
+		m.note = "read-only: the shell is off"
+		return nil
 	}
-	return box(m.attach.title, body, m.hints("enter", "attach", "esc", "cancel"), w)
+	a, mc, ok := m.consoleMachine()
+	switch {
+	case !ok && a.Name != "":
+		m.note = "a shell is per machine: select one"
+		return nil
+	case !ok:
+		return nil
+	case !mc.Started():
+		m.note = "shell: " + or(mc.Name, mc.ID) + " isn't running"
+		return nil
+	}
+	m.attach = &attachView{title: "shell ─ " + a.Name + " / " + or(mc.Name, mc.ID),
+		args: []string{"-a", a.Name, "ssh", "console", mc.ID}}
+	return nil
 }
 
 func (m *Model) attachKey(k string) tea.Cmd {
@@ -144,7 +185,7 @@ func (t teeWriter) Write(p []byte) (int, error) {
 
 func (m *Model) attachDone(msg attachDoneMsg) tea.Cmd {
 	j := msg.j
-	j.lines = append(j.lines, logLine{text: "(the console had the terminal)", kind: logText})
+	j.lines = append(j.lines, logLine{text: "(it had the terminal)", kind: logText})
 	for _, l := range strings.Split(strings.TrimSpace(msg.stderr.String()), "\n") {
 		if l != "" {
 			j.lines = append(j.lines, classifyJobLine(flk.Line{Text: l, Stderr: true}))

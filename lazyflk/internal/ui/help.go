@@ -28,6 +28,7 @@ var mainHelp = struct {
 		{"enter  x", "actions for the selection (start, stop, deploy, secrets, volumes…)"},
 		{"s", "start or stop the selected machine"},
 		{"c", "attach to the machine's console (detach: Ctrl-b d)"},
+		{"!", "a shell inside the machine (flk ssh console; exit to come back)"},
 		{">", "type a line into the machine's console, and watch its log answer"},
 		{"d", "deploy the selected app"},
 		{"a", "go through Needs attention; enter runs the fix flk suggests"},

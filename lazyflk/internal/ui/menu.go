@@ -184,6 +184,8 @@ func (m *Model) choose(title string, a actions.Action) tea.Cmd {
 		return m.openSendLine()
 	case actions.ViewFiles:
 		return m.openFiles()
+	case actions.ViewShell:
+		return m.openShell()
 	}
 	if j := m.runningJob(); j != nil {
 		m.note = "wait for " + j.line + " to finish (L shows it)"

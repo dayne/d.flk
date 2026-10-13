@@ -219,3 +219,20 @@ func TestGuides(t *testing.T) {
 		t.Error("esc twice closes the guides")
 	}
 }
+
+// ! offers a shell in the machine (flk ssh console), explained as one.
+func TestShellBox(t *testing.T) {
+	m := demoModel(t, 120, 40)
+	goTo(m, kindMachine)
+	press(m, "!")
+	s := screen(m)
+	if m.attach == nil || !strings.Contains(s, "$ flk -a minecraft-flk ssh console 225d58f615e7e6") || !strings.Contains(s, "leave the shell: exit, or Ctrl-D") {
+		t.Errorf("shell:\n%s", s)
+	}
+	if got := strings.Join(attachAbout([]string{"-a", "x", "exec", "-t", "--", "top"}), " "); !strings.Contains(got, "comes back when the command ends") {
+		t.Error(got)
+	}
+	if got := strings.Join(attachAbout([]string{"-a", "x", "console", "id"}), " "); !strings.Contains(got, "serial console") {
+		t.Error(got)
+	}
+}

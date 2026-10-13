@@ -139,6 +139,7 @@ func entry(c flk.Command, path []string, app string, readOnlyMode bool) Entry {
 		}
 		argv = append(argv, path...)
 		first := ""
+		var pos []string
 		for _, a := range args {
 			val := strings.TrimSpace(v[a.name])
 			if val == "" {
@@ -148,10 +149,16 @@ func entry(c flk.Command, path []string, app string, readOnlyMode bool) Entry {
 				first = val
 			}
 			if a.variadic {
-				argv = append(argv, strings.Fields(val)...)
+				pos = append(pos, strings.Fields(val)...)
 			} else {
-				argv = append(argv, val)
+				pos = append(pos, val)
 			}
+		}
+		// a command to run (flk exec -- CMD...): flk's options first, then
+		// "--", so the command's own flags stay the command's
+		runs := strings.HasSuffix(strings.TrimSpace(c.Args), "CMD...")
+		if !runs {
+			argv = append(argv, pos...)
 		}
 		for _, o := range opts {
 			val := v[o.flag]
@@ -162,6 +169,9 @@ func entry(c flk.Command, path []string, app string, readOnlyMode bool) Entry {
 				argv = append(argv, o.flag, strings.TrimSpace(val))
 			}
 		}
+		if runs && len(pos) > 0 {
+			argv = append(append(argv, "--"), pos...)
+		}
 		cmd := Command{Args: argv}
 		if destroys[name] {
 			cmd.TypeName = first
@@ -171,11 +181,14 @@ func entry(c flk.Command, path []string, app string, readOnlyMode bool) Entry {
 			cmd.Warn = "This deletes data and can't be undone."
 		}
 		if c.Blocks != "" {
-			if (top == "console" || top == "ssh") && v["--send"] == "" {
-				cmd.Interactive = true
+			if (top == "console" || top == "ssh") && v["--send"] == "" && strings.TrimSpace(v["--command"]) == "" {
+				cmd.Interactive = true // the serial console, or a shell (flk 25b23ad)
 			} else {
 				cmd.Warn = "It runs until you interrupt it: ctrl+c in its output view (esc hides it meanwhile)."
 			}
+		}
+		if name == "exec" && v["--tty"] == "yes" {
+			cmd.Interactive, cmd.Warn = true, ""
 		}
 		if name == "logs" && v["--follow"] == "yes" {
 			cmd.Warn = "It follows until you interrupt it: ctrl+c in its output view. (l is the better log view.)"

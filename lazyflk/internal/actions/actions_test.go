@@ -462,3 +462,66 @@ func TestPalette(t *testing.T) {
 		t.Error("read-only commands stay available")
 	}
 }
+
+// flk exec and the shell (flk 25b23ad): run one command, or hand over a
+// shell; both need the machine running.
+func TestExecActions(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	m := a.Machines[0]
+	acts := For(Target{Kind: Machine, App: a, Machine: m})
+	run := find(t, acts, "run a command")
+	c := run.Command(map[string]string{"cmd": "ls -la /data | head", "user": "minecraft"})
+	if strings.Join(c.Args, "\x00") != strings.Join([]string{"-a", "minecraft-flk", "exec", "-i", m.ID, "--user", "minecraft", "--", "sh", "-c", "ls -la /data | head"}, "\x00") ||
+		run.Confirm != Ask || !strings.Contains(c.Warn, "as minecraft") {
+		t.Errorf("%q / %s", c.Args, c.Warn)
+	}
+	if run.Check(nil) == "" {
+		t.Error("a command is required")
+	}
+	if find(t, acts, "shell").View != ViewShell {
+		t.Error("shell")
+	}
+	m.State = "stopped"
+	for _, act := range For(Target{Kind: Machine, App: a, Machine: m}) {
+		if (act.Label == "shell" || act.Label == "run a command") && act.Disabled != "not running" {
+			t.Errorf("%s: %q", act.Label, act.Disabled)
+		}
+	}
+}
+
+// The palette puts exec's command after "--", flk's options before it;
+// a shell or exec --tty gets the terminal, ssh console -C doesn't.
+func TestPaletteExec(t *testing.T) {
+	h := flk.Help{Commands: []flk.Command{
+		{Name: "exec", Args: "CMD...", Blocks: "", Options: []flk.Option{{Switches: []string{"-i", "--instance ID"}}, {Switches: []string{"--user USER"}}, {Switches: []string{"-t", "--tty"}}}},
+		{Name: "ssh", Subcommands: []flk.Command{{Name: "console", Args: "[ID]", Blocks: "an interactive shell needs a terminal",
+			Options: []flk.Option{{Switches: []string{"-C", "--command CMD"}}, {Switches: []string{"--send TEXT"}}}}}},
+	}}
+	var exec, ssh Entry
+	for _, e := range Palette(h, "minecraft-flk", false) {
+		switch e.Name {
+		case "exec":
+			exec = e
+		case "ssh console":
+			ssh = e
+		}
+	}
+	vals := map[string]string{"-a": "minecraft-flk", "--user": "mc"}
+	for _, f := range exec.Action.Fields {
+		if f.Label == "CMD..." {
+			vals[f.Name] = "ls -la /server"
+		}
+	}
+	c := exec.Action.Command(vals)
+	if got := strings.Join(c.Args, " "); got != "-a minecraft-flk exec --user mc -- ls -la /server" || c.Interactive {
+		t.Errorf("exec: %s", got)
+	}
+	vals["--tty"] = "yes"
+	if !exec.Action.Command(vals).Interactive {
+		t.Error("exec --tty needs the terminal")
+	}
+	if !ssh.Action.Command(map[string]string{"-a": "minecraft-flk"}).Interactive ||
+		ssh.Action.Command(map[string]string{"-a": "minecraft-flk", "--command": "uptime"}).Interactive {
+		t.Error("ssh console: a shell, unless -C")
+	}
+}

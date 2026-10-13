@@ -79,7 +79,12 @@ attention fix rolled it back).
   app's cached tabs), so polling is a 30s backstop; reconnects with
   `--since`, dropping repeats; Events tabs on the host, apps, machines.
   Checked live: a machine stopped from the CLI showed within 1s.
-- [ ] exec over vsock (next in flk).
+- [x] exec (25b23ad): machine menu `e` run a command (`flk exec -i ID
+  -- sh -c LINE`, output and exit status in the job view) and `h` shell
+  (`flk ssh console`, the terminal handed over like the console; `!` on
+  the main view). The palette puts exec's command after `--` and treats
+  ssh console without -C/--send and exec --tty as interactive. Checked
+  live.
 
 ## Polish (2026-10-13)
 

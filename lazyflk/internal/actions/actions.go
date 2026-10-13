@@ -100,6 +100,7 @@ const (
 	ViewAttach View = "attach" // the console, in the real terminal
 	ViewSend   View = "send"   // type one line into the console
 	ViewFiles  View = "files"  // browse the volume's files (flk files)
+	ViewShell  View = "shell"  // a shell in the machine, in the real terminal
 )
 
 type Action struct {
@@ -219,10 +220,23 @@ func machineActions(a flk.App, m flk.Machine) []Action {
 	}
 	console := Action{Key: "c", Label: "console", Help: "attach to its serial console (detach: Ctrl-b d)", View: ViewAttach}
 	send := Action{Key: ">", Label: "send a line", Help: "type one line into the app's stdin and watch the log answer (console --send)", View: ViewSend}
+	shell := Action{Key: "h", Label: "shell", Help: "a shell inside it (bash, else sh), through flk's agent (flk ssh console)", View: ViewShell}
+	run := Action{Key: "e", Label: "run a command", Help: "run one command inside it and show its output (flk exec)",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "cmd", Label: "command", Required: true, Help: "a shell line, run with sh -c inside the machine"},
+			{Name: "user", Label: "as user", Help: "empty: root"}},
+		build: func(v map[string]string) Command {
+			args := app(a, "exec", "-i", id)
+			if u := strings.TrimSpace(v["user"]); u != "" {
+				args = append(args, "--user", u)
+			}
+			return Command{Args: append(args, "--", "sh", "-c", strings.TrimSpace(v["cmd"])),
+				Warn: fmt.Sprintf("Runs it inside %s (as %s), through flk's agent. Its output shows here; flk exits with its status.", machineName(m), or(strings.TrimSpace(v["user"]), "root"))}
+		}}
 	if !m.Started() {
-		console.Disabled, send.Disabled = "not running", "not running"
+		console.Disabled, send.Disabled, shell.Disabled, run.Disabled = "not running", "not running", "not running", "not running"
 	}
-	return []Action{start, stop, restart,
+	return []Action{start, stop, restart, run, shell,
 		{Key: "l", Label: "logs", Help: "follow its console output", View: ViewLogs},
 		console, send,
 		{Key: "R", Label: "record", Help: "flk machine status: its record and state", View: ViewRecord},

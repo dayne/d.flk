@@ -308,6 +308,8 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 		return m.shortcut(k)
 	case "c":
 		return m.openAttach()
+	case "!":
+		return m.openShell()
 	case ":":
 		return m.openPalette()
 	case "H":
