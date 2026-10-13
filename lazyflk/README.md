@@ -23,6 +23,13 @@ hides it while it runs); `L` is the log of everything run. Secret values go
 to flk on stdin (`secrets set NAME=-`), so they never appear on screen or
 in the log. Root steps (`sudo ...`) are only ever copied (OSC 52), never run.
 
+Console: `c` attaches to a machine's console in your terminal (detach with
+`Ctrl-b d`, or `Ctrl-b Ctrl-b d` inside tmux) and comes back; `>` types one
+line into it (`flk console ID --send`) and shows the answer in the followed
+log. `:` is every flk command from `flk help --all --json`, with a form
+built from its args and options. `H` browses flk's guides (`flk help
+TOPIC`).
+
 Tests: `go test ./...`. Main view snapshots are in
 `internal/ui/testdata/`; after an intended change to the screen, rewrite
 them with `go test ./internal/ui -update` and review the diff.

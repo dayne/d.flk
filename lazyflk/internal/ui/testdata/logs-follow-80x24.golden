@@ -20,5 +20,5 @@
 │ [23:08:58] [Server thread/INFO]: There are 0 of a max of 10 players online:  │
 │ [23:09:57] [Server thread/INFO]: Server empty for 60 seconds, pausing        │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ f follow  / search  n/N match  w wrap  g/G top/end  esc back  ? help         │
+│ f follow  / search  n/N match  w wrap  g/G top/end  > send a line  esc back… │
 └──────────────────────────────────────────────────────────────────────────────┘

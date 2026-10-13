@@ -11,9 +11,13 @@
 │ l                  follow logs: the machine, or all of the app's machines                                                                                    │
 │ enter  x           actions for the selection (start, stop, deploy, secrets, volumes…)                                                                        │
 │ s                  start or stop the selected machine                                                                                                        │
+│ c                  attach to the machine's console (detach: Ctrl-b d)                                                                                        │
+│ >                  type a line into the machine's console, and watch its log answer                                                                          │
 │ d                  deploy the selected app                                                                                                                   │
 │ a                  go through Needs attention; enter runs the fix flk suggests                                                                               │
 │ L                  command log: what lazyflk ran, with its output                                                                                            │
+│ :                  every flk command: find it, fill in a form, run it                                                                                        │
+│ H                  flk's guides (flk help TOPIC): cheatsheet, operate, troubleshoot…                                                                         │
 │ ?                  this help                                                                                                                                 │
 │ q  ctrl+c          quit (asks first while a command runs)                                                                                                    │
 │                                                                                                                                                              │
@@ -39,10 +43,6 @@
 │                                                                                                                                                              │
 │                                                                                                                                                              │
 │                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ any key closes this help · the full flk reference: flk help --all                                                                                            │
+│ any key closes this help · flk's guides: H · every command: :                                                                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

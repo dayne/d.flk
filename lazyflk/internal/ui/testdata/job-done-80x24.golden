@@ -20,5 +20,5 @@
 │                                                                              │
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ esc close  ↑↓ pgup/dn scroll  y copy command  L command log                  │
+│ esc close  ↑↓ pgup/dn scroll  w wrap  y copy command  L command log          │
 └──────────────────────────────────────────────────────────────────────────────┘

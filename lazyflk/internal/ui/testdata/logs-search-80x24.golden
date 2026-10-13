@@ -20,5 +20,5 @@
 │ [23:08:55] [Server thread/INFO]: Loading Geyser version 2.11.0-b1205 (git-m… │
 │ [23:08:55] [Server thread/INFO]:                                             │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ f follow  / search  n/N match  w wrap  g/G top/end  esc back  ? help         │
+│ f follow  / search  n/N match  w wrap  g/G top/end  > send a line  esc back… │
 └──────────────────────────────────────────────────────────────────────────────┘

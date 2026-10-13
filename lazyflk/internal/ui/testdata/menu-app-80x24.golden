@@ -20,5 +20,5 @@
 ├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  ←→ fold… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
 └──────────────────────────────────────────────────────────────────────────────┘

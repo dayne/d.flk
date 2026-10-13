@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────┐ │
+│ │ Copy volumes (default: all of the app's) to the backup dir, then prune   │ │
+│ │ old copies                                                               │ │
+│ │ · How the app is kept from writing comes from [flk.backup] in flk.toml   │ │
+│ │   (see flk help --all): by default its machine is stopped for the copy   │ │
+│ │   and started again; mode = "live" with pre/post hooks (e.g. save-off /  │ │
+│ │   save-on) copies while it runs.                                         │ │
+│ │ · Copies are sparse, and instant on XFS/btrfs when the backup dir shares │ │
+│ │   … (flk help volumes backup)                                            │ │
+│ │                                                                          │ │
+│ │ app         [minecraft-flk▏                                            ] │ │
+│ │             the app (-a); the selection's app by default                 │ │
+│ │ ID|NAME...  [                                                          ] │ │
+│ │ --to DIR    [                                                          ] │ │
+│ │ --keep N    [                                                          ] │ │
+│ │ --mode MODE [                                                          ] │ │
+│ │ --no-check  ‹ no ›                                                       │ │
+│ │                                                                          │ │
+├ │ $ flk -a minecraft-flk volumes backup                                    │─┤
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+├─│ tab ↑↓ field  ←→ choose  enter next step  esc cancel                     │─┤
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘

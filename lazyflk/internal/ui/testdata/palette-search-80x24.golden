@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk                                   │
+│ ┌ flk commands ─ from flk help --all --json ───────────────────────────────┐ │
+│ │ : vol back▏                                                              │ │
+│ │ volumes backup   Copy volumes (default: all of the app's) to the backup… │ │
+│ │ volumes backups  List a volume's backups (default: all of the app's vol… │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │                                                                          │ │
+│ │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE]      │ │
+│ │   [--no-check]                                                           │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+├ │ type to find  ↑↓ choose  enter fill in and run  esc close                │─┤
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
+└──────────────────────────────────────────────────────────────────────────────┘

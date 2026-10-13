@@ -206,3 +206,71 @@ func TestFix(t *testing.T) {
 		t.Errorf("ran %+v", act)
 	}
 }
+
+func TestArgTokens(t *testing.T) {
+	for in, want := range map[string]string{
+		"ID...":               "ID...",
+		"LOCAL[:REMOTE] [ID]": "LOCAL[:REMOTE]|[ID]",
+		"ID|NAME [BACKUP]":    "ID|NAME|[BACKUP]",
+		"[ID|NAME...]":        "[ID|NAME...]",
+		"":                    "",
+	} {
+		if got := strings.Join(argTokens(in), "|"); got != want {
+			t.Errorf("%q: %q", in, got)
+		}
+	}
+	if f, m := optionSwitch([]string{"-i", "--instance ID"}); f != "--instance" || m != "ID" {
+		t.Errorf("%s %s", f, m)
+	}
+}
+
+// The palette covers flk's whole command table and builds argv from forms.
+func TestPalette(t *testing.T) {
+	b, _ := fixtures.FS.ReadFile("help-all.json")
+	var h flk.Help
+	json.Unmarshal(b, &h)
+	entries := Palette(h, "minecraft-flk", false)
+	byName := map[string]Entry{}
+	for _, e := range entries {
+		byName[e.Name] = e
+	}
+	for _, n := range []string{"machine start", "volumes backup", "volumes restore", "logs", "proxy", "ssh console", "apps destroy"} {
+		if _, ok := byName[n]; !ok {
+			t.Errorf("no %s", n)
+		}
+	}
+	if _, ok := byName["machine"]; ok {
+		t.Error("parents with subcommands aren't entries")
+	}
+	run := func(name string, vals map[string]string) string { return byName[name].Action.Command(vals).Line() }
+	if got := run("logs", map[string]string{"--instance": "225d", "--lines": "5", "--no-tail": "yes"}); got != "flk -a minecraft-flk logs --instance 225d --lines 5 --no-tail" {
+		t.Errorf("logs: %s", got)
+	}
+	if got := run("machine start", map[string]string{"arg0": "a b"}); got != "flk -a minecraft-flk machine start a b" {
+		t.Errorf("variadic: %s", got)
+	}
+	if got := run("volumes restore", map[string]string{"arg0": "world"}); got != "flk -a minecraft-flk volumes restore world" {
+		t.Errorf("restore: %s", got)
+	}
+	if c := byName["volumes restore"].Action.Command(map[string]string{"arg0": "world"}); c.TypeName != "world" {
+		t.Errorf("restore confirm: %+v", c)
+	}
+	if got := run("doctor", nil); got != "flk doctor" || byName["doctor"].Action.Confirm != NoConfirm {
+		t.Errorf("doctor: %s", got)
+	}
+	if got := run("resume", nil); got != "flk resume" {
+		t.Errorf("resume scopes to every app by default: %s", got)
+	}
+	if c := byName["console"].Action.Command(map[string]string{"--send": "save-all"}); c.Interactive || c.Line() != "flk -a minecraft-flk console --send save-all" {
+		t.Errorf("console --send: %+v", c)
+	}
+	if !byName["console"].Action.Command(nil).Interactive {
+		t.Error("console attaches")
+	}
+	if byName["launch"].Action.Disabled == "" || byName["secrets set"].Action.Disabled == "" {
+		t.Error("launch and secrets set don't run from lazyflk")
+	}
+	if Palette(h, "", true)[0].Action.Disabled != "" { // context: read-only is fine
+		t.Error("read-only commands stay available")
+	}
+}

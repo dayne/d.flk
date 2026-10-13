@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882      ┌ flk commands ─ from flk help --all --json ───────────────────────────────────────────────────────┐                             │
+│   ▢ world 40GB (external)   │ : vol back▏                                                                                      │                             │
+│   ⇄ tcp/25565 udp/19132     │ volumes backup   Copy volumes (default: all of the app's) to the backup dir, then prune old cop… │                             │
+│                             │ volumes backups  List a volume's backups (default: all of the app's volumes), newest first       │                             │
+│ Host                        │                                                                                                  │                             │
+│   health ✔                  │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
+│                             │ flk volumes backup [ID|NAME...] [--to DIR] [--keep N] [--mode MODE] [--no-check]                 │                             │
+│                             ├──────────────────────────────────────────────────────────────────────────────────────────────────┤                             │
+├ Needs attention ────────────│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │─────────────────────────────┤
+│ ✔ nothing needs attention   └──────────────────────────────────────────────────────────────────────────────────────────────────┘                             │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

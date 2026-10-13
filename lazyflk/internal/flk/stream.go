@@ -272,3 +272,15 @@ func (f *Fake) Stream(ctx context.Context, stdin string, args ...string) (*Strea
 	}()
 	return s, nil
 }
+
+// Interactive is a flk command for the admin's own terminal (console
+// attach): the caller hands it the terminal (tea.ExecProcess) and waits.
+// It's not in a process group of its own, so the terminal's keys reach it.
+func (x Exec) Interactive(args ...string) *exec.Cmd {
+	return exec.Command(x.Path, args...)
+}
+
+// Interactiver is a Runner that can give a command the terminal.
+type Interactiver interface {
+	Interactive(args ...string) *exec.Cmd
+}

@@ -10,7 +10,8 @@ digests only.
 | context-all.json / .txt | `flk context --all [--json]` |
 | context-minecraft-flk.json | `flk -a minecraft-flk context --json` |
 | context.txt | `flk context` (in ~, outside any app dir) |
-| help-all.json | `flk help --all --json` |
+| help-all.json | `flk help --all --json` (recaptured at flk 3366f33, with volume backups) |
+| help-TOPIC.txt | `flk help TOPIC` for cheatsheet, install, first-app, operate, troubleshoot, uninstall (flk 3366f33) |
 | doctor.json | `flk doctor --json` |
 | apps-list.json | `flk apps list --json` |
 | ports-list.json | `flk ports list --json` |

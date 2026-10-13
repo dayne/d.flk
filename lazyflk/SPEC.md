@@ -237,6 +237,8 @@ before the matching lazyflk milestone.
 | G6 JSON has no version | Detect a flk that's too old or too new. | A top-level `"schema": 1` in `context`/`help --all` JSON, and a documented compatibility rule. |
 | G7 no events | Polling is fine for v1; events would make it instant. | Later: `flk events --json` (one line per state change, fed by the tmux exit hook and lifecycle commands). |
 | G8 no disk breakdown | Show what flk uses (release images, rootfs copies, volumes, logs) when a disk fills. | `flk disk [--json]`: bytes per app and category, actual (sparse-aware) and apparent. |
+| G9 no unit status | Host Services tab: is `flk-net` / `flk-machines` running or failed, not just installed. | Unit state (installed, enabled, active, since) in `doctor --json`, and a warn for a failed unit. |
+| G10 no image list | Host Images tab: flk's container images, which are in use, which are orphans. | `flk images --json` (repo, tag, app, release, in_use, orphan, size). |
 
 Also visible on the reference host: the Minecraft app runs its own restart
 loop inside the image because flk has no restart policy (flk `TODO.md`).

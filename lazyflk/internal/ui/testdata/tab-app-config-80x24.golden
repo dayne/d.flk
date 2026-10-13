@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  ←→ fold… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
 └──────────────────────────────────────────────────────────────────────────────┘

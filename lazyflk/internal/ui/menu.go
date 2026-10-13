@@ -155,6 +155,10 @@ func (m *Model) choose(title string, a actions.Action) tea.Cmd {
 		return nil
 	case actions.ViewCopy:
 		return m.copy(a.Copy)
+	case actions.ViewAttach:
+		return m.openAttach()
+	case actions.ViewSend:
+		return m.openSendLine()
 	}
 	if j := m.runningJob(); j != nil {
 		m.note = "wait for " + j.line + " to finish (L shows it)"
@@ -174,6 +178,13 @@ func (m *Model) choose(title string, a actions.Action) tea.Cmd {
 }
 
 func (m *Model) confirmOrRun(title string, a actions.Action, c actions.Command) tea.Cmd {
+	if c.Interactive {
+		m.attach = &attachView{title: title, args: c.Args}
+		return nil
+	}
+	if c.TypeName != "" {
+		a.Confirm, a.TypeName = actions.Type, c.TypeName
+	}
 	if a.Confirm == actions.NoConfirm {
 		return m.runJob(title, c)
 	}
@@ -328,6 +339,17 @@ func (m *Model) formBox() []string {
 		labelW = max(labelW, ansi.StringWidth(fl.Label))
 	}
 	body := wrap(f.act.Help, inner)
+	var notes []string
+	for _, n := range f.act.Notes {
+		for i, l := range wrap(n, inner-2) {
+			p := "· "
+			if i > 0 {
+				p = "  "
+			}
+			notes = append(notes, styleDim.Render(p+l))
+		}
+	}
+	notesAt := len(body)
 	body = append(body, "")
 	for i, fl := range f.act.Fields {
 		v := f.vals[fl.Name]
@@ -376,6 +398,13 @@ func (m *Model) formBox() []string {
 		}
 	}
 	foot := keyHints(append(keys, "enter", "next step", "esc", "cancel")...)
+	// notes fill the room that's left; the form itself always shows
+	if room := m.height - 6 - len(body); room > 0 && len(notes) > 0 {
+		if len(notes) > room {
+			notes = append(notes[:room-1], styleDim.Render("  … (flk help "+f.act.Label+")"))
+		}
+		body = append(body[:notesAt], append(notes, body[notesAt:]...)...)
+	}
 	return box(f.title, body, foot, w)
 }
 

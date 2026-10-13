@@ -1,0 +1,74 @@
+# Troubleshooting
+
+Start with `flk context` (or `flk context --all`) and `flk doctor`: most
+problems show up there with the fix. Then find the symptom below.
+
+**A machine is stopped but should be running**
+- Why it stopped: `flk logs -i ID -n 200`. The last `[flk-init]` line has
+  the app's exit status.
+- Bring it back: `flk machine start ID` (or `flk resume` for all of them).
+- It stops right away again: the app itself is exiting. Check its command
+  (`flk config show`, `[experimental] cmd`) and its env/secrets.
+- "restart policy gave up": it crashed `retries` times in a row (each
+  restart is noted in `flk logs`). Fix the cause, then `flk machine start ID`.
+- It keeps coming back after you stopped it from inside (an in-game `stop`
+  that exits non-zero): that's the restart policy; use `flk machine stop ID`,
+  or set `[[restart]] policy = "never"`.
+- Machines that exit aren't noticed (ports stay mapped, no restarts):
+  `flk doctor` checks flk's exit hook; `flk resume` reinstalls it.
+
+**Deploy fails**
+- `short-name ... did not resolve`: run the one-liner flk prints, or use a
+  full image name (`docker.io/library/ruby:3.3`).
+- `not enough free volumes`: `flk volumes create NAME --size N`, one per machine.
+- `a backup of its volume is running`: a `stop`-mode `flk volumes backup`
+  has the machine down; it starts it again when the copy is done.
+- A backup reports `fsck: repaired` or `errors` (e2fsck's output is in
+  BACKUP.fsck.log; a journal replay alone counts as clean): the app was
+  writing during a `live` copy, or the volume itself is damaged. Add `pre`
+  hooks that make it save and stop writing, or use `mode = "pause"` or the
+  default `stop`; if a `stop` backup shows it too, check the volume
+  (machine stopped): `e2fsck -f FILE`. Older backups are kept.
+- `tap pool exhausted` / `flktapN missing`: `sudo /home/dayne/flk/setup-host.sh`
+  (with `FLK_TAPS=32` for more machines).
+- The build itself fails: the same Dockerfile should fail under `podman build`.
+- `nothing listening on IP:PORT after 30s`: the app is up but not on
+  `internal_port`. Check `flk logs`, and that it listens on 0.0.0.0, not
+  127.0.0.1.
+
+**Can't reach the app**
+- From the host: use the machine IP (`flk status`), `http://IP:PORT`.
+- Via a host port: `flk ports`. "blocked" says why (below 1024, or a
+  host process already listens there). "waiting" means another machine has
+  it. Nothing listed: add `[flk] http_port` or `[[services.ports]]`, then deploy.
+- 127.0.0.1 never works for forwarded ports: use the host's LAN IP (shown
+  by `flk ports`), or `flk proxy PORT`.
+- From another computer: check the host firewall allows that port
+  (`flk-sanity.sh` checks ufw and firewalld).
+
+**The machine has no network** (DNS or downloads fail inside it)
+- `flk doctor`: bridge, taps and ipv4 forwarding.
+- Another firewall (Docker, ufw, firewalld) may be dropping forwarded
+  traffic: `/home/dayne/flk/flk-sanity.sh` checks, `sudo /home/dayne/flk/setup-host.sh` fixes.
+
+**The app misbehaves only under flk**
+- Process substitution, `/dev/stdout`, `/dev/fd`: supported.
+- The app reads stdin: it's the serial console (`flk console`). If it acts
+  oddly because stdin is a terminal, set `[flk] stdin = "null"`.
+- Distroless/scratch images don't boot: flk needs `/bin/sh` in the image.
+
+**Can't start machines: /dev/kvm, groups**
+- `flk doctor` says `/dev/kvm` isn't accessible: `sudo /home/dayne/flk/setup-host.sh`,
+  then log out and back in.
+- "flk's tmux server started before you joined the kvm group": stop the
+  machines, then `tmux -L flk kill-server`.
+
+**After a reboot nothing runs**
+- `flk doctor` "boot service": `sudo /home/dayne/flk/setup-host.sh --install-service`.
+- Now: `sudo /home/dayne/flk/setup-host.sh`, then `flk resume`.
+
+**Where things are**
+- Machine files: `/home/dayne/.local/share/flk/apps/APP/machines/ID/` (console.log,
+  firecracker.log, machine.json, vm.json).
+- Exit hook errors: `/home/dayne/.local/share/flk/hooks.log`.
+- Start over with one app: `flk apps destroy APP --yes`.

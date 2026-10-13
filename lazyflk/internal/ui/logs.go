@@ -36,10 +36,21 @@ type logsView struct {
 	match   int // line of the current match, -1 for none
 	note    string
 
+	canSend bool   // > types a line into the machine's console (not read-only)
+	sending bool   // the > prompt is open
+	line    string // what's typed at it
+
 	gen    int // bumped per stream so late chunks from an old one are dropped
 	stream *flk.Stream
 	ended  bool
 	err    error
+}
+
+// sendLineMsg asks the model to run `flk console ID --send TEXT`.
+type sendLineMsg struct {
+	v       *logsView
+	app, id string
+	text    string
 }
 
 type logStartMsg struct {
@@ -262,7 +273,56 @@ func (v *logsView) matchCount() (pos, total int) {
 }
 
 // key handles a key press; it reports false when the view should close.
+// sendTarget is the machine > types into: the one shown, or the app's
+// only machine.
+func (v *logsView) sendTarget() (flk.Machine, bool) {
+	switch {
+	case v.sel >= 0 && v.sel < len(v.machines):
+		return v.machines[v.sel], true
+	case len(v.machines) == 1:
+		return v.machines[0], true
+	}
+	return flk.Machine{}, false
+}
+
+func (v *logsView) openSend() {
+	switch _, ok := v.sendTarget(); {
+	case !v.canSend:
+		v.note = "read-only: sending to the console is off"
+	case !ok:
+		v.note = "a line goes to one machine: pick it with [ ]"
+	default:
+		v.sending, v.line = true, ""
+	}
+}
+
 func (v *logsView) key(msg tea.KeyPressMsg, w, h int) (tea.Cmd, bool) {
+	if v.sending {
+		switch msg.String() {
+		case "enter":
+			mc, _ := v.sendTarget()
+			text := v.line
+			v.sending, v.follow = false, true
+			if strings.TrimSpace(text) == "" {
+				return nil, true
+			}
+			v.note = "sending: " + text
+			return func() tea.Msg { return sendLineMsg{v, v.app, mc.ID, text} }, true
+		case "esc":
+			v.sending = false
+		case "backspace":
+			if r := []rune(v.line); len(r) > 0 {
+				v.line = string(r[:len(r)-1])
+			}
+		case "ctrl+u":
+			v.line = ""
+		case "space":
+			v.line += " "
+		default:
+			v.line += msg.Text
+		}
+		return nil, true
+	}
 	if v.editing {
 		switch msg.String() {
 		case "enter":
@@ -298,6 +358,8 @@ func (v *logsView) key(msg tea.KeyPressMsg, w, h int) (tea.Cmd, bool) {
 		v.wrap = !v.wrap
 	case "/":
 		v.editing, v.input = true, v.query
+	case ">":
+		v.openSend()
 	case "n":
 		v.find(1, w, h)
 	case "N":
@@ -392,8 +454,14 @@ func (v *logsView) render(w, h int) string {
 	if len(v.machines) > 1 {
 		hints = append(hints, "[ ]", "machine")
 	}
+	if _, ok := v.sendTarget(); ok && v.canSend {
+		hints = append(hints, ">", "send a line")
+	}
 	foot := keyHints(append(hints, "esc", "back", "?", "help")...)
 	switch {
+	case v.sending:
+		mc, _ := v.sendTarget()
+		foot = styleKey.Render("> ") + v.line + "█" + styleDim.Render("   enter: type it into "+or(mc.Name, mc.ID)+"'s console · esc cancel")
 	case v.editing:
 		foot = "/" + v.input + "█" + styleDim.Render("   enter search · esc cancel")
 	case v.note != "":

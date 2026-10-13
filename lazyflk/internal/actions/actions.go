@@ -71,6 +71,10 @@ type Command struct {
 	Args  []string
 	Stdin string
 	Warn  string // shown when confirming: what this will do
+	// TypeName, if set, must be typed to confirm (overrides the action's).
+	TypeName string
+	// Interactive commands get the terminal (console attach).
+	Interactive bool
 }
 
 // Line is the command as the admin would type it.
@@ -84,6 +88,8 @@ const (
 	ViewRecord View = "record" // the machine's Record tab
 	ViewHealth View = "health" // the host's Health tab
 	ViewCopy   View = "copy"   // copy Copy to the clipboard
+	ViewAttach View = "attach" // the console, in the real terminal
+	ViewSend   View = "send"   // type one line into the console
 )
 
 type Action struct {
@@ -96,7 +102,8 @@ type Action struct {
 	TypeName string // what to type for Confirm == Type
 	Long     bool   // takes a while; the UI keeps its output in view
 	View     View
-	Copy     string // for ViewCopy
+	Copy     string   // for ViewCopy
+	Notes    []string // flk's notes on the command, shown in its form
 	build    func(vals map[string]string) Command
 }
 
@@ -193,8 +200,14 @@ func machineActions(a flk.App, m flk.Machine) []Action {
 		stop.Disabled = "already stopped"
 		restart.Disabled = "not running: start it"
 	}
+	console := Action{Key: "c", Label: "console", Help: "attach to its serial console (detach: Ctrl-b d)", View: ViewAttach}
+	send := Action{Key: ">", Label: "send a line", Help: "type one line into the app's stdin and watch the log answer (console --send)", View: ViewSend}
+	if !m.Started() {
+		console.Disabled, send.Disabled = "not running", "not running"
+	}
 	return []Action{start, stop, restart,
 		{Key: "l", Label: "logs", Help: "follow its console output", View: ViewLogs},
+		console, send,
 		{Key: "R", Label: "record", Help: "flk machine status: its record and state", View: ViewRecord},
 	}
 }

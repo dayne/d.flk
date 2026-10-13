@@ -1,0 +1,91 @@
+# Running apps day to day
+
+**See what's there.** `flk context --all` lists every app, machine, IP and
+port on the host, and what needs attention. In an app directory,
+`flk context` and `flk status` cover that app; elsewhere add `-a APP`.
+
+**Ship a change.** Edit code or `flk.toml`, then `flk deploy` from the app
+directory. Each deploy is a new release (`flk releases`); machines are
+updated one at a time. There's no rollback command yet: check out the old
+code and deploy again.
+
+**Logs.** `flk logs` shows the last 50 lines of every machine (`-n 500`
+for more, `-i ID` for one, `-f` to follow). Logs rotate at 10MB
+(`console.log.1` keeps the previous part) and survive restarts.
+
+**Talk to the app.** `flk console ID` attaches to its serial console: what
+you type goes to the app's stdin (Minecraft: `say hi`, `stop`). Leave with
+Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Ctrl-C there doesn't stop the app.
+For one command without attaching: `flk console ID --send "say hi"`; add
+`--wait-log "REGEX"` to print the app's answer (scripts and agents too).
+
+**Stop and start.** `flk machine stop ID` stops a machine and keeps it
+stopped, across reboots too. `flk machine start ID` brings it back.
+
+**Crashes.** When an app crashes or exits non-zero, flk restarts it (1s, 2s,
+4s... apart, 10 times in a row at most; `[[restart]]` in flk.toml changes
+that, `policy = "never"` turns it off). The log shows each restart. If it
+gives up, `flk context` says so: read `flk logs -i ID`, fix, then
+`flk machine start ID`. An app that exits cleanly (status 0) stays
+stopped but counts as "should be running": `flk resume` starts it again.
+
+**Reboots.** With `flk-machines.service` installed (`flk doctor` checks),
+machines stop gracefully at shutdown and come back at boot. Without it:
+`sudo /home/dayne/flk/setup-host.sh`, then `flk resume`.
+
+**Secrets and config.** `flk secrets set K=V` restarts running machines;
+`--stage` waits for the next deploy or restart. `flk config show` prints the
+config flk derived, `flk machine status ID` what a machine runs with.
+
+**More machines.** `flk scale count N`. Each machine needs its own volume
+per `[[mounts]]` entry: create them first. Host ports go to the first
+running machine; the next takes over when it stops.
+
+**Disk.** Everything is under `/home/dayne/.local/share/flk`: two release images per app,
+volumes (unless created with `--path`), logs. `flk apps prune` removes
+images of destroyed apps. Volumes on other disks (`--path`):
+put the disk in `/etc/fstab` (without `nofail`) and reboots mount it before
+machines start, and stop machines before unmounting it. `flk doctor` warns
+if a disk isn't covered, e.g. a `nofail` or network mount: then re-run
+`sudo /home/dayne/flk/setup-host.sh --install-service` once.
+
+**Backups.** Set where they go once, in `~/.config/flk/host.toml`:
+
+    backup_dir  = "/data/flk-backups"   # ideally another disk than the volumes
+    backup_keep = 7                     # per volume
+
+Then `flk volumes backup` copies all of the app's volumes there (sparse:
+only used space), checks each copy with e2fsck, and deletes the oldest past
+`keep`. By default the machine is stopped for the copy and started again
+(seconds to minutes of downtime, by size); `[flk.backup]` in flk.toml can
+copy while it runs instead, with hooks that make the app save and pause
+writing (`flk help --all`, Config). `flk volumes backups` lists them;
+`flk volumes restore NAME [BACKUP]` (machine stopped) puts one back and
+keeps the replaced image beside it. `flk volumes extend NAME --size GB`
+grows a volume (machine stopped).
+
+On a schedule, with a systemd user timer (no root;
+`loginctl enable-linger $USER` once so it runs while you're logged out):
+
+    # ~/.config/systemd/user/flk-backup-APP.service
+    [Service]
+    Type=oneshot
+    ExecStart=/home/dayne/flk/bin/flk -a APP volumes backup
+
+    # ~/.config/systemd/user/flk-backup-APP.timer
+    [Timer]
+    OnCalendar=*-*-* 04:00
+    Persistent=true
+    [Install]
+    WantedBy=timers.target
+
+    systemctl --user daemon-reload && systemctl --user enable --now flk-backup-APP.timer
+
+Machines deployed before flk had `live` backups write their cache out
+lazily (up to 35s): redeploy them, or use `settle = 35` until then.
+
+**Updating flk.** `git -C /home/dayne/flk pull`, then `flk setup` for a newer
+firecracker or kernel. Running machines pick changes up on their next
+deploy or restart.
+
+When something's wrong: flk help troubleshoot

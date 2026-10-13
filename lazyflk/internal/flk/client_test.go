@@ -119,6 +119,11 @@ func TestEveryFixtureServed(t *testing.T) {
 	c.Help(ctx)
 	c.Logs(ctx, "minecraft-flk", "", 40)
 	c.Run(ctx, "-a", "minecraft-flk", "config", "show")
+	for _, topic := range []string{"cheatsheet", "install", "first-app", "operate", "troubleshoot", "uninstall"} {
+		if out, err := c.Run(ctx, "help", topic); err != nil || len(out) == 0 {
+			t.Errorf("help %s: %v", topic, err)
+		}
+	}
 	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || b == nil || len(b) != 0 {
 		t.Errorf("backups: %v %v", b, err)
 	}

@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  ←→ fold  pgup/dn … │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
 └──────────────────────────────────────────────────────────────────────────────┘

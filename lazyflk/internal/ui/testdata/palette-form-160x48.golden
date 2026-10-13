@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
+│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│ Host                                   │                                                                                                                     │
+│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│                                        │ volume world 40GB (external)                                                                                        │
+│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
+│                                     ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │
+│                                     │ Copy volumes (default: all of the app's) to the backup dir, then prune old       │                                     │
+│                                     │ copies                                                                           │                                     │
+│                                     │ · How the app is kept from writing comes from [flk.backup] in flk.toml (see flk  │                                     │
+│                                     │   help --all): by default its machine is stopped for the copy and started again; │                                     │
+│                                     │   mode = "live" with pre/post hooks (e.g. save-off / save-on) copies while it    │                                     │
+│                                     │   runs.                                                                          │                                     │
+│                                     │ · Copies are sparse, and instant on XFS/btrfs when the backup dir shares the     │                                     │
+│                                     │   volume's filesystem. The copy is checked with e2fsck (a copy of a running      │                                     │
+│                                     │   machine gets its journal replayed).                                            │                                     │
+│                                     │                                                                                  │                                     │
+│                                     │ app         [minecraft-flk▏                                                    ] │                                     │
+│                                     │             the app (-a); the selection's app by default                         │                                     │
+│                                     │ ID|NAME...  [                                                                  ] │                                     │
+│                                     │ --to DIR    [                                                                  ] │                                     │
+│                                     │ --keep N    [                                                                  ] │                                     │
+│                                     │ --mode MODE [                                                                  ] │                                     │
+│                                     │ --no-check  ‹ no ›                                                               │                                     │
+│                                     │                                                                                  │                                     │
+│                                     │ $ flk -a minecraft-flk volumes backup                                            │                                     │
+│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│                                     │ tab ↑↓ field  ←→ choose  enter next step  esc cancel                             │                                     │
+│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

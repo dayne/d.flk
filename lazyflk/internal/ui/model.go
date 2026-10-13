@@ -45,8 +45,9 @@ type Model struct {
 	detailTop int              // detail pane scroll
 	cache     map[string]*fetched
 
-	logs *logsView // full-screen logs, when open
-	help bool      // help screen, when open
+	logs    *logsView // full-screen logs, when open
+	help    bool      // help screen, when open
+	helpTop int       // its scroll
 
 	// actions (M2): at most one of menu, form, confirm is open
 	menu    *menuView
@@ -56,6 +57,9 @@ type Model struct {
 	jobSeq  int
 	shown   *job // the job modal, when open
 	cmdlog  *cmdlogView
+	attach  *attachView
+	palette *paletteView
+	guides  *guideView
 	note    string // a one-off message in the footer, cleared by the next key
 
 	attn       bool // the Needs attention panel has focus
@@ -157,6 +161,13 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return m.jobStarted(msg)
 	case jobChunkMsg:
 		return m.jobChunk(msg)
+	case attachDoneMsg:
+		return m.attachDone(msg)
+	case sendLineMsg:
+		if m.opt.ReadOnly {
+			return nil
+		}
+		return m.sendLine(msg)
 	case tea.PasteMsg:
 		m.paste(msg.Content)
 	case tea.KeyPressMsg:
@@ -171,7 +182,7 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 	if k != "q" && k != "ctrl+c" {
 		m.quitArmed = false
 	}
-	typing := m.form != nil || m.confirm != nil || (m.logs != nil && m.logs.editing)
+	typing := m.form != nil || m.confirm != nil || m.palette != nil || (m.logs != nil && (m.logs.editing || m.logs.sending))
 	switch {
 	case k == "ctrl+c" && m.shown != nil && m.shown.running():
 		m.shown.interrupt()
@@ -179,13 +190,24 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 	case k == "ctrl+c":
 		return m.quit()
 	case m.help:
-		m.help = false
+		switch k {
+		case "down", "j", "pgdown", "space":
+			m.helpTop += map[string]int{"down": 1, "j": 1}[k] + map[string]int{"pgdown": 10, "space": 10}[k]
+		case "up", "k", "pgup":
+			m.helpTop = max(m.helpTop-map[string]int{"up": 1, "k": 1, "pgup": 10}[k], 0)
+		default:
+			m.help = false
+		}
 		return nil
 	case k == "?" && !typing:
-		m.help = true
+		m.help, m.helpTop = true, 0
 		return nil
+	case m.attach != nil:
+		return m.attachKey(k)
 	case m.confirm != nil:
 		return m.confirmKey(msg)
+	case m.palette != nil:
+		return m.paletteKey(msg)
 	case m.form != nil:
 		return m.formKey(msg)
 	case m.menu != nil:
@@ -194,6 +216,8 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 		return m.jobKey(k)
 	case m.cmdlog != nil:
 		return m.cmdlogKey(k)
+	case m.guides != nil:
+		return m.guideKey(msg)
 	case m.logs != nil:
 		cmd, open := m.logs.key(msg, m.width-4, m.height-5)
 		if !open {
@@ -216,6 +240,14 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 		}
 	case "s", "d":
 		return m.shortcut(k)
+	case "c":
+		return m.openAttach()
+	case ":":
+		return m.openPalette()
+	case "H":
+		return m.openGuides()
+	case ">":
+		return m.openSendLine()
 	case "up", "k":
 		m.move(-1)
 	case "down", "j":
@@ -311,7 +343,27 @@ func (m *Model) openLogs() tea.Cmd {
 		sel = n.machine
 	}
 	m.logs = newLogsView(m.opt.Client, a.Name, a.Machines, sel)
+	m.logs.canSend = !m.opt.ReadOnly
 	return m.logs.start()
+}
+
+// openSendLine follows the machine's logs with the > prompt open, so the
+// answer to the line shows up right below it.
+func (m *Model) openSendLine() tea.Cmd {
+	if m.opt.ReadOnly {
+		m.note = "read-only: sending to the console is off"
+		return nil
+	}
+	a, _, ok := m.consoleMachine()
+	if !ok {
+		if a.Name != "" {
+			m.note = "a line goes to one machine: select one"
+		}
+		return nil
+	}
+	cmd := m.openLogs()
+	m.logs.openSend()
+	return cmd
 }
 
 func (m *Model) viewKey() string {
@@ -557,6 +609,8 @@ func (m *Model) Render() string {
 		base = m.jobScreen(m.shown)
 	case m.cmdlog != nil:
 		base = m.cmdlogScreen()
+	case m.guides != nil:
+		base = m.guideScreen()
 	case m.logs != nil:
 		base = m.logs.render(m.width, m.height)
 	default:
@@ -564,8 +618,12 @@ func (m *Model) Render() string {
 	}
 	var top []string
 	switch {
+	case m.attach != nil:
+		top = m.attachBox()
 	case m.confirm != nil:
 		top = m.confirmBox()
+	case m.palette != nil:
+		top = m.paletteBox()
 	case m.form != nil:
 		top = m.formBox()
 	case m.menu != nil:
@@ -678,7 +736,7 @@ func (m *Model) footer() string {
 	if len(m.jobs) > 0 {
 		keys = append(keys, "L", "cmd log")
 	}
-	return keyHints(append(keys, "?", "help", "q", "quit", "←→", "fold", "pgup/dn", "scroll")...)
+	return keyHints(append(keys, "?", "help", "q", "quit", ":", "commands", "H", "guides", "←→", "fold", "pgup/dn", "scroll")...)
 }
 
 // treeLines renders exactly h lines of tree, scrolled to keep the cursor in view.

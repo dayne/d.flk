@@ -10,6 +10,7 @@
 │ n  N               next or previous match                                                                                                                    │
 │ w                  wrap long lines on or off                                                                                                                 │
 │ [  ]               previous or next machine (or all machines)                                                                                                │
+│ >                  type a line into this machine's console (its stdin); the answer shows here                                                                │
 │ esc  q             back to the main view                                                                                                                     │
 │                                                                                                                                                              │
 │                                                                                                                                                              │
@@ -42,7 +43,6 @@
 │                                                                                                                                                              │
 │                                                                                                                                                              │
 │                                                                                                                                                              │
-│                                                                                                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ any key closes this help · the full flk reference: flk help --all                                                                                            │
+│ any key closes this help · flk's guides: H · every command: :                                                                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

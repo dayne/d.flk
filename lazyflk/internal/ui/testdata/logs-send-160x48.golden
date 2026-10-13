@@ -1,0 +1,48 @@
+┌ Logs ─ minecraft-flk / mellow-aurora-7882 ──────────────────────────────────────────────────────────────────────────────────────────────────────── following ┐
+│ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 1000 -f                                                                                                     │
+│ [23:08:51] [Server thread/INFO]: Loading properties                                                                                                          │
+│ [23:08:51] [Server thread/INFO]: Default game type: SURVIVAL                                                                                                 │
+│ [23:08:51] [Server thread/INFO]: Generating keypair                                                                                                          │
+│ [23:08:51] [Server thread/INFO]: Starting Minecraft server on *:25565                                                                                        │
+│ [23:08:51] [Server thread/INFO]: Preparing level "world2-201803"                                                                                             │
+│ [23:08:52] [Server thread/INFO]: Loading 25 persistent chunks...                                                                                             │
+│ [23:08:52] [Server thread/INFO]: Preparing spawn area: 28%                                                                                                   │
+│ [23:08:52] [Server thread/INFO]: Preparing spawn area: 28%                                                                                                   │
+│ [23:08:53] [Server thread/INFO]: Preparing spawn area: 28%                                                                                                   │
+│ [23:08:53] [Server thread/INFO]: Preparing spawn area: 28%                                                                                                   │
+│ [23:08:54] [Server thread/INFO]: Preparing spawn area: 28%                                                                                                   │
+│ [23:08:54] [Server thread/INFO]: Time elapsed: 2238 ms                                                                                                       │
+│ [23:08:54] [Server thread/INFO]: Done (2.832s)! For help, type "help"                                                                                        │
+│ [23:08:54] [Server thread/INFO]: Starting remote control listener                                                                                            │
+│ [23:08:54] [Server thread/INFO]: Thread RCON Listener started                                                                                                │
+│ [23:08:54] [Server thread/INFO]: RCON running on 0.0.0.0:25576                                                                                               │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:overworld                                                    │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:the_nether                                                   │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world2-201803]'/minecraft:the_end                                                      │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved                                                                     │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved                                                                     │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved                                                                      │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved                                                                         │
+│ [23:08:54] [Server thread/INFO]: Took 17ms to boot Floodgate                                                                                                 │
+│ [23:08:55] [Server thread/INFO]: ******************************************                                                                                  │
+│ [23:08:55] [Server thread/INFO]:                                                                                                                             │
+│ [23:08:55] [Server thread/INFO]: Loading Geyser version 2.11.0-b1205 (git-master-3aeedfa)                                                                    │
+│ [23:08:55] [Server thread/INFO]:                                                                                                                             │
+│ [23:08:55] [Server thread/INFO]: ******************************************                                                                                  │
+│ [23:08:56] [Server thread/INFO]: Registered 199 custom block overrides.                                                                                      │
+│ [23:08:56] [Server thread/INFO]: Registered 2 custom block item overrides.                                                                                   │
+│ [23:08:56] [Server thread/INFO]: Registered 7 custom blocks.                                                                                                 │
+│ [23:08:57] [Server thread/INFO]: Registered 1 custom items                                                                                                   │
+│ [23:08:57] [GeyserServer-3-1/INFO]: Started Geyser on UDP port 19132                                                                                         │
+│ [23:08:57] [Server thread/INFO]: Done (2.59s)! Run /geyser help for help!                                                                                    │
+│ [23:08:58] [Server thread/WARN]: Can't keep up! Is the server overloaded? Running 3262ms or 65 ticks behind                                                  │
+│ [23:08:58] [ForkJoinPool.commonPool-worker-3/INFO]: There's a new Geyser update available to support Bedrock version 26.52. Download it here: https://geyse… │
+│ list                                                                                                                                                         │
+│ [23:08:58] [Server thread/INFO]: There are 0 of a max of 10 players online:                                                                                  │
+│ [23:09:57] [Server thread/INFO]: Server empty for 60 seconds, pausing                                                                                        │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ > say hi█   enter: type it into mellow-aurora-7882's console · esc cancel                                                                                    │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

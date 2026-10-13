@@ -35,6 +35,8 @@ type job struct {
 	err     error
 	stopped bool // interrupted by the admin
 	back    int  // rows scrolled up from the bottom; 0 follows
+	quiet   bool // runs without the job view (a console line); ends in a note
+	nowrap  bool // cut long lines (tables) instead of wrapping them
 }
 
 func (j *job) running() bool { return j.ended.IsZero() }
@@ -55,16 +57,40 @@ type jobChunkMsg struct {
 func (m *Model) runJob(title string, c actions.Command) tea.Cmd {
 	m.jobSeq++
 	j := &job{id: m.jobSeq, title: title, args: c.Args, line: c.Line(), started: m.now()}
-	m.jobs = append(m.jobs, j)
-	if len(m.jobs) > jobKeep {
-		m.jobs = m.jobs[len(m.jobs)-jobKeep:]
-	}
+	m.addJob(j)
 	m.shown = j
 	client, args, stdin := m.opt.Client, c.Args, c.Stdin
 	return func() tea.Msg {
 		s, err := client.StreamInput(context.Background(), stdin, args...)
 		return jobStartMsg{j, s, err}
 	}
+}
+
+func (m *Model) addJob(j *job) {
+	m.jobs = append(m.jobs, j)
+	if len(m.jobs) > jobKeep {
+		m.jobs = m.jobs[len(m.jobs)-jobKeep:]
+	}
+}
+
+func contextBackground() context.Context { return context.Background() }
+
+// classifyJobLine styles a line of an action's output: flk's errors in
+// red, its ==> steps and Next: hints in bold.
+func classifyJobLine(l flk.Line) logLine {
+	ll := classifyLog(l, func(id string) string { return id })
+	if ll.kind == logHeader || ll.kind == logBanner {
+		ll.kind = logText // only flk logs has those
+	}
+	switch {
+	case l.Stderr && strings.HasPrefix(ll.text, "Error:"):
+		ll.kind = logError
+	case l.Stderr:
+		ll.kind = logText // progress and warnings go to stderr too
+	case strings.HasPrefix(ll.text, "==>"), strings.HasPrefix(ll.text, "Next:"):
+		ll.kind = logHeader
+	}
+	return ll
 }
 
 func (m *Model) jobStarted(msg jobStartMsg) tea.Cmd {
@@ -83,19 +109,7 @@ func (m *Model) jobStarted(msg jobStartMsg) tea.Cmd {
 func (m *Model) jobChunk(msg jobChunkMsg) tea.Cmd {
 	j := msg.j
 	for _, l := range msg.lines {
-		ll := classifyLog(l, func(id string) string { return id })
-		if ll.kind == logHeader || ll.kind == logBanner {
-			ll.kind = logText // only flk logs has those
-		}
-		switch {
-		case l.Stderr && strings.HasPrefix(ll.text, "Error:"):
-			ll.kind = logError
-		case l.Stderr:
-			ll.kind = logText // progress and warnings go to stderr too
-		case strings.HasPrefix(ll.text, "==>"), strings.HasPrefix(ll.text, "Next:"):
-			ll.kind = logHeader
-		}
-		j.lines = append(j.lines, ll)
+		j.lines = append(j.lines, classifyJobLine(l))
 	}
 	if drop := len(j.lines) - jobLines; drop > 0 {
 		j.lines = append([]logLine(nil), j.lines[drop:]...)
@@ -110,6 +124,16 @@ func (m *Model) jobChunk(msg jobChunkMsg) tea.Cmd {
 // jobEnded records the end and reloads everything the action may have changed.
 func (m *Model) jobEnded(j *job) tea.Cmd {
 	j.ended, j.stream = m.now(), nil
+	if j.quiet {
+		if m.logs != nil {
+			if j.err != nil {
+				m.logs.note = "send failed: " + lastError(j)
+			} else {
+				m.logs.note = "sent: " + j.args[len(j.args)-1]
+			}
+		}
+		return nil
+	}
 	for _, f := range m.cache {
 		f.at = time.Time{}
 	}
@@ -189,6 +213,10 @@ func (j *job) body(w int) []string {
 	}
 	out = append(out, "")
 	for _, l := range j.lines {
+		if j.nowrap {
+			out = append(out, logLine{text: ansi.Truncate(l.text, w, "…"), kind: l.kind}.styled())
+			continue
+		}
 		for _, r := range wrapKeep(l.text, w) {
 			out = append(out, logLine{text: r, kind: l.kind}.styled())
 		}
@@ -223,7 +251,7 @@ func (m *Model) jobScreen(j *job) string {
 	if j.running() {
 		keys = keyHints("ctrl+c", "interrupt", "esc", "hide (it keeps running)", "↑↓ pgup/dn", "scroll", "y", "copy command")
 	} else {
-		keys = keyHints("esc", "close", "↑↓ pgup/dn", "scroll", "y", "copy command", "L", "command log")
+		keys = keyHints("esc", "close", "↑↓ pgup/dn", "scroll", "w", "wrap", "y", "copy command", "L", "command log")
 	}
 	if m.note != "" {
 		keys = m.note
@@ -256,6 +284,8 @@ func (m *Model) jobKey(k string) tea.Cmd {
 		j.back = 1 << 30
 	case "G":
 		j.back = 0
+	case "w":
+		j.nowrap = !j.nowrap
 	case "y":
 		return m.copy(j.line)
 	case "L":

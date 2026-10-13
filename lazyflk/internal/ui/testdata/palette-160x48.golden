@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●      ┌ flk commands ─ from flk help --all --json ───────────────────────────────────────────────────────┐                             │
+│   ● mellow-aurora-7882      │ : ▏                                                                                              │                             │
+│   ▢ world 40GB (external)   │ context          What flk sees right now: host health, the current app, machines, ports, next s… │                             │
+│   ⇄ tcp/25565 udp/19132     │ help             Show help for flk, a command, or a topic (cheatsheet, install, first-app, oper… │                             │
+│                             │ completion       Print a tab-completion script (bash; zsh via bashcompinit)                      │                             │
+│ Host                        │ setup            Download firecracker + guest kernel (no root), then run doctor                  │                             │
+│   health ✔                  │ doctor           Check host readiness                                                            │                             │
+│                             │ version          Print the flk version                                                           │                             │
+│                             │ resume           Start every machine that should be running (after a reboot, or after stop-all)  │                             │
+│                             │ stop-all         Gracefully stop every running machine, remembering to resume them               │                             │
+│                             │ launch           Create flk.toml (if missing) in the current directory, register the app, deploy │                             │
+│                             │ deploy           Build the image and roll machines to a new release                              │                             │
+│                             │ status           App and machine overview                                                        │                             │
+│                             │ releases         Release history                                                                 │                             │
+│                             │ apps list        All apps on this host                                                           │                             │
+│                             │ apps destroy     Destroy an app, its machines and volumes                                        │                             │
+│                             │ apps prune       Remove container images left behind by apps that no longer exist                │                             │
+│                             │ config show      Print the parsed flk.toml / fly.toml and the machine config flk derives from it │                             │
+│                             │ machine list     Machines of the app                                                             │                             │
+│                             │ machine start    Boot machines                                                                   │                             │
+│                             │ machine stop     Stop machines gracefully (SIGTERM to the app, kill after kill_timeout); they s… │                             │
+│                             │ machine restart  Stop, then boot                                                                 │                             │
+│                             │ machine destroy  Delete machines (their volumes are kept, unattached)                            │                             │
+│                             │ machine revive   Restart a machine that exited on its own, per its restart policy (run by flk i… │                             │
+│                             │ machine status   Machine record and state as JSON (an array when given several IDs)              │                             │
+│                             │ machine config   The Firecracker VM config as JSON (an array when given several IDs)             │                             │
+│                             │ scale count      Create or destroy machines to reach N                                           │                             │
+│                             │ logs             Serial console output (app stdout/stderr and boot messages)                     │                             │
+│                             │ console          Attach to a machine's serial console, or --send one line to the app's stdin     │                             │
+│                             │ ssh console      Same as flk console                                                             │                             │
+│                             │ proxy            Forward a local TCP port to a machine                                           │                             │
+│                             │ ports list       Forwarded ports: active, waiting (another machine has it) or blocked (and why)  │                             │
+│                             │ ports sync       Rewrite the host's port map from the running machines                           │                             │
+│                             │ ports reap       Tidy machines that exited on their own and hand their ports on (run automatica… │                             │
+│                             │ secrets list     Names and digests (never values)                                                │                             │
+│                             │ secrets set      Set secrets (VALUE '-' reads it from stdin)                                     │                             │
+│                             │ secrets unset    Remove secrets                                                                  │                             │
+│                             │ secrets import   Set secrets from KEY=VALUE lines on stdin                                       │                             │
+│                             │ volumes list     Volumes and what they're attached to                                            │                             │
+│                             │                                                                                                  │                             │
+│                             │ flk context [--all] [--json]                                                                     │                             │
+├ Needs attention ────────────├──────────────────────────────────────────────────────────────────────────────────────────────────┤─────────────────────────────┤
+│ ✔ nothing needs attention   │ type to find  ↑↓ choose  enter fill in and run  esc close                                        │                             │
+├─────────────────────────────└──────────────────────────────────────────────────────────────────────────────────────────────────┘─────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

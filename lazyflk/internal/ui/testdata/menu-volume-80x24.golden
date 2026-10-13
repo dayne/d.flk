@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  ←→ fol… │
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : comm… │
 └──────────────────────────────────────────────────────────────────────────────┘

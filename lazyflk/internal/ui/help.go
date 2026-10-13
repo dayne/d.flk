@@ -1,6 +1,9 @@
 package ui
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 type helpKey struct{ keys, what string }
 
@@ -22,9 +25,13 @@ var mainHelp = struct {
 		{"l", "follow logs: the machine, or all of the app's machines"},
 		{"enter  x", "actions for the selection (start, stop, deploy, secrets, volumes…)"},
 		{"s", "start or stop the selected machine"},
+		{"c", "attach to the machine's console (detach: Ctrl-b d)"},
+		{">", "type a line into the machine's console, and watch its log answer"},
 		{"d", "deploy the selected app"},
 		{"a", "go through Needs attention; enter runs the fix flk suggests"},
 		{"L", "command log: what lazyflk ran, with its output"},
+		{":", "every flk command: find it, fill in a form, run it"},
+		{"H", "flk's guides (flk help TOPIC): cheatsheet, operate, troubleshoot…"},
 		{"?", "this help"},
 		{"q  ctrl+c", "quit (asks first while a command runs)"},
 	},
@@ -46,6 +53,7 @@ var logsHelp = struct {
 		{"n  N", "next or previous match"},
 		{"w", "wrap long lines on or off"},
 		{"[  ]", "previous or next machine (or all machines)"},
+		{">", "type a line into this machine's console (its stdin); the answer shows here"},
 		{"esc  q", "back to the main view"},
 	},
 }
@@ -62,17 +70,26 @@ func (m *Model) helpScreen() string {
 		lines = append(lines, styleKey.Render(fit(k.keys, 18))+" "+k.what)
 	}
 
+	room := m.height - 4
+	m.helpTop = max(min(m.helpTop, len(lines)-room), 0)
+	foot := "any key closes this help · flk's guides: H · every command: :"
+	if len(lines) > room {
+		foot = "↑↓ scroll · any other key closes this help"
+	}
 	var b strings.Builder
 	b.WriteString("┌" + rule(title, m.width-2) + "┐\n")
-	for i := range m.height - 4 {
+	for i := range room {
 		s := ""
-		if i < len(lines) {
-			s = lines[i]
+		if j := m.helpTop + i; j < len(lines) {
+			s = lines[j]
+		}
+		if i == room-1 && m.helpTop+room < len(lines) {
+			s = styleDim.Render(fmt.Sprintf("… %d more (↓)", len(lines)-m.helpTop-room+1))
 		}
 		b.WriteString("│ " + fit(s, w) + " │\n")
 	}
 	b.WriteString("├" + rule("", m.width-2) + "┤\n")
-	b.WriteString("│ " + fit(styleDim.Render("any key closes this help · the full flk reference: flk help --all"), w) + " │\n")
+	b.WriteString("│ " + fit(styleDim.Render(foot), w) + " │\n")
 	b.WriteString("└" + rule("", m.width-2) + "┘")
 	return b.String()
 }
