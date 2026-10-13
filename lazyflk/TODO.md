@@ -28,6 +28,19 @@ lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
   `--no-mouse` flag, or off by default with `--mouse`; decide when
   building it.
 
+## From flk 1d428f4 (deploy batch), not used yet
+
+All additive; lazyflk works with it as is (checked 2026-10-13).
+- [ ] **Rollback:** a "roll back" action on the app (`flk releases
+  rollback [vN]`, confirm), and `--no-rollback` in deploy's form.
+- [ ] **Releases tab:** show `image` (rollback possible), `machines`, and
+  failed releases (`status`, `failure`, `failed_at`); `rollback_of`.
+- [ ] **Health checks:** a deploy can fail after its checks; the job
+  output already shows why, but the Overview could show the app's
+  `checks` (from `config show` machine_config).
+- [ ] **Config warnings:** `config show` `warnings` (unknown keys, with
+  did-you-mean) on the Config tab and in Needs attention.
+
 ## Known gaps
 
 - [x] **Reboots and log rotation** pin a banner in the followed log
