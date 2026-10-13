@@ -880,11 +880,14 @@ module Flk
       n = args[0].to_i
       a = app
       Util.with_lock do
-        meta = a.meta
-        meta["scale"] = n
-        a.save_meta(meta)
+        # Record the new scale only once it's known to fit: a refused scale
+        # must not make the next deploy try it again.
+        save_scale = -> { meta = a.meta; meta["scale"] = n; a.save_meta(meta) }
         rel = a.current_release
-        next puts("Scale set to #{n}; applies on first deploy") unless rel
+        unless rel
+          save_scale.call
+          next puts("Scale set to #{n}; applies on first deploy")
+        end
 
         ms = a.machines
         if n > ms.size
@@ -892,8 +895,10 @@ module Flk
           base = cfg ? cfg.machine_config : ms.last&.config&.reject { |k, _| k == "mounts" }
           raise Error, "run from the app directory so flk can read its config" unless base
           check_capacity!(a, base, creating: n - ms.size)
+          save_scale.call
           (n - ms.size).times { create_machine(a, rel, base) }
         else
+          save_scale.call
           ms.last(ms.size - n).reverse_each { destroy_machine(_1, force: true) }
         end
         puts "Scaled #{a.name} to #{n} machine#{'s' unless n == 1}"
