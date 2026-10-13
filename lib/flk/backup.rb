@@ -182,10 +182,70 @@ module Flk
 
     def write_meta(path, meta) = Util.write_json(path.sub(/\.ext4\z/, ".json"), meta)
 
+    def update_meta(path, h)
+      json = path.sub(/\.ext4\z/, ".json")
+      Util.write_json(json, (JSON.parse(File.read(json)) rescue {}).merge(h))
+    end
+
+    # Checks a backup without changing it: e2fsck -n (read only), then the
+    # [flk.backup] verify hook (a host command, run in hook_dir with
+    # FLK_BACKUP = the image, FLK_APP, FLK_VOLUME) that can look inside it,
+    # e.g. with debugfs. A copy taken with --no-check still needs its
+    # journal replayed, so it gets the full check that backup skipped.
+    # Records { verify: clean|errors|hook_failed, verified_at, verify_detail }
+    # in the backup's .json and returns that.
+    def verify(b, hook:, hook_dir:, env:)
+      path = b["path"]
+      detail = nil
+      state = if b["check"].nil? || b["check"] == "unchecked" || needs_recovery?(path)
+                st, = check(path)
+                update_meta(path, "check" => st)
+                detail = "e2fsck: #{st} (first check of this copy)"
+                st == "errors" ? "errors" : "clean"
+              else
+                fsck_readonly(path).tap { detail = "e2fsck -n: #{_1}" }
+              end
+      if state == "clean" && hook
+        ok, out = run_hook(hook, hook_dir, env.merge("FLK_BACKUP" => path))
+        tail = out.lines.last(20).join.strip
+        detail = [detail, "verify hook: #{ok ? 'passed' : 'failed'}#{": #{tail}" unless tail.empty?}"].join("; ")
+        state = "hook_failed" unless ok
+      end
+      res = { "verify" => state, "verified_at" => Util.now, "verify_detail" => detail }
+      update_meta(path, res)
+      res
+    end
+
+    def fsck_readonly(path)
+      bin = Util.which("e2fsck") || %w[/usr/sbin/e2fsck /sbin/e2fsck].find { File.executable?(_1) }
+      return "unchecked" unless bin
+      out, st = Open3.capture2e(bin, "-fn", path)
+      File.write(path.sub(/\.ext4\z/, ".verify.log"), out) unless st.success?
+      drop_cache(path)
+      st.success? ? "clean" : "errors"
+    end
+
+    HOOK_TIMEOUT = 600
+
+    # [ok, combined output]
+    def run_hook(cmd, dir, env)
+      out = +""
+      Open3.popen2e(env, "sh", "-c", cmd, chdir: dir, in: File::NULL) do |_i, oe, th|
+        reader = Thread.new { oe.each_line { out << _1 } }
+        unless Util.wait_for(HOOK_TIMEOUT, 0.1) { !th.alive? }
+          VM.kill(th.pid, "KILL")
+          reader.join(1)
+          return [false, "#{out}timed out after #{HOOK_TIMEOUT}s"]
+        end
+        reader.join
+        [th.value.success?, out]
+      end
+    end
+
     # Deletes all but the newest `keep` backups; returns the deleted files.
     def prune(root, app, vol, keep)
       list(root, app, vol).drop(keep).each do |b|
-        FileUtils.rm_f(%w[.ext4 .json .fsck.log].map { b["path"].sub(/\.ext4\z/, _1) })
+        FileUtils.rm_f(%w[.ext4 .json .fsck.log .verify.log].map { b["path"].sub(/\.ext4\z/, _1) })
       end.map { _1["file"] }
     end
 

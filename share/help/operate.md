@@ -114,7 +114,11 @@ only used space), checks each copy with e2fsck, and deletes the oldest past
 copy while it runs instead, with hooks that make the app save and pause
 writing (`flk help --all`, Config). `flk volumes backups` lists them;
 `flk volumes restore NAME [BACKUP]` (machine stopped) puts one back and
-keeps the replaced image beside it. `flk volumes extend NAME --size GB`
+keeps the replaced image beside it. To test a backup without stopping
+anything: `flk volumes verify NAME` (e2fsck read-only, plus the
+`[flk.backup] verify` hook if set), or `flk volumes restore NAME --as
+NEWNAME`, which copies it into a new volume and leaves everything else as
+it is. `flk volumes extend NAME --size GB`
 grows a volume (machine stopped).
 
 On a schedule, with a systemd user timer (no root;

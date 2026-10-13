@@ -226,6 +226,13 @@ To consider:
 
 ## Done (for reference)
 
+- [x] Testing backups without downtime (PLAN.md M1.1): `flk volumes verify
+  [NAME] [--backup B | --all] [--json]` (e2fsck -n, plus the `[flk.backup]
+  verify` hook with `FLK_BACKUP`, which `volumes backup` also runs) records
+  `verify`/`verified_at`/`verify_detail` in the backup; `flk volumes restore
+  NAME --as NEW [--path FILE]` copies a backup into a new, unattached volume
+  (also for a destroyed volume's backups).
+
 - [x] Graceful stop: `/flk/init` now disables the kernel's Ctrl-Alt-Del hard
   reboot, so stop sends the app SIGTERM instead of pulling the plug.
 - [x] Guest kernel lookup for Firecracker ≥ v1.16: CI moved to dated

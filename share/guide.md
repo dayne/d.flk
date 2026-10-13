@@ -148,7 +148,11 @@ also its own help page: {{TOPICS}}.
   `{ console = "LINE", wait = "REGEX", timeout = 60 }` typed into the app's
   stdin. `post` hooks run even if the backup failed. `settle` (default 5):
   seconds between `pre` and the copy, for the guest to write out its cache.
-  `keep`: backups per volume. Example (Minecraft, over its console):
+  `keep`: backups per volume. `verify`: a host command that checks a
+  backup after e2fsck (by `flk volumes backup` and `flk volumes verify`),
+  run in the flk.toml's directory with `FLK_BACKUP` (the image file),
+  `FLK_APP` and `FLK_VOLUME`; exit 0 means good. It can read files without
+  mounting: `debugfs -R 'stat /world/level.dat' "$FLK_BACKUP"`. Example (Minecraft, over its console):
   `mode = "live"`, `pre = [{ console = "save-off" }, { console = "save-all flush", wait = "Saved the game" }]`,
   `post = [{ console = "save-on" }]`.
 

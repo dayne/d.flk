@@ -1765,6 +1765,12 @@ module Flk
       what = { "stop" => "machine down", "pause" => "machine paused", "live" => "copied live" }[mode]
       puts "  #{Util.green('✔')} #{File.basename(dst)} in #{took.round(1)}s" \
            "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}#{' (journal replayed)' if replayed}"
+      if plan["verify"] && check && state != "errors"
+        res = Backup.verify(Backup.list(root, a.name, v).find { _1["path"] == dst }, hook: plan["verify"], hook_dir: hook_dir,
+                            env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"] })
+        puts "  #{res['verify'] == 'clean' ? Util.green('✔') : Util.red('✘')} verify hook: #{res['verify']}"
+        raise Error, "the verify hook failed for #{File.basename(dst)}: #{res['verify_detail']}" unless res["verify"] == "clean"
+      end
       log = dst.sub(/\.ext4\z/, ".fsck.log")
       if state == "errors"
         puts Util.yellow("  ⚠ e2fsck found errors it couldn't fix in the copy (#{log}); keep older backups until you've checked it")
@@ -1853,16 +1859,84 @@ module Flk
       rows = backup_volumes(a, args).flat_map { |v| Backup.list(root, a.name, v).map { _1.merge("volume" => v["name"]) } }
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No backups of #{a.name} in #{root}") if rows.empty?
-      Util.table(%w[VOLUME BACKUP CREATED USED MODE CHECK],
+      Util.table(%w[VOLUME BACKUP CREATED USED MODE CHECK VERIFIED],
                  rows.map { [_1["volume"], _1["file"], Util.ago(_1["created_at"]), Backup.gb(_1["bytes_used"]),
-                             _1["mode"] || "-", _1["check"] || "-"] })
+                             _1["mode"] || "-", _1["check"] || "-",
+                             _1["verified_at"] ? "#{_1['verify']} #{Util.ago(_1['verified_at'])}" : "-"] })
+    end
+
+    def volumes_verify(args, o)
+      a = app
+      root = Backup.root!(o[:to])
+      cfg = config_for(a.name)
+      hook = cfg&.backup&.dig("verify")
+      raise Error, "--backup and --all don't go together" if o[:backup] && o[:all]
+      results = backup_volumes(a, args).flat_map do |v|
+        bs = o[:all] ? Backup.list(root, a.name, v) : [Backup.find!(root, a.name, v, o[:backup])]
+        bs.map do |b|
+          print "==> #{v['name']}/#{b['file']} " unless o[:json]
+          $stdout.flush
+          r = Backup.verify(b, hook: hook, hook_dir: cfg&.dir || Dir.pwd, env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"] })
+          puts "#{r['verify'] == 'clean' ? Util.green('✔') : Util.red('✘')} #{r['verify']}: #{r['verify_detail']}" unless o[:json]
+          r.merge("volume" => v["name"], "file" => b["file"], "path" => b["path"])
+        end
+      end
+      raise Error, "#{a.name} has no volumes" if results.empty? && !o[:json]
+      if o[:json]
+        puts JSON.pretty_generate(results)
+      else
+        puts "  (no [flk.backup] verify hook: e2fsck only)" unless hook
+      end
+      bad = results.reject { _1["verify"] == "clean" }
+      raise Error, "#{bad.size} of #{results.size} backups aren't clean" if bad.any?
+      next_step("flk volumes backups") unless o[:json]
+    end
+
+    # The volume a backup belongs to; with allow_gone, also one that was
+    # destroyed (its backups are kept by name).
+    def backup_volume!(a, ref, allow_gone: false)
+      a.volume!(ref)
+    rescue Error
+      raise unless allow_gone && ref.match?(/\A[a-z0-9_]{1,30}\z/)
+      { "name" => ref }
+    end
+
+    # A backup into a new, unattached volume, with nothing stopped.
+    def restore_as(a, v, b, o)
+      name = volume_name!(o[:as])
+      id = "vol_#{SecureRandom.hex(8)}"
+      path = o[:path] ? external_path!(o[:path]) : File.join(a.dir, "volumes", "#{id}.ext4")
+      raise Error, "#{path} already exists" if File.exist?(path)
+      raise Error, "#{File.dirname(path)} doesn't exist" if o[:path] && !File.directory?(File.dirname(path))
+      FileUtils.mkdir_p(File.dirname(path))
+      Backup.room!(b["path"], File.dirname(path))
+      puts "==> Restoring #{b['file']} (#{Util.ago(b['created_at'])}) as new volume #{name}"
+      t0 = Time.now
+      begin
+        Backup.copy(b["path"], path)
+        state, = Backup.check(path) if Backup.needs_recovery?(path) # an unchecked copy: replay its journal
+      rescue StandardError
+        FileUtils.rm_f(path)
+        raise
+      end
+      raise Error, "e2fsck found errors it couldn't fix in #{path}" if state == "errors"
+      register_volume(a, { "id" => id, "name" => name, "size_gb" => (File.size(path) / 1024.0**3).ceil, "path" => path,
+                           "restored_from" => b["file"] }.merge(o[:path] ? { "external" => true } : {}))
+      puts "Restored #{b['file']} into #{id} (#{name}) in #{(Time.now - t0).round(1)}s#{", at #{path}" if o[:path]}. " \
+           "#{v['name']} wasn't touched."
+      if (config_for(a.name)&.mounts || []).any? { _1["source"] == name }
+        puts Util.yellow("Note: #{name} is a [[mounts]] source, so the next machine that needs a #{name} volume may attach this one.")
+      end
+      next_step("debugfs -R 'ls -l /' #{path}   (look inside)", "flk volumes destroy #{name}   (when done)")
     end
 
     def volumes_restore(args, o)
       raise Error, "restore takes a volume and optionally a backup" unless (1..2).cover?(args.size)
+      raise Error, "--path goes with --as" if o[:path] && !o[:as]
       a = app
-      v = a.volume!(args[0])
+      v = backup_volume!(a, args[0], allow_gone: o[:as])
       b = Backup.find!(Backup.root!(o[:to]), a.name, v, args[1])
+      return restore_as(a, v, b, o) if o[:as]
       if (m = volume_user(a, v))
         raise Error, "machine #{m.id} [#{m.name}] is using #{v['name']}; stop it first: flk machine stop #{m.id}"
       end

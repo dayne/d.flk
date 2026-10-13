@@ -40,6 +40,8 @@ Change things
 Data
   flk volumes backup [NAME]          copy to backup_dir (~/.config/flk/host.toml) or --to DIR
   flk volumes backups                list them; restore NAME [BACKUP] with the machine stopped
+  flk volumes verify [NAME]          check the latest backup (e2fsck -n + verify hook), no stop
+  flk volumes restore NAME --as NEW  a backup into a new volume (test a restore, no stop)
   flk volumes extend NAME --size GB  grow a volume (machine stopped)
 
 Clean up

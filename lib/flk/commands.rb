@@ -224,10 +224,26 @@ module Flk
                     "The copy is checked with e2fsck (a copy of a running machine gets its journal replayed)."] },
           { name: "backups", args: "[ID|NAME...]", opts: [BACKUP_TO_OPT, JSON_OPT], json: true,
             summary: "List a volume's backups (default: all of the app's volumes), newest first" },
-          { name: "restore", args: "ID|NAME [BACKUP]", opts: [BACKUP_TO_OPT],
+          { name: "restore", args: "ID|NAME [BACKUP]",
+            opts: [BACKUP_TO_OPT,
+                   ["--as NEW", "Restore into a new volume NEW instead (no stop, the volume is untouched)"],
+                   ["--path FILE", "With --as: create the new volume's image at FILE (flk never deletes it)"]],
             summary: "Replace a volume's data with a backup (default: the latest); its machine must be stopped",
             notes: ["BACKUP is a file name from flk volumes backups, or part of it (e.g. its date). " \
-                    "The current image is kept beside it as FILE.before-restore-TIME, not deleted."] },
+                    "The current image is kept beside it as FILE.before-restore-TIME, not deleted.",
+                    "--as NEW copies the backup into a new, unattached volume while everything keeps running: " \
+                    "to test a restore, look inside (debugfs), or mount it in another app. " \
+                    "NAME may be a volume that's gone (its backups remain). " \
+                    "If NEW is a [[mounts]] source, the next machine that needs one may attach it."] },
+          { name: "verify", args: "[ID|NAME...]",
+            opts: [BACKUP_TO_OPT, ["--backup BACKUP", "Which backup (default: the latest); part of its file name works"],
+                   ["--all", "Every backup of each volume"], JSON_OPT],
+            summary: "Check backups without changing them: e2fsck -n, then the [flk.backup] verify hook",
+            notes: ["The hook is a host command run in the flk.toml's directory with FLK_BACKUP (the image file), " \
+                    "FLK_APP and FLK_VOLUME; exit 0 means good. It can read files with debugfs, e.g. " \
+                    "debugfs -R 'stat /world/level.dat' \"$FLK_BACKUP\". flk volumes backup runs it too, after its own check.",
+                    "The result is kept with the backup (verify, verified_at in flk volumes backups --json). " \
+                    "Exits 1 when any backup isn't clean."] },
           { name: "extend", args: "ID|NAME", opts: [["-s", "--size GB", Integer, "New size in GB (required; grow only)"]],
             summary: "Grow a volume and its filesystem; its machine must be stopped" }
         ] }
