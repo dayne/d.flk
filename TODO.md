@@ -134,6 +134,33 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   - `volumes ls --json`: `{ name, type, size, uid, gid, mode, mtime }`,
     on a volume and on a backup (lazyflk's read-only file browser).
 
+## From opencode.flk (first app by hand, 2026-10-13)
+
+- [ ] **A new volume's root is owned by root**, so an image with a non-root
+  `USER` can't write to its mount point: the Dockerfile's
+  `chown developer /workspace` is hidden by the mount. (vintagestory.flk hit
+  the same and fixed it with `flk files chown`.) Idea: `flk volumes create
+  --owner UID:GID`, and/or default a new, empty volume's root to the image's
+  USER the first time it's mounted (init, or at deploy from the image config).
+- [ ] **No app-level stop/start.** `flk stop` is an unknown command and
+  `flk machine stop` needs IDs. Ideas: `flk stop|start|restart` for all of
+  the app's machines (fly has `fly machine stop` but people type `stop`), or
+  at least did-you-mean `machine stop` for `stop`/`start`/`restart`, and
+  `machine stop` with no ID listing the app's machines (or acting on the
+  only one).
+- [ ] **A failed build doesn't say nothing changed.** It ends with podman's
+  error; the person stopped the running machine thinking the deploy had
+  touched it. End a build failure with "machines unchanged (still on vN)"
+  and a Next: line.
+- [ ] **Gotcha for the troubleshoot guide:** `ubuntu:24.04` (and 23.04+)
+  ships user `ubuntu` with UID/GID 1000, so `groupadd -g 1000` fails. Use
+  `usermod -l NEW ubuntu && groupmod -n NEW ubuntu` (and move its home), or
+  `userdel -r ubuntu` first. flk could recognize "GID '1000' already exists"
+  in build output and print that hint.
+- [ ] `flk exec`/`ssh console` default to root; an image with a `USER` might
+  expect that user (`--user developer` works). Consider defaulting to the
+  image's USER, like `docker exec`.
+
 ## LAN addresses and failover
 
 Today forwarded ports answer on every address the host owns (the DNAT
