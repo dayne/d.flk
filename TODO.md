@@ -117,9 +117,22 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   instead of "older release" (the step names the version: `flk releases
   rollback vN`, the current one). Plain `flk releases rollback` also goes
   back to the current release then, not the one before it.
-- [ ] **G7: no events.** Later, after the above: `flk events --json`, one
-  line per state change (fed by the tmux exit hook and lifecycle
-  commands), so lazyflk can stop polling.
+- [ ] **G7: no events.** `flk events --json --follow [--since TS] [-a APP]`,
+  one object per line: `{ "at", "app", "machine", "type", "release"?,
+  "detail"? }`. `type` is a fixed set, documented in the guide. `--since`
+  lets lazyflk reconnect after a gap. Fed by the exit hook and lifecycle
+  commands. lazyflk keeps polling slowly while the stream is alive.
+- [ ] **G12: JSON for PLAN.md M1/M2** (lazyflk-3a, 2026-10-13). Message it
+  for each feature as it lands, with the commit and the JSON shape:
+  - `volumes backups --json`: per backup `verified_at`, `verify`
+    ("clean" / "errors" / the hook result), and `copies: [{ "to", "at",
+    "ok" }]`.
+  - Releases: `backup` (the before_deploy backup ID);
+    `releases rollback --with-volumes`.
+  - `flk disk --json`: backup bytes per volume.
+  - `volumes move`: an ordinary command (lazyflk makes a form for it).
+  - `volumes ls --json`: `{ name, type, size, uid, gid, mode, mtime }`,
+    on a volume and on a backup (lazyflk's read-only file browser).
 
 ## LAN addresses and failover
 
