@@ -37,7 +37,8 @@ test_live_backup_runs_hooks_and_keeps_running() {
   out=$(flk volumes backup --to "$BK") || fail "backup failed: $out"
   assert_contains "$out" "mode live"
   assert_contains "$out" "Saved the game (save-all)" "console hook waited for the save"
-  [[ $out != *"fsck: errors"* ]] || fail "copy has fs errors: $out"
+  [[ $out == *"fsck: clean"* ]] ||
+    fail "a live copy of a healthy volume isn't clean: $out $(cat "$(backups_json | json_get 0.path | sed 's/\.ext4$/.fsck.log/')")"
   assert_eq "pre $(machine_id)"$'\n'"post" "$(cat "$APP_DIR/hooks.txt")" "hooks ran in order, in the app dir"
   assert_eq "$boots" "$(mcq flk.boots)" "machine kept running"
   assert_eq 1 "$(mcq flk.console_saves)" "save-all reached the app"
@@ -93,6 +94,19 @@ test_restore_brings_back_the_backup() {
   ls "$(flk volumes list --json | json_get 0.path)".before-restore-* >/dev/null || fail "old image not kept"
   flk machine start "$m" >/dev/null; wait_mc 60
   assert_eq $((b + 1)) "$(mcq flk.boots)" "boots after restore (backup's count + this boot)"
+}
+
+# Real damage is reported, with e2fsck's output kept beside the backup.
+test_damage_is_reported_as_repaired() {
+  local m out f; m=$(machine_id)
+  flk machine stop "$m" >/dev/null
+  f=$(flk volumes list --json | json_get 0.path)
+  /usr/sbin/debugfs -w -R "set_inode_field /world/level.json links_count 7" "$f" >/dev/null 2>&1
+  out=$(flk volumes backup --to "$BK") || fail "backup failed: $out"
+  assert_contains "$out" "fsck: repaired"
+  [[ -s $(backups_json | json_get 0.path | sed 's/\.ext4$/.fsck.log/') ]] || fail "no .fsck.log kept"
+  /usr/sbin/e2fsck -fy "$f" >/dev/null 2>&1 || true # mend the volume itself (exit 1: fixed)
+  flk machine start "$m" >/dev/null; wait_mc 60
 }
 
 test_extend_grows_a_stopped_volume() {

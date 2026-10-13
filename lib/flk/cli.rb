@@ -1341,14 +1341,20 @@ module Flk
       t0 = Time.now
       window = backup_copy(m, src, dst, mode, plan, hook_dir)
       took = Time.now - t0
-      state = check ? Backup.check(dst) : "unchecked"
+      state, replayed = check ? Backup.check(dst) : ["unchecked", false]
       Backup.write_meta(dst, { "app" => a.name, "volume_id" => v["id"], "volume" => v["name"], "size_gb" => v["size_gb"],
                                "source" => src, "machine" => m&.id, "release" => m&.release, "mode" => mode,
-                               "check" => state, "created_at" => Util.now, "seconds" => took.round(1) })
+                               "check" => state, "journal_replayed" => replayed,
+                               "created_at" => Util.now, "seconds" => took.round(1) })
       what = { "stop" => "machine down", "pause" => "machine paused", "live" => "copied live" }[mode]
       puts "  #{Util.green('✔')} #{File.basename(dst)} in #{took.round(1)}s" \
-           "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}"
-      puts Util.yellow("  ⚠ e2fsck found errors in the copy; keep older backups until you've checked it") if state == "errors"
+           "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}#{' (journal replayed)' if replayed}"
+      log = dst.sub(/\.ext4\z/, ".fsck.log")
+      if state == "errors"
+        puts Util.yellow("  ⚠ e2fsck found errors it couldn't fix in the copy (#{log}); keep older backups until you've checked it")
+      elsif state == "repaired"
+        puts Util.yellow("  ⚠ e2fsck had to repair the copy (#{log}): the app was writing, or the volume has damage")
+      end
       if Backup.same_fs?(src, dir)
         puts "  note: same disk as the volume (covers mistakes and corruption, not a failed disk)"
       end

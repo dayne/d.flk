@@ -23,9 +23,12 @@ problems show up there with the fix. Then find the symptom below.
 - `not enough free volumes`: `flk volumes create NAME --size N`, one per machine.
 - `a backup of its volume is running`: a `stop`-mode `flk volumes backup`
   has the machine down; it starts it again when the copy is done.
-- A backup reports `fsck: errors`: the app was writing during a `live`
-  copy. Add `pre` hooks that make it save and stop writing, use
-  `mode = "pause"`, or the default `stop`. Older backups are kept.
+- A backup reports `fsck: repaired` or `errors` (e2fsck's output is in
+  BACKUP.fsck.log; a journal replay alone counts as clean): the app was
+  writing during a `live` copy, or the volume itself is damaged. Add `pre`
+  hooks that make it save and stop writing, or use `mode = "pause"` or the
+  default `stop`; if a `stop` backup shows it too, check the volume
+  (machine stopped): `e2fsck -f FILE`. Older backups are kept.
 - `tap pool exhausted` / `flktapN missing`: `sudo {{SRC}}/setup-host.sh`
   (with `FLK_TAPS=32` for more machines).
 - The build itself fails: the same Dockerfile should fail under `podman build`.

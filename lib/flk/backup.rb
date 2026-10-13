@@ -81,17 +81,35 @@ module Flk
       FileUtils.rm_f(part) if part && File.exist?(part)
     end
 
-    # e2fsck on the copy (never on the live volume). -y: a copy taken while
-    # the machine ran is like a disk after a power cut, so replaying its
-    # journal here is expected. Returns "clean", "repaired" or "errors".
+    # e2fsck on the copy (never on the live volume). A copy taken while the
+    # machine ran is like a disk after a power cut: its journal needs
+    # replaying, which is normal, so that's done first and doesn't count.
+    # Then a full check: "clean", or "repaired"/"errors" with e2fsck's
+    # output kept in BACKUP.fsck.log. Returns [state, journal_replayed].
     def check(path)
-      bin = Util.which("e2fsck") || %w[/usr/sbin/e2fsck /sbin/e2fsck].find { File.executable?(_1) } or return "unchecked"
-      _out, st = Open3.capture2e(bin, "-fy", path)
-      case st.exitstatus
-      when 0 then "clean"
-      when 1, 2 then "repaired"
-      else "errors"
-      end
+      bin = Util.which("e2fsck") || %w[/usr/sbin/e2fsck /sbin/e2fsck].find { File.executable?(_1) }
+      return ["unchecked", false] unless bin
+      replayed = needs_recovery?(path)
+      Open3.capture2e(bin, "-y", "-E", "journal_only", path) if replayed
+      out, st = Open3.capture2e(bin, "-fy", path)
+      state = case st.exitstatus
+              when 0 then "clean"
+              when 1, 2 then out.scan(/\? yes/).size > out.scan(UNJOURNALED).size ? "repaired" : "clean"
+              else "errors"
+              end
+      File.write(path.sub(/\.ext4\z/, ".fsck.log"), out) unless state == "clean"
+      [state, replayed]
+    end
+
+    # The superblock's free block/inode totals aren't journaled: a running
+    # ext4 keeps them in memory, so any copy of one has them off. Fixing
+    # them is part of a normal recovery, not a repair.
+    UNJOURNALED = /^Free (?:blocks|inodes) count wrong \(\d+, counted=\d+\)\./
+
+    def needs_recovery?(path)
+      bin = Util.which("dumpe2fs") || %w[/usr/sbin/dumpe2fs /sbin/dumpe2fs].find { File.executable?(_1) } or return false
+      out, _ = Open3.capture2e(bin, "-h", path)
+      out.match?(/^Filesystem features:.*needs_recovery/)
     end
 
     def write_meta(path, meta) = Util.write_json(path.sub(/\.ext4\z/, ".json"), meta)
@@ -99,7 +117,7 @@ module Flk
     # Deletes all but the newest `keep` backups; returns the deleted files.
     def prune(root, app, vol, keep)
       list(root, app, vol).drop(keep).each do |b|
-        FileUtils.rm_f([b["path"], b["path"].sub(/\.ext4\z/, ".json")])
+        FileUtils.rm_f(%w[.ext4 .json .fsck.log].map { b["path"].sub(/\.ext4\z/, _1) })
       end.map { _1["file"] }
     end
 
