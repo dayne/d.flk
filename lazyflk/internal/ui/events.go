@@ -241,14 +241,17 @@ func (m *Model) eventLine(e flk.Event, withApp bool) string {
 	return s
 }
 
-// eventStyle colours a type by how it went.
+// eventStyle colours a type by how it went. Every boot is one of
+// created, started, updated, restarted or rolled_back; the last two
+// follow a failure, so they're a warning.
 func eventStyle(t string) string {
 	switch {
 	case strings.HasSuffix(t, "failed"), t == "machine.gave_up":
 		return styleBad.Render(t)
 	case t == "machine.exited", t == "machine.rolled_back", t == "machine.restarted", t == "port.dropped":
 		return styleWarn.Render(t)
-	case strings.HasSuffix(t, "succeeded"), strings.HasSuffix(t, "passed"), t == "machine.started":
+	case strings.HasSuffix(t, "succeeded"), strings.HasSuffix(t, "passed"),
+		t == "machine.started", t == "machine.created", t == "machine.updated":
 		return styleOK.Render(t)
 	}
 	return t

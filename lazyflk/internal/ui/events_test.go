@@ -93,3 +93,18 @@ func TestEventsReconnect(t *testing.T) {
 		t.Error(got)
 	}
 }
+
+// Boots: created, started and updated are good news; restarted and
+// rolled_back follow a failure.
+func TestEventStyle(t *testing.T) {
+	for typ, want := range map[string]string{
+		"machine.created": styleOK.Render("machine.created"), "machine.updated": styleOK.Render("machine.updated"),
+		"machine.started": styleOK.Render("machine.started"), "machine.restarted": styleWarn.Render("machine.restarted"),
+		"machine.rolled_back": styleWarn.Render("machine.rolled_back"), "deploy.failed": styleBad.Render("deploy.failed"),
+		"machine.paused": "machine.paused",
+	} {
+		if got := eventStyle(typ); got != want {
+			t.Errorf("%s: %q", typ, got)
+		}
+	}
+}
