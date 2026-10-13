@@ -155,6 +155,15 @@ To consider:
   machine uses it. Gotcha (from the vintagestory session): `write` creates
   files as uid 0; follow with `sif PATH uid N` / `gid N`. Minecraft's
   `bin/mc-edit` and VS's tooling each do a version of this today.
+- [ ] **Roll volumes back with the release (opt-in).** Automatic rollback
+  restores the image but not the volume, so an upgrade that changed data
+  on the volume (VS mods, Minecraft jars) would boot the old image on the
+  new data (the vintagestory session's point). Idea: `[flk.backup]
+  before_deploy = true` takes a backup before the roll, and a failed
+  health check restores it (machine stopped) before booting the old
+  release; `releases rollback --with-volumes` could do the same from a
+  release's recorded backup. Needs instant snapshots to be cheap for big
+  volumes.
 - [ ] **Volume snapshots.** Backups and extend are done; instant
   snapshots need volumes on a reflink filesystem (an XFS LV for flk's
   volumes: `cp --reflink` is instant, so `pause` mode freezes the VM for
