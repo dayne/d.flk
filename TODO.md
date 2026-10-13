@@ -155,6 +155,14 @@ To consider:
   machine uses it. Gotcha (from the vintagestory session): `write` creates
   files as uid 0; follow with `sif PATH uid N` / `gid N`. Minecraft's
   `bin/mc-edit` and VS's tooling each do a version of this today.
+- [ ] **Backups flood the page cache** (minecraft.flk BUGS #9). `cp` of a
+  21G volume reads and writes it through the page cache, evicting the
+  other VM's and the host's cache and pushing guest RAM towards swap.
+  After the copy and its e2fsck, `posix_fadvise(DONTNEED)` both files
+  (Ruby has no fadvise: a tiny helper, or `dd` with `iflag=nocache`
+  /`oflag=nocache` per chunk, keeping sparseness), and run the copy under
+  `ionice -c3`. Same for `restore`. Test: `Cached` in /proc/meminfo rises
+  by far less than the volume size; the copy stays identical and sparse.
 - [ ] **Roll volumes back with the release (opt-in).** Automatic rollback
   restores the image but not the volume, so an upgrade that changed data
   on the volume (VS mods, Minecraft jars) would boot the old image on the
@@ -175,6 +183,15 @@ To consider:
 - [ ] **Static init** (Go/Rust) so distroless/scratch images boot without `/bin/sh`.
 
 ## Machines
+
+- [ ] **Huge pages for guest memory (opt-in)** (minecraft.flk BUGS #8).
+  `[[vm]] huge_pages = "2M"` → firecracker `machine-config.huge_pages`
+  (Firecracker 1.17 has it). Needs `vm.nr_hugepages` reserved on the host
+  (root: a setup-host.sh option or a documented sysctl); deploy and doctor
+  check `HugePages_Free` covers memory_mb/2 and refuse with the sysctl to
+  run. Docs: reserved whether used or not, never swapped, may not mix
+  with balloon/snapshots later; the host-wide alternative is THP `always`.
+  Test: HugePages_Free drops by memory/2M on boot; too few → clean refusal.
 
 - [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
