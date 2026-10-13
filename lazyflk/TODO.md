@@ -41,6 +41,10 @@ All additive; lazyflk works with it as is (checked 2026-10-13).
 - [ ] **Config warnings:** `config show` `warnings` (unknown keys, with
   did-you-mean) on the Config tab and in Needs attention.
 
+- [ ] **Huge pages** (flk 553b1a3): show machine `huge_pages` ("2M")
+  on the machine Overview; doctor's "huge pages: A of T free" already
+  shows on Health.
+
 ## Known gaps
 
 - [x] **Reboots and log rotation** pin a banner in the followed log
