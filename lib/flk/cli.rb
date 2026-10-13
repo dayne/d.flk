@@ -182,6 +182,7 @@ module Flk
           .gsub("{{EXIT_CODES}}", Commands::EXIT_CODES.map { |k, v| "- `#{k}`: #{v}" }.join("\n"))
           .gsub("{{MAX_KILL_TIMEOUT}}", AppConfig::MAX_KILL_TIMEOUT.to_s)
           .gsub("{{SCHEMA}}", JSON_SCHEMA.to_s)
+          .gsub("{{EVENT_TYPES}}", Events::TYPES.map { |k, v| "- `#{k}`: #{v}" }.join("\n"))
     end
 
     def cmd_completion(args, _o)
@@ -866,6 +867,7 @@ module Flk
         v = m.app.volumes.find { _1["id"] == vid } or next
         puts "  #{m.id} [#{m.name}] volume #{v['name']} <- #{File.basename(path)}"
         Backup.restore_over(path, v["path"])
+        Events.machine("volume.restored", m, "#{v['name']} from #{File.basename(path)}")
       end
     end
 
@@ -876,7 +878,18 @@ module Flk
       a.save_meta(meta)
     end
 
-    def roll!(a, rel, mconfig, machines, no_rollback: false, pre_backup: nil, restore: {})
+    def roll!(a, rel, mconfig, machines, **kw)
+      what = rel["rollback_of"] ? "rollback to v#{rel['rollback_of']}" : "deploy"
+      Events.emit("deploy.started", app: a.name, release: rel["version"],
+                                    detail: "#{what}, #{machines.empty? ? 'new machines' : "#{machines.size} machine#{'s' if machines.size > 1}"}")
+      roll_machines!(a, rel, mconfig, machines, **kw)
+      Events.emit("deploy.succeeded", app: a.name, release: rel["version"], detail: what)
+    rescue Error => e
+      Events.emit("deploy.failed", app: a.name, release: rel["version"], detail: e.message)
+      raise
+    end
+
+    def roll_machines!(a, rel, mconfig, machines, no_rollback: false, pre_backup: nil, restore: {})
       checks = Array(mconfig["checks"])
       if machines.empty?
         count = [a.meta["scale"] || 1, 1].max
@@ -940,7 +953,7 @@ module Flk
       m.h["config"] = before["config"]
       m.save!
       install_rootfs(m, old)
-      boot(m, "Machine #{m.id} [#{m.name}] back on v#{old['version']}")
+      boot(m, "Machine #{m.id} [#{m.name}] back on v#{old['version']}", event: "machine.rolled_back")
       true
     rescue Error => e
       warn Util.red("  couldn't put #{m.id} back on v#{before['release']}: #{e.message}")
@@ -955,13 +968,19 @@ module Flk
         $stdout.flush
         t0 = Time.now
         passed = Util.wait_for(c["grace_period"], 1) do
-          return "machine #{m.id} exited (flk logs -i #{m.id} --no-tail)".tap { puts Util.red("✘") } unless m.running?
+          unless m.running?
+            puts Util.red("✘")
+            Events.machine("check.failed", m, "#{c['name']}: the machine exited")
+            return "machine #{m.id} exited (flk logs -i #{m.id} --no-tail)"
+          end
           check_passes?(m, c)
         end
         unless passed
           puts Util.red("✘")
+          Events.machine("check.failed", m, "#{c['name']} (#{what}) didn't pass within #{c['grace_period']}s")
           return "check #{c['name']} (#{what}) didn't pass within #{c['grace_period']}s"
         end
+        Events.machine("check.passed", m, "#{c['name']} (#{what}) in #{(Time.now - t0).round}s")
         puts "#{Util.green('✔')} #{(Time.now - t0).round}s"
       end
       nil
@@ -1329,6 +1348,7 @@ module Flk
       if count >= policy["retries"]
         note["restart policy #{policy['policy']}: gave up after #{count} restarts in a row (last exit status #{status || 'none'})"]
         m.h["restarts"] = { "count" => count, "gave_up_at" => Util.now }
+        Events.machine("machine.gave_up", m, "after #{count} restarts in a row (last exit status #{status || 'none'})")
         return m.save!
       end
       sleep [2**count, 60].min
@@ -1418,7 +1438,7 @@ module Flk
       FileUtils.mkdir_p(m.dir)
       m.save!
       install_rootfs(m, rel)
-      boot(m, "Machine #{m.id} [#{m.name}] created")
+      boot(m, "Machine #{m.id} [#{m.name}] created", event: "machine.created")
     end
 
     # The block runs while the machine is stopped (before_deploy backups).
@@ -1430,7 +1450,7 @@ module Flk
       m.h["config"] = mconfig.merge("mounts" => attach_volumes(m.app, m.id, mconfig["mount_specs"]))
       m.save!
       install_rootfs(m, rel)
-      boot(m, "Machine #{m.id} [#{m.name}] updated to v#{rel['version']}")
+      boot(m, "Machine #{m.id} [#{m.name}] updated to v#{rel['version']}", event: "machine.updated")
     end
 
     # Root filesystem is ephemeral per release, exactly like Fly:
@@ -1465,14 +1485,16 @@ module Flk
       vols.each { _1["attached_machine"] = nil if _1["attached_machine"] == m.id }
       m.app.save_volumes(vols)
       FileUtils.rm_rf(m.dir)
+      Events.machine("machine.destroyed", m)
       puts "Machine #{m.id} [#{m.name}] destroyed"
     end
 
     # revive: a restart by the restart policy; anything else is a person
     # starting it, which resets the count of restarts in a row.
-    def boot(m, msg, revive: false)
+    def boot(m, msg, revive: false, event: "machine.started")
       m.h.delete("restarts") unless revive
       VM.start(m)
+      Events.machine(revive ? "machine.restarted" : event, m, msg)
       puts "  #{Util.green('✔')} #{msg} (#{m.ip})"
       port = m.config["internal_port"] or return m
       if VM.wait_port(m, port, 30)
@@ -1500,6 +1522,42 @@ module Flk
           puts Util.yellow("    ⚠ host port #{label} is taken by #{o['app']} (#{o['machine']}); this machine gets it when that one stops")
         end
       end
+    end
+
+    def cmd_events(_args, o)
+      raise Error, "--all and -a don't go together" if o[:all] && @app_name
+      name = o[:all] ? nil : (@app_name || (AppConfig.find&.app rescue nil))
+      since = o[:since] && parse_since(o[:since])
+      n = o[:lines] || 50
+      show = lambda do |ev|
+        if o[:json]
+          puts JSON.generate(ev)
+        else
+          t = (Time.parse(ev["at"]).localtime.strftime("%Y-%m-%d %H:%M:%S") rescue ev["at"])
+          puts [t, name ? nil : ev["app"], ev["machine"] || "-", ev["type"], ev["release"] ? "v#{ev['release']}" : nil, ev["detail"]]
+            .compact.join("  ")
+        end
+      end
+      if o[:follow]
+        Events.follow(app: name, since: since, backlog: n) { show.call(_1) }
+      else
+        evs = Events.read(app: name, since: since)
+        evs = evs.last(n) unless since
+        return puts("No events#{" for #{name}" if name}#{" since #{since}" if since}") if evs.empty? && !o[:json]
+        evs.each { show.call(_1) }
+      end
+    rescue Interrupt
+      nil
+    end
+
+    # ISO time, or a duration back from now: 30s, 10m, 2h, 3d.
+    def parse_since(s)
+      if (md = /\A(\d+)([smhd])\z/.match(s))
+        return (Time.now - md[1].to_i * { "s" => 1, "m" => 60, "h" => 3600, "d" => 86_400 }[md[2]]).utc.iso8601(3)
+      end
+      Time.parse(s).utc.iso8601(3)
+    rescue ArgumentError
+      raise Error, "--since takes an ISO time (2026-10-13T12:00:00Z) or a duration (30s, 10m, 2h, 3d)"
     end
 
     def ports_reap(_args, _o) = reap_exited(wait: true) # the tmux exit hook: no hurry, must not skip
@@ -1916,6 +1974,8 @@ module Flk
         true
       rescue Error => e
         warn Util.red("  ✘ #{v['name']}: #{e.message}")
+        Events.emit(e.message.start_with?("copy to ") ? "backup.copy_failed" : "backup.failed",
+                    app: a.name, machine: v["attached_machine"], detail: "#{v['name']}: #{e.message}")
         false
       end
       raise Error, "#{failed.size} of #{vols.size} volume backups failed (see above)" if failed.any?
@@ -1972,6 +2032,8 @@ module Flk
       end
       pruned = Backup.prune(root, a.name, v, keep)
       puts "  pruned #{pruned.size} old backup#{'s' if pruned.size > 1} (keeping #{keep})" if pruned.any?
+      Events.emit("backup.succeeded", app: a.name, machine: m&.id, release: m&.release,
+                                      detail: "#{v['name']}: #{File.basename(dst)}, mode #{mode}, fsck #{state}, #{took.round(1)}s")
       dst
     end
 
@@ -2000,10 +2062,12 @@ module Flk
           end
         when "pause"
           VM.pause(m)
+          Events.machine("machine.paused", m, "pause-mode backup")
           begin
             Backup.copy(src, dst, idle: false) # the machine is frozen: be quick
           ensure
             VM.resume(m)
+            Events.machine("machine.resumed", m, "after the backup")
             window = Time.now - t
           end
         else
@@ -2057,6 +2121,7 @@ module Flk
         true
       rescue Error => e
         warn Util.red("  ✘ #{v['name']}: #{e.message}")
+        Events.emit("backup.copy_failed", app: a.name, detail: "#{v['name']}: #{e.message}")
         false
       end
       raise Error, "#{failed.size} of #{vols.size} copies failed (see above)" if failed.any?
@@ -2068,6 +2133,7 @@ module Flk
       print "==> copy #{v['name']}/#{b['file']} to #{dest} "
       e = Backup.send_copy(b, dest, a.name, v["name"], keep: keep)
       raise Error, "copy to #{dest} failed: #{e['error']}" unless e["ok"]
+      Events.emit("backup.copied", app: a.name, detail: "#{v['name']}: #{b['file']} to #{dest}#{' (already there)' if e['already']}")
       puts "#{Util.green('✔')} #{e['already'] ? 'already there' : "#{e['seconds']}s"}" \
            "#{"; pruned #{e['pruned'].size} old cop#{e['pruned'].size == 1 ? 'y' : 'ies'} there (keeping #{keep})" if e['pruned'].any?}"
     rescue Error
@@ -2173,6 +2239,7 @@ module Flk
         File.rename(dst, aside) if File.exist?(dst)
         File.rename("#{dst}.restoring", dst)
         set_volume_size(a, v, dst)
+        Events.emit("volume.restored", app: a.name, machine: v["attached_machine"], detail: "#{v['name']} from #{b['file']}")
       end
       puts "Restored #{v['name']}. The previous image is kept at #{aside}; delete it when you're happy."
       next_step(v["attached_machine"] ? "flk machine start #{v['attached_machine']}" : "flk deploy")
@@ -2251,7 +2318,11 @@ module Flk
       if src
         v, path = src
         img = read_image(v, o)
+        if args[1].end_with?("/") && !File.directory?(args[1])
+          raise Error, "#{args[1]}: no such directory"
+        end
         local = File.directory?(args[1]) ? File.join(args[1], path == "/" ? v["name"] : File.basename(path)) : args[1]
+        raise Error, "#{File.dirname(File.expand_path(local))}: no such directory" unless File.directory?(File.dirname(File.expand_path(local)))
         VolFS.export(img, path, local)
         puts "Copied #{v['name']}:#{path} to #{local}"
       else

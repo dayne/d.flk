@@ -46,6 +46,11 @@ test_cp_out() {
   assert_eq "motd=hello" "$(cat "$d/server.properties")"
   flk files cp data:/logs "$d/logs-copy" >/dev/null
   assert_eq "line 1" "$(cat "$d/logs-copy/latest log.txt")" "a directory copied out"
+  local out
+  out=$(flk files cp data:/conf/server.properties "$d/missing/deep/" 2>&1) && fail "copied into a missing dir"
+  assert_contains "$out" "no such directory"
+  out=$(flk files cp data:/conf/server.properties "$d/missing/file" 2>&1) && fail "copied into a missing dir"
+  assert_contains "$out" "no such directory"
   rm -rf "$d"
 }
 

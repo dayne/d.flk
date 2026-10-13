@@ -167,7 +167,8 @@ module Flk
       # capped here too: machines deployed before the config check keep their old value
       timeout ||= [(m.config["kill_timeout"] || 10).to_i, AppConfig::MAX_KILL_TIMEOUT].min
       File.write(m.path("stopping"), Util.now) if File.directory?(m.dir) # see Machine#stopping?
-      if m.running?
+      was_running = m.running?
+      if was_running
         sent = begin
           api(m.path("fc.sock"), "PUT", "/actions", { "action_type" => "SendCtrlAltDel" })
           true
@@ -184,6 +185,7 @@ module Flk
       m.h["stopped_at"] = Util.now
       m.h["desired_state"] = "stopped" unless keep_desired
       m.save!
+      Events.machine("machine.stopped", m, keep_desired ? "to be started again (stop-all, or a backup)" : nil) if was_running
       Ports.sync! if sync_ports && Array(m.config["ports"]).any? # hand its ports to another machine, or drop them
     ensure
       FileUtils.rm_f(m.path("stopping"))
@@ -204,6 +206,8 @@ module Flk
       Util.with_lock(wait: wait) do
         dead.each do |m|
           next unless m.exited? # re-check: another flk may have just restarted it
+          st = m.last_exit_status
+          Events.machine("machine.exited", m, st ? "the app exited with status #{st}" : "no exit status (crashed or killed)")
           tmux_quiet("kill-session", "-t", m.session)
           FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
         end

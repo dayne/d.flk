@@ -166,6 +166,16 @@ also its own help page: {{TOPICS}}.
 Everything else in a fly.toml (regions, checks, concurrency, statics) is ignored.
 `flk config show` prints what flk understood.
 
+## Events
+
+`flk events` reads a history kept in the state dir (`events.jsonl`), written
+by every flk command and the tmux exit hook. `--json` prints one object
+per line: `{ "at", "app", "machine", "type", "release"?, "detail"? }`.
+`type` is one of a fixed set (new ones may be added; existing ones keep
+their meaning):
+
+{{EVENT_TYPES}}
+
 ## Commands
 
 Global option for every command: `-a, --app APP`. `flk COMMAND --help` works

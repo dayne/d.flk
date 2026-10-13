@@ -27,6 +27,10 @@ test_on_failure_restarts_then_gives_up() {
   log_has "restart policy on-failure: exit status 3, restart 1 of 2" || fail "no restart note in the log"
   is_stopped || fail "still running after giving up"
   assert_contains "$(flk context)" "restart policy gave up after 2 restarts" "context next step"
+  local ev; ev=$(flk events --json --since 2m | ruby -rjson -e '$stdin.each_line { e = JSON.parse(_1); puts "#{e["type"]} #{e["detail"]}" }')
+  assert_contains "$ev" "machine.exited the app exited with status 3"
+  [[ $(grep -c "^machine.restarted" <<<"$ev") == 2 ]] || fail "expected 2 machine.restarted events: $ev"
+  assert_contains "$ev" "machine.gave_up after 2 restarts in a row"
 }
 
 test_clean_exit_not_restarted_on_failure() {

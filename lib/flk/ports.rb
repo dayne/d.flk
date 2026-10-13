@@ -131,11 +131,32 @@ module Flk
         input = active.map { "#{_1['proto']} #{_1['port']} #{_1['ip']} #{_1['internal_port']}#{" #{_1['bind']}" if _1['bind']}\n" }.join
         out, st = Open3.capture2e("sudo", "-n", HELPER, "replace", stdin_data: input)
         warn_once("port forwarding update failed: #{out.strip}") unless st.success?
+        port_events(active) if st.success?
         st.success?
       end
     rescue SystemCallError => e # e.g. no sudo binary
       warn_once("port forwarding update failed: #{e.message}")
       false
+    end
+
+    # port.forwarded / port.dropped for what changed since the last sync
+    # (kept in STATE/ports.state.json; the first sync only records).
+    def port_events(active)
+      file = File.join(ROOT, "ports.state.json")
+      now = active.to_h { ["#{label(_1)} #{_1['machine']}", _1.slice("app", "machine", "ip", "internal_port")] }
+      before = File.exist?(file) ? (JSON.parse(File.read(file)) rescue {}) : nil
+      Util.write_json(file, now)
+      return unless before
+      (now.keys - before.keys).each do |k|
+        r = now[k]
+        Events.emit("port.forwarded", app: r["app"], machine: r["machine"], detail: "#{k.split.first} -> #{r['ip']}:#{r['internal_port']}")
+      end
+      (before.keys - now.keys).each do |k|
+        r = before[k]
+        Events.emit("port.dropped", app: r["app"], machine: r["machine"], detail: "#{k.split.first} (was -> #{r['ip']}:#{r['internal_port']})")
+      end
+    rescue StandardError
+      nil
     end
 
     def warn_once(msg)

@@ -117,7 +117,7 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   instead of "older release" (the step names the version: `flk releases
   rollback vN`, the current one). Plain `flk releases rollback` also goes
   back to the current release then, not the one before it.
-- [ ] **G7: no events.** `flk events --json --follow [--since TS] [-a APP]`,
+- [x] **G7: no events.** Done (PLAN.md M3): `flk events [--all] [-f] [--since T] [-n N] [--json]`; types in `Events::TYPES` and the guide. `flk events --json --follow [--since TS] [-a APP]`,
   one object per line: `{ "at", "app", "machine", "type", "release"?,
   "detail"? }`. `type` is a fixed set, documented in the guide. `--since`
   lets lazyflk reconnect after a gap. Fed by the exit hook and lifecycle

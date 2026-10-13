@@ -205,6 +205,16 @@ module Flk
           { name: "import", opts: [["--stage", "Don't restart machines; applies on next start/deploy"]],
             summary: "Set secrets from KEY=VALUE lines on stdin" }
         ] },
+      { name: "events", group: "Machines",
+        opts: [["--all", "Every app (default: the app here or -a APP; every app when there's none)"],
+               ["-f", "--follow", "Keep printing new events until interrupted"],
+               ["--since TIME", "From this time on: ISO (2026-10-13T12:00:00Z) or a duration back (30s, 10m, 2h, 3d)"],
+               ["-n", "--lines N", Integer, "How many recent events (default 50; with --since, all since then)"], JSON_OPT],
+        json: true, summary: "What happened to apps and machines: starts, stops, exits, deploys, checks, backups, ports",
+        notes: ["--json prints one object per line: { at, app, machine, type, release?, detail? }; " \
+                "at is UTC with milliseconds, and --since TIME includes events at TIME (so a reconnecting reader may see one twice).",
+                "Types: #{Events::TYPES.keys.join(', ')}. The full list with meanings is in flk help --all.",
+                "Kept in STATE/events.jsonl (rotated at 4MB to events.jsonl.1). --follow blocks by design; stop it with Ctrl-C."] },
       { name: "files", group: "Config & data",
         summary: "Files inside a volume (or a backup of one): list, read, copy in and out; no mount, no root",
         notes: ["VOL:PATH names a path in volume VOL (its name or ID); PATH is absolute inside it, default /. " \

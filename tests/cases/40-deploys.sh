@@ -40,6 +40,14 @@ test_failing_check_rolls_the_machine_back() {
   assert_contains "$(flk releases)" "failed: check never"
 }
 
+test_events_of_a_failed_deploy() {
+  local ev; ev=$(flk events --json | ruby -rjson -e '$stdin.each_line { e = JSON.parse(_1); puts "#{e["type"]} v#{e["release"]} #{e["detail"]}" }')
+  local t
+  for t in "deploy.started v2" "check.failed v2 never" "machine.rolled_back v1" "deploy.failed v2" "deploy.succeeded v1" "machine.created v1"; do
+    assert_contains "$ev" "$t" "events"
+  done
+}
+
 test_no_rollback_leaves_the_machine_for_debugging() {
   local out
   out=$(flk deploy --no-rollback 2>&1) && fail "deploy passed a failing check"
