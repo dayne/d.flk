@@ -23,7 +23,7 @@
 │   ◇ eclipse-temurin:25-jre 341M     │ 1  who           who's online (RCON)                                             │                                     │
 │   ◇ ruby:3.3-alpine 69M             │ 2  say           broadcast a message to the players (RCON)                       │                                     │
 │   ◇ alpine:3.20 7.7M                │ 3  save          write the world to disk now and wait until it's saved           │                                     │
-│   4 flk images: host Images tab     │ 4  backup        the nightly backup, now: live (no restart, ~50s), checked, new… │                                     │
+│   4 flk images: host Images tab     │ 4  backup        the nightly backup, now: live (no restart, ~25s), checked, new… │                                     │
 │                                     │ 5  backup-check  preflight only: mounts, flk, lock, status; makes no backup      │                                     │
 │ Services                            │ 6  whitelist     let a player in: type their name (RCON)                         │                                     │
 │   ● flk-net                         │                                                                                  │                                     │

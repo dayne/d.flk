@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / volume world                    │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
-│   ⇄ 10.47.11.3: tcp/25565… │                                                 │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ world-20261013T111353Z.ext4                     │
-│   ● frosty-river-2714      │   2026-10-13 11:14Z · 20G used · checked clean… │
-│   ▢ vsdata 40GB (external) │   mode live · release v9 · took 24s             │
-│   ⇄ 10.47.11.3: tcp/42420… │                                                 │
-│                            │ world-20261013T100001Z.ext4                     │
-│ Host                       │   2026-10-13 10:00Z · 20G used · checked clean… │
-│   health ✔                 │   mode live · release v9 · took 20s             │
+│   ● frosty-river-2714      │   2026-10-13 11:14Z · 20G used · checked clean  │
+│   ▢ vsdata 40GB (external) │     (journal replayed)                          │
+│   ⇄ tcp/42420 udp/42420    │   mode live · release v9 · took 24s             │
 │                            │                                                 │
-│ Storage                    │ world-20261013T082359Z.ext4                     │
-│   / 21%                    │   2026-10-13 08:24Z · 20G used · checked clean… │
-│   /data/minecraft 66%      │   mode live · release v8 · took 49s             │
-│   /data/vintagestory 56%   │                                                 │
-│                            │ … 13 more (pgdn)                                │
+│ Host                       │ world-20261013T100001Z.ext4                     │
+│   health ✔                 │   2026-10-13 10:00Z · 20G used · checked clean  │
+│                            │     (journal replayed)                          │
+│ Storage                    │   mode live · release v9 · took 20s             │
+│   / 21%                    │                                                 │
+│   /data/minecraft 66%      │ world-20261013T082359Z.ext4                     │
+│   /data/vintagestory 56%   │   2026-10-13 08:24Z · 20G used · checked clean  │
+│                            │ … 17 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

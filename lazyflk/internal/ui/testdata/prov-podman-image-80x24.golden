@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │   ● mellow-aurora-7882     │ image docker.io/itzg/minecraft-server:latest    │
 │   ▢ world 40GB (external)  │  Overview                                       │
-│   ⇄ 10.47.11.3: tcp/25565… │                                                 │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ $ podman ps -a --external --format json ·       │
 │   ● frosty-river-2714      │   podman images --format json                   │
 │   ▢ vsdata 40GB (external) │                                                 │
-│   ⇄ 10.47.11.3: tcp/42420… │ id        f9dfcd225ce9                          │
+│   ⇄ tcp/42420 udp/42420    │ id        f9dfcd225ce9                          │
 │                            │ size      868M                                  │
 │ Host                       │ created   2026-10-10T22:25:04Z                  │
-│   health ✔                 │ names     docker.io/itzg/minecraft-server:late… │
-│                            │ used      no container uses it                  │
-│ Storage                    │                                                 │
-│   / 21%                    │ Not one of flk's (flk.local/*). A Dockerfile's… │
-│   /data/minecraft 66%      │ the build cache, so later deploys don't downlo… │
-│   /data/vintagestory 56%   │                                                 │
-│                            │                                                 │
-│ Podman                     │                                                 │
+│   health ✔                 │ names     docker.io/itzg/minecraft-server:lates │
+│                            │           t                                     │
+│ Storage                    │ used      no container uses it                  │
+│   / 21%                    │                                                 │
+│   /data/minecraft 66%      │ Not one of flk's (flk.local/*). A Dockerfile's  │
+│   /data/vintagestory 56%   │   FROM image stays here as                      │
+│                            │ the build cache, so later deploys don't         │
+│ Podman                     │   download it again.                            │
 │   ◇ itzg/minecraft-server… │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

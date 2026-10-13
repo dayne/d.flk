@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ filesystem /data/minecraft ─  Overview          │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ df -k MOUNT_DIRS · lsblk -e7 -b --json        │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ 10.47.11.3: tcp/25565… │ used      66% · 32G free of 98G                 │
+│   ⇄ tcp/25565 udp/19132    │ used      66% · 32G free of 98G                 │
 │ ▾ vintagestory-flk  1/1 ●  │ holds     /data/minecraft/flk                   │
 │   ● frosty-river-2714      │                                                 │
 │   ▢ vsdata 40GB (external) │ devices, from the filesystem down:              │
-│   ⇄ 10.47.11.3: tcp/42420… │   /dev/mapper/ubuntu--vg-mc--data  lvm, 100G, … │
-│                            │   /dev/nvme0n1p3  part, 1.8T, LVM2_member       │
-│ Host                       │   /dev/nvme0n1  disk, 1.8T · WD_BLACK SN770 2TB │
-│   health ✔                 │                                                 │
-│                            │ 1.1T of /dev/nvme0n1p3 isn't in any logical vo… │
-│ Storage                    │   (e.g. sudo lvextend -r -L +10G /dev/mapper/u… │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │                                                 │
+│   ⇄ tcp/42420 udp/42420    │   /dev/mapper/ubuntu--vg-mc--data  lvm, 100G,   │
+│                            │     ext4                                        │
+│ Host                       │   /dev/nvme0n1p3  part, 1.8T, LVM2_member       │
+│   health ✔                 │   /dev/nvme0n1  disk, 1.8T · WD_BLACK SN770 2TB │
+│                            │                                                 │
+│ Storage                    │ 1.1T of /dev/nvme0n1p3 isn't in any logical     │
+│   / 21%                    │   volume yet: room to grow /data/minecraft      │
+│   /data/minecraft 66%      │   (e.g. sudo lvextend -r -L +10G                │
+│   /data/vintagestory 56%   │     /dev/mapper/ubuntu--vg-mc--data)            │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

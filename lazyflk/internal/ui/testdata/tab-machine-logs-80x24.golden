@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk logs -i 225d58f615e7e6   │
-│   ⇄ 10.47.11.3: tcp/25565… │   -n 200 --no-tail                              │
+│   ⇄ tcp/25565 udp/19132    │   -n 200 --no-tail                              │
 │ ▾ vintagestory-flk  1/1 ●  │                                                 │
 │   ● frosty-river-2714      │ [03:13:53] [Server thread/INFO]: ThreadedAnvil… │
 │   ▢ vsdata 40GB (external) │ [03:13:53] [Server thread/INFO]: Saved the game │
-│   ⇄ 10.47.11.3: tcp/42420… │ save-on                                         │
+│   ⇄ tcp/42420 udp/42420    │ save-on                                         │
 │                            │ [03:14:18] [Server thread/INFO]: Automatic sav… │
 │ Host                       │ [03:14:18] [RCON Listener #1/INFO]: Thread RCO… │
 │   health ✔                 │ [03:14:18] [RCON Client /172.30.0.1 #6/INFO]: … │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands │
 └──────────────────────────────────────────────────────────────────────────────┘

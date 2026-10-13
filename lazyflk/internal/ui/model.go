@@ -735,7 +735,7 @@ func (m *Model) mainScreen() string {
 }
 
 func (m *Model) topRule(w int) string {
-	title := "lazyflk ─ "
+	title, short := "lazyflk ─ ", "lazyflk ─ "
 	switch {
 	case m.hc != nil:
 		h := m.hc.Host
@@ -744,21 +744,28 @@ func (m *Model) topRule(w int) string {
 		} else {
 			title += "host NOT ready (" + plural(len(h.Problems), "problem") + ")"
 		}
+		short = title
 		switch {
 		case h.Address != "" && h.Address != h.LanIP:
 			title += " · address " + h.Address + " (LAN " + h.LanIP + ")"
+			short += " · " + h.Address
 		case h.LanIP != "":
 			title += " · LAN " + h.LanIP
+			short += " · " + h.LanIP
 		}
 		if h.BootService {
 			title += " · boot service ok"
+			short += " · boot ok"
 		} else {
 			title += " · boot service missing"
+			short += " · boot service missing"
 		}
 	case m.err != nil:
 		title += "flk error"
+		short = title
 	default:
 		title += "loading…"
+		short = title
 	}
 	var status []string
 	if j := m.runningJob(); j != nil {
@@ -777,6 +784,9 @@ func (m *Model) topRule(w int) string {
 	if len(status) > 0 {
 		right = " " + strings.Join(status, " · ") + " "
 	}
+	if ansi.StringWidth(" "+title+" ") > w-ansi.StringWidth(right) {
+		title = short // narrow terminals: the details are on the host's Health tab
+	}
 	return rule(title, w-ansi.StringWidth(right)) + right
 }
 
@@ -792,7 +802,41 @@ func (m *Model) footer() string {
 	if m.note != "" {
 		return styleWarn.Render(m.note)
 	}
-	return keyHints(m.footerKeys()...)
+	return keyHints(m.footerFit()...)
+}
+
+// footerFit is footerKeys cut to the footer's width (fitPairs).
+func (m *Model) footerFit() []string {
+	return fitPairs(m.footerKeys(), m.width-4)
+}
+
+// fitPairs cuts key hints to w cells, dropping whole hints that don't
+// fit. "? help" (which lists every key) and "esc" always stay.
+func fitPairs(pairs []string, w int) []string {
+	if ansi.StringWidth(keyHints(pairs...)) <= w {
+		return pairs
+	}
+	keep := func(k string) bool { return k == "?" || k == "esc" }
+	used := 0
+	for i := 0; i+1 < len(pairs); i += 2 {
+		if keep(pairs[i]) {
+			used += ansi.StringWidth(pairs[i]+" "+pairs[i+1]) + 2
+		}
+	}
+	var out []string
+	for i := 0; i+1 < len(pairs); i += 2 {
+		n := ansi.StringWidth(pairs[i] + " " + pairs[i+1])
+		if keep(pairs[i]) {
+			out = append(out, pairs[i], pairs[i+1])
+			continue
+		}
+		if used+n+2 > w+2 {
+			continue
+		}
+		used += n + 2
+		out = append(out, pairs[i], pairs[i+1])
+	}
+	return out
 }
 
 // footerKeys are the main view's key hints, as key/label pairs.
@@ -824,6 +868,19 @@ func (m *Model) footerKeys() []string {
 	return append(keys, "?", "help", "q", "quit", ":", "commands", "H", "guides", "←→", "fold", "pgup/dn", "scroll")
 }
 
+// onlyHostBind reports ports all bound to the host's address, which the
+// header shows.
+func (m *Model) onlyHostBind(t flk.PortTable) bool {
+	for _, ps := range [][]flk.Port{t.Active, t.Waiting, t.Blocked} {
+		for _, p := range ps {
+			if p.Bind != nil && *p.Bind != "" && *p.Bind != m.hc.Host.Address {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // treeLines renders exactly h lines of tree, scrolled to keep the cursor in view.
 func (m *Model) treeLines(w, h int) []string {
 	out := make([]string, h)
@@ -843,6 +900,9 @@ func (m *Model) treeLines(w, h int) []string {
 			break
 		}
 		s := m.treeLine(m.nodes[j])
+		if n := m.nodes[j]; n.kind == kindPorts && ansi.StringWidth(s) > w && m.onlyHostBind(m.apps[n.app].Ports) {
+			s = "  ⇄ " + strings.Join(portKeys(m.apps[n.app].Ports, false), " ") // the address is in the header
+		}
 		if j == m.cursor {
 			s = styleSelected.Render(fit(s, w))
 		}
@@ -931,6 +991,9 @@ func (m *Model) detailLines(w, h int) []string {
 			m.tabSpans = append(m.tabSpans, tabSpan{sp.tab, row, sp.x0 + off, sp.x1 + off})
 		}
 		body = m.tabBody(n, names[active], w, h-len(head)-1)
+		if names[active] != "Logs" { // the log preview fits itself to h
+			body = softWrap(body, w)
+		}
 	case m.err != nil:
 		head = []string{styleBad.Render("flk failed")}
 		body = append([]string{"$ " + flk.CommandLine("context", "--all", "--json"), ""}, wrap(m.err.Error(), w)...)
@@ -968,6 +1031,71 @@ func plural(n int, word string) string {
 func firstLine(s string) string {
 	s, _, _ = strings.Cut(strings.TrimSpace(s), "\n")
 	return s
+}
+
+// softWrap breaks lines wider than w instead of cutting them off, so
+// narrow terminals (80 columns) show everything. Continuations line up
+// under a field's value, or under the line's own indent.
+func softWrap(lines []string, w int) []string {
+	if w < 20 {
+		return lines
+	}
+	var out []string
+	for _, l := range lines {
+		if ansi.StringWidth(l) <= w {
+			out = append(out, l)
+			continue
+		}
+		indent := hangingIndent(ansi.Strip(l))
+		pad := strings.Repeat(" ", indent)
+		for width, prefix := w, ""; ; width, prefix = w-indent, pad {
+			n := breakAt(ansi.Strip(l), width)
+			out = append(out, prefix+strings.TrimRight(ansi.Truncate(l, n, ""), " "))
+			l = ansi.TruncateLeft(l, n, "")
+			for strings.HasPrefix(ansi.Strip(l), " ") {
+				l = ansi.TruncateLeft(l, 1, "")
+			}
+			if ansi.StringWidth(l) == 0 {
+				break
+			}
+			if ansi.StringWidth(l) <= w-indent {
+				out = append(out, pad+l)
+				break
+			}
+		}
+	}
+	return out
+}
+
+// breakAt is how many cells of plain go on a line of width w: up to its
+// last space that fits, else w (a path or a long word is cut, not split
+// at its hyphens).
+func breakAt(plain string, w int) int {
+	cells, space := 0, 0
+	for _, r := range plain {
+		rw := ansi.StringWidth(string(r))
+		if r == ' ' {
+			space = cells // the line ends before the space
+		}
+		if cells+rw > w {
+			break
+		}
+		cells += rw
+	}
+	if space > 0 && space > w/3 {
+		return space
+	}
+	return max(cells, 1)
+}
+
+// hangingIndent is where a wrapped line's continuations start: under a
+// field's value ("label     value"), else two past its own indent.
+func hangingIndent(plain string) int {
+	lead := len(plain) - len(strings.TrimLeft(plain, " "))
+	if lead == 0 && len(plain) > 10 && plain[9] == ' ' && plain[10] != ' ' && !strings.Contains(strings.TrimRight(plain[:9], " "), " ") {
+		return 10
+	}
+	return min(lead+2, 12)
 }
 
 // wrap breaks plain text into lines of at most w cells, keeping its newlines.
@@ -1052,7 +1180,7 @@ func (m *Model) mainZones(lw, body, attnRows int) {
 		})
 	}
 	if m.note == "" {
-		m.hintZones(m.footerKeys(), 2, m.height-2, m.width-2)
+		m.hintZones(m.footerFit(), 2, m.height-2, m.width-2)
 	}
 }
 

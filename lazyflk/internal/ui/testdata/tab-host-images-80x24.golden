@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk images --json                             │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ 10.47.11.3: tcp/25565… │ minecraft-flk                                   │
+│   ⇄ tcp/25565 udp/19132    │ minecraft-flk                                   │
 │ ▾ vintagestory-flk  1/1 ●  │   v9     352M  running · current                │
-│   ● frosty-river-2714      │               built 2026-10-13 08:31Z · cb1853… │
-│   ▢ vsdata 40GB (external) │   v8     352M  older release                    │
-│   ⇄ 10.47.11.3: tcp/42420… │               built 2026-10-12 06:41Z · 7f0a02… │
-│                            │   v7     352M  same image as v8                 │
-│ Host                       │               built 2026-10-12 06:41Z · 7f0a02… │
-│   health ✔                 │                                                 │
-│                            │ vintagestory-flk                                │
-│ Storage                    │   v3     560M  running · current                │
-│   / 21%                    │               built 2026-10-13 05:19Z · e2e7f9… │
-│   /data/minecraft 66%      │   v2     558M  older release                    │
-│   /data/vintagestory 56%   │               built 2026-10-13 04:47Z · b54f5b… │
-│                            │ … 2 more (pgdn)                                 │
+│   ● frosty-river-2714      │               built 2026-10-13 08:31Z ·         │
+│   ▢ vsdata 40GB (external) │             cb185335b4e7                        │
+│   ⇄ tcp/42420 udp/42420    │   v8     352M  older release                    │
+│                            │               built 2026-10-12 06:41Z ·         │
+│ Host                       │             7f0a0298ab17                        │
+│   health ✔                 │   v7     352M  same image as v8                 │
+│                            │               built 2026-10-12 06:41Z ·         │
+│ Storage                    │             7f0a0298ab17                        │
+│   / 21%                    │                                                 │
+│   /data/minecraft 66%      │ vintagestory-flk                                │
+│   /data/vintagestory 56%   │   v3     560M  running · current                │
+│                            │ … 7 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

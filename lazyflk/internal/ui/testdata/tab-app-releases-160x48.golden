@@ -7,14 +7,14 @@
 │ ▾ vintagestory-flk  1/1 ●              │      on mellow-aurora-7882                                                                                          │
 │   ● frosty-river-2714                  │ v8   2026-10-12 07:08Z  Dockerfile  kept                                                                            │
 │   ▢ vsdata 40GB (external)             │ v7   2026-10-12 06:58Z  Dockerfile  kept                                                                            │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ v6   2026-10-12 06:41Z  Dockerfile  image pruned                                                                    │
-│                                        │ v5   2026-10-12 06:34Z  Dockerfile  image pruned                                                                    │
-│ Host                                   │ v4   2026-10-12 05:35Z  Dockerfile  image pruned                                                                    │
-│   health ✔                             │ v3   2026-10-12 05:30Z  Dockerfile  image pruned                                                                    │
-│                                        │ v2   2026-10-12 05:20Z  Dockerfile  image pruned                                                                    │
-│ Storage                                │ v1   2026-10-12 05:01Z  Dockerfile  image pruned                                                                    │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ v6   2026-10-12 06:41Z  Dockerfile  pruned                                                                          │
+│                                        │ v5   2026-10-12 06:34Z  Dockerfile  pruned                                                                          │
+│ Host                                   │ v4   2026-10-12 05:35Z  Dockerfile  pruned                                                                          │
+│   health ✔                             │ v3   2026-10-12 05:30Z  Dockerfile  pruned                                                                          │
+│                                        │ v2   2026-10-12 05:20Z  Dockerfile  pruned                                                                          │
+│ Storage                                │ v1   2026-10-12 05:01Z  Dockerfile  pruned                                                                          │
 │   / 21%                                │                                                                                                                     │
-│   /data/minecraft 66%                  │ kept: its image is still here, so it can be rolled back to (enter, r)                                               │
+│   /data/minecraft 66%                  │ kept: can be rolled back to (enter, r) · pruned: its image is gone                                                  │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │

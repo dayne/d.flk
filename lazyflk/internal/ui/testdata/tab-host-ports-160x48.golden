@@ -6,13 +6,13 @@
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ helper    installed                                                                                                 │
 │ ▾ vintagestory-flk  1/1 ●              │ host      10.47.11.3 · ports from 1024                                                                              │
 │   ● frosty-river-2714                  │                                                                                                                     │
-│   ▢ vsdata 40GB (external)             │ 10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                             │
+│   ▢ vsdata 40GB (external)             │ tcp/25565 → 10.47.11.3:25565                                                                                        │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │   minecraft-flk / mellow-aurora-7882 172.30.0.10:25565                                                              │
-│                                        │ 10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                             │
+│                                        │ udp/19132 → 10.47.11.3:19132                                                                                        │
 │ Host                                   │   minecraft-flk / mellow-aurora-7882 172.30.0.10:19132                                                              │
-│   health ✔                             │ 10.47.11.3:tcp/42420 → 10.47.11.3:42420                                                                             │
+│   health ✔                             │ tcp/42420 → 10.47.11.3:42420                                                                                        │
 │                                        │   vintagestory-flk / frosty-river-2714 172.30.0.11:42420                                                            │
-│ Storage                                │ 10.47.11.3:udp/42420 → 10.47.11.3:42420                                                                             │
+│ Storage                                │ udp/42420 → 10.47.11.3:42420                                                                                        │
 │   / 21%                                │   vintagestory-flk / frosty-river-2714 172.30.0.11:42420                                                            │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │

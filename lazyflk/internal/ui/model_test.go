@@ -438,7 +438,7 @@ func TestReleaseLines(t *testing.T) {
 	}
 	s := ansi.Strip(strings.Join(m.releaseLines(a, rels, 60), "\n"))
 	for _, want := range []string{"rollback to v2  current", "v3", "failed\n     check port: nothing answered on :25565 within",
-		"Dockerfile  kept", "Dockerfile  image pruned", "can be rolled back to (enter, r)"} {
+		"Dockerfile  kept", "Dockerfile  pruned", "can be rolled back to (enter, r)"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("no %q in:\n%s", want, s)
 		}
@@ -478,5 +478,71 @@ func TestMenuLoadsReleases(t *testing.T) {
 	press(m, "r")
 	if s := ansi.Strip(m.Render()); !strings.Contains(s, "roll back") || !strings.Contains(s, "v8") {
 		t.Errorf("roll back form:\n%s", s)
+	}
+}
+
+// Narrow panes wrap long lines instead of cutting them off: under a
+// field's value, or past the line's own indent.
+func TestSoftWrap(t *testing.T) {
+	got := softWrap([]string{
+		field("address", "10.47.11.3 (advertised; host.toml address)"),
+		"  2026-10-13 11:14Z · 20G used · " + styleOK.Render("checked clean") + " (journal replayed)",
+		"short",
+	}, 30)
+	want := []string{
+		"address   10.47.11.3",
+		"          (advertised;",
+		"          host.toml address)",
+		"  2026-10-13 11:14Z · 20G used",
+		"    · checked clean (journal",
+		"    replayed)",
+		"short",
+	}
+	var plain []string
+	for _, l := range got {
+		plain = append(plain, ansi.Strip(l))
+		if ansi.StringWidth(l) > 30 {
+			t.Errorf("too wide: %q", ansi.Strip(l))
+		}
+	}
+	if strings.Join(plain, "\n") != strings.Join(want, "\n") {
+		t.Errorf("got\n%s\nwant\n%s", strings.Join(plain, "\n"), strings.Join(want, "\n"))
+	}
+	if !strings.Contains(strings.Join(got, ""), styleOK.Render("checked clean")) {
+		t.Error("styles are kept")
+	}
+}
+
+// Key hints drop whole entries to fit, and keep help and esc.
+func TestFitPairs(t *testing.T) {
+	pairs := []string{"↑↓", "move", "tab", "tabs", ":", "commands", "esc", "back", "?", "help"}
+	got := ansi.Strip(keyHints(fitPairs(pairs, 30)...))
+	if ansi.StringWidth(got) > 30 || !strings.Contains(got, "? help") || !strings.Contains(got, "esc back") || strings.Contains(got, "…") {
+		t.Errorf("%q", got)
+	}
+	if len(fitPairs(pairs, 200)) != len(pairs) {
+		t.Error("everything fits")
+	}
+}
+
+// At 80 columns the header keeps the essentials.
+func TestNarrowHeader(t *testing.T) {
+	m := newDemo(fixtures.FS)
+	send(m, tea.WindowSizeMsg{Width: 80, Height: 24})
+	send(m, runCmd(m.Init())...)
+	if top := ansi.Strip(strings.SplitN(m.Render(), "\n", 2)[0]); !strings.Contains(top, "host ready · 10.47.11.3 · boot ok") || strings.Contains(top, "…") {
+		t.Errorf("%q", top)
+	}
+	send(m, tea.WindowSizeMsg{Width: 160, Height: 48})
+	if top := ansi.Strip(strings.SplitN(m.Render(), "\n", 2)[0]); !strings.Contains(top, "address 10.47.11.3 (LAN 10.47.11.116) · boot service ok") {
+		t.Errorf("%q", top)
+	}
+}
+
+// Paths are cut at the width, not at their hyphens.
+func TestSoftWrapPath(t *testing.T) {
+	got := softWrap([]string{"  /home/dayne/.local/share/flk/apps/flkt-mcshadow-25-14ea/volumes/vol_1.ext4"}, 40)
+	if len(got) != 2 || ansi.Strip(got[0]) != "  /home/dayne/.local/share/flk/apps/flkt" || ansi.Strip(got[1]) != "    -mcshadow-25-14ea/volumes/vol_1.ext4" {
+		t.Errorf("%q", got)
 	}
 }

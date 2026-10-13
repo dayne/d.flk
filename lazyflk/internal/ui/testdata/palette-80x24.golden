@@ -1,4 +1,4 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk                                   │
 │ ┌ flk commands ─ from flk help --all --json ───────────────────────────────┐ │
 │ │ : ▏                                                                      │ │
@@ -20,5 +20,5 @@
 ├ ├──────────────────────────────────────────────────────────────────────────┤─┤
 │ │ type to find  ↑↓ choose  enter fill in and run  esc close                │ │
 ├─└──────────────────────────────────────────────────────────────────────────┘─┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  H guides │
 └──────────────────────────────────────────────────────────────────────────────┘

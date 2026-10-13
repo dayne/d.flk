@@ -1,4 +1,4 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │                            │ service ssh.service ─  Overview                 │
 │ Storage                    │                                                 │
 │   / 21%                    │ $ systemctl show --timestamp=utc -p ... UNIT... │
@@ -11,8 +11,8 @@
 │   ◇ eclipse-temurin:25-jr… │ since     Sat 2026-10-10 04:46:52 UTC           │
 │   ◇ ruby:3.3-alpine 69M    │ pid       9022                                  │
 │   ◇ alpine:3.20 7.7M       │                                                 │
-│   4 flk images: host Imag… │ pinned by default; edit ~/.config/lazyflk/pins… │
-│                            │                                                 │
+│   4 flk images: host Imag… │ pinned by default; edit ~/.config/lazyflk/pins  │
+│                            │   (one unit per line) to change                 │
 │ Services                   │                                                 │
 │   ● flk-net                │                                                 │
 │   ● flk-machines           │                                                 │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

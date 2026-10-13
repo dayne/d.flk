@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
-│   ⇄ 10.47.11.3: tcp/25565… │ name      mellow-aurora-7882                    │
+│   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │
 │ ▾ vintagestory-flk  1/1 ●  │ state     ● started                             │
 │   ● frosty-river-2714      │ release   v9                                    │
 │   ▢ vsdata 40GB (external) │ ip        172.30.0.10:25565                     │
-│   ⇄ 10.47.11.3: tcp/42420… │ size      4 cpus · 11264MB                      │
+│   ⇄ tcp/42420 udp/42420    │ size      4 cpus · 11264MB                      │
 │                            │ cpu       4% (100% = one host CPU; it has 4)    │
 │ Host                       │ memory    9956MB used of 11264MB                │
 │   health ✔                 │ up        8h 18m                                │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -20,5 +20,5 @@
 │ [06:30:34] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost conne… │
 │ [07:44:48] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost conne… │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ f follow  / search  n/N match  w wrap  g/G top/end  > send a line  esc back… │
+│ f follow  / search  n/N match  w wrap  g/G top/end  esc back  ? help         │
 └──────────────────────────────────────────────────────────────────────────────┘

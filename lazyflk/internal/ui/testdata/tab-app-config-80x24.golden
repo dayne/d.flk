@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  1/1 ●     │ ‹ Ports  Volumes  Releases  Secrets  Config     │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk config show --json       │
-│   ⇄ 10.47.11.3: tcp/25565… │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ checks    ready: log line "Started Geyser on U… │
-│   ● frosty-river-2714      │           port: tcp :25565 within 300s          │
-│   ▢ vsdata 40GB (external) │                                                 │
-│   ⇄ 10.47.11.3: tcp/42420… │ {                                               │
-│                            │   "file": "/home/dayne/minecraft.flk/flk.toml", │
-│ Host                       │   "parsed": {                                   │
-│   health ✔                 │     "app": "minecraft-flk",                     │
-│                            │     "kill_timeout": 120,                        │
-│ Storage                    │     "build": {                                  │
-│   / 21%                    │       "dockerfile": "Dockerfile"                │
-│   /data/minecraft 66%      │     },                                          │
-│   /data/vintagestory 56%   │     "env": {                                    │
-│                            │ … 143 more (pgdn)                               │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ checks    ready: log line "Started Geyser on    │
+│   ● frosty-river-2714      │           UDP port 19132" within 300s           │
+│   ▢ vsdata 40GB (external) │           port: tcp :25565 within 300s          │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
+│                            │ {                                               │
+│ Host                       │   "file": "/home/dayne/minecraft.flk/flk.toml", │
+│   health ✔                 │   "parsed": {                                   │
+│                            │     "app": "minecraft-flk",                     │
+│ Storage                    │     "kill_timeout": 120,                        │
+│   / 21%                    │     "build": {                                  │
+│   /data/minecraft 66%      │       "dockerfile": "Dockerfile"                │
+│   /data/vintagestory 56%   │     },                                          │
+│                            │ … 182 more (pgdn)                               │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : comma… │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  H guides │
 └──────────────────────────────────────────────────────────────────────────────┘

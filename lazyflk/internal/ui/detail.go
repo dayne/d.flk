@@ -213,7 +213,7 @@ func portLines(t flk.PortTable, label string) []string {
 		out = append(out, l+s)
 	}
 	for _, p := range t.Active {
-		add(fmt.Sprintf("%s → %s", p.Shown(), p.Address))
+		add(activePort(p))
 	}
 	for _, p := range t.Waiting {
 		add(fmt.Sprintf("%s %s (machine %s; another machine has it)", p.Shown(), styleWarn.Render("waiting"), p.Machine))
@@ -225,6 +225,14 @@ func portLines(t flk.PortTable, label string) []string {
 		add(styleDim.Render("none forwarded"))
 	}
 	return out
+}
+
+// activePort is a forwarded port; its address already names the bind.
+func activePort(p flk.Port) string {
+	if p.Address == "" {
+		return p.Shown()
+	}
+	return p.Key + " → " + p.Address
 }
 
 func field(label, value string) string {

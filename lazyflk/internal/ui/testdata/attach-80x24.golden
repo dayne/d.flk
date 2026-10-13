@@ -1,9 +1,9 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
-│   ⇄ 10.47.11.3: tcp/25565… │ name      mellow-aurora-7882                    │
+│   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │
 │ ┌ console ─ minecraft-flk / mellow-aurora-7882 ────────────────────────────┐ │
 │ │ $ flk -a minecraft-flk console 225d58f615e7e6                            │ │
 │ │                                                                          │ │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands │
 └──────────────────────────────────────────────────────────────────────────────┘

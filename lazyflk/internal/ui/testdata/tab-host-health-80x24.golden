@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk doctor --json                             │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ 10.47.11.3: tcp/25565… │ flk       0.1.0                                 │
+│   ⇄ tcp/25565 udp/19132    │ flk       0.1.0                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ state     /home/dayne/.local/share/flk          │
 │   ● frosty-river-2714      │ source    /home/dayne/flk                       │
 │   ▢ vsdata 40GB (external) │ LAN IP    10.47.11.116                          │
-│   ⇄ 10.47.11.3: tcp/42420… │ address   10.47.11.3 (advertised; host.toml ad… │
-│                            │ boot      installed                             │
-│ Host                       │ health    ✔ ready                               │
-│   health ✔                 │ data dirs /home/dayne/.local/share/flk          │
-│                            │           /data/minecraft/flk                   │
-│ Storage                    │           /data/vintagestory/flk                │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │ ✔ /dev/kvm read/write                           │
-│   /data/vintagestory 56%   │ ✔ firecracker /home/dayne/.local/share/flk/bin… │
-│                            │ … 14 more (pgdn)                                │
+│   ⇄ tcp/42420 udp/42420    │ address   10.47.11.3 (advertised; host.toml     │
+│                            │           address)                              │
+│ Host                       │ boot      installed                             │
+│   health ✔                 │ health    ✔ ready                               │
+│                            │ data dirs /home/dayne/.local/share/flk          │
+│ Storage                    │           /data/minecraft/flk                   │
+│   / 21%                    │           /data/vintagestory/flk                │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 56%   │ ✔ /dev/kvm read/write                           │
+│                            │ … 22 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

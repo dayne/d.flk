@@ -454,7 +454,7 @@ func (m *Model) releaseLines(a flk.App, rels []flk.Release, w int) []string {
 			s += styleDim.Render("  kept")
 			kept++
 		default:
-			s = styleDim.Render(s + "  image pruned")
+			s = styleDim.Render(s + "  pruned")
 		}
 		out = append(out, s)
 		if r.Failed() {
@@ -470,7 +470,7 @@ func (m *Model) releaseLines(a flk.App, rels []flk.Release, w int) []string {
 		return append(out, styleDim.Render("no releases yet: flk deploy"))
 	}
 	if kept > 0 {
-		out = append(out, "", styleDim.Render("kept: its image is still here, so it can be rolled back to (enter, r)"))
+		out = append(out, "", styleDim.Render("kept: can be rolled back to (enter, r) · pruned: its image is gone"))
 	}
 	return out
 }
@@ -578,7 +578,7 @@ func (m *Model) hostPortLines(p flk.PortsList) []string {
 		return styleDim.Render(fmt.Sprintf("  %s / %s %s:%d", x.App, name(x.App, x.Machine), x.IP, x.InternalPort))
 	}
 	for _, x := range p.Active {
-		out = append(out, x.Shown()+" → "+x.Address, owner(x))
+		out = append(out, activePort(x), owner(x))
 	}
 	for _, x := range p.Waiting {
 		out = append(out, x.Shown()+" "+styleWarn.Render("waiting: another machine has it"), owner(x))

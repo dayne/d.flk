@@ -1,9 +1,9 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk doctor --json                             │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ 10.47.11.3: tcp/25565… │ flk       0.1.0                                 │
+│   ⇄ tcp/25565 udp/19132    │ flk       0.1.0                                 │
 │ ┌ host ─ actions ──────────────────────────────────────────────────────────┐ │
 │ │ u  resume all    nothing to resume                                       │ │
 │ │ S  stop all      stop every running machine, remembering to resume them  │ │
@@ -16,9 +16,9 @@
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │ … 14 more (pgdn)                                │
+│                            │ … 22 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : comm… │
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  ←→ fold │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -518,7 +518,7 @@ func (v *logsView) render(w, h int) string {
 	if _, ok := v.sendTarget(); ok && v.canSend {
 		hints = append(hints, ">", "send a line")
 	}
-	foot := keyHints(append(hints, "esc", "back", "?", "help")...)
+	foot := keyHints(fitPairs(append(hints, "esc", "back", "?", "help"), bw)...)
 	switch {
 	case v.sending:
 		mc, _ := v.sendTarget()

@@ -1,17 +1,17 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  0/1 ○ !   │  Overview  Logs  Ports  Volumes  Releases ›     │
 │   ! mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ release v9 (of 9) · 2026-10-13 08:31Z           │
-│   ⇄ 10.47.11.3: tcp/25565… │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ! stopped, should be st… │
-│   ● frosty-river-2714      │   mellow-aurora-7882 · 4 cpus · 11264MB · v9    │
-│   ▢ vsdata 40GB (external) │   cpu 4% · 9956MB used · up 8h 18m              │
-│   ⇄ 10.47.11.3: tcp/42420… │                                                 │
-│                            │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565  │
-│ Host                       │        10.47.11.3:udp/19132 → 10.47.11.3:19132  │
-│   health ✔                 │ volume world 40GB (external)                    │
-│                            │ … 5 more (pgdn)                                 │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ! stopped, should be     │
+│   ● frosty-river-2714      │   started 172.30.0.10                           │
+│   ▢ vsdata 40GB (external) │   mellow-aurora-7882 · 4 cpus · 11264MB · v9    │
+│   ⇄ tcp/42420 udp/42420    │   cpu 4% · 9956MB used · up 8h 18m              │
+│                            │                                                 │
+│ Host                       │ ports  tcp/25565 → 10.47.11.3:25565             │
+│   health ✔                 │        udp/19132 → 10.47.11.3:19132             │
+│                            │ … 12 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ … 1 above                                                                    │
 │ › minecraft-flk: machine 225d58f615e7e6 [mellow-aurora-7882] should be       │

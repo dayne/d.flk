@@ -1,4 +1,4 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────┐ │
 │ │ s  start         already running                                         │ │
@@ -11,7 +11,7 @@
 │ │ 1  who           who's online (RCON)                                     │ │
 │ │ 2  say           broadcast a message to the players (RCON)               │ │
 │ │ 3  save          write the world to disk now and wait until it's saved   │ │
-│ │ 4  backup        the nightly backup, now: live (no restart, ~50s), chec… │ │
+│ │ 4  backup        the nightly backup, now: live (no restart, ~25s), chec… │ │
 │ │ 5  backup-check  preflight only: mounts, flk, lock, status; makes no ba… │ │
 │ │ 6  whitelist     let a player in: type their name (RCON)                 │ │
 │ │                                                                          │ │
@@ -20,5 +20,5 @@
 ├ ├──────────────────────────────────────────────────────────────────────────┤─┤
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 ├─└──────────────────────────────────────────────────────────────────────────┘─┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands │
 └──────────────────────────────────────────────────────────────────────────────┘

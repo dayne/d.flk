@@ -228,7 +228,7 @@ func TestInputIsData(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "show"), []byte("#!/bin/sh\nfor a; do printf '[%s]' \"$a\"; done\n"), 0o755)
 	a := flk.App{Name: "x", Machines: []flk.Machine{{ID: "m1"}}}
-	for _, input := range []string{"don't", `say "hi" $HOME $(touch pwned) `+"`id`"+` ; rm -rf / & | < > \\ (x) {input}`, "  two  spaces "} {
+	for _, input := range []string{"don't", `say "hi" $HOME $(touch pwned) ` + "`id`" + ` ; rm -rf / & | < > \\ (x) {input}`, "  two  spaces "} {
 		for run, want := range map[string]string{
 			"./show say {input}":         "[say][" + input + "]",
 			"./show 'say {input}!'":      "[say " + input + "!]",

@@ -43,6 +43,14 @@ attention fix rolled it back).
   (last good) release (flk 3fd7177); the form offers it first and the
   attention fix runs `releases rollback vN`. Checked end to end.
 
+## Polish (2026-10-13)
+
+- [x] `{input}` takes any one line (apostrophes too): passed to sh as $1.
+- [x] 80 columns: the detail pane wraps long lines (under a field's
+  value; paths cut, not split at hyphens); short header; footers drop
+  whole hints and keep `? help` and `esc`; tree ports drop the host's
+  own address when narrow; port lines name the address once.
+
 ## Known gaps
 
 - [x] **Reboots and log rotation** pin a banner in the followed log

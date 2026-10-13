@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / volume world                    │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ name      world                                 │
-│   ⇄ 10.47.11.3: tcp/25565… │ id        vol_28392490d0d4d4c7                  │
+│   ⇄ tcp/25565 udp/19132    │ id        vol_28392490d0d4d4c7                  │
 │ ▾ vintagestory-flk  1/1 ●  │ size      40GB                                  │
 │   ● frosty-river-2714      │ path      /data/minecraft/flk/world.ext4        │
 │   ▢ vsdata 40GB (external) │           external: outside flk's state dir     │
-│   ⇄ 10.47.11.3: tcp/42420… │ attached  mellow-aurora-7882 (225d58f615e7e6)   │
+│   ⇄ tcp/42420 udp/42420    │ attached  mellow-aurora-7882 (225d58f615e7e6)   │
 │                            │ created   2026-10-12 05:01Z                     │
 │ Host                       │                                                 │
 │   health ✔                 │                                                 │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

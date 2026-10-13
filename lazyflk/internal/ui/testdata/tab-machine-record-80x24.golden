@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk machine status           │
-│   ⇄ 10.47.11.3: tcp/25565… │   225d58f615e7e6                                │
+│   ⇄ tcp/25565 udp/19132    │   225d58f615e7e6                                │
 │ ▾ vintagestory-flk  1/1 ●  │                                                 │
 │   ● frosty-river-2714      │ {                                               │
 │   ▢ vsdata 40GB (external) │   "id": "225d58f615e7e6",                       │
-│   ⇄ 10.47.11.3: tcp/42420… │   "name": "mellow-aurora-7882",                 │
+│   ⇄ tcp/42420 udp/42420    │   "name": "mellow-aurora-7882",                 │
 │                            │   "app": "minecraft-flk",                       │
 │ Host                       │   "tap_index": 0,                               │
 │   health ✔                 │   "ip": "172.30.0.10",                          │
@@ -16,9 +16,9 @@
 │   / 21%                    │   "config": {                                   │
 │   /data/minecraft 66%      │     "cpus": 4,                                  │
 │   /data/vintagestory 56%   │     "memory_mb": 11264,                         │
-│                            │ … 66 more (pgdn)                                │
+│                            │ … 85 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands │
 └──────────────────────────────────────────────────────────────────────────────┘

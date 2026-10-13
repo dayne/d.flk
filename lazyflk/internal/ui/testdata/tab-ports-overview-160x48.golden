@@ -1,8 +1,8 @@
 ┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk / ports ─  Overview                                                                                   │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
-│   ● mellow-aurora-7882                 │ 10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                             │
-│   ▢ world 40GB (external)              │ 10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                             │
+│   ● mellow-aurora-7882                 │ tcp/25565 → 10.47.11.3:25565                                                                                        │
+│   ▢ world 40GB (external)              │ udp/19132 → 10.47.11.3:19132                                                                                        │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │                                                                                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │                                                                                                                     │
 │   ● frosty-river-2714                  │                                                                                                                     │

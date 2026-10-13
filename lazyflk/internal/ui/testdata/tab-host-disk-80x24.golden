@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ df -k --output=target,size,used,avail,pcent   │
 │   ▢ world 40GB (external)  │   /home/dayne/.local/share/flk                  │
-│   ⇄ 10.47.11.3: tcp/25565… │   /data/minecraft/flk /data/vintagestory/flk    │
+│   ⇄ tcp/25565 udp/19132    │   /data/minecraft/flk /data/vintagestory/flk    │
 │ ▾ vintagestory-flk  1/1 ●  │                                                 │
 │   ● frosty-river-2714      │  21% ██░░░░░░░░ /                               │
 │   ▢ vsdata 40GB (external) │      74G free of 98G                            │
-│   ⇄ 10.47.11.3: tcp/42420… │      holds /home/dayne/.local/share/flk         │
+│   ⇄ tcp/42420 udp/42420    │      holds /home/dayne/.local/share/flk         │
 │                            │                                                 │
 │ Host                       │  66% ██████░░░░ /data/minecraft                 │
 │   health ✔                 │      32G free of 98G                            │
@@ -16,9 +16,9 @@
 │   / 21%                    │  56% █████░░░░░ /data/vintagestory              │
 │   /data/minecraft 66%      │      62G free of 147G                           │
 │   /data/vintagestory 56%   │      holds /data/vintagestory/flk               │
-│                            │ … 15 more (pgdn)                                │
+│                            │ … 22 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands         │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -92,7 +92,7 @@ func sortApps(apps []flk.App, steps []string) []flk.App {
 // portKeys is an app's ports for its tree line, grouped by the address
 // they're bound to: "tcp/25565 udp/19132", or "10.47.11.3: tcp/25565
 // udp/19132". Waiting ones end in ?, blocked ones in !.
-func portKeys(t flk.PortTable) []string {
+func portKeys(t flk.PortTable, binds bool) []string {
 	var order []string
 	byBind := map[string][]string{}
 	add := func(p flk.Port, mark string) {
@@ -117,7 +117,7 @@ func portKeys(t flk.PortTable) []string {
 	var out []string
 	for _, b := range order {
 		keys := byBind[b]
-		if b != "" {
+		if b != "" && binds {
 			keys[0] = b + ": " + keys[0]
 		}
 		out = append(out, keys...)
@@ -152,7 +152,7 @@ func buildTree(hc *flk.HostContext, apps []flk.App, collapsed map[string]bool, e
 		for j := range a.Volumes {
 			nodes = append(nodes, node{kind: kindVolume, app: i, volume: j})
 		}
-		if len(portKeys(a.Ports)) > 0 {
+		if len(portKeys(a.Ports, true)) > 0 {
 			nodes = append(nodes, node{kind: kindPorts, app: i})
 		}
 	}
@@ -203,7 +203,7 @@ func (m *Model) treeLine(n node) string {
 		}
 		return s
 	case kindPorts:
-		return "  ⇄ " + strings.Join(portKeys(a.Ports), " ")
+		return "  ⇄ " + strings.Join(portKeys(a.Ports, true), " ")
 	}
 	return ""
 }

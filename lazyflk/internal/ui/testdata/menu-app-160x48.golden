@@ -7,8 +7,8 @@
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
 │   ● frosty-river-2714                  │   cpu 4% · 9956MB used · up 8h 18m                                                                                  │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                      │
-│                                        │        10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                      │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  tcp/25565 → 10.47.11.3:25565                                                                                 │
+│                                        │        udp/19132 → 10.47.11.3:19132                                                                                 │
 │ Host                                ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────────────┐                                     │
 │   health ✔                          │ d  deploy         build the image and roll machines to a new release             │                                     │
 │                                     │ r  roll back      back to an older release's image and config, rolled out like … │                                     │
@@ -25,7 +25,7 @@
 │   ◇ alpine:3.20 7.7M                │ 1  who            who's online (RCON)                                            │                                     │
 │   4 flk images: host Images tab     │ 2  say            broadcast a message to the players (RCON)                      │                                     │
 │                                     │ 3  save           write the world to disk now and wait until it's saved          │                                     │
-│ Services                            │ 4  backup         the nightly backup, now: live (no restart, ~50s), checked, ne… │                                     │
+│ Services                            │ 4  backup         the nightly backup, now: live (no restart, ~25s), checked, ne… │                                     │
 │   ● flk-net                         │ 5  backup-check   preflight only: mounts, flk, lock, status; makes no backup     │                                     │
 │   ● flk-machines                    │ 6  whitelist      let a player in: type their name (RCON)                        │                                     │
 │   ● ssh                             │                                                                                  │                                     │
