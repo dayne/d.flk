@@ -222,7 +222,7 @@ test_completion_bash() {
   bash -n "$f" || fail "completion script has a syntax error"
   local got
   got=$(PATH="$FLK_SRC/bin:$PATH" bash -c '. "$1"; COMP_WORDS=(flk machine st); COMP_CWORD=2; _flk; echo "${COMPREPLY[*]}"' _ "$f")
-  assert_eq "start stop status" "$got" "flk machine st<TAB>"
+  assert_eq "start stop stats status" "$got" "flk machine st<TAB>"
   local out
   out=$("$FLK_BIN" completion fish 2>&1) && fail "accepted fish"
   assert_contains "$out" "only bash is supported"
@@ -286,4 +286,52 @@ test_config_path_recorded_and_used() {
   out=$(cd "$elsewhere" && "$FLK_BIN" -a "$APP" config show 2>&1) && { mv "$APP_DIR/flk.toml.moved" "$APP_DIR/flk.toml"; fail "used a config that's gone"; }
   mv "$APP_DIR/flk.toml.moved" "$APP_DIR/flk.toml"
   assert_contains "$out" "which is gone; run flk deploy in its new directory"
+}
+
+# G6: the JSON documents lazyflk and agents parse carry a schema number.
+test_json_schema_version() {
+  assert_eq 1 "$(flk context --json | json_get schema)" "context"
+  assert_eq 1 "$(flk context --all --json | json_get schema)" "context --all"
+  assert_eq 1 "$(flk doctor --json | json_get schema)" "doctor"
+  assert_eq 1 "$(flk help --all --json | json_get schema)" "help --all"
+  assert_contains "$(flk help --all)" '"schema": 1' "the rule is documented"
+}
+
+# G5: --no-host is the same app data, without running the host checks
+# (no sudo, no systemctl).
+test_context_no_host_is_cheap() {
+  local bin="$WORK/fakebin-$RUN_ID" b
+  mkdir -p "$bin"
+  for b in sudo systemctl podman docker; do
+    printf '#!/bin/sh\necho "%s $*" >>"%s/calls"\nexit 1\n' "$b" "$bin" >"$bin/$b"; chmod +x "$bin/$b"
+  done
+  local fast full
+  fast=$(PATH="$bin:$PATH" flk context --all --json --no-host)
+  [[ ! -s $bin/calls ]] || fail "--no-host ran: $(cat "$bin/calls")"
+  assert_eq '{"lan_ip":'"$(json_get host.lan_ip <<<"$fast" | ruby -rjson -e 'print JSON.generate($stdin.read.strip)')"'}' \
+    "$(json_get host <<<"$fast")" "host is just lan_ip"
+  full=$(flk context --all --json)
+  assert_eq "$(json_get apps <<<"$full")" "$(json_get apps <<<"$fast")" "same apps"
+  assert_contains "$(PATH="$bin:$PATH" flk context --no-host)" "$APP" "one app, text"
+}
+
+# G9: doctor --json reports flk's systemd units, installed or not.
+test_doctor_json_services() {
+  local d; d=$(flk doctor --json)
+  assert_eq flk-net.service "$(json_get services.0.unit <<<"$d")" "first unit"
+  assert_eq flk-machines.service "$(json_get services.1.unit <<<"$d")" "second unit"
+  [[ $(json_get services.0.installed <<<"$d") =~ ^(true|false)$ ]] || fail "installed isn't a boolean"
+}
+
+# G4, G8, G10: the read-only host views parse and have their keys.
+test_stats_disk_images_json() {
+  flk machine stats --all --json | ruby -rjson -e 'a = JSON.parse($stdin.read); abort "not an array" unless a.is_a?(Array)
+    a.each { |s| %w[app id state cpu_percent rss_mb memory_mb uptime_s pid].each { |k| abort "no #{k}" unless s.key?(k) } }' ||
+    fail "machine stats --all --json"
+  local out; out=$(flk machine stats --all 1 2>&1) && fail "--all took an ID"
+  flk disk --json | ruby -rjson -e 'd = JSON.parse($stdin.read)
+    abort "no state_dir bytes" unless d["state_dir"]["bytes"].is_a?(Integer)
+    %w[images rootfs volumes logs external_volumes].each { |k| abort "no totals.#{k}" unless d["totals"][k]["apparent"] }
+    abort "no app #{ARGV[0]}" unless d["apps"].any? { _1["app"] == ARGV[0] }' "$APP" || fail "disk --json"
+  flk images --json | ruby -rjson -e 'abort "not an array" unless JSON.parse($stdin.read).is_a?(Array)' || fail "images --json"
 }

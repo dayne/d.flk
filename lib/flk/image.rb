@@ -117,6 +117,25 @@ module Flk
 
     # App names with flk.local tags but no app directory: leftovers from
     # before apps destroy removed tags.
+    # Every image under flk.local/ ([{ repo, tag, id, size_bytes,
+    # created_at }]), one entry per tag; [] without an engine.
+    def list
+      out, st = Open3.capture2e(engine, "images", "--format", "{{.Repository}} {{.Tag}} {{.ID}}")
+      return [] unless st.success?
+      rows = out.lines.map(&:split).select { _1.size == 3 && _1[0].start_with?("flk.local/") }.uniq
+      short = ->(id) { id.delete_prefix("sha256:")[0, 12] }
+      ids = rows.map { short[_1[2]] }.uniq
+      info = ids.empty? ? [] : JSON.parse(Util.run!(engine, "image", "inspect", *ids))
+      by_id = info.to_h { [short[_1["Id"]], _1] }
+      rows.map do |repo, tag, id|
+        i = by_id[short[id]] || {}
+        { "repo" => repo, "tag" => tag, "id" => short[id], "size_bytes" => i["Size"],
+          "created_at" => (Time.parse(i["Created"].to_s).utc.iso8601 rescue nil) }
+      end
+    rescue Error, SystemCallError, JSON::ParserError
+      []
+    end
+
     def orphan_repos
       out, st = Open3.capture2e(engine, "images", "--format", "{{.Repository}}")
       return [] unless st.success?

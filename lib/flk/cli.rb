@@ -181,6 +181,7 @@ module Flk
           .gsub("{{JSON_COMMANDS}}", Commands.json_summary)
           .gsub("{{EXIT_CODES}}", Commands::EXIT_CODES.map { |k, v| "- `#{k}`: #{v}" }.join("\n"))
           .gsub("{{MAX_KILL_TIMEOUT}}", AppConfig::MAX_KILL_TIMEOUT.to_s)
+          .gsub("{{SCHEMA}}", JSON_SCHEMA.to_s)
     end
 
     def cmd_completion(args, _o)
@@ -204,7 +205,10 @@ module Flk
     def cmd_doctor(_args, o)
       results = doctor_checks
       ok = results.none? { _1["status"] == "fail" }
-      return puts(JSON.pretty_generate("ok" => ok, "checks" => results)) if o[:json]
+      if o[:json]
+        return puts(JSON.pretty_generate("schema" => JSON_SCHEMA, "ok" => ok, "checks" => results,
+                                         "services" => services_status))
+      end
       icons = { "pass" => Util.green("✔"), "fail" => Util.red("✘"), "warn" => Util.yellow("!") }
       results.each { |c| puts "#{icons[c['status']]} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
       puts(ok ? "\nReady to fly, locally." : "\nFix the ✘ items above.")
@@ -245,6 +249,7 @@ module Flk
       boot_service_check(record)
       exit_hook_check(record)
       backup_check(record)
+      services_check(record)
       results
     end
 
@@ -306,6 +311,34 @@ module Flk
       end
     end
 
+    FLK_UNITS = %w[flk-net.service flk-machines.service].freeze
+
+    # flk's systemd units as systemd sees them (no root needed). Units that
+    # aren't installed have installed: false and nothing else to say.
+    def services_status
+      @services_status ||= FLK_UNITS.map do |u|
+        out, st = Open3.capture2("systemctl", "show", u, "--timestamp=unix",
+                                 "-p", "LoadState,UnitFileState,ActiveState,SubState,Result,StateChangeTimestamp",
+                                 err: File::NULL)
+        h = st.success? ? out.lines.to_h { _1.chomp.split("=", 2) } : {}
+        since = h["StateChangeTimestamp"].to_s[/\A@(\d+)/, 1]
+        { "unit" => u, "installed" => h["LoadState"] == "loaded", "enabled" => h["UnitFileState"] == "enabled",
+          "active" => h["ActiveState"], "sub" => h["SubState"], "result" => h["Result"],
+          "since" => since && Time.at(since.to_i).utc.iso8601 }
+      end
+    rescue SystemCallError
+      @services_status = []
+    end
+
+    # A failed unit is worth a look; one that isn't installed is covered by
+    # boot_service_check (and setup-host.sh).
+    def services_check(record)
+      services_status.select { _1["installed"] && _1["active"] == "failed" }.each do |s|
+        record["#{s['unit']} failed (#{s['result']}) #{Util.ago(s['since']) if s['since']}".strip, "warn",
+               "journalctl -u #{s['unit']} -b, then sudo systemctl restart #{s['unit']}"]
+      end
+    end
+
     # Only when some app has volumes: where `flk volumes backup` copies to.
     def backup_check(record)
       dir = Host.settings["backup_dir"]
@@ -358,14 +391,14 @@ module Flk
 
     def cmd_context(_args, o)
       reap_exited
-      c = o[:all] ? host_context : context
+      c = o[:all] ? host_context(no_host: o[:no_host]) : context(no_host: o[:no_host])
       return puts(JSON.pretty_generate(c)) if o[:json]
       puts(o[:all] ? host_context_text(c) : context_text(c))
     end
 
     # Every app at once: what's running where, what's reachable, what's wrong.
-    def host_context
-      host = doctor_checks
+    def host_context(no_host: false)
+      host = no_host ? [] : doctor_checks
       steps = host.reject { _1["status"] == "pass" }
                   .map { "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
       apps = App.all.map do |a|
@@ -375,19 +408,30 @@ module Flk
         steps.concat(app_steps.reject { _1.start_with?("all good") }.map { "#{a.name}: #{_1}" })
         h
       end
-      { "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
+      { "schema" => JSON_SCHEMA,
+        "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
         "mount_dirs" => mount_dirs,
-        "host" => { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
-                    "lan_ip" => Net.host_lan_ip, "boot_service" => host.any? { _1["label"].start_with?("boot service (") } },
+        "host" => if no_host
+                    { "lan_ip" => Net.host_lan_ip }
+                  else
+                    { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
+                      "lan_ip" => Net.host_lan_ip, "boot_service" => host.any? { _1["label"].start_with?("boot service (") },
+                      "services" => services_status }
+                  end,
         "apps" => apps, "next_steps" => steps }
     end
 
     def host_context_text(c)
       h = c["host"]
+      health = if h.key?("ok")
+                 "#{h['ok'] ? 'ready' : 'NOT ready'}, LAN IP #{h['lan_ip'] || '?'}, " \
+                   "boot service #{h['boot_service'] ? 'installed' : 'missing'}"
+               else
+                 "not checked (--no-host), LAN IP #{h['lan_ip'] || '?'}"
+               end
       out = ["# flk host overview", "",
              "flk #{c['flk']['version']}  state: #{c['flk']['state_dir']}  source: #{c['flk']['source']}",
-             "host: #{h['ok'] ? 'ready' : 'NOT ready'}, LAN IP #{h['lan_ip'] || '?'}, " \
-             "boot service #{h['boot_service'] ? 'installed' : 'missing'}", ""]
+             "host: #{health}", ""]
       return (out << "No apps. Start with: flk help first-app").join("\n") if c["apps"].empty?
       c["apps"].each do |a|
         ms = Array(a["machines"])
@@ -412,14 +456,19 @@ module Flk
 
     # Everything an agent (or a person) needs to pick the next command,
     # gathered without failing: problems become next_steps.
-    def context
-      host = doctor_checks
-      c = { "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE),
+    def context(no_host: false)
+      host = no_host ? [] : doctor_checks
+      c = { "schema" => JSON_SCHEMA,
+            "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE),
                        "reference" => "flk help --all" },
-            "host" => { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" } },
+            "host" => if no_host
+                        { "lan_ip" => Net.host_lan_ip }
+                      else
+                        { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" } }
+                      end,
             "cwd" => Dir.pwd, "config" => nil, "app" => nil, "other_apps" => [], "next_steps" => [] }
       steps = c["next_steps"]
-      c["host"]["problems"].each { steps << "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
+      Array(c["host"]["problems"]).each { steps << "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
 
       cfg = begin
         AppConfig.find
@@ -508,8 +557,8 @@ module Flk
     def context_text(c)
       out = ["# flk context", "",
              "flk #{c['flk']['version']}  state: #{c['flk']['state_dir']}  full reference: flk help --all", "",
-             "## Host", c["host"]["ok"] ? "ready" : "NOT ready"]
-      c["host"]["problems"].each { out << "- #{_1['status']}: #{_1['label']} -> #{_1['hint']}" }
+             "## Host", c["host"].key?("ok") ? (c["host"]["ok"] ? "ready" : "NOT ready") : "not checked (--no-host)"]
+      Array(c["host"]["problems"]).each { out << "- #{_1['status']}: #{_1['label']} -> #{_1['hint']}" }
       out << "" << "## App" << "cwd: #{c['cwd']}"
       if (cf = c["config"])
         out << "config: #{cf['file'] || '(unreadable)'}#{" -- ERROR: #{cf['error']}" if cf['error']}"
@@ -781,7 +830,7 @@ module Flk
     # A machine as list/status/context JSON show it.
     def machine_json(m)
       { "id" => m.id, "name" => m.name, "state" => m.state, "desired_state" => m.desired_state,
-        "restart" => m.restart_policy, "restarts" => m.h["restarts"],
+        "pid" => m.running? ? m.pid : nil, "restart" => m.restart_policy, "restarts" => m.h["restarts"],
         "release" => m.release, "ip" => m.ip,
         "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
@@ -862,6 +911,30 @@ module Flk
       note["restart policy #{policy['policy']}: exit status #{status || 'none'}, restart #{count + 1} of #{policy['retries']}"]
       m.h["restarts"] = { "count" => count + 1, "last_at" => Util.now }
       boot(m, "Machine #{m.id} [#{m.name}] restarted by its restart policy", revive: true)
+    end
+
+    def machine_stats(args, o)
+      reap_exited
+      ms = if o[:all]
+             raise Error, "--all takes no IDs (it's every machine)" if args.any?
+             App.all.flat_map(&:machines)
+           else
+             args.empty? ? app.machines : args.map { app.machine!(_1) }
+           end
+      stats = VM.stats(ms)
+      return puts(JSON.pretty_generate(stats)) if o[:json]
+      return puts("No machines") if stats.empty?
+      Util.table(%w[APP ID NAME STATE CPU RSS MEMORY UPTIME], stats.map do |s|
+        [s["app"], s["id"], s["name"], s["state"], s["cpu_percent"] ? "#{s['cpu_percent']}%" : "-",
+         s["rss_mb"] ? "#{s['rss_mb']}MB" : "-", "#{s['memory_mb']}MB", s["uptime_s"] ? duration(s["uptime_s"]) : "-"]
+      end)
+    end
+
+    def duration(s)
+      return "#{s}s" if s < 60
+      return "#{s / 60}m" if s < 3600
+      return "#{s / 3600}h#{(s % 3600) / 60}m" if s < 86_400
+      "#{s / 86_400}d#{(s % 86_400) / 3600}h"
     end
 
     def machine_status(args, _o) = print_json_each(args) { |m| m.h.merge("state" => m.state) }
@@ -1193,6 +1266,87 @@ module Flk
         VM.stop(m)
         boot(m, "Machine #{m.id} [#{m.name}] restarted with new secrets")
       end
+    end
+
+    # ---------- host: disk, images ----------
+
+    # Allocated (sparse-aware) and apparent bytes of the files given.
+    def du(paths)
+      paths.each_with_object({ "bytes" => 0, "apparent" => 0 }) do |p, h|
+        s = File.stat(p)
+        next unless s.file?
+        h["bytes"] += s.blocks * 512
+        h["apparent"] += s.size
+      rescue SystemCallError
+        nil
+      end
+    end
+
+    def du_tree(dir) = du(Dir.glob(File.join(dir, "**", "*"), File::FNM_DOTMATCH))
+
+    def add_du(a, b) = { "bytes" => a["bytes"] + b["bytes"], "apparent" => a["apparent"] + b["apparent"] }
+
+    DISK_KINDS = %w[images rootfs volumes logs external_volumes].freeze
+
+    def cmd_disk(_args, o)
+      zero = { "bytes" => 0, "apparent" => 0 }
+      apps = App.all.map do |a|
+        md = File.join(a.dir, "machines", "*")
+        vols = a.volumes.map { _1["path"] }
+        internal, external = vols.partition { _1.start_with?("#{ROOT}/") }
+        h = { "app" => a.name,
+              "images" => du(Dir[File.join(a.dir, "images", "*.ext4")]),
+              "rootfs" => du(Dir[File.join(md, "{rootfs,config}.ext4")]),
+              "volumes" => du(internal),
+              "logs" => du(Dir[File.join(md, "{console.log,console.log.1,firecracker.log}")]),
+              "external_volumes" => du(external) }
+        h["total"] = DISK_KINDS[0..3].map { h[_1] }.reduce(zero) { add_du(_1, _2) } # in the state dir
+        h
+      end
+      totals = DISK_KINDS.to_h { |k| [k, apps.map { _1[k] }.reduce(zero) { add_du(_1, _2) }] }
+      backups = begin
+        dir = Host.settings["backup_dir"]
+        if dir && File.directory?(dir)
+          per = App.all.to_h { |a| [a.name, du_tree(File.join(dir, a.name))] }
+          { "dir" => dir, "apps" => per }.merge(per.values.reduce(zero) { add_du(_1, _2) })
+        end
+      rescue Error
+        nil
+      end
+      doc = { "state_dir" => { "path" => ROOT }.merge(du_tree(ROOT)), "apps" => apps,
+              "totals" => totals, "backups" => backups }
+      return puts(JSON.pretty_generate(doc)) if o[:json]
+      gb = ->(h) { Backup.gb(h["bytes"]) }
+      Util.table(%w[APP IMAGES ROOTFS VOLUMES LOGS TOTAL EXTERNAL_VOLUMES],
+                 apps.map { |a| [a["app"], *%w[images rootfs volumes logs total external_volumes].map { gb[a[_1]] }] })
+      puts "\nState dir #{ROOT}: #{gb[doc['state_dir']]}"
+      puts "Backups in #{backups['dir']}: #{gb[backups]}" if backups
+      puts "Container images: flk images"
+    end
+
+    def cmd_images(_args, o)
+      rows = Image.list.map do |i|
+        name = i["repo"].delete_prefix("flk.local/")
+        a = App::NAME_RE.match?(name) ? App.new(name) : nil
+        live = a&.exists?
+        rel = i["tag"][/\Av(\d+)\z/, 1]&.to_i
+        ms = live ? a.machines : []
+        i.merge("app" => name, "release" => rel, "orphan" => !live,
+                "current" => live && rel && a.current_release&.dig("version") == rel || false,
+                "in_use" => !rel.nil? && ms.any? { _1.release == rel },
+                "running" => !rel.nil? && ms.any? { _1.release == rel && _1.running? })
+      end
+      return puts(JSON.pretty_generate(rows)) if o[:json]
+      return puts("No flk images") if rows.empty?
+      Util.table(%w[REPO TAG SIZE CREATED STATUS], rows.map do |r|
+        status = if r["orphan"] then "orphan (flk apps prune)"
+                 elsif r["running"] then "running"
+                 elsif r["in_use"] then "in use (stopped)"
+                 elsif r["current"] then "current"
+                 else "kept (rollback)"
+                 end
+        [r["repo"], r["tag"], r["size_bytes"] ? Backup.gb(r["size_bytes"]) : "?", r["created_at"] ? Util.ago(r["created_at"]) : "?", status]
+      end)
     end
 
     def volumes_list(_args, o)

@@ -37,6 +37,17 @@ test_host_port_follows_running_machine() {
   assert_eq "$m1" "$(mcping "$ip" "$HOST_PORT" -q flk.machine_id)" "owner after machine 1 restarts"
 }
 
+# G4: a running machine has a pid, and stats report its CPU and memory.
+test_machine_pid_and_stats() {
+  local pid; pid=$(flk machine list --json | json_get 0.pid)
+  [[ $pid =~ ^[0-9]+$ ]] && [[ -d /proc/$pid ]] || fail "machine list --json pid: $pid"
+  local s; s=$(flk machine stats --json "$(machine_id 1)" | json_get 0)
+  assert_eq "$pid" "$(json_get pid <<<"$s")" "stats pid"
+  [[ $(json_get rss_mb <<<"$s") -gt 0 ]] || fail "rss_mb: $s"
+  [[ $(json_get uptime_s <<<"$s") =~ ^[0-9]+$ ]] || fail "uptime_s: $s"
+  ruby -e 'exit Float(ARGV[0]) >= 0 ? 0 : 1' "$(json_get cpu_percent <<<"$s")" || fail "cpu_percent: $s"
+}
+
 test_each_machine_has_its_own_volume() {
   local vols; vols=$(flk volumes list)
   assert_contains "$vols" "$(machine_id 1)" "volume for machine 1"

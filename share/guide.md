@@ -65,6 +65,11 @@ and secrets.
   reachable from the host (`curl http://172.30.0.10:8080/`).
 - **Machine-readable output:** {{JSON_COMMANDS}}. Commands whose output is
   always JSON also accept `--json`; with several IDs they print one array.
+  `context`, `doctor` and `help --all` JSON carry `"schema": {{SCHEMA}}`:
+  new fields can appear without notice (ignore what you don't know), while
+  renaming, removing or changing the type of a field bumps the number.
+  For polling, `flk context --all --json --no-host` skips the host checks
+  (run `flk doctor --json` less often).
 - **Arguments are checked strictly.** An unknown option, a missing argument or
   an extra argument is an error that names the problem and points at
   `flk help COMMAND`. Nothing is silently ignored.

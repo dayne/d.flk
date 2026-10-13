@@ -55,7 +55,7 @@ lazyflk only uses flk's CLI, so these are flk changes. M1–M3 are done
 is additive: lazyflk ignores unknown fields and treats missing ones as
 "not supported by this flk", so nothing existing may change shape.
 
-- [ ] **G5: context always runs doctor (cheap polling).** lazyflk polls
+- [x] **G5: context always runs doctor (cheap polling).** lazyflk polls
   `flk context --all --json` every 5s, and each call runs all 15 doctor
   checks (podman, `sudo -n -l`, systemctl...). Add `--no-host` to
   `context`: same JSON, but `host` is just `{ "lan_ip": ... }` and
@@ -63,24 +63,35 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   `doctor --json` separately every 30s (it already does for the Health
   tab) and merges. Test: `--no-host` output has the same `apps` as
   without it, and runs no `sudo`/`systemctl`.
-- [ ] **G6: JSON has no schema version.** Add top-level `"schema": 1` to
+  Done: `context [--all] --json --no-host`; `host` is `{ "lan_ip" }`, no
+  sudo/systemctl/podman calls (tested), 0.09s vs 0.44s here.
+- [x] **G6: JSON has no schema version.** Add top-level `"schema": 1` to
   `context --json`, `context --all --json`, `help --all --json` and
   `doctor --json`. Rule (put it in `share/guide.md`): adding fields keeps
   the number; renaming, removing or changing a field's type bumps it.
   lazyflk will show "flk is newer than this lazyflk" on a higher number.
-- [ ] **G4: no per-machine CPU/memory.** For the machine Overview. Add
+  Done: `"schema": 1` in all four; the rule is in the guide (`help --all`).
+- [x] **G4: no per-machine CPU/memory.** For the machine Overview. Add
   `pid` (firecracker's, null when stopped) to machine JSON, and
   `flk machine stats [ID...] --json` → array of `{ "id", "cpu_percent",
   "rss_mb", "memory_mb" (configured), "uptime_s" }` from /proc of the
   firecracker process (cpu over a ~0.5s sample, or since the last call).
   Without an app (`flk machine stats --all --json`) for every machine, so
   lazyflk makes one call per refresh.
-- [ ] **G8: no disk breakdown.** When a disk fills, show what flk uses.
+  Done: `pid` in machine JSON; `flk machine stats [ID...] [--all] [--json]`
+  → `{ app, id, name, state, pid, cpus, memory_mb, cpu_percent, rss_mb,
+  uptime_s }` (nulls when stopped); one 0.5s sample for all machines.
+- [x] **G8: no disk breakdown.** When a disk fills, show what flk uses.
   `flk disk --json` → `{ "state_dir", "apps": [ { "app", "images" (release
   rootfs), "rootfs" (machine copies), "volumes", "logs" } ], "backups" }`,
   each `{ "bytes" (allocated, sparse-aware), "apparent" }`, plus totals.
   lazyflk shows it in the host Disk tab next to `df`.
-- [ ] **G9: no status of flk's systemd units (host Services tab).** doctor
+  Done: `flk disk --json` → `{ state_dir: { path, bytes, apparent }, apps:
+  [ { app, images, rootfs, volumes, logs, external_volumes, total } ],
+  totals: { images, rootfs, volumes, logs, external_volumes }, backups:
+  { dir, bytes, apparent, apps: { APP: {...} } } | null }`; each size is
+  `{ bytes, apparent }`; `total` is what the app takes in the state dir.
+- [x] **G9: no status of flk's systemd units (host Services tab).** doctor
   says whether the boot service is installed, not whether `flk-net` and
   `flk-machines` are running or failed. Add to `doctor --json` (or a
   `"services"` key in `context --all --json`): `[ { "unit":
@@ -88,11 +99,16 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   "failed", ...), "since" } ]` from `systemctl show` (no root needed).
   A failed unit should also be a doctor warn with `journalctl -u UNIT`
   as the hint.
-- [ ] **G10: no list of flk's images (host Images tab).** `apps prune`
+  Done: `doctor --json` `services` (and `context --all --json`
+  `host.services`): `{ unit, installed, enabled, active, sub, result, since }`;
+  a failed unit is a warn with the journalctl hint.
+- [x] **G10: no list of flk's images (host Images tab).** `apps prune`
   knows about orphaned images, but nothing lists them. `flk images
   --json` → `[ { "repo", "tag", "app", "release", "in_use" (a machine runs
   it), "orphan" (app destroyed), "size_bytes", "created_at" } ]` from
   podman/docker. Stays read-only; pruning is `apps prune`.
+  Done: `flk images [--json]` → `{ repo, tag, id, size_bytes, created_at,
+  app, release, orphan, current, in_use, running }`, one per tag.
 - [ ] **G7: no events.** Later, after the above: `flk events --json`, one
   line per state change (fed by the tmux exit hook and lifecycle
   commands), so lazyflk can stop polling.

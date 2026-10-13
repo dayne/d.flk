@@ -8,10 +8,14 @@ require "tmpdir"
 require "socket"
 require "digest"
 require "set"
+require "etc"
 require "rbconfig"
 
 module Flk
   VERSION = "0.1.0"
+  # The "schema" of flk's JSON documents (context, doctor, help --all):
+  # adding fields keeps it; renaming, removing or retyping one bumps it.
+  JSON_SCHEMA = 1
 
   class Error < StandardError; end
 

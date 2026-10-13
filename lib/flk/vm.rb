@@ -269,6 +269,46 @@ module Flk
     def pause(m) = api(m.path("fc.sock"), "PATCH", "/vm", { "state" => "Paused" })
     def resume(m) = api(m.path("fc.sock"), "PATCH", "/vm", { "state" => "Resumed" })
 
+    # CPU and memory of running machines, from /proc of each firecracker
+    # process (the VM: its RSS is guest memory actually touched). CPU is
+    # one sample over `sample` seconds for all machines at once.
+    def stats(machines, sample: 0.5)
+      hz = Etc.sysconf(Etc::SC_CLK_TCK).to_f
+      live = machines.select(&:running?).to_h { [_1.id, _1.pid] }
+      t0 = live.transform_values { proc_ticks(_1) }
+      sleep sample if live.any?
+      t1 = live.transform_values { proc_ticks(_1) }
+      up = File.read("/proc/uptime").to_f
+      machines.map do |m|
+        h = { "app" => m.app.name, "id" => m.id, "name" => m.name, "state" => m.state, "pid" => live[m.id],
+              "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"],
+              "cpu_percent" => nil, "rss_mb" => nil, "uptime_s" => nil }
+        a = t0[m.id]
+        b = t1[m.id]
+        if a && b
+          h["cpu_percent"] = ((b[0] - a[0]) / hz / sample * 100).round(1)
+          h["rss_mb"] = proc_rss_mb(live[m.id])
+          h["uptime_s"] = (up - b[1] / hz).round
+        end
+        h
+      end
+    end
+
+    # [utime + stime, starttime] in clock ticks; nil if the process is gone.
+    def proc_ticks(pid)
+      f = File.read("/proc/#{pid}/stat").split(") ", 2)[1].split # field 3 onwards
+      [f[11].to_i + f[12].to_i, f[19].to_i]
+    rescue SystemCallError, NoMethodError
+      nil
+    end
+
+    def proc_rss_mb(pid)
+      kb = File.read("/proc/#{pid}/status")[/^VmRSS:\s+(\d+)/, 1] or return nil
+      (kb.to_i / 1024.0).round
+    rescue SystemCallError
+      nil
+    end
+
     def kill(pid, sig)
       Process.kill(sig, pid) if pid
     rescue SystemCallError

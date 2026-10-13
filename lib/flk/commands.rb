@@ -38,7 +38,9 @@ module Flk
     }.freeze
 
     LIST = [
-      { name: "context", group: "Start here", opts: [["--all", "Every app on this host, not just the current one"], ["--json", "Print JSON"]], json: true,
+      { name: "context", group: "Start here",
+        opts: [["--all", "Every app on this host, not just the current one"], ["--json", "Print JSON"],
+               ["--no-host", "Skip the host checks (flk doctor): cheap enough to poll; host is just lan_ip"]], json: true,
         summary: "What flk sees right now: host health, the current app, machines, ports, next steps",
         notes: ["Run this first. It resolves the app the same way other commands do (-a APP, or flk.toml / fly.toml in the current directory) and works even when there is none.",
                 "Also tidies machines that exited on their own, like status does."] },
@@ -57,7 +59,8 @@ module Flk
         notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo #{SETUP_HOST}"] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
-        notes: ['--json prints {"ok", "checks": [{"label", "status", "hint"}]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.'] },
+        notes: ['--json prints {"schema", "ok", "checks": [{"label", "status", "hint"}], "services": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
+                'services: flk-net.service and flk-machines.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
       { name: "version", group: "Setup", summary: "Print the flk version" },
 
       { name: "resume", group: "Host",
@@ -92,6 +95,13 @@ module Flk
         summary: "App and machine overview",
         notes: ["Also tidies machines that exited on their own and hands their host ports on."] },
       { name: "releases", group: "Apps", opts: [JSON_OPT], json: true, summary: "Release history" },
+      { name: "disk", group: "Host", opts: [JSON_OPT], json: true,
+        summary: "Disk space flk uses, per app: release images, machine disks, volumes, logs; and backups",
+        notes: ["Sizes are allocated bytes (sparse files count only what they use); --json also gives apparent sizes.",
+                "External volumes (--path / import) are counted apart: they're on other disks."] },
+      { name: "images", group: "Host", opts: [JSON_OPT], json: true,
+        summary: "flk's container images (flk.local/APP:vN): size, whether a machine runs that release, orphans",
+        notes: ["Read-only. Images of destroyed apps (orphan) go with flk apps prune; deploys keep the last two per app."] },
       { name: "apps", group: "Apps", default_sub: "list", summary: "List or destroy apps",
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "All apps on this host" },
@@ -115,6 +125,9 @@ module Flk
             summary: "Delete machines (their volumes are kept, unattached)" },
           { name: "revive", args: "ID", hidden: true,
             summary: "Restart a machine that exited on its own, per its restart policy (run by flk itself)" },
+          { name: "stats", args: "[ID...]", opts: [["--all", "Every app's machines (no -a needed)"], JSON_OPT], json: true,
+            summary: "CPU and memory use of machines (default: all of the app's)",
+            notes: ["cpu_percent is over a 0.5s sample; 100 means one host CPU. rss_mb is what the VM really uses of its memory_mb."] },
           { name: "status", aliases: %w[show], args: "ID...", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
             summary: "Machine record and state as JSON (an array when given several IDs)" },
           { name: "config", args: "ID...", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
@@ -423,7 +436,7 @@ module Flk
         h
       end
       {
-        "version" => VERSION, "state_dir" => ROOT,
+        "schema" => JSON_SCHEMA, "version" => VERSION, "state_dir" => ROOT,
         "global_options" => GLOBAL_OPTS.map { { "switches" => switches(_1), "description" => desc(_1) } },
         "exit_codes" => EXIT_CODES.transform_keys(&:to_s),
         "commands" => LIST.map { ser.call(_1) },
