@@ -1,6 +1,6 @@
 # Fixtures
 
-Real output from the reference host (flk 0.1.0, commit a51bf79, 2026-10-12),
+Real output from the reference host (flk 0.1.0, commit 5ee0db9, 2026-10-12),
 captured with the commands below. Regenerate with the same commands; never
 edit them by hand. No secret values: `secrets list --json` has names and
 digests only.
@@ -9,7 +9,7 @@ digests only.
 |---|---|
 | context-all.json / .txt | `flk context --all [--json]` |
 | context-minecraft-flk.json | `flk -a minecraft-flk context --json` |
-| context.txt | `flk context` (outside any app dir) |
+| context.txt | `flk context` (in ~, outside any app dir) |
 | help-all.json | `flk help --all --json` |
 | doctor.json | `flk doctor --json` |
 | apps-list.json | `flk apps list --json` |

@@ -206,7 +206,7 @@
       ],
       "json": false,
       "notes": [
-        "Run from the app directory (it reads flk.toml / fly.toml there).",
+        "Reads flk.toml / fly.toml in the current directory, or with -a APP the file flk recorded at the app's last launch/deploy, so it works from anywhere.",
         "Creates machines on the first deploy (count from `flk scale count`, default 1); later deploys stop, update and reboot each machine in turn.",
         "Waits up to 30s per machine for internal_port to accept connections, then warns but carries on.",
         "Volumes named in [[mounts]] must exist first: flk volumes create NAME --size 1 (one per machine)."
@@ -407,6 +407,16 @@
           "json": false
         },
         {
+          "name": "revive",
+          "usage": "flk machine revive ID",
+          "summary": "Restart a machine that exited on its own, per its restart policy (run by flk itself)",
+          "args": "ID",
+          "options": [
+
+          ],
+          "json": false
+        },
+        {
           "name": "status",
           "usage": "flk machine status ID... [--json]",
           "summary": "Machine record and state as JSON (an array when given several IDs)",
@@ -508,16 +518,34 @@
     },
     {
       "name": "console",
-      "usage": "flk console [ID]",
-      "summary": "Attach to a machine's serial console",
+      "usage": "flk console [ID] [--send TEXT] [--wait-log REGEX] [--timeout SECONDS]",
+      "summary": "Attach to a machine's serial console, or --send one line to the app's stdin",
       "args": "[ID]",
       "options": [
-
+        {
+          "switches": [
+            "--send TEXT"
+          ],
+          "description": "Type one line into the app's stdin, then return (no terminal needed)"
+        },
+        {
+          "switches": [
+            "--wait-log REGEX"
+          ],
+          "description": "With --send: print console output until a line matches REGEX"
+        },
+        {
+          "switches": [
+            "--timeout SECONDS"
+          ],
+          "description": "With --wait-log: give up after this long (default 10)"
+        }
       ],
       "json": false,
-      "blocks": "attaches an interactive terminal; agents should use `flk logs` instead",
+      "blocks": "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`",
       "notes": [
-        "Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Needs a terminal.",
+        "Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Attaching needs a terminal; --send doesn't.",
+        "--send types TEXT and Enter into the app's stdin (needs [flk] stdin = \"console\", the default). With --wait-log it then prints the console output until a line matches REGEX (exit 1 after --timeout). The console echoes what you type; that echo is skipped when matching.",
         "It's the serial console, not a shell: you see app output and type to its stdin (server consoles: stop, say, op...). Ctrl-C here doesn't signal the app; use flk machine stop.",
         "`flk ssh console` is an alias."
       ]
@@ -534,14 +562,31 @@
       "subcommands": [
         {
           "name": "console",
-          "usage": "flk ssh console [ID]",
+          "usage": "flk ssh console [ID] [--send TEXT] [--wait-log REGEX] [--timeout SECONDS]",
           "summary": "Same as flk console",
           "args": "[ID]",
           "options": [
-
+            {
+              "switches": [
+                "--send TEXT"
+              ],
+              "description": "Type one line into the app's stdin, then return (no terminal needed)"
+            },
+            {
+              "switches": [
+                "--wait-log REGEX"
+              ],
+              "description": "With --send: print console output until a line matches REGEX"
+            },
+            {
+              "switches": [
+                "--timeout SECONDS"
+              ],
+              "description": "With --wait-log: give up after this long (default 10)"
+            }
           ],
           "json": false,
-          "blocks": "attaches an interactive terminal; agents should use `flk logs` instead"
+          "blocks": "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`"
         }
       ]
     },

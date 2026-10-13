@@ -65,6 +65,11 @@
       "label": "boot service (machines come back after a reboot)",
       "status": "pass",
       "hint": null
+    },
+    {
+      "label": "exit hook (/home/dayne/flk/bin/flk)",
+      "status": "pass",
+      "hint": null
     }
   ]
 }

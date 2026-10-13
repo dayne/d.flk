@@ -6,7 +6,7 @@ flk 0.1.0  state: /home/dayne/.local/share/flk  full reference: flk help --all
 ready
 
 ## App
-cwd: /home/dayne/lazyflk
+cwd: /home/dayne
 config: none in this directory
 app: none (pass -a APP or cd to a directory with flk.toml)
 
@@ -14,4 +14,4 @@ app: none (pass -a APP or cd to a directory with flk.toml)
 - minecraft-flk: 1/1 machines started
 
 ## Next steps
-- no flk.toml or fly.toml in /home/dayne/lazyflk: cd to an app directory, pass -a APP, or create one with: flk launch
+- no flk.toml or fly.toml in /home/dayne: cd to an app directory, pass -a APP, or create one with: flk launch

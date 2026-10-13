@@ -3,6 +3,7 @@
     "name": "minecraft-flk",
     "machines": 1,
     "started": 1,
-    "release": 5
+    "release": 8,
+    "config_path": "/home/dayne/minecraft.flk/flk.toml"
   }
 ]
