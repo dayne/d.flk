@@ -228,6 +228,18 @@ test_completion_bash() {
   assert_contains "$out" "only bash is supported"
 }
 
+# G11: lazyflk polls context, so it carries the config warnings
+test_context_has_config_warnings() {
+  assert_eq "[]" "$(flk context --json --no-host | json_get app.config_warnings)" "clean config"
+  sed -i '1i kill_timout = 60' "$APP_DIR/flk.toml"
+  assert_contains "$(flk context --json --no-host | json_get app.config_warnings)" "kill_timout (did you mean kill_timeout?)"
+  assert_contains "$("$FLK_BIN" context --all --json --no-host | ruby -rjson -e \
+    'puts JSON.parse($stdin.read)["apps"].find { _1["name"] == ARGV[0] }["config_warnings"]' "$APP")" "kill_timout" "context --all"
+  assert_contains "$(flk context --no-host)" "⚠ flk.toml: unknown key kill_timout" "text context"
+  assert_contains "$("$FLK_BIN" context --all --no-host)" "⚠ flk.toml: unknown key kill_timout" "text overview"
+  sed -i '1d' "$APP_DIR/flk.toml"
+}
+
 test_context_all() {
   local c; c=$("$FLK_BIN" context --all --json)
   ruby -rjson -e 'd = JSON.parse(ARGV[0]); exit d["apps"].any? { _1["name"] == ARGV[1] }' "$c" "$APP" ||

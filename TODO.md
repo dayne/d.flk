@@ -104,6 +104,10 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   podman/docker. Stays read-only; pruning is `apps prune`.
   Done: `flk images [--json]` → `{ repo, tag, id, size_bytes, created_at,
   app, release, orphan, current, in_use, running }`, one per tag.
+- [x] **G11: config warnings in context.** lazyflk polls context, so each
+  app there (`context` and `context --all`) has `"config_warnings"`: the
+  `config show` warnings for its recorded flk.toml, `[]` when clean or
+  unreadable. Text context prints them as `⚠ flk.toml: …` lines.
 - [ ] **G7: no events.** Later, after the above: `flk events --json`, one
   line per state change (fed by the tmux exit hook and lifecycle
   commands), so lazyflk can stop polling.

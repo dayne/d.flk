@@ -499,6 +499,7 @@ module Flk
           flag = m["state"] != "started" && m["desired_state"] == "started" ? "  <- should be running" : ""
           out << "  #{m['id']} [#{m['name']}] #{m['state']} #{m['ip']}#{m['internal_port'] ? ":#{m['internal_port']}" : ''}#{flag}"
         end
+        Array(a["config_warnings"]).each { out << "  ⚠ #{File.basename(a['config_path'] || 'flk.toml')}: #{_1}" }
         Array(a.dig("ports", "active")).each { out << "  port #{Ports.label(_1)} -> #{_1['address'] || "LAN IP:#{_1['port']}"}" }
         Array(a.dig("ports", "blocked")).each { out << "  port #{_1['key']} blocked: #{_1['blocked']}" }
         vols = Array(a["volumes"])
@@ -557,7 +558,7 @@ module Flk
     end
 
     def app_context(a, cfg, steps)
-      h = { "name" => a.name, "registered" => a.exists? }
+      h = { "name" => a.name, "registered" => a.exists?, "config_warnings" => warning_strings(cfg) }
       unless a.exists?
         steps << (cfg ? "register the app: flk launch --no-deploy (then flk deploy)" : "app '#{a.name}' doesn't exist; see: flk apps list")
         return h
@@ -625,6 +626,7 @@ module Flk
       end
       if (a = c["app"])
         out << "app: #{a['name']}#{' (not registered)' unless a['registered']}"
+        Array(a["config_warnings"]).each { out << "⚠ #{File.basename(a['config_path'] || 'flk.toml')}: #{_1}" }
         if a["registered"]
           rel = a["release"]
           out << "release: #{rel ? "v#{rel['version']} (#{rel['tag']}), #{a['releases']} total" : 'none'}"
@@ -760,6 +762,14 @@ module Flk
         a.machines.each { |m| puts "   #{m.name}  http://#{m.ip}:#{port}" }
       end
       next_step("flk status", "flk logs", "flk context")
+    end
+
+    # The same warnings as strings, for JSON ([] without a readable config).
+    def warning_strings(cfg)
+      return [] unless cfg
+      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" }
+    rescue StandardError
+      []
     end
 
     # Warnings about the config that don't stop anything: unknown keys.
@@ -1045,7 +1055,7 @@ module Flk
 
     def config_show(_args, _o)
       puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config,
-                                "warnings" => config.unknown_keys.map { "unknown key #{_1}; flk ignores it" })
+                                "warnings" => warning_strings(config))
     end
 
     # ---------- machines ----------
