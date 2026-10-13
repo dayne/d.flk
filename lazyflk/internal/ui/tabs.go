@@ -230,10 +230,7 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 		return m.contextTab(n, tab)
 	}
 	var out []string
-	for i, l := range wrap("$ "+src.cmd, w) {
-		if i > 0 {
-			l = "  " + l
-		}
+	for _, l := range wrapIndent("$ "+src.cmd, w) {
 		out = append(out, styleDim.Render(l))
 	}
 	f := m.cache[src.cmd]
@@ -452,7 +449,10 @@ func backupLines(v flk.Volume, all []flk.Backup) []string {
 			out = append(out, "")
 		}
 		how := "mode " + or(b.Mode, "?")
-		if b.Release > 0 {
+		switch {
+		case b.Reason == "before_deploy":
+			how += fmt.Sprintf(" · before deploying v%d, from v%d", b.ForRelease, b.Release)
+		case b.Release > 0:
 			how += fmt.Sprintf(" · release v%d", b.Release)
 		}
 		out = append(out, styleTitle.Render(b.File),
@@ -503,6 +503,13 @@ func (m *Model) releaseLines(a flk.App, rels []flk.Release, w int) []string {
 		}
 		if names := running[r.Version]; len(names) > 0 {
 			out = append(out, styleDim.Render("     on "+strings.Join(names, ", ")))
+		}
+		if len(r.Backups) > 0 {
+			var vols []string
+			for _, b := range r.Backups {
+				vols = append(vols, b.Volume)
+			}
+			out = append(out, styleDim.Render("     backed up first: "+strings.Join(vols, ", ")+" (before_deploy)"))
 		}
 	}
 	if len(out) == 0 {

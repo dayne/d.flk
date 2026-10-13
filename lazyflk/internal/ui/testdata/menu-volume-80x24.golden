@@ -1,7 +1,6 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / volume world                    │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
-│   ● mellow-aurora-7882     │                                                 │
 │ ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────┐ │
 │ │ b  back up            copy world to the backup dir, then prune old copi… │ │
 │ │ v  verify             check backups without changing them: e2fsck -n, t… │ │
@@ -9,6 +8,7 @@
 │ │ t  restore            machine 225d58f615e7e6 [mellow-aurora-7882] is us… │ │
 │ │ a  restore as new     copy a backup into a new volume, to test it or lo… │ │
 │ │ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is us… │ │
+│ │ m  move               machine 225d58f615e7e6 [mellow-aurora-7882] is us… │ │
 │ │ D  unregister         attached to machine 225d58f615e7e6: destroy that … │ │
 │ │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that … │ │
 │ │ n  new volume         create a volume for [[mounts]] source = NAME       │ │

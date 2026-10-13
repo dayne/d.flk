@@ -118,10 +118,7 @@ func (m *Model) providerDetail(n node, w int) (string, []string) {
 	it := m.providerItem(n)
 	p := m.opt.Providers[n.prov]
 	var out []string
-	for i, l := range wrap("$ "+p.Command(), w) {
-		if i > 0 {
-			l = "  " + l
-		}
+	for _, l := range wrapIndent("$ "+p.Command(), w) {
 		out = append(out, styleDim.Render(l))
 	}
 	if _, err, _ := m.providerData(n.prov); err != nil {

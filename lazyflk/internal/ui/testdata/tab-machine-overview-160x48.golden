@@ -7,9 +7,9 @@
 │ ▾ vintagestory-flk  1/1 ●              │ release   v9                                                                                                        │
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       4% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    10489MB used of 11264MB                                                                                   │
-│ Host                                   │ up        13h 12m                                                                                                   │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       6% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    10507MB used of 11264MB                                                                                   │
+│ Host                                   │ up        13h 22m                                                                                                   │
 │   health ✔                             │ pid       1676117 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
 │ Storage                                │ ports     tcp/25565 → 10.47.11.3:25565                                                                              │

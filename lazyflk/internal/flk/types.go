@@ -77,6 +77,16 @@ type Release struct {
 	Failure    string `json:"failure"`  // why it failed its health checks
 	FailedAt   string `json:"failed_at"`
 	RollbackOf int    `json:"rollback_of"` // the release it copies, for a rollback
+	// volumes backed up by the roll to this release (flk 3f618a4,
+	// [flk.backup] before_deploy): the data from before it
+	Backups []ReleaseBackup `json:"backups"`
+}
+
+type ReleaseBackup struct {
+	Machine  string `json:"machine"`
+	Volume   string `json:"volume"`
+	VolumeID string `json:"volume_id"`
+	File     string `json:"file"`
 }
 
 // Failed reports a release that failed its health checks on deploy.
@@ -326,6 +336,11 @@ type Backup struct {
 	Verify       string `json:"verify"` // clean, errors, hook_failed
 	VerifiedAt   string `json:"verified_at"`
 	VerifyDetail string `json:"verify_detail"`
+	// a backup a deploy took before rolling (flk 3f618a4): Reason
+	// "before_deploy", Release the release the machine left, ForRelease
+	// the one being deployed
+	Reason     string `json:"reason"`
+	ForRelease int    `json:"for_release"`
 	// copies elsewhere (flk a04fcc6): one per destination, latest attempt
 	Copies []BackupCopy `json:"copies"`
 }

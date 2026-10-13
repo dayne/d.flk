@@ -4,18 +4,18 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk logs -n 200 --no-tail    │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │     at knot//io.netty.channel.SingleThreadIoEv… │
-│   ● frosty-river-2714      │     at knot//io.netty.util.concurrent.SingleTh… │
-│   ▢ vsdata 40GB (external) │     at knot//io.netty.util.internal.ThreadExec… │
-│   ⇄ tcp/42420 udp/42420    │     at java.base/java.lang.Thread.run(Unknown … │
-│                            │ [09:57:25] [Server thread/INFO]: FishNet (/176… │
-│ Host                       │ [11:02:15] [Server thread/INFO]: FishNet (/176… │
-│   health ✔                 │ [12:01:02] [Server thread/INFO]: FishNet (/176… │
-│                            │ [12:58:25] [Server thread/INFO]: FaintWolf7391… │
-│ Storage                    │ [13:08:24] [Server thread/INFO]: HollowWolf713… │
-│   / 21%                    │ [13:18:25] [Server thread/INFO]: GrandLynx0904… │
-│   /data/minecraft 66%      │ [13:30:11] [Server thread/INFO]: SlyOwl0456 (/… │
-│   /data/vintagestory 56%   │ [13:41:37] [Server thread/INFO]: EpicOwl9598 (… │
+│ ▾ vintagestory-flk  1/1 ●  │     at knot//io.netty.util.internal.ThreadExec… │
+│   ● frosty-river-2714      │     at java.base/java.lang.Thread.run(Unknown … │
+│   ▢ vsdata 40GB (external) │ [09:57:25] [Server thread/INFO]: FishNet (/176… │
+│   ⇄ tcp/42420 udp/42420    │ [11:02:15] [Server thread/INFO]: FishNet (/176… │
+│                            │ [12:01:02] [Server thread/INFO]: FishNet (/176… │
+│ Host                       │ [12:58:25] [Server thread/INFO]: FaintWolf7391… │
+│   health ✔                 │ [13:08:24] [Server thread/INFO]: HollowWolf713… │
+│                            │ [13:18:25] [Server thread/INFO]: GrandLynx0904… │
+│ Storage                    │ [13:30:11] [Server thread/INFO]: SlyOwl0456 (/… │
+│   / 21%                    │ [13:41:37] [Server thread/INFO]: EpicOwl9598 (… │
+│   /data/minecraft 66%      │ [13:48:48] [Server thread/INFO]: FishNet (/176… │
+│   /data/vintagestory 56%   │ [13:51:11] [Server thread/INFO]: HappyCrab8189… │
 │                            │ l: follow, search, wrap (full screen)           │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

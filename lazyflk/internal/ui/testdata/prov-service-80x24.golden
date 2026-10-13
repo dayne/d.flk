@@ -1,8 +1,8 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │                            │ service ssh.service ─  Overview                 │
 │ Storage                    │                                                 │
-│   / 21%                    │ $ systemctl show --timestamp=utc -p ... UNIT... │
-│   /data/minecraft 66%      │   · journalctl -u UNIT                          │
+│   / 21%                    │ $ systemctl show --timestamp=utc -p ...         │
+│   /data/minecraft 66%      │   UNIT... · journalctl -u UNIT                  │
 │   /data/vintagestory 56%   │                                                 │
 │                            │ unit      ssh.service                           │
 │ Podman                     │ what      OpenBSD Secure Shell server           │

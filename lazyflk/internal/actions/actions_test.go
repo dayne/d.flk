@@ -2,6 +2,7 @@ package actions
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -225,6 +226,62 @@ func TestDestroyBackups(t *testing.T) {
 	p := find(t, For(Target{Kind: Host, Apps: hc.Apps}), "prune backups")
 	if p.Confirm != Type || strings.Join(p.Command(nil).Args, " ") != "apps prune --backups" {
 		t.Errorf("%+v", p)
+	}
+}
+
+// Roll back with volumes needs a before-deploy backup of every attached
+// volume from the target release (flk 3f618a4).
+func TestRollbackWithVolumes(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	v := a.Volumes[0]
+	cur := a.Release.Version
+	rels := []flk.Release{{Version: cur - 1, Image: true}, {Version: cur, Image: true, Current: true}}
+	pre := []flk.Backup{{File: "w.ext4", VolumeID: v.ID, Volume: v.Name, Reason: "before_deploy", Release: cur - 1, ForRelease: cur}}
+	to := fmt.Sprintf("v%d", cur-1)
+	r := find(t, For(Target{Kind: App, App: a, Releases: rels, Backups: pre}), "roll back")
+	vals := map[string]string{"to": to, "volumes": "back to then"}
+	if why := r.Check(vals); why != "" {
+		t.Fatal(why)
+	}
+	c := r.Command(vals)
+	if strings.Join(c.Args, " ") != "-a minecraft-flk releases rollback "+to+" --with-volumes" || !strings.Contains(c.Warn, "backed up first") {
+		t.Errorf("%v / %s", c.Args, c.Warn)
+	}
+	if strings.Contains(strings.Join(r.Command(nil).Args, " "), "--with-volumes") {
+		t.Error("volumes stay as they are by default")
+	}
+	r = find(t, For(Target{Kind: App, App: a, Releases: rels, Backups: []flk.Backup{{VolumeID: v.ID, Release: cur - 1}}}), "roll back")
+	if why := r.Check(vals); !strings.Contains(why, "no before-deploy backup from "+to+" of world") {
+		t.Errorf("an ordinary backup doesn't count: %q", why)
+	}
+	noVols := a
+	noVols.Volumes = nil
+	for _, f := range find(t, For(Target{Kind: App, App: noVols, Releases: rels}), "roll back").Fields {
+		if f.Name == "volumes" {
+			t.Error("no volumes, no choice")
+		}
+	}
+}
+
+// Move needs the machine stopped, and a dir or a file (flk 63db57f).
+func TestVolumeMove(t *testing.T) {
+	hc := hostContext(t)
+	a := hc.Apps[0]
+	v := a.Volumes[0]
+	if find(t, For(Target{Kind: Volume, App: a, Volume: v, StateDir: hc.Flk.StateDir}), "move").Disabled == "" {
+		t.Error("its machine is running")
+	}
+	a.Machines = nil
+	mv := find(t, For(Target{Kind: Volume, App: a, Volume: v, StateDir: hc.Flk.StateDir}), "move")
+	if mv.Disabled != "" || mv.Check(nil) == "" || mv.Check(map[string]string{"dir": "/x", "path": "/y"}) == "" {
+		t.Errorf("%+v", mv)
+	}
+	c := mv.Command(map[string]string{"dir": "/data/big"})
+	if strings.Join(c.Args, " ") != "-a minecraft-flk volumes move world --dir /data/big" || !strings.Contains(c.Warn, "is kept for you to delete") {
+		t.Errorf("%v / %s", c.Args, c.Warn)
+	}
+	if got := strings.Join(mv.Command(map[string]string{"path": "/data/w.ext4"}).Args, " "); got != "-a minecraft-flk volumes move world --path /data/w.ext4" {
+		t.Error(got)
 	}
 }
 

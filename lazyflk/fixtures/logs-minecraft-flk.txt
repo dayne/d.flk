@@ -1,5 +1,3 @@
-	at knot//net.minecraft.network.PacketEncoder.encode(PacketEncoder.java)
-	at knot//net.minecraft.network.PacketEncoder.encode(PacketEncoder.java:12)
 	at knot//io.netty.handler.codec.MessageToByteEncoder.write(MessageToByteEncoder.java:107)
 	at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:800)
 	at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:737)
@@ -38,3 +36,5 @@
 [13:18:25] [Server thread/INFO]: GrandLynx0904 (/178.63.179.212:62139) lost connection: Disconnected
 [13:30:11] [Server thread/INFO]: SlyOwl0456 (/178.63.123.78:16721) lost connection: Disconnected
 [13:41:37] [Server thread/INFO]: EpicOwl9598 (/176.65.148.253:39620) lost connection: Disconnected
+[13:48:48] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected
+[13:51:11] [Server thread/INFO]: HappyCrab8189 (/46.4.84.241:59653) lost connection: Disconnected

@@ -22,8 +22,8 @@
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │ app                images   rootfs  volumes     logs external                                                       │
 │   ◇ ruby:3.3-alpine 69M                │ minecraft-flk        1.1G     357M        -     648K      21G                                                       │
-│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     546M        -     896K     8.1G                                                       │
-│   4 flk images: host Images tab        │ all                  2.2G     903M        -     1.5M      29G                                                       │
+│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     546M        -     900K     8.1G                                                       │
+│   4 flk images: host Images tab        │ all                  2.2G     904M        -     1.5M      29G                                                       │
 │                                        │                                                                                                                     │
 │ Services                               │ backups   146G in /data/flk-backups                                                                                 │
 │   ● flk-net                            │           minecraft-flk    122G                                                                                     │

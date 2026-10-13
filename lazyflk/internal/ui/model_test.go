@@ -582,3 +582,23 @@ func TestWrapLongWord(t *testing.T) {
 		t.Errorf("path lost: %q", got)
 	}
 }
+
+// An indented wrap stays within its width, so a long path in a command
+// is never cut.
+func TestWrapIndentFits(t *testing.T) {
+	path := "/tmp/" + strings.Repeat("abcdefghij", 8)
+	got := wrapIndent("$ flk volumes move data --dir "+path, 40)
+	joined := ""
+	for i, l := range got {
+		if ansi.StringWidth(l) > 40 {
+			t.Errorf("too wide: %q", l)
+		}
+		if i > 0 {
+			l = strings.TrimPrefix(l, "  ")
+		}
+		joined += l
+	}
+	if !strings.Contains(joined, path) {
+		t.Errorf("path lost: %q", got)
+	}
+}

@@ -53,7 +53,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 79427743744,
+                     "fsavail": 79372214272,
                      "mountpoints": [
                          "/"
                      ],
@@ -77,7 +77,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 33902243840,
+                     "fsavail": 33902178304,
                      "mountpoints": [
                          "/data/minecraft"
                      ],

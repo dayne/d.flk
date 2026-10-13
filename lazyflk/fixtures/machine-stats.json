@@ -7,9 +7,9 @@
     "pid": 1676117,
     "cpus": 4,
     "memory_mb": 11264,
-    "cpu_percent": 4.0,
-    "rss_mb": 10489,
-    "uptime_s": 47565
+    "cpu_percent": 6.0,
+    "rss_mb": 10507,
+    "uptime_s": 48132
   },
   {
     "app": "vintagestory-flk",
@@ -21,6 +21,6 @@
     "memory_mb": 6144,
     "cpu_percent": 8.0,
     "rss_mb": 3384,
-    "uptime_s": 44039
+    "uptime_s": 44607
   }
 ]

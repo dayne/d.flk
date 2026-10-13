@@ -309,7 +309,7 @@ func appActions(t Target) []Action {
 			}
 			return Command{Args: args, Warn: warn + " This can't be undone."}
 		}}
-	acts := []Action{deploy, rollback(a, t.Releases, running),
+	acts := []Action{deploy, rollback(a, t.Releases, t.Backups, running),
 		{Key: "c", Label: "scale", Help: "set the number of machines",
 			Confirm: Ask, Long: true,
 			Fields: []Field{{Name: "count", Label: "machines", Default: scale, Required: true, Number: true}},
@@ -355,9 +355,38 @@ func withChecks(c Command, v map[string]string) Command {
 	return c
 }
 
+// attachedVolumes are the app's volumes in use by its machines.
+func attachedVolumes(a flk.App) []flk.Volume {
+	var out []flk.Volume
+	for _, v := range a.Volumes {
+		if v.AttachedMachine != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+// missingPreDeploy names the attached volumes with no before-deploy backup
+// taken while their machine left release n (flk's volumes_of_release!).
+func missingPreDeploy(attached []flk.Volume, backups []flk.Backup, n int) []string {
+	var missing []string
+	for _, v := range attached {
+		found := false
+		for _, b := range backups {
+			if b.Reason == "before_deploy" && b.Release == n && b.VolumeID == v.ID {
+				found = true
+			}
+		}
+		if !found {
+			missing = append(missing, v.Name)
+		}
+	}
+	return missing
+}
+
 // rollback makes a new release from an older one's image and config, and
 // rolls it out like a deploy (flk releases rollback).
-func rollback(a flk.App, rels []flk.Release, running int) Action {
+func rollback(a flk.App, rels []flk.Release, backups []flk.Backup, running int) Action {
 	cur := 0
 	if a.Release != nil {
 		cur = a.Release.Version
@@ -379,10 +408,33 @@ func rollback(a flk.App, rels []flk.Release, running int) Action {
 			to = append(to, fmt.Sprintf("v%d", r.Version))
 		}
 	}
+	fields := []Field{{Name: "to", Label: "to", Choices: to,
+		Help: "a release whose image is kept ([flk] keep_releases)"}}
+	attached := attachedVolumes(a)
+	if len(attached) > 0 {
+		fields = append(fields, Field{Name: "volumes", Label: "volumes", Choices: []string{"as they are", "back to then"},
+			Help: "back to then: restore the backups a deploy took when the machines left that release ([flk.backup] before_deploy); today's data is backed up first (--with-volumes)"})
+	}
 	act := Action{Key: "r", Label: "roll back", Help: "back to an older release's image and config, rolled out like a deploy",
 		Confirm: Ask, Long: true,
-		Fields: []Field{{Name: "to", Label: "to", Choices: to,
-			Help: "a release whose image is kept ([flk] keep_releases); volumes stay as they are"}, checksField()},
+		Fields: append(fields, checksField()),
+		check: func(v map[string]string) string {
+			if v["volumes"] != "back to then" {
+				return ""
+			}
+			if backups == nil {
+				return "the backups are still loading"
+			}
+			r := strings.TrimSpace(v["to"])
+			n, err := strconv.Atoi(strings.TrimPrefix(r, "v"))
+			if err != nil {
+				return "pick a release to roll the volumes back with"
+			}
+			if missing := missingPreDeploy(attached, backups, n); len(missing) > 0 {
+				return fmt.Sprintf("no before-deploy backup from %s of %s (needs [flk.backup] before_deploy = true when it was deployed over; keep prunes them)", r, strings.Join(missing, ", "))
+			}
+			return ""
+		},
 		build: func(v map[string]string) Command {
 			args := app(a, "releases", "rollback")
 			what := "the release before the current one"
@@ -393,7 +445,12 @@ func rollback(a flk.App, rels []flk.Release, running int) Action {
 			if running > 0 {
 				warn += fmt.Sprintf(" Restarts %s.", plural(running, "running machine"))
 			}
-			warn += " Volumes stay as they are: data written since isn't rolled back."
+			if v["volumes"] == "back to then" {
+				args = append(args, "--with-volumes")
+				warn += fmt.Sprintf(" Volumes go back to their data from when the machines left %s: today's data is backed up first, then replaced.", what)
+			} else {
+				warn += " Volumes stay as they are: data written since isn't rolled back."
+			}
 			return withChecks(Command{Args: args, Warn: warn}, v)
 		}}
 	switch {
@@ -617,7 +674,41 @@ func volumeActions(t Target) []Action {
 		}
 	}
 
-	acts := []Action{backup(t, &v), verify, cp, restore, restoreAs, extend}
+	keep := "The old file is deleted (it's in flk's state dir)."
+	if External(v, t.StateDir) {
+		keep = "The old file at " + v.Path + " is kept for you to delete."
+	}
+	move := Action{Key: "m", Label: "move", Help: "move its image file to another directory or disk (machine stopped)",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "dir", Label: "to dir", Help: "e.g. a bigger disk, or XFS for instant backups; flk's state dir makes it an ordinary volume again"},
+			{Name: "path", Label: "or file", Help: "exactly this file instead of a dir"}},
+		check: func(val map[string]string) string {
+			d, p := strings.TrimSpace(val["dir"]), strings.TrimSpace(val["path"])
+			switch {
+			case d == "" && p == "":
+				return "give a dir (or a file)"
+			case d != "" && p != "":
+				return "a dir or a file, not both"
+			}
+			return ""
+		},
+		build: func(val map[string]string) Command {
+			args := app(a, "volumes", "move", v.Name)
+			to := strings.TrimSpace(val["dir"])
+			if to != "" {
+				args = append(args, "--dir", to)
+			} else {
+				to = strings.TrimSpace(val["path"])
+				args = append(args, "--path", to)
+			}
+			return Command{Args: args, Warn: fmt.Sprintf("Copies %s (sparse) to %s, checks the copy with e2fsck, then points the volume at it. %s"+
+				" On another disk, the boot service must start after that disk is mounted (flk says if not).", v.Name, to, keep)}
+		}}
+	if inUse != "" {
+		move.Disabled = inUse
+	}
+
+	acts := []Action{backup(t, &v), verify, cp, restore, restoreAs, extend, move}
 	attached := ""
 	if v.AttachedMachine != "" {
 		attached = "attached to machine " + v.AttachedMachine + ": destroy that machine (or scale down) first"

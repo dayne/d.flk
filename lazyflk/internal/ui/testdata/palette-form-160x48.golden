@@ -5,7 +5,7 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
-│   ● frosty-river-2714                  │   cpu 4% · 10489MB used · up 13h 12m                                                                                │
+│   ● frosty-river-2714                  │   cpu 6% · 10507MB used · up 13h 22m                                                                                │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  tcp/25565 → 10.47.11.3:25565                                                                                 │
 │                                     ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │

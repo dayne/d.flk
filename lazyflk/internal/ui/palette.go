@@ -205,8 +205,9 @@ func (m *Model) paletteBox() []string {
 	return box("flk commands ─ from flk help --all --json", body[:min(len(body), h-4)], foot, w)
 }
 
+// wrapIndent wraps s to w cells, its continuations indented by two.
 func wrapIndent(s string, w int) []string {
-	out := wrap(s, w)
+	out := wrap(s, w-2)
 	for i := 1; i < len(out); i++ {
 		out[i] = "  " + out[i]
 	}

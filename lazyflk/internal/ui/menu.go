@@ -53,6 +53,7 @@ func (m *Model) target(n node) (actions.Target, string, bool) {
 	case kindApp:
 		t.Kind = actions.App
 		t.Releases = m.releases(t.App.Name)
+		t.Backups, t.BackupsErr = m.backups(t.App.Name)
 	case kindMachine:
 		t.Kind, t.Machine = actions.Machine, t.App.Machines[n.machine]
 		title += " / " + or(t.Machine.Name, t.Machine.ID)
@@ -109,6 +110,9 @@ func (m *Model) openMenu() tea.Cmd {
 		var cmds []tea.Cmd
 		if n.kind == kindApp {
 			cmds = append(cmds, m.want(m.releasesSource(a.Name)))
+			if len(a.Volumes) > 0 { // roll back --with-volumes needs them
+				cmds = append(cmds, m.want(m.backupSource(a.Name)))
+			}
 		}
 		if a.ConfigPath != "" {
 			cmds = append(cmds, m.want(m.appActionsSource(a)))
@@ -417,10 +421,7 @@ func (m *Model) formBox() []string {
 		}
 	}
 	body = append(body, "")
-	for i, l := range wrap("$ "+f.act.Command(f.vals).Line(), inner) {
-		if i > 0 {
-			l = "  " + l
-		}
+	for _, l := range wrapIndent("$ "+f.act.Command(f.vals).Line(), inner) {
 		body = append(body, styleDim.Render(l))
 	}
 	if f.err != "" {
@@ -480,10 +481,7 @@ func (m *Model) confirmBox() []string {
 	w := min(m.width-4, 84)
 	inner := w - 4
 	var body []string
-	for i, l := range wrap("$ "+c.cmd.Line(), inner) {
-		if i > 0 {
-			l = "  " + l
-		}
+	for _, l := range wrapIndent("$ "+c.cmd.Line(), inner) {
 		body = append(body, styleTitle.Render(l))
 	}
 	if c.cmd.Warn != "" {

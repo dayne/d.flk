@@ -56,8 +56,13 @@ attention fix rolled it back).
   Needs attention); back up's confirm says what happens when short.
 - [x] 1bdb910: destroy app asks keep/delete backups (`--with-backups`);
   host menu `B` prune backups of destroyed apps (typed confirm).
-- [ ] M1.4 before_deploy backups, `releases rollback --with-volumes`.
-- [ ] M1.5 `volumes move`.
+- [x] M1.4 (3f618a4): roll back's "volumes: back to then"
+  (`--with-volumes`), checked against the before-deploy backups like flk
+  does; before-deploy backups labelled in Backups, and on the release
+  that took them. Checked live: the volume's data went back with v1.
+- [x] M1.5 (63db57f, fbedbe7): volume menu `m` move (`--dir` or
+  `--path`, machine stopped). Checked live, out and back into the state
+  dir.
 
 ## Polish (2026-10-13)
 

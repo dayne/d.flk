@@ -1,7 +1,5 @@
 ┌ Logs ─ minecraft-flk / mellow-aurora-7882 ──────────────────────── following ┐
 │ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 1000 -f                     │
-│     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamU… │
-│     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamU… │
 │     at knot//io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsaf… │
 │     at knot//io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistrati… │
 │     at knot//io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHand… │
@@ -19,6 +17,8 @@
 │ [13:18:25] [Server thread/INFO]: GrandLynx0904 (/178.63.179.212:62139) lost… │
 │ [13:30:11] [Server thread/INFO]: SlyOwl0456 (/178.63.123.78:16721) lost con… │
 │ [13:41:37] [Server thread/INFO]: EpicOwl9598 (/176.65.148.253:39620) lost c… │
+│ [13:48:48] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost conne… │
+│ [13:51:11] [Server thread/INFO]: HappyCrab8189 (/46.4.84.241:59653) lost co… │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ f follow  / search  n/N match  w wrap  g/G top/end  esc back  ? help         │
 └──────────────────────────────────────────────────────────────────────────────┘
