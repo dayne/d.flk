@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ Host ─  Health  Ports  Disk                                                                                         │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ $ flk doctor --json                                                                                                 │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ flk       0.1.0                                                                                                     │
+│                                        │ state     /home/dayne/.local/share/flk                                                                              │
+│ Host                                   │ source    /home/dayne/flk                                                                                           │
+│   health ✔                             │ LAN IP    10.47.11.116                                                                                              │
+│                                        │ boot      installed                                                                                                 │
+│                                        │ health    ✔ ready                                                                                                   │
+│                                        │ data dirs /home/dayne/.local/share/flk                                                                              │
+│                                        │           /data/minecraft/flk                                                                                       │
+│                                        │                                                                                                                     │
+│                                        │ ✔ /dev/kvm read/write                                                                                               │
+│                                        │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
+│                                        │ ✔ guest kernel /home/dayne/.local/share/flk/kernel/vmlinux                                                          │
+│                                        │ ✔ bridge flkbr0                                                                                                     │
+│                                        │ ✔ tap pool 16/16                                                                                                    │
+│                                        │ ✔ ipv4 forwarding                                                                                                   │
+│                                        │ ✔ tmux                                                                                                              │
+│                                        │ ✔ mkfs.ext4                                                                                                         │
+│                                        │ ✔ fakeroot                                                                                                          │
+│                                        │ ✔ container engine (podman)                                                                                         │
+│                                        │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
+│                                        │ ✔ port helper (host ports from 1024)                                                                                │
+│                                        │ ✔ boot service (machines come back after a reboot)                                                                  │
+│                                        │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit                                                                                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

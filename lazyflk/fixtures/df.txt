@@ -1,0 +1,3 @@
+Mounted on      1K-blocks     Used    Avail Use%
+/               102626232 15744564 81622404  17%
+/data/minecraft 102626232 64150612 33216356  66%

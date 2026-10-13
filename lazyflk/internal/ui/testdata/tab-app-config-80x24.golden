@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │ ‹ Ports  Volumes  Releases  Secrets  Config     │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk config show              │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ {                                               │
+│ Host                       │   "file": "/home/dayne/minecraft.flk/flk.toml", │
+│   health ✔                 │   "parsed": {                                   │
+│                            │     "app": "minecraft-flk",                     │
+│                            │     "kill_timeout": 120,                        │
+│                            │     "build": {                                  │
+│                            │       "dockerfile": "Dockerfile"                │
+│                            │     },                                          │
+│                            │     "env": {                                    │
+│                            │       "TZ": "America/Anchorage",                │
+│                            │       "MC_HEAP": "8G",                          │
+│                            │       "RESTART_DELAY": "10",                    │
+│                            │ … 86 more (pgdn)                                │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
+└──────────────────────────────────────────────────────────────────────────────┘

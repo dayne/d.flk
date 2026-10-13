@@ -15,9 +15,11 @@ import (
 	"time"
 )
 
-// Runner runs `flk ARGS...` and returns its stdout.
+// Runner runs `flk ARGS...`: Run waits and returns stdout, Stream returns
+// output as it comes.
 type Runner interface {
 	Run(ctx context.Context, args ...string) ([]byte, error)
+	Stream(ctx context.Context, args ...string) (*Stream, error)
 }
 
 // Error is a failed flk command. Stderr starts with "Error:" and usually

@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk / mellow-aurora-7882              │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk machine status           │
+│   ⇄ tcp/25565 udp/19132    │   225d58f615e7e6                                │
+│                            │                                                 │
+│ Host                       │ {                                               │
+│   health ✔                 │   "id": "225d58f615e7e6",                       │
+│                            │   "name": "mellow-aurora-7882",                 │
+│                            │   "app": "minecraft-flk",                       │
+│                            │   "tap_index": 0,                               │
+│                            │   "ip": "172.30.0.10",                          │
+│                            │   "mac": "06:00:ac:1e:00:0a",                   │
+│                            │   "release": 8,                                 │
+│                            │   "config": {                                   │
+│                            │     "cpus": 4,                                  │
+│                            │     "memory_mb": 11264,                         │
+│                            │ … 50 more (pgdn)                                │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
+└──────────────────────────────────────────────────────────────────────────────┘

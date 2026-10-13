@@ -1,0 +1,24 @@
+┌ Help ─ logs ─────────────────────────────────────────────────────────────────┐
+│ Follows flk logs -f: the machine's console output, or every machine of the   │
+│ app. Lines starting --- flk: are flk's own notes (boots, restarts); a "log   │
+│ rotated" line means older output moved to console.log.1.                     │
+│                                                                              │
+│ f                  follow (stick to the newest line) on or off               │
+│ ↑ ↓  k j           scroll a line (scrolling up pauses following)             │
+│ pgup pgdn  space   scroll a page                                             │
+│ g  G               top, or bottom and follow                                 │
+│ /                  search (case-insensitive); enter jumps to the newest mat… │
+│ n  N               next or previous match                                    │
+│ w                  wrap long lines on or off                                 │
+│ [  ]               previous or next machine (or all machines)                │
+│ esc  q             back to the main view                                     │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ any key closes this help · the full flk reference: flk help --all            │
+└──────────────────────────────────────────────────────────────────────────────┘

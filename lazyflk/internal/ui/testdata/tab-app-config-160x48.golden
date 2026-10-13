@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk config show                                                                                  │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ {                                                                                                                   │
+│                                        │   "file": "/home/dayne/minecraft.flk/flk.toml",                                                                     │
+│ Host                                   │   "parsed": {                                                                                                       │
+│   health ✔                             │     "app": "minecraft-flk",                                                                                         │
+│                                        │     "kill_timeout": 120,                                                                                            │
+│                                        │     "build": {                                                                                                      │
+│                                        │       "dockerfile": "Dockerfile"                                                                                    │
+│                                        │     },                                                                                                              │
+│                                        │     "env": {                                                                                                        │
+│                                        │       "TZ": "America/Anchorage",                                                                                    │
+│                                        │       "MC_HEAP": "8G",                                                                                              │
+│                                        │       "RESTART_DELAY": "10",                                                                                        │
+│                                        │       "MAX_RESTARTS": "5",                                                                                          │
+│                                        │       "RESTART_WINDOW": "600",                                                                                      │
+│                                        │       "STOP_TIMEOUT": "100",                                                                                        │
+│                                        │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│                                        │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│                                        │     },                                                                                                              │
+│                                        │     "restart": [                                                                                                    │
+│                                        │       {                                                                                                             │
+│                                        │         "policy": "on-failure",                                                                                     │
+│                                        │         "retries": 1                                                                                                │
+│                                        │       }                                                                                                             │
+│                                        │     ],                                                                                                              │
+│                                        │     "vm": [                                                                                                         │
+│                                        │       {                                                                                                             │
+│                                        │         "cpus": 4,                                                                                                  │
+│                                        │         "memory": "11gb"                                                                                            │
+│                                        │       }                                                                                                             │
+│                                        │     ],                                                                                                              │
+│                                        │     "mounts": [                                                                                                     │
+│                                        │       {                                                                                                             │
+│                                        │         "source": "world",                                                                                          │
+│                                        │         "destination": "/server"                                                                                    │
+│                                        │       }                                                                                                             │
+│                                        │     ],                                                                                                              │
+│                                        │     "services": [                                                                                                   │
+│                                        │ … 61 more (pgdn)                                                                                                    │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit                                                                                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

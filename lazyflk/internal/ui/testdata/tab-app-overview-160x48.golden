@@ -1,18 +1,18 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ minecraft-flk / mellow-aurora-7882 ─  Overview                                                                      │
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
-│   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
-│   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
-│   ⇄ tcp/25565 udp/19132                │ state     ● started                                                                                                 │
-│                                        │ release   v8                                                                                                        │
-│ Host                                   │ ip        172.30.0.10:25565                                                                                         │
-│   health ✔                             │ size      4 cpus · 11264MB                                                                                          │
-│                                        │ restart   on-failure · 1 retry                                                                                      │
-│                                        │ ports     tcp/25565 → 10.47.11.116:25565                                                                            │
-│                                        │           udp/19132 → 10.47.11.116:19132                                                                            │
-│                                        │ volumes   world → /server                                                                                           │
-│                                        │ created   2026-10-12 05:01Z                                                                                         │
-│                                        │ updated   2026-10-12 07:08Z                                                                                         │
+│   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
+│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│ Host                                   │                                                                                                                     │
+│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│                                        │ volume world 40GB (external)                                                                                        │
+│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -44,5 +44,5 @@
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  ←→ fold  q quit                                                                                                                                     │
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit                                                                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

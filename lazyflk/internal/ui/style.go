@@ -18,6 +18,7 @@ var (
 	styleSelected = lipgloss.NewStyle().Reverse(true)
 	styleKey      = lipgloss.NewStyle().Bold(true)
 	styleLabel    = lipgloss.NewStyle().Foreground(lipgloss.Cyan)
+	styleMatch    = lipgloss.NewStyle().Reverse(true).Foreground(lipgloss.Yellow)
 )
 
 // fit truncates or pads a styled string to exactly w cells.

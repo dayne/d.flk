@@ -1,17 +1,17 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ Host ─  Overview                                                                                                    │
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
-│   ● mellow-aurora-7882                 │ flk       0.1.0                                                                                                     │
-│   ▢ world 40GB (external)              │ state     /home/dayne/.local/share/flk                                                                              │
-│   ⇄ tcp/25565 udp/19132                │ source    /home/dayne/flk                                                                                           │
-│                                        │ LAN IP    10.47.11.116                                                                                              │
-│ Host                                   │ boot      installed                                                                                                 │
-│   health ✔                             │ health    ✔ ready                                                                                                   │
-│                                        │ data dirs /home/dayne/.local/share/flk                                                                              │
-│                                        │           /data/minecraft/flk                                                                                       │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk releases --json                                                                              │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ v8   2026-10-12 07:08Z  Dockerfile  current                                                                         │
+│                                        │      running on mellow-aurora-7882                                                                                  │
+│ Host                                   │ v7   2026-10-12 06:58Z  Dockerfile                                                                                  │
+│   health ✔                             │ v6   2026-10-12 06:41Z  Dockerfile                                                                                  │
+│                                        │ v5   2026-10-12 06:34Z  Dockerfile                                                                                  │
+│                                        │ v4   2026-10-12 05:35Z  Dockerfile                                                                                  │
+│                                        │ v3   2026-10-12 05:30Z  Dockerfile                                                                                  │
+│                                        │ v2   2026-10-12 05:20Z  Dockerfile                                                                                  │
+│                                        │ v1   2026-10-12 05:01Z  Dockerfile                                                                                  │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -44,5 +44,5 @@
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  ←→ fold  q quit                                                                                                                                     │
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit                                                                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

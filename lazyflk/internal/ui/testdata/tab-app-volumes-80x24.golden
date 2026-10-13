@@ -1,15 +1,15 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Apps                       │ minecraft-flk ─  Overview                       │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ release v8 (8 kept) · 2026-10-12 07:08Z         │
-│   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10    │
-│                            │   mellow-aurora-7882 · 4 cpus · 11264MB · v8    │
-│ Host                       │                                                 │
-│   health ✔                 │ ports  tcp/25565 → 10.47.11.116:25565           │
-│                            │        udp/19132 → 10.47.11.116:19132           │
-│                            │ volume world 40GB (external)                    │
-│                            │   /data/minecraft/flk/world.ext4                │
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │ ‹ Logs  Ports  Volumes  Releases  Secrets ›     │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ world 40GB (external)                           │
+│   ⇄ tcp/25565 udp/19132    │   id        vol_28392490d0d4d4c7                │
+│                            │   size      40GB                                │
+│ Host                       │   path      /data/minecraft/flk/world.ext4      │
+│   health ✔                 │             external: outside flk's state dir   │
+│                            │   attached  mellow-aurora-7882 (225d58f615e7e6) │
+│                            │   created   2026-10-12 05:01Z                   │
+│                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  ←→ fold  q quit                                                     │
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
 └──────────────────────────────────────────────────────────────────────────────┘

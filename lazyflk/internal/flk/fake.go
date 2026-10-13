@@ -28,10 +28,19 @@ func (f *Fake) Calls() [][]string {
 	return append([][]string(nil), f.calls...)
 }
 
-func (f *Fake) Run(ctx context.Context, args ...string) ([]byte, error) {
+func (f *Fake) record(args []string) {
 	f.mu.Lock()
 	f.calls = append(f.calls, append([]string(nil), args...))
 	f.mu.Unlock()
+}
+
+func (f *Fake) missing(args []string) error {
+	return &Error{Args: args, Err: fs.ErrNotExist,
+		Stderr: fmt.Sprintf("Error: demo mode has no captured output for: %s", CommandLine(args...))}
+}
+
+func (f *Fake) Run(ctx context.Context, args ...string) ([]byte, error) {
+	f.record(args)
 	if err := ctx.Err(); err != nil {
 		return nil, &Error{Args: args, Err: err}
 	}
@@ -41,8 +50,7 @@ func (f *Fake) Run(ctx context.Context, args ...string) ([]byte, error) {
 			return out, nil
 		}
 	}
-	return nil, &Error{Args: args, Err: fs.ErrNotExist,
-		Stderr: fmt.Sprintf("Error: demo mode has no captured output for: %s", CommandLine(args...))}
+	return nil, f.missing(args)
 }
 
 // fixtureFor maps a command line to its fixture file name.
@@ -75,6 +83,8 @@ func fixtureFor(args []string) (string, bool) {
 		return "volumes-" + app + ".json", true
 	case cmd == "secrets list --json":
 		return "secrets-" + app + ".json", true
+	case cmd == "config show":
+		return "config-" + app + ".json", true
 	case len(args) == 3 && args[0] == "machine" && args[1] == "status":
 		return "machine-status.json", true
 	case len(args) > 0 && args[0] == "logs" && !hasAny(args, "-f", "--follow"):

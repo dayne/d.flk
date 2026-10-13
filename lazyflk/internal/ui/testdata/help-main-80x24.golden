@@ -1,0 +1,24 @@
+┌ Help ─ main view ────────────────────────────────────────────────────────────┐
+│ Everything flk runs on this host. Left: apps, with their machines (●         │
+│ running, ○ stopped, ! should run but doesn't), volumes (▢) and forwarded     │
+│ ports (⇄), then the host. Right: tabs for the selection. Bottom: what needs  │
+│ attention, from flk context --all. Each tab shows the flk command that fills │
+│ it.                                                                          │
+│                                                                              │
+│ ↑ ↓  k j           move in the tree                                          │
+│ ← →                fold or unfold an app                                     │
+│ tab  shift+tab     next or previous tab                                      │
+│ 1 … 9              jump to a tab                                             │
+│ pgup pgdn          scroll the tab (also ctrl+u ctrl+d)                       │
+│ l                  follow logs: the machine, or all of the app's machines    │
+│ ?                  this help                                                 │
+│ q  ctrl+c          quit                                                      │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ any key closes this help · the full flk reference: flk help --all            │
+└──────────────────────────────────────────────────────────────────────────────┘

@@ -1,16 +1,16 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Apps                       │ Host ─  Overview                                │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ flk       0.1.0                                 │
-│   ▢ world 40GB (external)  │ state     /home/dayne/.local/share/flk          │
-│   ⇄ tcp/25565 udp/19132    │ source    /home/dayne/flk                       │
-│                            │ LAN IP    10.47.11.116                          │
-│ Host                       │ boot      installed                             │
-│   health ✔                 │ health    ✔ ready                               │
-│                            │ data dirs /home/dayne/.local/share/flk          │
-│                            │           /data/minecraft/flk                   │
-│                            │                                                 │
-│                            │                                                 │
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ machine 225d58f615e7e6 ● started 172.30.0.10    │
+│ Host                       │   mellow-aurora-7882 · 4 cpus · 11264MB · v8    │
+│   health ✔                 │                                                 │
+│                            │ ports  tcp/25565 → 10.47.11.116:25565           │
+│                            │        udp/19132 → 10.47.11.116:19132           │
+│                            │ volume world 40GB (external)                    │
+│                            │   /data/minecraft/flk/world.ext4                │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
@@ -20,5 +20,5 @@
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  ←→ fold  q quit                                                     │
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
 └──────────────────────────────────────────────────────────────────────────────┘

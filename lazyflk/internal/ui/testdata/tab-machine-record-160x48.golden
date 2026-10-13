@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk / mellow-aurora-7882 ─  Overview  Logs  Record                                                        │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk machine status 225d58f615e7e6                                                                │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ {                                                                                                                   │
+│                                        │   "id": "225d58f615e7e6",                                                                                           │
+│ Host                                   │   "name": "mellow-aurora-7882",                                                                                     │
+│   health ✔                             │   "app": "minecraft-flk",                                                                                           │
+│                                        │   "tap_index": 0,                                                                                                   │
+│                                        │   "ip": "172.30.0.10",                                                                                              │
+│                                        │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
+│                                        │   "release": 8,                                                                                                     │
+│                                        │   "config": {                                                                                                       │
+│                                        │     "cpus": 4,                                                                                                      │
+│                                        │     "memory_mb": 11264,                                                                                             │
+│                                        │     "env": {                                                                                                        │
+│                                        │       "TZ": "America/Anchorage",                                                                                    │
+│                                        │       "MC_HEAP": "8G",                                                                                              │
+│                                        │       "RESTART_DELAY": "10",                                                                                        │
+│                                        │       "MAX_RESTARTS": "5",                                                                                          │
+│                                        │       "RESTART_WINDOW": "600",                                                                                      │
+│                                        │       "STOP_TIMEOUT": "100",                                                                                        │
+│                                        │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│                                        │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│                                        │     },                                                                                                              │
+│                                        │     "mount_specs": [                                                                                                │
+│                                        │       {                                                                                                             │
+│                                        │         "source": "world",                                                                                          │
+│                                        │         "destination": "/server"                                                                                    │
+│                                        │       }                                                                                                             │
+│                                        │     ],                                                                                                              │
+│                                        │     "internal_port": 25565,                                                                                         │
+│                                        │     "ports": [                                                                                                      │
+│                                        │       {                                                                                                             │
+│                                        │         "proto": "tcp",                                                                                             │
+│                                        │         "port": 25565,                                                                                              │
+│                                        │         "internal_port": 25565                                                                                      │
+│                                        │       },                                                                                                            │
+│                                        │       {                                                                                                             │
+│                                        │         "proto": "udp",                                                                                             │
+│                                        │         "port": 19132,                                                                                              │
+│                                        │ … 24 more (pgdn)                                                                                                    │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit                                                                                           │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

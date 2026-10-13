@@ -20,3 +20,5 @@ digests only.
 | secrets-minecraft-flk.json | `flk -a minecraft-flk secrets list --json` |
 | machine-status.json | `flk -a minecraft-flk machine status ID` |
 | logs-minecraft-flk.txt | `flk -a minecraft-flk logs -n 40 --no-tail` |
+| config-minecraft-flk.json | `flk -a minecraft-flk config show` |
+| df.txt | `df -k --output=target,size,used,avail,pcent STATE_DIR MOUNT_DIRS...` (the `mount_dirs` of context-all.json) |

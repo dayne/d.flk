@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk logs -n 200 --no-tail    │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ [23:08:55] [Server thread/INFO]: *************… │
+│ Host                       │ [23:08:56] [Server thread/INFO]: Registered 19… │
+│   health ✔                 │ [23:08:56] [Server thread/INFO]: Registered 2 … │
+│                            │ [23:08:56] [Server thread/INFO]: Registered 7 … │
+│                            │ [23:08:57] [Server thread/INFO]: Registered 1 … │
+│                            │ [23:08:57] [GeyserServer-3-1/INFO]: Started Ge… │
+│                            │ [23:08:57] [Server thread/INFO]: Done (2.59s)!… │
+│                            │ [23:08:58] [Server thread/WARN]: Can't keep up… │
+│                            │ [23:08:58] [ForkJoinPool.commonPool-worker-3/I… │
+│                            │ list                                            │
+│                            │ [23:08:58] [Server thread/INFO]: There are 0 o… │
+│                            │ [23:09:57] [Server thread/INFO]: Server empty … │
+│                            │ l: follow, search, wrap (full screen)           │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
+└──────────────────────────────────────────────────────────────────────────────┘

@@ -2,8 +2,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"io/fs"
 	"os"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 
 	"lazyflk/fixtures"
 	"lazyflk/internal/flk"
+	"lazyflk/internal/host"
 	"lazyflk/internal/ui"
 )
 
@@ -36,8 +39,10 @@ func main() {
 	}
 
 	var runner flk.Runner
+	disk := host.DF
 	if *demo {
 		runner = flk.NewFake(fixtures.FS)
+		disk = demoDisk
 	} else {
 		path, err := flk.FindFlk(*flkPath)
 		if err != nil {
@@ -47,9 +52,18 @@ func main() {
 		runner = flk.Exec{Path: path}
 	}
 
-	m := ui.New(ui.Options{Client: flk.New(runner), Demo: *demo, ReadOnly: *readOnly, Refresh: *refresh})
+	m := ui.New(ui.Options{Client: flk.New(runner), Disk: disk, Demo: *demo, ReadOnly: *readOnly, Refresh: *refresh})
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
 		os.Exit(1)
 	}
+}
+
+// demoDisk answers df from the captured fixtures/df.txt.
+func demoDisk(_ context.Context, paths []string) ([]host.Disk, error) {
+	out, err := fs.ReadFile(fixtures.FS, "df.txt")
+	if err != nil {
+		return nil, err
+	}
+	return host.ParseDF(string(out), paths)
 }

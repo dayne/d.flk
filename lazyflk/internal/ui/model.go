@@ -9,17 +9,17 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"lazyflk/internal/flk"
+	"lazyflk/internal/host"
 )
 
-const (
-	minWidth, minHeight = 80, 24
-	maxAttention        = 4
-)
+const minWidth, minHeight = 80, 24
 
 type Options struct {
 	Client   *flk.Client
+	Disk     func(ctx context.Context, paths []string) ([]host.Disk, error) // nil: no disk usage
 	Demo     bool
 	ReadOnly bool
 	Refresh  time.Duration // 0: load once
@@ -28,6 +28,7 @@ type Options struct {
 type Model struct {
 	opt           Options
 	width, height int
+	now           func() time.Time
 
 	hc      *flk.HostContext // last good `flk context --all --json`
 	apps    []flk.App        // hc.Apps, problems first
@@ -38,6 +39,13 @@ type Model struct {
 	cursor    int // index into nodes; always a selectable node once loaded
 	top       int // first tree line shown
 	collapsed map[string]bool
+
+	tabs      map[nodeKind]int // selected tab per kind of selection
+	detailTop int              // detail pane scroll
+	cache     map[string]*fetched
+
+	logs *logsView // full-screen logs, when open
+	help bool      // help screen, when open
 }
 
 type contextMsg struct {
@@ -48,7 +56,8 @@ type contextMsg struct {
 type tickMsg struct{}
 
 func New(opt Options) *Model {
-	return &Model{opt: opt, collapsed: map[string]bool{}, loading: true}
+	return &Model{opt: opt, now: time.Now, collapsed: map[string]bool{}, loading: true,
+		tabs: map[nodeKind]int{}, cache: map[string]*fetched{}}
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -71,6 +80,24 @@ func (m *Model) tick() tea.Cmd {
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	before := m.viewKey()
+	cmd := m.update(msg)
+	if m.viewKey() != before {
+		m.detailTop = 0
+	}
+	return m, tea.Batch(cmd, m.sync())
+}
+
+// sync starts loading whatever the screen shows that is missing or stale.
+func (m *Model) sync() tea.Cmd {
+	if m.hc == nil {
+		return nil
+	}
+	n := m.nodes[m.cursor]
+	return tea.Batch(m.want(m.tabSource(n, m.tabName(n))), m.want(m.diskSource()))
+}
+
+func (m *Model) update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
@@ -82,29 +109,124 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tickMsg:
 		if m.loading {
-			return m, m.tick()
+			return m.tick()
 		}
 		m.loading = true
-		return m, tea.Batch(m.load(), m.tick())
-	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		case "up", "k":
-			m.move(-1)
-		case "down", "j":
-			m.move(1)
-		case "pgup":
-			m.move(-m.treeHeight())
-		case "pgdown":
-			m.move(m.treeHeight())
-		case "left":
-			m.fold(true)
-		case "right":
-			m.fold(false)
+		return tea.Batch(m.load(), m.tick())
+	case fetchedMsg:
+		m.gotFetched(msg)
+	case logStartMsg:
+		if msg.v == m.logs {
+			return m.logs.handleStart(msg)
 		}
+		if msg.stream != nil {
+			msg.stream.Stop()
+		}
+	case logChunkMsg:
+		if msg.v == m.logs {
+			return m.logs.handleChunk(msg)
+		}
+	case tea.KeyPressMsg:
+		return m.key(msg)
 	}
-	return m, nil
+	return nil
+}
+
+func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
+	k := msg.String()
+	switch {
+	case k == "ctrl+c":
+		if m.logs != nil {
+			m.logs.stop()
+		}
+		return tea.Quit
+	case m.help:
+		m.help = false
+		return nil
+	case k == "?" && !(m.logs != nil && m.logs.editing):
+		m.help = true
+		return nil
+	case m.logs != nil:
+		cmd, open := m.logs.key(msg, m.width-4, m.height-5)
+		if !open {
+			m.logs = nil
+		}
+		return cmd
+	}
+	switch k {
+	case "q":
+		return tea.Quit
+	case "up", "k":
+		m.move(-1)
+	case "down", "j":
+		m.move(1)
+	case "left":
+		m.fold(true)
+	case "right":
+		m.fold(false)
+	case "tab", "shift+tab":
+		m.nextTab(map[string]int{"tab": 1, "shift+tab": -1}[k])
+	case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+		m.setTab(int(k[0] - '1'))
+	case "pgdown", "ctrl+d":
+		m.detailTop += max(m.treeHeight()-4, 1)
+	case "pgup", "ctrl+u":
+		m.detailTop = max(m.detailTop-max(m.treeHeight()-4, 1), 0)
+	case "l":
+		return m.openLogs()
+	}
+	return nil
+}
+
+// openLogs follows the logs of the selected machine, or of every machine
+// of the selected app.
+func (m *Model) openLogs() tea.Cmd {
+	if m.hc == nil {
+		return nil
+	}
+	n := m.nodes[m.cursor]
+	if n.kind < kindApp || n.kind > kindPorts {
+		return nil
+	}
+	a := m.apps[n.app]
+	sel := -1
+	if n.kind == kindMachine {
+		sel = n.machine
+	}
+	m.logs = newLogsView(m.opt.Client, a.Name, a.Machines, sel)
+	return m.logs.start()
+}
+
+func (m *Model) viewKey() string {
+	if m.hc == nil {
+		return ""
+	}
+	n := m.nodes[m.cursor]
+	return n.key(m.apps) + "#" + m.tabName(n)
+}
+
+func (m *Model) tabName(n node) string {
+	names := tabNames(n.kind)
+	return names[min(m.tabs[n.kind], len(names)-1)]
+}
+
+func (m *Model) nextTab(step int) {
+	if m.hc == nil {
+		return
+	}
+	k := m.nodes[m.cursor].kind
+	n := len(tabNames(k))
+	m.tabs[k] = (m.tabs[k] + step + n) % n
+}
+
+func (m *Model) setTab(i int) {
+	if m.hc == nil {
+		return
+	}
+	k := m.nodes[m.cursor].kind
+	if i < len(tabNames(k)) {
+		m.tabs[k] = i
+	}
 }
 
 // setContext swaps in fresh data, keeping the selection on the same item.
@@ -139,16 +261,10 @@ func (m *Model) move(delta int) {
 	if m.hc == nil {
 		return
 	}
-	step := 1
-	if delta < 0 {
-		step = -1
-	}
-	for range max(delta*step, 1) {
-		for i := m.cursor + step; i >= 0 && i < len(m.nodes); i += step {
-			if m.nodes[i].selectable() {
-				m.cursor = i
-				break
-			}
+	for i := m.cursor + delta; i >= 0 && i < len(m.nodes); i += delta {
+		if m.nodes[i].selectable() {
+			m.cursor = i
+			return
 		}
 	}
 }
@@ -183,23 +299,50 @@ func (m *Model) layout() (left, right int) {
 	return left, m.width - 3 - left
 }
 
+// attention is the Needs attention panel: one entry per problem, wrapped,
+// capped at a few rows with a pointer to the rest.
 func (m *Model) attention() []string {
 	if m.hc == nil {
 		return nil
 	}
-	var out []string
+	type item struct{ icon, text string }
+	var items []item
 	if m.err != nil {
-		out = append(out, styleBad.Render("✘ refresh failed: ")+firstLine(m.err.Error()))
+		items = append(items, item{styleBad.Render("✘"), "refresh failed: " + firstLine(m.err.Error())})
 	}
 	for _, s := range m.hc.NextSteps {
-		out = append(out, styleWarn.Render("! ")+s)
+		items = append(items, item{styleWarn.Render("!"), s})
 	}
-	if len(out) == 0 {
-		out = append(out, styleOK.Render("✔ ")+"nothing needs attention")
+	for _, s := range m.diskWarnings() {
+		items = append(items, item{styleWarn.Render("!"), s})
 	}
-	if len(out) > maxAttention {
-		more := len(out) - maxAttention + 1
-		out = append(out[:maxAttention-1], styleDim.Render(fmt.Sprintf("… %d more: flk context --all", more)))
+	if len(items) == 0 {
+		return []string{styleOK.Render("✔") + " nothing needs attention"}
+	}
+	limit := max(4, m.height/6)
+	var out []string
+	for i, it := range items {
+		lines := wrap(it.text, m.width-6)
+		left := len(items) - i
+		room := limit - len(out)
+		if left > 1 {
+			room-- // keep a row for "… more"
+		}
+		if len(lines) > room {
+			if room > 0 && left == 1 {
+				lines = append(lines[:room-1], ansi.Truncate(lines[room-1], m.width-7, "")+"…")
+			} else {
+				out = append(out, styleDim.Render(fmt.Sprintf("… %d more: flk context --all", left)))
+				break
+			}
+		}
+		for j, l := range lines {
+			if j == 0 {
+				out = append(out, it.icon+" "+l)
+			} else {
+				out = append(out, "  "+l)
+			}
+		}
 	}
 	return out
 }
@@ -212,6 +355,12 @@ func (m *Model) treeHeight() int {
 func (m *Model) Render() string {
 	if m.width < minWidth || m.height < minHeight {
 		return fmt.Sprintf("lazyflk needs a %dx%d terminal (this one is %dx%d)", minWidth, minHeight, m.width, m.height)
+	}
+	switch {
+	case m.help:
+		return m.helpScreen()
+	case m.logs != nil:
+		return m.logs.render(m.width, m.height)
 	}
 	lw, rw := m.layout()
 	attn := m.attention()
@@ -274,16 +423,19 @@ func (m *Model) topRule(w int) string {
 	if len(status) > 0 {
 		right = " " + strings.Join(status, " · ") + " "
 	}
-	return rule(title, w-len([]rune(right))) + right
+	return rule(title, w-ansi.StringWidth(right)) + right
+}
+
+func keyHints(pairs ...string) string {
+	var parts []string
+	for i := 0; i+1 < len(pairs); i += 2 {
+		parts = append(parts, styleKey.Render(pairs[i])+" "+pairs[i+1])
+	}
+	return strings.Join(parts, "  ")
 }
 
 func (m *Model) footer() string {
-	keys := []string{"↑↓", "move", "←→", "fold", "q", "quit"}
-	var parts []string
-	for i := 0; i < len(keys); i += 2 {
-		parts = append(parts, styleKey.Render(keys[i])+" "+keys[i+1])
-	}
-	return strings.Join(parts, "  ")
+	return keyHints("↑↓", "move", "←→", "fold", "tab", "tabs", "pgup/dn", "scroll", "l", "logs", "?", "help", "q", "quit")
 }
 
 // treeLines renders exactly h lines of tree, scrolled to keep the cursor in view.
@@ -313,26 +465,83 @@ func (m *Model) treeLines(w, h int) []string {
 	return out
 }
 
+// tabBar renders the tabs, windowed around the active one if they don't fit.
+func tabBar(names []string, active, w int) string {
+	parts := make([]string, len(names))
+	for i, n := range names {
+		parts[i] = " " + n + " "
+		if i == active {
+			parts[i] = styleSelected.Render(parts[i])
+		}
+	}
+	width := func(lo, hi int) int {
+		n := ansi.StringWidth(strings.Join(parts[lo:hi], ""))
+		if lo > 0 {
+			n++
+		}
+		if hi < len(parts) {
+			n++
+		}
+		return n
+	}
+	lo, hi := active, active+1
+	for grew := true; grew; {
+		grew = false
+		if hi < len(parts) && width(lo, hi+1) <= w {
+			hi, grew = hi+1, true
+		}
+		if lo > 0 && width(lo-1, hi) <= w {
+			lo, grew = lo-1, true
+		}
+	}
+	s := strings.Join(parts[lo:hi], "")
+	if lo > 0 {
+		s = "‹" + s
+	}
+	if hi < len(parts) {
+		s += "›"
+	}
+	return s
+}
+
 // detailLines renders exactly h lines of the right pane.
 func (m *Model) detailLines(w, h int) []string {
 	out := make([]string, h)
-	var title string
-	var body []string
+	var head, body []string
 	switch {
 	case m.hc != nil:
-		title, body = m.detail(m.nodes[m.cursor])
-		title = styleTitle.Render(title) + " ─ " + styleSelected.Render(" Overview ")
+		n := m.nodes[m.cursor]
+		title, _ := m.detail(n)
+		names := tabNames(n.kind)
+		active := min(m.tabs[n.kind], len(names)-1)
+		title = styleTitle.Render(title)
+		if bar := tabBar(names, active, w); ansi.StringWidth(title)+3+ansi.StringWidth(bar) <= w {
+			head = []string{title + " ─ " + bar}
+		} else {
+			head = []string{title, bar}
+		}
+		body = m.tabBody(n, names[active], w, h-len(head)-1)
 	case m.err != nil:
-		title = styleBad.Render("flk failed")
+		head = []string{styleBad.Render("flk failed")}
 		body = append([]string{"$ " + flk.CommandLine("context", "--all", "--json"), ""}, wrap(m.err.Error(), w)...)
 	default:
-		title = "loading…"
+		head = []string{"loading…"}
 		body = []string{"$ " + flk.CommandLine("context", "--all", "--json")}
 	}
-	out[0] = title
-	if h > 1 {
-		copy(out[2:], body)
+	copy(out, head)
+	room := h - len(head) - 1
+	if room <= 0 {
+		return out
 	}
+	m.detailTop = max(min(m.detailTop, len(body)-room), 0)
+	shown := body[m.detailTop:min(m.detailTop+room, len(body))]
+	if below := len(body) - m.detailTop - room; below > 0 {
+		shown = append(shown[:room-1], styleDim.Render(fmt.Sprintf("… %d more (pgdn)", below+1)))
+	}
+	if m.detailTop > 0 {
+		shown[0] = styleDim.Render(fmt.Sprintf("… %d above (pgup)", m.detailTop+1))
+	}
+	copy(out[len(head)+1:], shown)
 	return out
 }
 
@@ -357,7 +566,7 @@ func wrap(s string, w int) []string {
 	for _, para := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
 		line := ""
 		for _, word := range strings.Fields(para) {
-			if line != "" && len([]rune(line))+1+len([]rune(word)) > w {
+			if line != "" && ansi.StringWidth(line)+1+ansi.StringWidth(word) > w {
 				out = append(out, line)
 				line = ""
 			}

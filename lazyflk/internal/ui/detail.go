@@ -171,17 +171,6 @@ func (m *Model) hostOverview() []string {
 		field("boot", boot),
 		field("health", health),
 	}
-	for _, p := range h.Problems {
-		icon := styleWarn.Render("!")
-		if p.Status == "fail" {
-			icon = styleBad.Render("✘")
-		}
-		line := "  " + icon + " " + p.Label
-		if p.Hint != "" {
-			line += " → " + p.Hint
-		}
-		out = append(out, line)
-	}
 	for i, d := range m.hc.MountDirs {
 		label := ""
 		if i == 0 {

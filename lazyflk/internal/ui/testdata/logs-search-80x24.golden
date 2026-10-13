@@ -1,0 +1,24 @@
+┌ Logs ─ minecraft-flk / mellow-aurora-7882 ─────────────── paused · /RCON 2/2 ┐
+│ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 1000 -f                     │
+│ [23:08:53] [Server thread/INFO]: Preparing spawn area: 28%                   │
+│ [23:08:54] [Server thread/INFO]: Preparing spawn area: 28%                   │
+│ [23:08:54] [Server thread/INFO]: Time elapsed: 2238 ms                       │
+│ [23:08:54] [Server thread/INFO]: Done (2.832s)! For help, type "help"        │
+│ [23:08:54] [Server thread/INFO]: Starting remote control listener            │
+│ [23:08:54] [Server thread/INFO]: Thread RCON Listener started                │
+│ [23:08:54] [Server thread/INFO]: RCON running on 0.0.0.0:25576               │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world… │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world… │
+│ [23:08:54] [Server thread/INFO]: Saving chunks for level 'ServerLevel[world… │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (world): All chu… │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chu… │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chun… │
+│ [23:08:54] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions … │
+│ [23:08:54] [Server thread/INFO]: Took 17ms to boot Floodgate                 │
+│ [23:08:55] [Server thread/INFO]: ******************************************  │
+│ [23:08:55] [Server thread/INFO]:                                             │
+│ [23:08:55] [Server thread/INFO]: Loading Geyser version 2.11.0-b1205 (git-m… │
+│ [23:08:55] [Server thread/INFO]:                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ f follow  / search  n/N match  w wrap  g/G top/end  esc back  ? help         │
+└──────────────────────────────────────────────────────────────────────────────┘

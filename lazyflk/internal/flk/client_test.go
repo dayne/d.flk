@@ -117,6 +117,7 @@ func TestEveryFixtureServed(t *testing.T) {
 	c.MachineStatus(ctx, "minecraft-flk", "mellow-aurora-7882")
 	c.Help(ctx)
 	c.Logs(ctx, "minecraft-flk", "", 40)
+	c.Run(ctx, "-a", "minecraft-flk", "config", "show")
 
 	served := map[string]bool{}
 	for _, args := range f.Calls() {
@@ -128,7 +129,7 @@ func TestEveryFixtureServed(t *testing.T) {
 	}
 	files, _ := fs.Glob(fixtures.FS, "*.*")
 	for _, name := range files {
-		if !served[name] {
+		if !served[name] && name != "df.txt" { // df.txt is host.DF's, not flk's
 			t.Errorf("fixture %s is never served", name)
 		}
 	}
