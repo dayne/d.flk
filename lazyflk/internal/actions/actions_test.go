@@ -168,6 +168,50 @@ func TestRollback(t *testing.T) {
 	}
 }
 
+// Verify and restore as new work while the machine runs (flk 4ff9e9b).
+func TestVerifyAndRestoreAs(t *testing.T) {
+	hc := hostContext(t)
+	a := hc.Apps[0]
+	v := a.Volumes[0] // attached to the running machine
+	b := []flk.Backup{{File: v.Name + "-20261013T111353Z.ext4", Volume: v.Name, VolumeID: v.ID}, {File: v.Name + "-20261013T100001Z.ext4", Volume: v.Name, VolumeID: v.ID}}
+	acts := For(Target{Kind: Volume, App: a, Volume: v, Backups: b, StateDir: hc.Flk.StateDir})
+	if find(t, acts, "restore").Disabled == "" {
+		t.Error("restore in place needs the machine stopped")
+	}
+	as := find(t, acts, "restore as new")
+	if as.Disabled != "" || as.Confirm != Ask {
+		t.Fatalf("%+v", as)
+	}
+	if got := strings.Join(as.Command(nil).Args, " "); got != "-a minecraft-flk volumes restore world "+b[0].File+" --as world_restored" {
+		t.Errorf("%s", got)
+	}
+	for _, bad := range []string{"world", "world-copy", "World", strings.Repeat("x", 31)} {
+		if as.Check(map[string]string{"as": bad}) == "" {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+	if restoredName(strings.Repeat("v", 30)) != strings.Repeat("v", 21)+"_restored" {
+		t.Error("long names")
+	}
+	ver := find(t, acts, "verify")
+	if got := strings.Join(ver.Command(nil).Args, " "); got != "-a minecraft-flk volumes verify world --backup "+b[0].File {
+		t.Errorf("verify default: %s", got)
+	}
+	for val, want := range map[string]string{"all": "--all", b[1].File: "--backup " + b[1].File} {
+		if got := strings.Join(ver.Command(map[string]string{"backup": val}).Args, " "); got != "-a minecraft-flk volumes verify world "+want {
+			t.Errorf("verify %q: %s", val, got)
+		}
+	}
+	cp := find(t, acts, "copy")
+	if got := strings.Join(cp.Command(map[string]string{"dest": "nas:/b"}).Args, " "); got != "-a minecraft-flk volumes copy world --backup "+b[0].File+" --dest nas:/b" ||
+		cp.Confirm != Ask || !strings.Contains(cp.Command(nil).Warn, "backup_copy_to/minecraft-flk/world/") {
+		t.Errorf("copy: %s / %s", got, cp.Command(nil).Warn)
+	}
+	if ver.Confirm != NoConfirm || find(t, For(Target{Kind: Volume, App: a, Volume: v}), "verify").Disabled == "" {
+		t.Error("verify only reads; it waits for the backups list")
+	}
+}
+
 func TestVolumeActions(t *testing.T) {
 	a := hostContext(t).Apps[0]
 	v := a.Volumes[0] // external, attached to the running machine

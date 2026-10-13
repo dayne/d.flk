@@ -1098,7 +1098,8 @@ func hangingIndent(plain string) int {
 	return min(lead+2, 12)
 }
 
-// wrap breaks plain text into lines of at most w cells, keeping its newlines.
+// wrap breaks plain text into lines of at most w cells, keeping its
+// newlines; a word longer than w is broken across lines.
 func wrap(s string, w int) []string {
 	var out []string
 	for _, para := range strings.Split(strings.TrimRight(s, "\n"), "\n") {
@@ -1107,6 +1108,10 @@ func wrap(s string, w int) []string {
 			if line != "" && ansi.StringWidth(line)+1+ansi.StringWidth(word) > w {
 				out = append(out, line)
 				line = ""
+			}
+			for w > 0 && line == "" && ansi.StringWidth(word) > w { // a path longer than the line: break it, never cut it
+				out = append(out, ansi.Truncate(word, w, ""))
+				word = ansi.TruncateLeft(word, w, "")
 			}
 			if line != "" {
 				line += " "

@@ -27,7 +27,7 @@
 │                                        │   2026-10-13 05:52Z · 20G used · repaired                                                                           │
 │ Services                               │   mode live · release v8 · took 50s                                                                                 │
 │   ● flk-net                            │                                                                                                                     │
-│   ● flk-machines                       │ restore: stop the machine first                                                                                     │
+│   ● flk-machines                       │ enter: verify, copy, restore (machine stopped), or restore as a new volume (nothing stops)                          │
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │

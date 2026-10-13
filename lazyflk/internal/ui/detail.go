@@ -170,7 +170,11 @@ func (m *Model) volumeOverview(a flk.App, v flk.Volume) []string {
 	if actions.External(v, m.hc.Flk.StateDir) {
 		out = append(out, field("", styleDim.Render("external: outside flk's state dir")))
 	}
-	return append(out, field("attached", attached), field("created", when(v.CreatedAt)))
+	out = append(out, field("attached", attached), field("created", when(v.CreatedAt)))
+	if v.RestoredFrom != "" {
+		out = append(out, field("restored", "from "+v.RestoredFrom))
+	}
+	return out
 }
 
 func (m *Model) hostOverview() []string {

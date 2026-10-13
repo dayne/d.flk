@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -544,5 +545,40 @@ func TestSoftWrapPath(t *testing.T) {
 	got := softWrap([]string{"  /home/dayne/.local/share/flk/apps/flkt-mcshadow-25-14ea/volumes/vol_1.ext4"}, 40)
 	if len(got) != 2 || ansi.Strip(got[0]) != "  /home/dayne/.local/share/flk/apps/flkt" || ansi.Strip(got[1]) != "    -mcshadow-25-14ea/volumes/vol_1.ext4" {
 		t.Errorf("%q", got)
+	}
+}
+
+// A backup's verify result and copies show under it (flk 4ff9e9b, a04fcc6).
+func TestBackupVerifyAndCopies(t *testing.T) {
+	var bs []flk.Backup
+	raw, _ := fixtures.FS.ReadFile("backups-verified.json")
+	if err := json.Unmarshal(raw, &bs); err != nil || len(bs) != 1 || len(bs[0].Copies) != 1 {
+		t.Fatalf("%v %+v", err, bs)
+	}
+	v := flk.Volume{ID: bs[0].VolumeID, Name: bs[0].Volume}
+	s := ansi.Strip(strings.Join(backupLines(v, bs), "\n"))
+	if !strings.Contains(s, "verified clean "+when(bs[0].VerifiedAt)) || !strings.Contains(s, "copied to "+bs[0].Copies[0].To) {
+		t.Errorf("%s", s)
+	}
+	bs[0].Verify, bs[0].VerifyDetail = "hook_failed", "level.dat missing"
+	bs[0].Copies = append(bs[0].Copies, flk.BackupCopy{To: "nas:/backups", OK: false, Error: "ssh: connection refused"})
+	s = ansi.Strip(strings.Join(backupLines(v, bs), "\n"))
+	if !strings.Contains(s, "verify hook failed") || !strings.Contains(s, ": level.dat missing") ||
+		!strings.Contains(s, "copy to nas:/backups failed") || !strings.Contains(s, "ssh: connection refused") {
+		t.Errorf("%s", s)
+	}
+}
+
+// Commands shown before running are never cut: long words break.
+func TestWrapLongWord(t *testing.T) {
+	path := "/tmp/" + strings.Repeat("abcdefghij", 5)
+	got := wrap("flk volumes copy --dest "+path+" done", 20)
+	for _, l := range got {
+		if ansi.StringWidth(l) > 20 {
+			t.Errorf("too wide: %q", l)
+		}
+	}
+	if !strings.Contains(strings.Join(got, ""), path) {
+		t.Errorf("path lost: %q", got)
 	}
 }

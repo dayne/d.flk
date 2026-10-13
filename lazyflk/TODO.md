@@ -43,6 +43,18 @@ attention fix rolled it back).
   (last good) release (flk 3fd7177); the form offers it first and the
   attention fix runs `releases rollback vN`. Checked end to end.
 
+## From flk M1 (backups you can trust)
+
+- [x] M1.1 (4ff9e9b): volume menu `v` verify (one backup or all) and `a`
+  restore as new (nothing stops); verify results and `restored_from`
+  shown. Checked live on a test app.
+- [x] M1.2 (a04fcc6): volume menu `c` copy (`--dest`, else
+  backup_copy_to); copies (ok, or why not) under each backup; the
+  doctor's copy check shows on Health and in Needs attention.
+- [ ] M1.3 space checks, per-volume backup bytes in `disk --json`.
+- [ ] M1.4 before_deploy backups, `releases rollback --with-volumes`.
+- [ ] M1.5 `volumes move`.
+
 ## Polish (2026-10-13)
 
 - [x] `{input}` takes any one line (apostrophes too): passed to sh as $1.
@@ -55,6 +67,6 @@ attention fix rolled it back).
 
 - [x] **Reboots and log rotation** pin a banner in the followed log
   (`x` dismisses); checked live with a restart.
-- [ ] **Detaching from the console inside tmux** (`Ctrl-b Ctrl-b d`) is
-  only checked by reading; the automated run could only send `Ctrl-b d`
-  straight to the inner tmux. Try it once by hand.
+- [x] **Detaching from the console inside tmux** (`Ctrl-b Ctrl-b d`):
+  checked through a real outer tmux client (2026-10-13): back in
+  lazyflk, the outer tmux stays attached, the machine keeps running.

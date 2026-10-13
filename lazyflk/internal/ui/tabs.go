@@ -373,6 +373,9 @@ func (m *Model) appVolumeLines(a flk.App, backups []flk.Backup) []string {
 				out = append(out, "  "+field("backup", styleWarn.Render("none yet")))
 			} else {
 				out = append(out, "  "+field("backup", fmt.Sprintf("%s (%s, %d kept)", when(mine[0].CreatedAt), checkText(mine[0]), len(mine))))
+				if vt := verifyText(mine[0]); vt != "" {
+					out = append(out, "  "+field("", vt))
+				}
 			}
 		}
 	}
@@ -407,6 +410,36 @@ func checkText(b flk.Backup) string {
 	return or(b.Check, "unchecked")
 }
 
+// verifyText is a backup's last flk volumes verify, or "" if it has none.
+func verifyText(b flk.Backup) string {
+	var s string
+	switch b.Verify {
+	case "":
+		return ""
+	case "clean":
+		s = styleOK.Render("verified clean")
+	case "errors":
+		s = styleBad.Render("verify found errors")
+	case "hook_failed":
+		s = styleBad.Render("verify hook failed")
+	default:
+		s = styleWarn.Render("verify: " + b.Verify)
+	}
+	s += " " + when(b.VerifiedAt)
+	if b.VerifyDetail != "" && b.Verify != "clean" {
+		s += ": " + b.VerifyDetail
+	}
+	return s
+}
+
+// copyText is a backup's copy at one destination.
+func copyText(c flk.BackupCopy) string {
+	if !c.OK {
+		return styleBad.Render("copy to "+c.To+" failed") + " " + when(c.At) + ": " + or(c.Error, "?")
+	}
+	return styleOK.Render("copied") + " to " + c.To + " " + when(c.At)
+}
+
 // backupLines lists one volume's backups, newest first.
 func backupLines(v flk.Volume, all []flk.Backup) []string {
 	mine := volumeBackups(v, all)
@@ -425,8 +458,14 @@ func backupLines(v flk.Volume, all []flk.Backup) []string {
 		out = append(out, styleTitle.Render(b.File),
 			fmt.Sprintf("  %s · %s used · %s", when(b.CreatedAt), host.Human(b.BytesUsed/1024), checkText(b)),
 			styleDim.Render(fmt.Sprintf("  %s · took %.0fs", how, b.Seconds)))
+		if v := verifyText(b); v != "" {
+			out = append(out, "  "+v)
+		}
+		for _, c := range b.Copies {
+			out = append(out, "  "+copyText(c))
+		}
 	}
-	out = append(out, "", styleDim.Render("restore: stop the machine first"))
+	out = append(out, "", styleDim.Render("enter: verify, copy, restore (machine stopped), or restore as a new volume (nothing stops)"))
 	return out
 }
 

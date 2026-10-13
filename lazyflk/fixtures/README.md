@@ -25,6 +25,7 @@ digests only.
 | config-minecraft-flk.json | `flk -a minecraft-flk config show --json` (same as without --json) |
 | backups-minecraft-flk.json | `flk -a minecraft-flk volumes backups --json` |
 | backups-sample.json | `flk -a flkt-lazyflk-m2 volumes backups --json` at flk 407ff4d: a test app (since destroyed) after one offline and one stop-mode backup |
+| backups-verified.json | `flk -a flkt-lazyflk-bk volumes backups --json` at flk a04fcc6: a test app (since destroyed) after a backup, `volumes verify` and `volumes copy --dest` to a scratch dir |
 | df.txt | `df -k --output=target,size,used,avail,pcent MOUNT_DIRS...` (the `mount_dirs` of context-all.json, which start with the state dir) |
 | machine-stats.json | `flk machine stats --all --json` |
 | disk.json | `flk disk --json` |

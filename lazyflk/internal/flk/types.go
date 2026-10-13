@@ -141,6 +141,7 @@ type Volume struct {
 	External        bool   `json:"external"`
 	AttachedMachine string `json:"attached_machine"`
 	CreatedAt       string `json:"created_at"`
+	RestoredFrom    string `json:"restored_from"` // the backup file it was made from (restore --as)
 }
 
 // PortTable is the active/waiting/blocked split flk uses everywhere.
@@ -321,6 +322,22 @@ type Backup struct {
 	Check     string  `json:"check"` // clean, repaired, errors, unchecked
 	Journal   bool    `json:"journal_replayed"`
 	Seconds   float64 `json:"seconds"`
+	// flk volumes verify (flk 4ff9e9b); empty until it's been verified
+	Verify       string `json:"verify"` // clean, errors, hook_failed
+	VerifiedAt   string `json:"verified_at"`
+	VerifyDetail string `json:"verify_detail"`
+	// copies elsewhere (flk a04fcc6): one per destination, latest attempt
+	Copies []BackupCopy `json:"copies"`
+}
+
+// BackupCopy is a backup's copy at one destination (backup_copy_to or
+// volumes copy --dest).
+type BackupCopy struct {
+	To      string  `json:"to"` // a local dir, or HOST:DIR
+	At      string  `json:"at"`
+	OK      bool    `json:"ok"`
+	Seconds float64 `json:"seconds"`
+	Error   string  `json:"error"`
 }
 
 // MachineStats is a row of `flk machine stats --all --json`. The live

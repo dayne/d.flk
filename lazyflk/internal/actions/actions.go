@@ -469,6 +469,21 @@ func backup(t Target, v *flk.Volume) Action {
 	return act
 }
 
+// volumeNameRE is flk's rule for volume names.
+var volumeNameRE = regexp.MustCompile(`^[a-z0-9_]{1,30}$`)
+
+func or(s, fallback string) string {
+	if s == "" {
+		return fallback
+	}
+	return s
+}
+
+// restoredName is restore --as's default: NAME_restored, within 30.
+func restoredName(name string) string {
+	return name[:min(len(name), 30-len("_restored"))] + "_restored"
+}
+
 func volumeActions(t Target) []Action {
 	a, v := t.App, t.Volume
 	var user *flk.Machine
@@ -521,7 +536,77 @@ func volumeActions(t Target) []Action {
 		extend.Disabled = inUse
 	}
 
-	acts := []Action{backup(t, &v), restore, extend}
+	restoreAs := Action{Key: "a", Label: "restore as new", Help: "copy a backup into a new volume, to test it or look inside; nothing stops",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "backup", Label: "backup", Choices: backups, Help: "newest first"},
+			{Name: "as", Label: "new volume", Default: restoredName(v.Name), Required: true,
+				Help: "its name; if it's a [[mounts]] source, the next machine that needs one may attach it"},
+			{Name: "path", Label: "file", Help: "put its image here (empty: flk's state dir)"}},
+		check: func(val map[string]string) string {
+			n := strings.TrimSpace(val["as"])
+			switch {
+			case n == v.Name:
+				return "pick a new name: restore (t) replaces " + v.Name + " itself"
+			case !volumeNameRE.MatchString(n):
+				return "volume names: up to 30 lowercase letters, digits, underscores"
+			}
+			return ""
+		},
+		build: func(val map[string]string) Command {
+			as := strings.TrimSpace(val["as"])
+			args := app(a, "volumes", "restore", v.Name)
+			if b := val["backup"]; b != "" {
+				args = append(args, b)
+			}
+			args = append(args, "--as", as)
+			if p := strings.TrimSpace(val["path"]); p != "" {
+				args = append(args, "--path", p)
+			}
+			return Command{Args: args, Warn: fmt.Sprintf("Copies the backup into a new, unattached volume %s (as big as %s). Nothing stops, and %s isn't touched.", as, v.Name, v.Name)}
+		}}
+	verify := Action{Key: "v", Label: "verify", Help: "check backups without changing them: e2fsck -n, then the app's verify hook",
+		Long: true,
+		Fields: []Field{{Name: "backup", Label: "backup", Choices: append(append([]string{}, backups...), "all"),
+			Help: "one backup (newest first), or all of them"}},
+		build: func(val map[string]string) Command {
+			args := app(a, "volumes", "verify", v.Name)
+			switch b := val["backup"]; b {
+			case "all":
+				args = append(args, "--all")
+			case "":
+			default:
+				args = append(args, "--backup", b)
+			}
+			return Command{Args: args}
+		}}
+	cp := Action{Key: "c", Label: "copy", Help: "copy a backup off this disk or host (rsync), then prune old copies there",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "backup", Label: "backup", Choices: backups, Help: "newest first"},
+			{Name: "dest", Label: "to", Help: "a dir or HOST:DIR (empty: backup_copy_to in ~/.config/flk/host.toml)"}},
+		build: func(val map[string]string) Command {
+			args := app(a, "volumes", "copy", v.Name)
+			if b := val["backup"]; b != "" {
+				args = append(args, "--backup", b)
+			}
+			dest := strings.TrimSpace(val["dest"])
+			if dest != "" {
+				args = append(args, "--dest", dest)
+			}
+			return Command{Args: args, Warn: "Copies the backup to " + or(dest, "backup_copy_to") +
+				"/" + a.Name + "/" + v.Name + "/ (skipped if it's there), then deletes the oldest copies there beyond the copy keep count."}
+		}}
+	for _, x := range []*Action{&restoreAs, &verify, &cp} {
+		switch {
+		case t.Backups == nil && t.BackupsErr != "":
+			x.Disabled = t.BackupsErr
+		case t.Backups == nil:
+			x.Disabled = "loading its backups…"
+		case len(backups) == 0:
+			x.Disabled = "no backups of it yet"
+		}
+	}
+
+	acts := []Action{backup(t, &v), verify, cp, restore, restoreAs, extend}
 	attached := ""
 	if v.AttachedMachine != "" {
 		attached = "attached to machine " + v.AttachedMachine + ": destroy that machine (or scale down) first"
