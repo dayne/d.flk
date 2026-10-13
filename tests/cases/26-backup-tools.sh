@@ -80,3 +80,66 @@ test_verify_finds_damage() {
   assert_eq errors "$(backups_json | json_get 0.verify)"
   [[ -s ${f%.ext4}.verify.log ]] || fail "no .verify.log kept"
 }
+
+# ---------- copies elsewhere (backup_copy_to) ----------
+
+OFF="$WORK/offsite-26-$RUN_ID"
+# a stand-in for ssh: runs the remote command here ("nohost" fails like a
+# host that's down), so HOST:DIR copies go through rsync's remote path
+fake_ssh() {
+  mkdir -p "$WORK/fakebin-$RUN_ID"
+  cat >"$WORK/fakebin-$RUN_ID/ssh" <<'SH'
+#!/bin/bash
+while [[ $1 == -* ]]; do [[ $1 == -o ]] && shift; shift; done
+[[ $1 == nohost ]] && { echo "ssh: connect to host nohost: No route to host" >&2; exit 255; }
+shift
+exec sh -c "$*"
+SH
+  chmod +x "$WORK/fakebin-$RUN_ID/ssh"
+}
+host_conf() { printf 'backup_dir = "%s"\n' "$BK" >"$FLK_HOST_CONFIG"; printf '%s\n' "$@" >>"$FLK_HOST_CONFIG"; }
+offsite_files() { ls "$1/$APP/data" 2>/dev/null | grep -c '\.ext4$' || true; }
+
+test_backup_copies_to_another_disk() {
+  mkdir -p "$OFF"
+  host_conf "backup_copy_to = \"$OFF\"" "backup_copy_keep = 2"
+  local out i
+  out=$(flk volumes backup data) || fail "backup failed: $out"
+  assert_contains "$out" "copy data/"
+  assert_eq 1 "$(offsite_files "$OFF")" "copies at the destination"
+  assert_eq true "$(backups_json | json_get 0.copies.0.ok)" "recorded copy"
+  assert_eq "$OFF" "$(backups_json | json_get 0.copies.0.to)"
+  out=$(flk volumes copy data) || fail "copy failed: $out"
+  assert_contains "$out" "already there"
+  for i in 1 2; do sleep 1; flk volumes backup data >/dev/null || fail "backup $i failed"; done
+  assert_eq 2 "$(offsite_files "$OFF")" "backup_copy_keep = 2 at the destination"
+  cmp -s "$(backups_json | json_get 0.path)" "$OFF/$APP/data/$(backups_json | json_get 0.file)" || fail "the copy differs"
+}
+
+test_copies_over_ssh() {
+  fake_ssh
+  local remote="$WORK/remote-26-$RUN_ID" out
+  host_conf "backup_copy_to = \"fakehost:$remote\"" "backup_copy_keep = 1"
+  out=$(PATH="$WORK/fakebin-$RUN_ID:$PATH" flk volumes copy data) || fail "remote copy failed: $out"
+  assert_eq 1 "$(offsite_files "$remote")" "remote copy"
+  [[ -f $remote/$APP/data/$(backups_json | json_get 0.file | sed 's/\.ext4$/.json/') ]] || fail "no .json beside the remote copy"
+  sleep 1
+  out=$(PATH="$WORK/fakebin-$RUN_ID:$PATH" flk volumes backup data) || fail "backup with a remote copy failed: $out"
+  assert_contains "$out" "pruned 1 old copy there"
+  assert_eq 1 "$(offsite_files "$remote")" "remote prune to keep 1"
+  [[ -z $(ls -A "$remote/$APP/data" | grep -v "^$(backups_json | json_get 0.file | sed 's/\.ext4$//')") ]] ||
+    fail "leftovers at the remote: $(ls -A "$remote/$APP/data")"
+}
+
+test_failed_copy_is_reported_and_recorded() {
+  fake_ssh
+  host_conf 'backup_copy_to = "nohost:/srv/flk"' 'backup_copy_warn_days = 8'
+  local out
+  out=$(PATH="$WORK/fakebin-$RUN_ID:$PATH" flk volumes backup data 2>&1) && fail "backup passed with a failed copy"
+  assert_contains "$out" "copy to nohost:/srv/flk failed"
+  assert_eq false "$(backups_json | json_get 0.copies.0.ok)" "failed copy recorded"
+  assert_contains "$(flk volumes backups)" "FAILED nohost:/srv/flk"
+  out=$(flk doctor --json | json_get checks)
+  assert_contains "$out" "$APP/data (never copied)" "doctor warns"
+  host_conf
+}

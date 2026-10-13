@@ -232,6 +232,12 @@ To consider:
   `verify`/`verified_at`/`verify_detail` in the backup; `flk volumes restore
   NAME --as NEW [--path FILE]` copies a backup into a new, unattached volume
   (also for a destroyed volume's backups).
+- [x] Copies off this disk (PLAN.md M1.2): host `backup_copy_to` (a dir, or
+  HOST:DIR over rsync+ssh with keys), `backup_copy_keep`,
+  `backup_copy_warn_days`. `volumes backup` copies each new backup there
+  (`--no-copy` skips); `flk volumes copy [NAME] [--dest D] [--backup B]
+  [--keep N]` by hand, skipping what's there. Each backup records
+  `copies: [{ to, at, ok, seconds, error? }]`; doctor warns about stale ones.
 
 - [x] Graceful stop: `/flk/init` now disables the kernel's Ctrl-Alt-Del hard
   reboot, so stop sends the app SIGTERM instead of pulling the plug.

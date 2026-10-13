@@ -381,6 +381,10 @@ module Flk
   #   address     = "10.47.11.3"          # the address flk tells people to use
   #   bind        = "10.47.11.3"          # forward ports only there (default
   #                                       # for apps without [flk] bind)
+  #   backup_copy_to   = "/mnt/usb/flk" or "user@nas:/srv/flk"  # after each
+  #                                       # backup, copy it there too
+  #   backup_copy_keep = 7                # copies kept there per volume
+  #   backup_copy_warn_days = 8           # doctor warns when the newest copy is older
   module Host
     # FLK_HOST_CONFIG (tests) swaps the file for this process. Except for
     # `bind`: the port map is one for the whole host, and every flk process
@@ -388,7 +392,7 @@ module Flk
     # (else a test run would move every app's ports; see port_settings).
     HOST_FILE = File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
     PATH = ENV["FLK_HOST_CONFIG"] || HOST_FILE
-    KEYS = %w[backup_dir backup_keep address bind].freeze
+    KEYS = %w[backup_dir backup_keep address bind backup_copy_to backup_copy_keep backup_copy_warn_days].freeze
 
     module_function
 

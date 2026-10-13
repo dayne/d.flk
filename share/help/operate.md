@@ -118,7 +118,17 @@ keeps the replaced image beside it. To test a backup without stopping
 anything: `flk volumes verify NAME` (e2fsck read-only, plus the
 `[flk.backup] verify` hook if set), or `flk volumes restore NAME --as
 NEWNAME`, which copies it into a new volume and leaves everything else as
-it is. `flk volumes extend NAME --size GB`
+it is.
+
+**Copies off this disk.** A backup on the same disk as the volume doesn't
+survive that disk. Add `backup_copy_to = "/mnt/usb/flk"` (another disk) or
+`"user@nas:/srv/flk"` (rsync over ssh, with a key: no password prompts) to
+`~/.config/flk/host.toml`, and every `flk volumes backup` then copies the
+new backup there too, keeping `backup_copy_keep` (default `backup_keep`) per
+volume. `flk volumes copy` sends one by hand (it skips what's already
+there), `flk volumes backups` shows where each backup was copied, and
+`flk doctor` warns when a volume's newest copy is older than
+`backup_copy_warn_days` (8). `flk volumes extend NAME --size GB`
 grows a volume (machine stopped).
 
 On a schedule, with a systemd user timer (no root;

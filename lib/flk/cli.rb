@@ -408,9 +408,30 @@ module Flk
         record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn", "mount it, or fix #{Host::PATH}"]
       else
         record["backups go to #{dir} (#{Backup.gb(Backup.free_bytes(dir))} free)", "pass", nil]
+        backup_copy_check(record, dir)
       end
     rescue Error => e
       record[e.message, "warn", "fix #{Host::PATH}"]
+    end
+
+    # With backup_copy_to: is every backed-up volume's newest copy recent?
+    def backup_copy_check(record, root)
+      dest = Host.settings["backup_copy_to"] or return
+      days = (Host.settings["backup_copy_warn_days"] || 8).to_f
+      stale = App.all.flat_map do |a|
+        a.volumes.filter_map do |v|
+          bs = Backup.list(root, a.name, v)
+          next if bs.empty?
+          t = Backup.newest_copy(bs, Backup.remote?(dest) ? dest : File.expand_path(dest))
+          "#{a.name}/#{v['name']} (#{t ? "newest copy #{Util.ago(t.utc.iso8601)}" : 'never copied'})" if t.nil? || Time.now - t > days * 86_400
+        end
+      end
+      if stale.any?
+        record["backup copies to #{dest} are missing or older than #{days.to_i} days: #{stale.join(', ')}", "warn",
+               "flk -a APP volumes copy (and check that backups run: flk -a APP volumes backups)"]
+      else
+        record["backups are copied to #{dest}", "pass", nil]
+      end
     end
 
     # Optional: without it nothing comes back after a reboot.
@@ -1734,6 +1755,9 @@ module Flk
       raise Error, "--keep must be at least 1" if keep < 1
       failed = vols.reject do |v|
         backup_one(a, v, root, plan, keep, cfg&.dir || Dir.pwd, check: !o[:no_check])
+        if (dest = Host.settings["backup_copy_to"]) && !o[:no_copy]
+          copy_one(a, v, root, Backup.copy_dest!(dest), nil, Backup.copy_keep(nil))
+        end
         true
       rescue Error => e
         warn Util.red("  ✘ #{v['name']}: #{e.message}")
@@ -1853,16 +1877,48 @@ module Flk
       end
     end
 
+    def volumes_copy(args, o)
+      a = app
+      root = Backup.root!(o[:to])
+      dest = Backup.copy_dest!(o[:dest] || Host.settings["backup_copy_to"])
+      keep = Backup.copy_keep(o[:keep])
+      raise Error, "--keep must be at least 1" if keep < 1
+      vols = backup_volumes(a, args)
+      raise Error, "#{a.name} has no volumes" if vols.empty?
+      failed = vols.reject do |v|
+        copy_one(a, v, root, dest, o[:backup], keep)
+        true
+      rescue Error => e
+        warn Util.red("  ✘ #{v['name']}: #{e.message}")
+        false
+      end
+      raise Error, "#{failed.size} of #{vols.size} copies failed (see above)" if failed.any?
+      next_step("flk volumes backups")
+    end
+
+    def copy_one(a, v, root, dest, ref, keep)
+      b = Backup.find!(root, a.name, v, ref)
+      print "==> copy #{v['name']}/#{b['file']} to #{dest} "
+      e = Backup.send_copy(b, dest, a.name, v["name"], keep: keep)
+      raise Error, "copy to #{dest} failed: #{e['error']}" unless e["ok"]
+      puts "#{Util.green('✔')} #{e['already'] ? 'already there' : "#{e['seconds']}s"}" \
+           "#{"; pruned #{e['pruned'].size} old cop#{e['pruned'].size == 1 ? 'y' : 'ies'} there (keeping #{keep})" if e['pruned'].any?}"
+    rescue Error
+      puts Util.red("✘") if b
+      raise
+    end
+
     def volumes_backups(args, o)
       a = app
       root = Backup.root!(o[:to])
       rows = backup_volumes(a, args).flat_map { |v| Backup.list(root, a.name, v).map { _1.merge("volume" => v["name"]) } }
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No backups of #{a.name} in #{root}") if rows.empty?
-      Util.table(%w[VOLUME BACKUP CREATED USED MODE CHECK VERIFIED],
+      Util.table(%w[VOLUME BACKUP CREATED USED MODE CHECK VERIFIED COPIES],
                  rows.map { [_1["volume"], _1["file"], Util.ago(_1["created_at"]), Backup.gb(_1["bytes_used"]),
                              _1["mode"] || "-", _1["check"] || "-",
-                             _1["verified_at"] ? "#{_1['verify']} #{Util.ago(_1['verified_at'])}" : "-"] })
+                             _1["verified_at"] ? "#{_1['verify']} #{Util.ago(_1['verified_at'])}" : "-",
+                             Array(_1["copies"]).map { |c| "#{c['ok'] ? '' : 'FAILED '}#{c['to']}" }.join(", ").then { |s| s.empty? ? "-" : s }] })
     end
 
     def volumes_verify(args, o)

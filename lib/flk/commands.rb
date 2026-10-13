@@ -215,13 +215,27 @@ module Flk
           { name: "backup", args: "[ID|NAME...]",
             opts: [BACKUP_TO_OPT, ["--keep N", Integer, "Keep this many backups per volume (default: [flk.backup] keep, host backup_keep, 7)"],
                    ["--mode MODE", "stop, live or pause: override [flk.backup] mode"],
-                   ["--no-check", "Skip the e2fsck of the copy"]],
+                   ["--no-check", "Skip the e2fsck of the copy"],
+                   ["--no-copy", "Don't copy it to backup_copy_to (host.toml) this time"]],
             summary: "Copy volumes (default: all of the app's) to the backup dir, then prune old copies",
             notes: ["How the app is kept from writing comes from [flk.backup] in flk.toml (see flk help --all): " \
                     "by default its machine is stopped for the copy and started again; " \
                     "mode = \"live\" with pre/post hooks (e.g. save-off / save-on) copies while it runs.",
                     "Copies are sparse, and instant on XFS/btrfs when the backup dir shares the volume's filesystem. " \
-                    "The copy is checked with e2fsck (a copy of a running machine gets its journal replayed)."] },
+                    "The copy is checked with e2fsck (a copy of a running machine gets its journal replayed).",
+                    "With backup_copy_to in ~/.config/flk/host.toml, the new backup is then copied there too " \
+                    "(see flk volumes copy); a failed copy makes the command fail, but the backup is kept."] },
+          { name: "copy", args: "[ID|NAME...]",
+            opts: [BACKUP_TO_OPT, ["--dest DEST", "Where to: a dir (another disk) or HOST:DIR (rsync over ssh) " \
+                                                  "(default: backup_copy_to in ~/.config/flk/host.toml)"],
+                   ["--backup BACKUP", "Which backup (default: the latest)"],
+                   ["--keep N", Integer, "Copies kept at DEST per volume (default: backup_copy_keep, else backup_keep, 7)"]],
+            summary: "Copy backups to another disk or host (off this machine), then prune old copies there",
+            notes: ["Copies go to DEST/APP/VOLUME/, like the backup dir. Ones already there are skipped, " \
+                    "so it's safe to rerun. Remote copies use rsync over ssh with keys (BatchMode: no password prompts), " \
+                    "resume when cut off, and run at idle I/O priority.",
+                    "Each backup records its copies (copies in flk volumes backups --json); " \
+                    "flk doctor warns when the newest copy is older than backup_copy_warn_days (8)."] },
           { name: "backups", args: "[ID|NAME...]", opts: [BACKUP_TO_OPT, JSON_OPT], json: true,
             summary: "List a volume's backups (default: all of the app's volumes), newest first" },
           { name: "restore", args: "ID|NAME [BACKUP]",

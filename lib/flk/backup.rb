@@ -250,5 +250,105 @@ module Flk
     end
 
     def gb(bytes) = "#{(bytes / 1024.0**3).round(1)}GB"
+
+    # ---------- copies elsewhere (host backup_copy_to) ----------
+    # A copy target is a local dir (another disk) or HOST:DIR / USER@HOST:DIR
+    # (rsync over ssh, keys only). Copies are laid out like backup_dir:
+    # DEST/APP/VOLUME/FILE.ext4 + .json.
+
+    def remote?(dest) = dest.match?(%r{\A[^/:]+:})
+
+    def copy_dest!(dest)
+      raise Error, "no copy destination: pass --dest, or set backup_copy_to in #{Host::PATH}" unless dest
+      return dest if remote?(dest)
+      dir = File.expand_path(dest)
+      raise Error, "copy destination #{dir} doesn't exist (is its disk mounted?)" unless File.directory?(dir)
+      raise Error, "copy destination #{dir} isn't writable by you" unless File.writable?(dir)
+      dir
+    end
+
+    def copy_keep(opt) = Integer(opt || Host.settings["backup_copy_keep"] || Host.settings["backup_keep"] || DEFAULT_KEEP)
+
+    RSYNC_SSH = "ssh -o BatchMode=yes -o ConnectTimeout=20"
+
+    # Backup file names at dest/app/vol: { name => bytes }.
+    def copies_at(dest, app, vol)
+      if remote?(dest)
+        out, st = Open3.capture2e("rsync", "--list-only", "-e", RSYNC_SSH, "#{dest}/#{app}/#{vol}/")
+        return {} if !st.success? && out.include?("No such file or directory")
+        raise Error, "listing #{dest}/#{app}/#{vol}: #{out.lines.last(3).join.strip}" unless st.success?
+        out.lines.filter_map do |l|
+          f = l.split.last
+          [f, l.split[1].delete(",").to_i] if f&.match?(NAME_RE)
+        end.to_h
+      else
+        d = File.join(dest, app, vol)
+        return {} unless File.directory?(d)
+        Dir.children(d).grep(NAME_RE).to_h { [_1, File.size(File.join(d, _1))] }
+      end
+    end
+
+    # Sends backup b of app/vol to dest (unless it's there already), then
+    # keeps the newest `keep` there. Records the result in b's .json
+    # ("copies": one entry per destination) and returns that entry.
+    def send_copy(b, dest, app, vol, keep:)
+      t0 = Time.now
+      entry = { "to" => dest, "at" => nil, "ok" => false }
+      begin
+        have = copies_at(dest, app, vol)
+        if have[b["file"]] == File.size(b["path"])
+          entry["already"] = true
+        elsif remote?(dest)
+          rsync!(dest, app, vol, [b["path"], b["path"].sub(/\.ext4\z/, ".json")])
+        else
+          d = File.join(dest, app, vol)
+          FileUtils.mkdir_p(d)
+          room!(b["path"], d)
+          copy(b["path"], File.join(d, b["file"]))
+          FileUtils.cp(b["path"].sub(/\.ext4\z/, ".json"), File.join(d, b["file"].sub(/\.ext4\z/, ".json")))
+        end
+        entry.merge!("ok" => true, "pruned" => prune_copies(dest, app, vol, keep))
+      rescue Error, SystemCallError => e
+        entry["error"] = e.message
+      end
+      entry.merge!("at" => Util.now, "seconds" => (Time.now - t0).round(1))
+      old = (JSON.parse(File.read(b["path"].sub(/\.ext4\z/, ".json"))) rescue {})["copies"] || []
+      update_meta(b["path"], "copies" => old.reject { _1["to"] == dest } + [entry.except("pruned", "already")])
+      entry
+    end
+
+    # rsync at idle I/O priority, resumable (--partial-dir: a cut-off copy
+    # never shows up as a backup), then out of the page cache.
+    def rsync!(dest, app, vol, files)
+      cmd = ["rsync", "-t", "--sparse", "--mkpath", "--partial-dir=.rsync-partial", "-e", RSYNC_SSH, *files, "#{dest}/#{app}/#{vol}/"]
+      cmd = ["ionice", "-c3", *cmd] if Util.which("ionice")
+      out, st = Open3.capture2e(*cmd)
+      files.each { drop_cache(_1) }
+      raise Error, "rsync to #{dest} failed: #{out.lines.last(3).join.strip}" unless st.success?
+    end
+
+    # Deletes all but the newest `keep` backups at dest; returns their names.
+    def prune_copies(dest, app, vol, keep)
+      old = copies_at(dest, app, vol).keys.sort.reverse.drop(keep)
+      return [] if old.empty?
+      names = old.flat_map { |f| %w[.ext4 .json .fsck.log .verify.log].map { f.sub(/\.ext4\z/, _1) } }
+      if remote?(dest)
+        # rsync from an empty dir, deleting only these names
+        Dir.mktmpdir do |empty|
+          inc = names.flat_map { ["--include", "/#{_1}"] }
+          out, st = Open3.capture2e("rsync", "-r", "--delete", *inc, "--exclude", "*", "-e", RSYNC_SSH,
+                                    "#{empty}/", "#{dest}/#{app}/#{vol}/")
+          raise Error, "pruning #{dest}/#{app}/#{vol}: #{out.lines.last(3).join.strip}" unless st.success?
+        end
+      else
+        FileUtils.rm_f(names.map { File.join(dest, app, vol, _1) })
+      end
+      old
+    end
+
+    # The newest successful copy to dest of any of these backups: time or nil.
+    def newest_copy(backups, dest)
+      backups.flat_map { Array(_1["copies"]) }.select { _1["ok"] && _1["to"] == dest }.map { Time.parse(_1["at"]) }.max
+    end
   end
 end
