@@ -139,17 +139,11 @@ help = "broadcast a message"
 		t.Fatalf("menu:\n%s", s)
 	}
 	press(m, "2")
-	typeText(m, "hi; reboot")
-	press(m, "enter")
-	if m.form == nil || !strings.Contains(screen(m), "the input can't contain") {
-		t.Fatalf("unsafe input:\n%s", screen(m))
-	}
-	for range 8 {
-		press(m, "backspace")
-	}
-	typeText(m, " back soon")
+	typeText(m, "don't panic; reboot")
 	press(m, "enter", "y")
-	want := "sh -c 'cd '\\''" + dir + "'\\'' && flk -a minecraft-flk console 225d58f615e7e6 --send '\\''say hi back soon'\\'''"
+	// the text goes to sh as $1: shown and run as data, never as code
+	want := flk.CommandLineFor("sh", "-c", "cd '"+dir+`' && flk -a minecraft-flk console 225d58f615e7e6 --send 'say '"$1"''`,
+		"lazyflk-input", "don't panic; reboot")
 	if len(m.jobs) != 1 || m.jobs[0].line != want {
 		t.Errorf("ran %v\nwant %s", actionCalls(m), want)
 	}

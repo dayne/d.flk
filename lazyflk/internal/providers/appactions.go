@@ -26,9 +26,9 @@ import (
 //
 // Placeholders: {app}, {machine} (the selected machine, or the app's
 // first), {machine.name}, {volume.NAME} (that volume's file), {dir} (the
-// app's directory) and {input} (asked for when the action runs). Each
-// runs with sh -c in the app's directory, after showing the expanded
-// command and asking.
+// app's directory) and {input} (asked for when the action runs; any one
+// line of text, passed to sh as $1). Each runs with sh -c in the app's
+// directory, after showing the expanded command and asking.
 
 // AppAction is one entry of [actions].
 type AppAction struct {
@@ -147,10 +147,11 @@ var (
 	sudoRE        = regexp.MustCompile(`(^|[\s;&|(])sudo\s`)
 	placeholderRE = regexp.MustCompile(`\{([a-z]+(?:\.[A-Za-z0-9_-]+)?)\}`)
 	safeValue     = regexp.MustCompile(`^[A-Za-z0-9._/:@+=-]*$`)
-	// typed input may also have spaces and plain punctuation, but nothing
-	// the shell would read (quotes, $, `, \, ;, &, |, <, >, parentheses)
-	safeInput = regexp.MustCompile(`^[A-Za-z0-9 ._/:@+=,!?%#*\[\]-]*$`)
 )
+
+// inputArg is $0 for sh -c; the typed input is $1, so the shell never
+// reads it as code: any text works, quotes and $ included.
+const inputArg = "lazyflk-input"
 
 // AppActionItems turns an app's actions into menu actions: keys 1-9, an
 // {input} field when the command asks for one, and sh -c in dir.
@@ -190,7 +191,11 @@ func AppActionItems(list []AppAction, a flk.App, machine *flk.Machine, dir strin
 				if strings.Contains(dir, "'") {
 					return actions.Command{}, "the app's directory has a ' in its name"
 				}
-				return actions.Command{Program: "sh", Args: []string{"-c", "cd '" + dir + "' && " + line},
+				args := []string{"-c", "cd '" + dir + "' && " + line}
+				if needsInput {
+					args = append(args, inputArg, input)
+				}
+				return actions.Command{Program: "sh", Args: args,
 					Warn: "Runs " + act.Name + " from " + filepath.Join(dir, ".lazyflk.toml") + " with sh, in the app's directory."}, ""
 			}))
 	}
@@ -198,59 +203,106 @@ func AppActionItems(list []AppAction, a flk.App, machine *flk.Machine, dir strin
 }
 
 // Expand fills an action's placeholders. Values from flk must look like
-// names or paths, and typed input can't contain anything the shell
-// interprets, so a placeholder can't change the command's shape.
+// names or paths, so a placeholder can't change the command's shape.
+// {input} becomes a reference to $1, quoted for where it stands, and the
+// typed text goes to sh as that argument; it only has to be one line.
 func Expand(cmd string, a flk.App, machine *flk.Machine, dir, input string) (string, string) {
 	m := machine
 	if m == nil && len(a.Machines) > 0 {
 		m = &a.Machines[0]
 	}
 	var problem string
-	out := placeholderRE.ReplaceAllStringFunc(cmd, func(ph string) string {
-		key := ph[1 : len(ph)-1]
-		var v string
+	var out strings.Builder
+	last := 0
+	for _, at := range placeholderRE.FindAllStringIndex(cmd, -1) {
+		out.WriteString(cmd[last:at[0]])
+		last = at[1]
+		ph := cmd[at[0]:at[1]]
+		if ph == "{input}" {
+			if strings.ContainsFunc(input, func(r rune) bool { return r < ' ' || r == 0x7f }) {
+				problem = "the input must be one line of text"
+			}
+			out.WriteString(inputRef(quoteAt(cmd, at[0])))
+			continue
+		}
+		out.WriteString(placeholder(ph, a, m, dir, &problem))
+	}
+	out.WriteString(cmd[last:])
+	return out.String(), problem
+}
+
+// inputRef is $1 as written inside the given quotes.
+func inputRef(quote byte) string {
+	switch quote {
+	case '\'':
+		return `'"$1"'`
+	case '"':
+		return "${1}"
+	}
+	return `"$1"`
+}
+
+// quoteAt is the shell quote open at position i of cmd: ', " or 0.
+func quoteAt(cmd string, i int) byte {
+	var q byte
+	for j := 0; j < i; j++ {
+		c := cmd[j]
 		switch {
-		case key == "app":
-			v = a.Name
-		case key == "dir":
-			v = dir
-		case key == "machine" || key == "machine.name":
-			if m == nil {
-				problem = "the app has no machine for {" + key + "}"
-				return ph
+		case q == '\'':
+			if c == '\'' {
+				q = 0
 			}
-			v = m.ID
-			if key == "machine.name" {
-				v = m.Name
+		case c == '\\':
+			j++ // escapes the next character, outside and inside "
+		case q == '"':
+			if c == '"' {
+				q = 0
 			}
-		case strings.HasPrefix(key, "volume."):
-			name := strings.TrimPrefix(key, "volume.")
-			for _, vol := range a.Volumes {
-				if vol.Name == name {
-					v = vol.Path
-				}
-			}
-			if v == "" {
-				problem = "the app has no volume " + name
-				return ph
-			}
-		case key == "input":
-			if !safeInput.MatchString(input) {
-				problem = "the input can't contain quotes, $, `, \\, ;, &, |, <, > or parentheses"
-				return ph
-			}
-			return input
-		default:
-			names := []string{"{app}", "{machine}", "{machine.name}", "{volume.NAME}", "{dir}", "{input}"}
-			sort.Strings(names)
-			problem = "unknown placeholder " + ph + " (known: " + strings.Join(names, " ") + ")"
+		case c == '\'' || c == '"':
+			q = c
+		}
+	}
+	return q
+}
+
+// placeholder is the value of one placeholder other than {input}.
+func placeholder(ph string, a flk.App, m *flk.Machine, dir string, problem *string) string {
+	key := ph[1 : len(ph)-1]
+	var v string
+	switch {
+	case key == "app":
+		v = a.Name
+	case key == "dir":
+		v = dir
+	case key == "machine" || key == "machine.name":
+		if m == nil {
+			*problem = "the app has no machine for {" + key + "}"
 			return ph
 		}
-		if !safeValue.MatchString(v) {
-			problem = fmt.Sprintf("%s is %q, which isn't safe to put in a command", ph, v)
+		v = m.ID
+		if key == "machine.name" {
+			v = m.Name
+		}
+	case strings.HasPrefix(key, "volume."):
+		name := strings.TrimPrefix(key, "volume.")
+		for _, vol := range a.Volumes {
+			if vol.Name == name {
+				v = vol.Path
+			}
+		}
+		if v == "" {
+			*problem = "the app has no volume " + name
 			return ph
 		}
-		return v
-	})
-	return out, problem
+	default:
+		names := []string{"{app}", "{machine}", "{machine.name}", "{volume.NAME}", "{dir}", "{input}"}
+		sort.Strings(names)
+		*problem = "unknown placeholder " + ph + " (known: " + strings.Join(names, " ") + ")"
+		return ph
+	}
+	if !safeValue.MatchString(v) {
+		*problem = fmt.Sprintf("%s is %q, which isn't safe to put in a command", ph, v)
+		return ph
+	}
+	return v
 }

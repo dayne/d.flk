@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -197,11 +198,12 @@ help = "broadcast a message"
 	if len(say.Fields) != 1 || say.Key != "2" {
 		t.Errorf("say: %+v", say)
 	}
-	if why := say.Check(map[string]string{"input": "hi $(reboot)"}); why == "" {
-		t.Error("shell syntax in input must be refused")
+	if why := say.Check(map[string]string{"input": "two\nlines"}); why == "" {
+		t.Error("input is one line")
 	}
-	if got := say.Command(map[string]string{"input": "Restarting in 5 minutes!"}).Args[1]; !strings.HasSuffix(got, `--send "say Restarting in 5 minutes!"`) {
-		t.Errorf("say: %s", got)
+	if c := say.Command(map[string]string{"input": "don't $(reboot)"}); !strings.HasSuffix(c.Args[1], `--send "say ${1}"`) ||
+		len(c.Args) != 4 || c.Args[2] != "lazyflk-input" || c.Args[3] != "don't $(reboot)" {
+		t.Errorf("say: %q", c.Args)
 	}
 	if line, why := Expand("cp {volume.world} /b/ && {nope}", a, nil, "/d", ""); why == "" || !strings.Contains(line, "/data/minecraft/flk/world.ext4") {
 		t.Errorf("%s / %s", line, why)
@@ -217,6 +219,35 @@ help = "broadcast a message"
 	}
 	if _, err := ParseAppActions("[actions]\nbad\n"); err == nil {
 		t.Error("bad line")
+	}
+}
+
+// Typed input reaches the command as text, whatever it holds and wherever
+// {input} stands: unquoted, in '...' or in "...".
+func TestInputIsData(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "show"), []byte("#!/bin/sh\nfor a; do printf '[%s]' \"$a\"; done\n"), 0o755)
+	a := flk.App{Name: "x", Machines: []flk.Machine{{ID: "m1"}}}
+	for _, input := range []string{"don't", `say "hi" $HOME $(touch pwned) `+"`id`"+` ; rm -rf / & | < > \\ (x) {input}`, "  two  spaces "} {
+		for run, want := range map[string]string{
+			"./show say {input}":         "[say][" + input + "]",
+			"./show 'say {input}!'":      "[say " + input + "!]",
+			`./show "say {input} \"q\""`: "[say " + input + ` "q"]`,
+			`./show "it's" '{input}'`:    "[it's][" + input + "]",
+		} {
+			acts := AppActionItems([]AppAction{{Name: "t", Run: run}}, a, nil, dir)
+			if why := acts[0].Check(map[string]string{"input": input}); why != "" {
+				t.Fatalf("%s: %s", run, why)
+			}
+			c := acts[0].Command(map[string]string{"input": input})
+			out, err := exec.Command(c.Program, c.Args...).CombinedOutput()
+			if err != nil || string(out) != want {
+				t.Errorf("%s with %q: got %q (%v), want %q\n  line: %s", run, input, out, err, want, c.Line())
+			}
+		}
+	}
+	if _, err := os.Stat(filepath.Join(dir, "pwned")); err == nil {
+		t.Error("input ran as code")
 	}
 }
 

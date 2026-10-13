@@ -67,9 +67,11 @@ own commands to its menu (and its machines'):
     help = "broadcast a message to the players"
 
 Placeholders: `{app}`, `{machine}`, `{machine.name}`, `{volume.NAME}` (its
-file), `{dir}`, `{input}` (asked for; no quotes, `$`, `;`, `&`, `|`, `<`,
-`>`, backticks or parentheses). It runs with `sh -c` in the app's
-directory, after showing the expanded command and asking.
+file), `{dir}`, `{input}` (asked for: one line of any text). It runs with
+`sh -c` in the app's directory, after showing the expanded command and
+asking. The typed text is passed to sh as `$1` and `{input}` becomes
+`"$1"` (quoted to fit where it stands), so quotes, `$` and the like
+arrive as text and never run.
 
 Tests: `go test ./...`. Main view snapshots are in
 `internal/ui/testdata/`; after an intended change to the screen, rewrite
