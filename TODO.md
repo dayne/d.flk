@@ -113,6 +113,10 @@ Each entry says where the issue is caught today, and where a fix could go.
   stopping so its own stops are never taken for crashes (that race was real:
   1 in 3 stops). Tests run on their own tmux server, so they never repoint
   the real exit hook, and doctor checks the hook's flk exists.
+- [x] New volumes on another disk no longer ask for `--install-service`:
+  a plain /etc/fstab mount is already ordered before the boot service
+  (local-fs.target); doctor only warns for nofail, network or hand-made
+  mounts. A machine whose volume file is missing won't start (clear error).
 - [x] lazyflk gaps G1-G3: read commands never wait on flk's lock (they skip
   the reap when busy); flk records each app's config path so `-a APP`
   works from anywhere (`config_path` in JSON); `flk console --send TEXT

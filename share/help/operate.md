@@ -46,8 +46,10 @@ volumes (unless created with `--path`), logs. `flk apps prune` removes
 images of destroyed apps. To back up a volume, stop its machine and copy
 the file (`flk volumes list --json` shows the path): a stop unmounts it
 cleanly, so the copy is consistent. Volumes on other disks (`--path`):
-re-run `sudo {{SRC}}/setup-host.sh --install-service` once so reboots wait
-for that disk (`flk doctor` reminds you).
+put the disk in `/etc/fstab` (without `nofail`) and reboots mount it before
+machines start, and stop machines before unmounting it. `flk doctor` warns
+if a disk isn't covered, e.g. a `nofail` or network mount: then re-run
+`sudo {{SRC}}/setup-host.sh --install-service` once.
 
 **Updating flk.** `git -C {{SRC}} pull`, then `flk setup` for a newer
 firecracker or kernel. Running machines pick changes up on their next

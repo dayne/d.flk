@@ -57,3 +57,18 @@ test_scale_down_frees_volume() {
   local free; free=$(flk volumes list | grep -c ' - ' || true)
   assert_eq 1 "$free" "unattached volumes"
 }
+
+# A volume whose file is gone (its disk isn't mounted) stops the start,
+# instead of booting without it.
+test_missing_volume_file_blocks_start() {
+  local m out path; m=$(machine_id 1)
+  path=$(flk volumes list --json | ruby -rjson -e 'm = ARGV[0]; v = JSON.parse($stdin.read).find { _1["attached_machine"] == m }; puts v["path"]' "$m")
+  [[ -f $path ]] || fail "no volume path for $m"
+  flk machine stop "$m"
+  mv "$path" "$path.away"
+  out=$(flk machine start "$m" 2>&1) && { mv "$path.away" "$path"; fail "started without its volume"; }
+  mv "$path.away" "$path"
+  assert_contains "$out" "is missing"
+  flk machine start "$m"
+  wait_mc 60 "$(machine_ip 1)"
+}

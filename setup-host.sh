@@ -145,6 +145,9 @@ EOF
   [[ -n $ruby_bin ]] || { echo "ruby not found for $user" >&2; exit 1; }
   # Disks the machines need mounted: flk's state dir and every external
   # volume's dir (flk knows them). Start after those mounts, stop before them.
+  # Plain /etc/fstab mounts are ordered that way already (local-fs.target);
+  # this covers nofail and network mounts, so new volumes on such disks are
+  # the only reason to re-run --install-service (flk doctor says when).
   local mount_dirs
   mount_dirs=$(sudo -u "$user" -H "$ruby_bin" "$src/bin/flk" context --all --json 2>/dev/null |
     "$ruby_bin" -rjson -e 'puts JSON.parse($stdin.read)["mount_dirs"].join(" ")' 2>/dev/null) ||
@@ -153,7 +156,7 @@ EOF
 [Unit]
 Description=flk machines: resume at boot, stop gracefully at shutdown
 Requires=flk-net.service
-After=flk-net.service
+After=flk-net.service remote-fs.target
 RequiresMountsFor=$mount_dirs
 
 [Service]

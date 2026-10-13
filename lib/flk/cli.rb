@@ -255,9 +255,40 @@ module Flk
       ([ROOT] + ext).uniq
     end
 
-    def boot_unit_mount_dirs
-      out, st = Open3.capture2("systemctl", "show", "-p", "RequiresMountsFor", "--value", "flk-machines.service")
+    def boot_unit_mount_dirs = boot_unit_prop("RequiresMountsFor")
+
+    def boot_unit_prop(name, unit = "flk-machines.service")
+      out, st = Open3.capture2("systemctl", "show", "-p", name, "--value", unit, err: File::NULL)
       st.success? ? out.split : []
+    rescue SystemCallError
+      []
+    end
+
+    # Why the boot service could start or stop machines without dir's disk,
+    # as [problem, fix], or nil when it can't. A mount from /etc/fstab
+    # (without nofail) is ordered before local-fs.target, and the service
+    # (default dependencies) after it: those need nothing. RequiresMountsFor
+    # is for the rest (nofail, network mounts).
+    def mount_gap(dir)
+      return ["#{dir} is missing: is its disk mounted?", "mount it, then flk doctor"] unless File.directory?(dir)
+      return if boot_unit_mount_dirs.include?(dir)
+      target, st = Open3.capture2("findmnt", "-n", "-o", "TARGET", "-T", dir, err: File::NULL)
+      target = target.strip
+      return if !st.success? || target.empty? || target == "/"
+      unit = Util.run!("systemd-escape", "-p", "--suffix=mount", target).strip
+      before = boot_unit_prop("Before", unit)
+      return if before.include?("local-fs.target") || before.include?("flk-machines.service")
+      return if before.include?("remote-fs.target") && boot_unit_prop("After").include?("remote-fs.target")
+      if boot_unit_prop("SourcePath", unit).empty? && boot_unit_prop("FragmentPath", unit).empty?
+        ["#{target} (holding #{dir}) isn't in /etc/fstab: after a reboot it won't be mounted and those machines won't start",
+         "add #{target} to /etc/fstab"]
+      else
+        ["boot service doesn't wait for #{target} (holding #{dir}; nofail or network mount): " \
+         "a reboot could start or stop machines without it",
+         "sudo #{SETUP_HOST} --install-service (regenerates it)"]
+      end
+    rescue Error, SystemCallError
+      nil # no findmnt/systemd: nothing to check
     end
 
     # The hook on flk's tmux server must run a flk that exists; a removed
@@ -281,9 +312,8 @@ module Flk
       fix = "sudo #{SETUP_HOST} --install-service"
       if !ok
         record["boot service: after a reboot the network and machines stay down", "warn", fix]
-      elsif (missing = mount_dirs - boot_unit_mount_dirs).any?
-        record["boot service doesn't wait for the disk(s) of #{missing.join(', ')}: a reboot could start or stop machines without them",
-               "warn", "#{fix} (regenerates it)"]
+      elsif (gaps = mount_dirs.filter_map { mount_gap(_1) }).any?
+        gaps.each { |problem, how| record[problem, "warn", how] }
       else
         record["boot service (machines come back after a reboot)", "pass", nil]
       end
@@ -1201,11 +1231,12 @@ module Flk
       next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
     end
 
-    # A volume on another disk: the boot service must wait for that mount.
+    # A volume on another disk: the boot service must wait for that mount
+    # (usually it already does; see mount_gap).
     def boot_unit_note(path)
       return unless File.exist?("/etc/systemd/system/flk-machines.service")
-      return if boot_unit_mount_dirs.include?(File.dirname(path))
-      puts Util.yellow("Run once so reboots wait for this disk: sudo #{SETUP_HOST} --install-service")
+      problem, how = mount_gap(File.dirname(path))
+      puts Util.yellow("#{problem}\n  -> #{how}") if problem
     end
 
     # --from-dir must fit with headroom: ext4 metadata takes a few percent.

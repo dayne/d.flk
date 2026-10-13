@@ -78,6 +78,12 @@ module Flk
       raise Error, "guest kernel not found at #{kernel}; run: flk setup" unless File.exist?(kernel)
       raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo #{SETUP_HOST}" unless Net.tap_exists?(m.tap_index)
       raise Error, "tmux is required" unless Util.which("tmux")
+      m.config["mounts"].each do |mt|
+        v = m.app.volume!(mt["volume"])
+        next if File.exist?(v["path"])
+        raise Error, "volume #{v['name']}'s file #{v['path']} is missing" +
+                     (App.external_volume?(v) ? " (is its disk mounted?)" : "")
+      end
       if tmux_server_lacks_kvm?
         # The server outlives its sessions (see install_exit_hook); when it's
         # idle, restarting it with the current groups is safe.
