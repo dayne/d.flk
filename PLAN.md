@@ -77,7 +77,7 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
 - `cp` sets uid/gid (`--owner`, defaulting to the parent's owner).
 - Every write ends with an e2fsck.
 
-### M3: Talk to running machines (events c0a98f4 and exec done; static init next)
+### M3: Talk to running machines (done 2026-10-13: events c0a98f4, exec 25b23ad, static init)
 
 - **G7 events**: `flk events [--json] [--follow] [-a APP]`. An
   append-only, rotated `events.jsonl`, fed by lifecycle commands and the

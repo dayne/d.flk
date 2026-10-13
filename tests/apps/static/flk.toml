@@ -1,0 +1,16 @@
+# An image without /bin/sh: boots with flk's static init.
+app = "static"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  GREETING = "from scratch, it's $static"
+
+[[vm]]
+  cpus = 1
+  memory_mb = 128
+
+[[mounts]]
+  source = "data"
+  destination = "/data"

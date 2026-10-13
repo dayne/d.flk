@@ -54,3 +54,14 @@ test_exec_needs_a_running_machine() {
   assert_contains "$out" "isn't running"
   flk machine start "$m" >/dev/null; wait_mc 60
 }
+
+test_args_after_double_dash_are_the_commands() {
+  assert_eq "-a -l" "$(flk exec -- sh -c 'echo "$*"' x -a -l)" "-a after -- belongs to the command"
+  assert_contains "$(flk exec -- uname -a)" "x86_64" "uname -a (not plain uname)"
+}
+
+test_exec_waits_for_a_freshly_booted_agent() {
+  local m; m=$(machine_id)
+  flk machine restart "$m" >/dev/null
+  assert_eq ok "$(flk exec -- echo ok)" "exec right after a boot"
+}

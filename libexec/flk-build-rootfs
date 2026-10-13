@@ -33,6 +33,17 @@ ${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
   mkdir -p "$root"
   tar -xpf "$tar" -C "$root" --numeric-owner 2>/dev/null || tar -xpf "$tar" -C "$root" --numeric-owner
   cp -a "$overlay"/. "$root"/
+  # No /bin/sh (scratch, distroless): the static flk-agent is PID 1 instead
+  # of init.sh. (-L: an absolute symlink would point at the host here.)
+  if [ ! -e "$root/bin/sh" ] && [ ! -L "$root/bin/sh" ]; then
+    if [ -x "$root/flk/agent" ]; then
+      cp "$root/flk/agent" "$root/flk/init"
+      echo "    no /bin/sh in the image: booting it with flk'"'"'s static init"
+    else
+      echo "flk: the image has no /bin/sh, and there is no flk-agent to boot it with (it needs Go to build; see flk doctor)" >&2
+      exit 1
+    fi
+  fi
   chown -R 0:0 "$root/flk"
   mkdir -p "$root"/{proc,sys,dev,run,tmp,etc}
   chmod 1777 "$root/tmp"

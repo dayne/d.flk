@@ -252,7 +252,8 @@ module Flk
                    ["--owner UID[:GID]", "When copying in: owner of the new files (default: the target directory's owner)"]],
             summary: "Copy a file or directory into or out of a volume (one side is VOL:PATH)",
             notes: ["Like cp -r: into an existing directory it goes inside it; a file in the volume is replaced. " \
-                    "File modes are kept; owners come from --owner or the directory copied into, not the host's user IDs.",
+                    "Modes come from the copied file (also when it replaces one: the local file's mode, not the old one's; " \
+                    "chmod it first if needed); owners come from --owner or the directory copied into, not the host's user IDs.",
                     "Examples: flk files cp ./server.properties world:/ ; flk files cp world:/logs ./logs"] },
           { name: "rm", args: "VOL:PATH", opts: [["-r", "--recursive", "Delete a directory and everything in it"]],
             summary: "Delete a file (or with -r, a directory) in a volume; its machine must be stopped" },

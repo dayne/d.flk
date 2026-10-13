@@ -71,15 +71,20 @@ module Flk
         raise Error, "machine #{m.id} has no exec socket: it booted before flk had flk exec; " \
                      "restart it (flk machine restart #{m.id}), and if it still has no agent, redeploy (flk deploy)"
       end
-      io = UNIXSocket.new(s)
-      io.write("CONNECT #{PORT}\n")
-      line = io.wait_readable(5) && io.gets
-      unless line&.start_with?("OK")
+      # a machine that just booted: its agent may not be listening yet
+      fresh = (Time.now - Time.parse(m.h["started_at"].to_s) rescue 999) < 20
+      deadline = Time.now + (fresh ? 15 : 0)
+      loop do
+        io = UNIXSocket.new(s)
+        io.write("CONNECT #{PORT}\n")
+        line = io.wait_readable(5) && io.gets
+        return io if line&.start_with?("OK")
         io.close
-        raise Error, "the agent in machine #{m.id} isn't answering: its release was built without one " \
-                     "(redeploy with flk deploy; building it needs Go, see flk doctor), or it hasn't started yet"
+        break if Time.now >= deadline
+        sleep 0.5
       end
-      io
+      raise Error, "the agent in machine #{m.id} isn't answering: its release was built without one " \
+                   "(redeploy with flk deploy; building it needs Go, see flk doctor)"
     end
 
     # Runs req (argv, env, tty, user, cwd) in machine m. stdin: forward

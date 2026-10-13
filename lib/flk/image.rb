@@ -89,9 +89,10 @@ module Flk
       ep = cfg.entrypoint || Array(icfg["Entrypoint"])
       cmd = cfg.cmd || (cfg.entrypoint ? [] : Array(icfg["Cmd"]))
       argv = ep + cmd
-      argv = ["/bin/sh"] if argv.empty?
+      argv = ["/bin/sh"] if argv.empty? # (an image with neither a CMD nor a shell can't boot)
 
       File.write(File.join(fdir, "cmd"), "#!/bin/sh\nexec #{argv.shelljoin}\n")
+      File.write(File.join(fdir, "cmd.json"), JSON.generate(argv)) # for the static init (no /bin/sh)
       File.write(File.join(fdir, "image.env"), Array(icfg["Env"]).filter_map { |kv|
         k, v = kv.split("=", 2)
         "export #{k}=#{v.to_s.shellescape}\n" if k.match?(ENV_KEY)

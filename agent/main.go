@@ -43,7 +43,11 @@ type request struct {
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		fmt.Println("flk-agent 1")
+		fmt.Println("flk-agent 2")
+		return
+	}
+	if os.Getpid() == 1 { // installed as /flk/init (an image without /bin/sh)
+		runInit()
 		return
 	}
 	fd, err := listen(port)

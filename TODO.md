@@ -216,7 +216,10 @@ To consider:
   backup_dir; an in-guest `sync`/fsfreeze once exec (vsock) exists.
 - [ ] **Snapshots of machines** (Firecracker snapshot/restore): suspend and
   sub-second resume.
-- [ ] **Static init** (Go/Rust) so distroless/scratch images boot without `/bin/sh`.
+- [x] **Static init** (PLAN.md M3): an image without `/bin/sh` boots with
+  flk-agent as PID 1 (`agent/init.go`, same job and log lines as init.sh,
+  reads `/flk/cmd.json`); images with a shell keep init.sh. Test app
+  `tests/apps/static` (FROM scratch + /busybox).
 
 ## Machines
 

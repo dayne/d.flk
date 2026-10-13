@@ -89,6 +89,11 @@ module Flk
       it = argv.each
       loop do
         a = it.next
+        if a == "--" # the rest is positional, -a included
+          out << a
+          loop { out << it.next }
+          break
+        end
         case a
         when "-a", "--app" then @app_name = it.next
         when /\A--app=(.+)\z/ then @app_name = $1
@@ -146,7 +151,7 @@ module Flk
         name = @app_name || AppConfig.find&.app ||
                raise(Error, "no app: pass -a APP or run inside a directory with flk.toml/fly.toml")
         a = App.new(name)
-        raise Error, "app '#{name}' not found (run: flk launch)" unless a.exists?
+        raise Error, "app '#{name}' not found (run: flk launch, or flk launch --no-deploy to register it without deploying)" unless a.exists?
         a
       end
     end
