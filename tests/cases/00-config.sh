@@ -228,3 +228,20 @@ test_host_settings_address_and_bind() {
   out=$(FLK_HOST_CONFIG="$h" flk doctor 2>&1)
   assert_contains "$out" "unknown setting(s) adress"
 }
+
+test_huge_pages_option() {
+  stage_app hello
+  assert_eq null "$(config | json_get machine_config.huge_pages)" "default"
+  sed -i 's/^\(\s*\)memory_mb = 128$/&\n\1huge_pages = "2M"/' "$APP_DIR/flk.toml"
+  assert_eq 2M "$(config | json_get machine_config.huge_pages)" "2M"
+  local out v
+  for v in 1G transparent; do
+    toml_set 'huge_pages' "huge_pages = \"$v\""
+    out=$(config 2>&1) && fail "accepted $v"
+    assert_contains "$out" 'huge_pages must be "2M"'
+  done
+  toml_set 'huge_pages' 'huge_pages = "2M"'
+  toml_set 'memory_mb' 'memory_mb = 127'
+  out=$(config 2>&1) && fail "accepted 127MB with huge pages"
+  assert_contains "$out" "whole 2MB steps"
+}

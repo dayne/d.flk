@@ -84,6 +84,15 @@ addresses. `bind` needs the port helper from a current
 address and `flk doctor` says so. doctor also warns about an address
 that isn't on this host (expected for a floating one another host holds).
 
+**Big memory (game servers).** `[[vm]] huge_pages = "2M"` backs the
+guest's memory with 2M pages from a pool you reserve once (root):
+`sudo sysctl -w vm.nr_hugepages=N` plus the same line in `/etc/sysctl.d/`,
+N = memory MB / 2 for every such machine. Fewer TLB misses for a big Java
+heap, and the memory is never swapped; but it's held even when the VM is
+stopped. flk refuses to start a machine without enough free pages and
+prints the commands; `flk doctor` shows the pool. Without a pool, the
+host-wide alternative is THP `always` (`/sys/kernel/mm/transparent_hugepage/enabled`).
+
 **Disk.** Everything is under `{{ROOT}}`: two release images per app,
 volumes (unless created with `--path`), logs. `flk apps prune` removes
 images of destroyed apps. Volumes on other disks (`--path`):

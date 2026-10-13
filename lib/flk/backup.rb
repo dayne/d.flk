@@ -70,15 +70,82 @@ module Flk
       raise Error, "not enough space in #{dir}: the copy needs about #{gb(need)}, #{gb(free)} is free"
     end
 
-    # Sparse (and reflinked when possible) copy to a .partial file, renamed
-    # into place only when complete, so a crash never leaves a half backup.
-    def copy(src, dst)
+    # Copy to a .partial file, renamed into place only when complete, so a
+    # crash never leaves a half backup. A reflink when the filesystem can
+    # (XFS, btrfs: instant, no I/O). Else a sparse copy that keeps out of the
+    # host's way: at idle I/O priority (idle: false when the machine is
+    # stopped or paused for it, to keep that short), synced and dropped from
+    # the page cache as it goes, so a 20G volume doesn't evict everything
+    # else cached (and push the game VMs' memory towards swap).
+    def copy(src, dst, idle: true)
       part = "#{dst}.partial"
       FileUtils.rm_f(part)
-      Util.run!("cp", "--sparse=always", "--reflink=auto", src, part)
+      unless system("cp", "--reflink=always", src, part, out: File::NULL, err: File::NULL)
+        FileUtils.rm_f(part)
+        pid = fork do
+          system("ionice", "-c3", "-p", Process.pid.to_s, out: File::NULL, err: File::NULL) if idle
+          stream_copy(src, part)
+          exit!(0)
+        rescue Exception => e # rubocop:disable Lint/RescueException -- report anything, then leave
+          warn "flk: copying #{src}: #{e.message}"
+          exit!(1)
+        end
+        Process.wait(pid)
+        raise Error, "copying #{src} to #{part} failed" unless $?.success?
+      end
       File.rename(part, dst)
     ensure
       FileUtils.rm_f(part) if part && File.exist?(part)
+    end
+
+    CHUNK = 1 << 20     # all-zero chunks stay holes, like cp --sparse=always
+    DROP_EVERY = 64 << 20
+
+    # Data extents only (SEEK_DATA/SEEK_HOLE), so holes stay holes; every
+    # DROP_EVERY bytes the copy is synced and both files' pages are
+    # dropped from the page cache (posix_fadvise DONTNEED).
+    def stream_copy(src, dst)
+      File.open(src, "rb") do |i|
+        File.open(dst, File::WRONLY | File::CREAT | File::TRUNC, File.stat(src).mode & 0o777) do |o|
+          size = i.size
+          o.truncate(size)
+          pos = 0
+          dropped = 0
+          drop = lambda do |upto|
+            o.fdatasync
+            [i, o].each { _1.advise(:dontneed, dropped, upto - dropped) }
+            dropped = upto
+          end
+          while pos < size
+            begin
+              i.seek(pos, IO::SEEK_DATA)
+            rescue Errno::ENXIO # no data after pos
+              break
+            end
+            off = i.pos
+            i.seek(off, IO::SEEK_HOLE)
+            hole = i.pos
+            while off < hole
+              buf = i.pread([CHUNK, hole - off].min, off)
+              o.pwrite(buf, off) unless buf.count("\0") == buf.bytesize
+              off += buf.bytesize
+              drop.call(off) if off - dropped >= DROP_EVERY
+            end
+            pos = hole
+          end
+          drop.call(size)
+        end
+      end
+    end
+
+    # After e2fsck read (and maybe wrote) the copy: out of the page cache.
+    def drop_cache(path)
+      File.open(path, "r+") do |f|
+        f.fdatasync
+        f.advise(:dontneed, 0, 0)
+      end
+    rescue SystemCallError
+      nil
     end
 
     # e2fsck on the copy (never on the live volume). A copy taken while the
@@ -98,6 +165,7 @@ module Flk
               else "errors"
               end
       File.write(path.sub(/\.ext4\z/, ".fsck.log"), out) unless state == "clean"
+      drop_cache(path)
       [state, replayed]
     end
 

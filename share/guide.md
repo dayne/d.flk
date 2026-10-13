@@ -115,7 +115,11 @@ also its own help page: {{TOPICS}}.
   starting the machine yourself. flk's own stops (`machine stop`,
   `stop-all`, deploys) are never restarted.
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
-  (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
+  (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N).
+  `huge_pages = "2M"` (flk): guest memory from a reserved hugetlbfs pool;
+  the host needs `vm.nr_hugepages` of memory/2MB free, which deploy and
+  start check, printing the sysctl to run. That memory is held whether the
+  guest uses it or not and is never swapped. Memory must be whole 2MB.
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
 - `[checks.NAME]`: health checks a deploy waits for: `type` = `"tcp"`
   (`port`), `"http"` (`port`, `path`; 2xx/3xx passes) or flk's `"log"`

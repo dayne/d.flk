@@ -109,6 +109,36 @@ test_damage_is_reported_as_repaired() {
   flk machine start "$m" >/dev/null; wait_mc 60
 }
 
+# A backup keeps out of the page cache: neither the volume nor its copy
+# stays cached (a 20G world would evict everything else), and the copy is
+# identical and as sparse as the volume.
+test_backup_leaves_the_page_cache_alone() {
+  command -v fincore >/dev/null || skip_test "no fincore (util-linux)"
+  local d="$WORK/bulk-$RUN_ID"
+  mkdir -p "$d"
+  head -c 200M /dev/urandom >"$d/blob"
+  flk volumes create bulk --size 1 --from-dir "$d" >/dev/null || fail "volume create failed"
+  rm -rf "$d"
+  local src out f bk
+  # on a real disk: on tmpfs (/tmp) every file is "cached"
+  bk=$(mktemp -d "$HOME/.cache/flk-test-bk.XXXX")
+  src=$(flk volumes list --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["name"] == "bulk" }["path"]')
+  out=$(flk volumes backup bulk --to "$bk" --no-check) || { rm -rf "$bk"; fail "backup failed: $out"; }
+  assert_contains "$out" "no machine running"
+  f=$(flk volumes backups bulk --to "$bk" --json | json_get 0.path)
+  cmp -s "$src" "$f" || { rm -rf "$bk"; fail "copy differs from the volume"; }
+  [[ $(du -k "$f" | cut -f1) -le $(( $(du -k "$src" | cut -f1) + 1024 )) ]] || { rm -rf "$bk"; fail "the copy isn't sparse"; }
+  flk volumes backup bulk --to "$bk" >/dev/null || { rm -rf "$bk"; fail "checked backup failed"; } # e2fsck reads it too
+  f=$(flk volumes backups bulk --to "$bk" --json | json_get 0.path)
+  local cached x
+  for x in "$src" "$f"; do
+    cached=$(fincore -b -n -o RES "$x" | tr -d ' ')
+    [[ $cached -lt $((16 * 1024 * 1024)) ]] || { rm -rf "$bk"; fail "$x still has $cached bytes in the page cache"; }
+  done
+  rm -rf "$bk"
+  flk volumes destroy bulk >/dev/null
+}
+
 test_extend_grows_a_stopped_volume() {
   local m out; m=$(machine_id)
   out=$(flk volumes extend world --size 2 2>&1) && fail "extended under a running machine"

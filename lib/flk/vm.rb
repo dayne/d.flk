@@ -45,7 +45,8 @@ module Flk
       {
         "boot-source" => { "kernel_image_path" => kernel, "boot_args" => boot_args(m) },
         "drives" => drives(m),
-        "machine-config" => { "vcpu_count" => m.config["cpus"], "mem_size_mib" => m.config["memory_mb"] },
+        "machine-config" => { "vcpu_count" => m.config["cpus"], "mem_size_mib" => m.config["memory_mb"] }
+          .merge(m.config["huge_pages"] ? { "huge_pages" => FC_HUGE_PAGES.fetch(m.config["huge_pages"]) } : {}),
         "network-interfaces" => [{ "iface_id" => "eth0", "guest_mac" => m.mac, "host_dev_name" => Net.tap(m.tap_index) }]
       }
     end
@@ -80,6 +81,9 @@ module Flk
       raise Error, "tmux is required" unless Util.which("tmux")
       if (pid = backup_pid(m))
         raise Error, "a backup of its volume is running (flk, pid #{pid}); the machine starts again when it's done"
+      end
+      if (why = huge_pages_short(huge_pages_needed(m.config), huge_pool[:available]))
+        raise Error, "machine #{m.id} #{why}"
       end
       m.config["mounts"].each do |mt|
         v = m.app.volume!(mt["volume"])
@@ -302,11 +306,40 @@ module Flk
       nil
     end
 
+    # Resident memory, including hugetlbfs pages (not part of VmRSS).
     def proc_rss_mb(pid)
-      kb = File.read("/proc/#{pid}/status")[/^VmRSS:\s+(\d+)/, 1] or return nil
-      (kb.to_i / 1024.0).round
+      st = File.read("/proc/#{pid}/status")
+      kb = st[/^VmRSS:\s+(\d+)/, 1] or return nil
+      ((kb.to_i + st[/^HugetlbPages:\s+(\d+)/, 1].to_i) / 1024.0).round
     rescue SystemCallError
       nil
+    end
+
+    FC_HUGE_PAGES = { "2M" => "2M" }.freeze
+
+    # The host's 2M hugetlbfs pool: { total:, free:, rsvd:, available: }
+    # (available = free minus pages promised to running VMs).
+    def huge_pool
+      mi = File.read("/proc/meminfo")
+      n = ->(k) { mi[/^#{k}:\s+(\d+)/, 1].to_i }
+      { total: n["HugePages_Total"], free: n["HugePages_Free"], rsvd: n["HugePages_Rsvd"],
+        available: n["HugePages_Free"] - n["HugePages_Rsvd"], size_kb: n["Hugepagesize"] }
+    rescue SystemCallError
+      { total: 0, free: 0, rsvd: 0, available: 0, size_kb: 2048 }
+    end
+
+    def huge_pages_needed(mconfig) = mconfig["huge_pages"] == "2M" ? mconfig["memory_mb"].to_i / 2 : 0
+
+    # Why a pool of `extra` more pages is needed, with the root commands
+    # that reserve it (persistently: /etc/sysctl.d), or nil.
+    def huge_pages_short(need, have)
+      return nil if need <= have
+      pool = huge_pool
+      want = pool[:total] + (need - have)
+      "needs #{need} free 2M huge pages, #{have} available (pool #{pool[:total]}). Reserve more (root), then retry:\n" \
+        "  sudo sysctl -w vm.nr_hugepages=#{want}\n" \
+        "  echo 'vm.nr_hugepages = #{want}' | sudo tee /etc/sysctl.d/60-flk-hugepages.conf\n" \
+        "  (check HugePages_Total in /proc/meminfo: on a busy host the kernel may find fewer; a reboot always works)"
     end
 
     def kill(pid, sig)

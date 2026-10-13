@@ -258,6 +258,7 @@ module Flk
       backup_check(record)
       services_check(record)
       address_check(record)
+      huge_pages_check(record)
       results
     end
 
@@ -351,6 +352,21 @@ module Flk
       end
     rescue Error => e
       record[e.message, "warn", "fix #{Host::PATH}"]
+    end
+
+    # Only when some machine uses a 2M pool: will the ones that aren't
+    # running fit when they start (after a reboot, say)?
+    def huge_pages_check(record)
+      ms = App.all.flat_map(&:machines).select { _1.config["huge_pages"] == "2M" }
+      return if ms.empty?
+      pool = VM.huge_pool
+      waiting = ms.reject(&:running?).select { _1.desired_state == "started" }.sum { VM.huge_pages_needed(_1.config) }
+      label = "huge pages: #{pool[:available]} of #{pool[:total]} (2M) free for #{ms.size} machine#{'s' if ms.size > 1} using them"
+      if (why = VM.huge_pages_short(waiting, pool[:available]))
+        record["#{label}; machines that should run #{why.lines.first.strip}", "warn", why.lines[1..].map(&:strip).first(2).join(" && ")]
+      else
+        record[label, "pass", nil]
+      end
     end
 
     FLK_UNITS = %w[flk-net.service flk-machines.service].freeze
@@ -872,6 +888,15 @@ module Flk
     # ones (which may keep the volumes they hold). One volume per machine
     # per [[mounts]] entry, as attach_volumes hands them out.
     def check_capacity!(a, mconfig, creating: 0, updating: [])
+      # huge pages: machines are updated one at a time, and the one being
+      # updated gives its pages back first
+      if (per = VM.huge_pages_needed(mconfig)).positive?
+        back = updating.select(&:running?).map { VM.huge_pages_needed(_1.config) }.max.to_i
+        need = creating.positive? ? per * creating : per
+        if (why = VM.huge_pages_short(need, VM.huge_pool[:available] + (creating.positive? ? 0 : back)))
+          raise Error, "[[vm]] huge_pages = \"2M\": #{a.name} #{why}"
+        end
+      end
       ids = updating.map(&:id)
       need = creating + updating.size
       vols = a.volumes
@@ -1039,7 +1064,7 @@ module Flk
       { "id" => m.id, "name" => m.name, "state" => m.state, "desired_state" => m.desired_state,
         "pid" => m.running? ? m.pid : nil, "restart" => m.restart_policy, "restarts" => m.h["restarts"],
         "release" => m.release, "ip" => m.ip,
-        "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"],
+        "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"], "huge_pages" => m.config["huge_pages"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
         "volumes" => Array(m.config["mounts"]), "created_at" => m.created_at, "updated_at" => m.updated_at }
     end
@@ -1744,7 +1769,7 @@ module Flk
           File.write(m.path("backup"), Process.pid.to_s)
           begin
             VM.stop(m, keep_desired: true, sync_ports: false)
-            Backup.copy(src, dst)
+            Backup.copy(src, dst, idle: false) # the machine is down: be quick
           ensure
             FileUtils.rm_f(m.path("backup"))
             window = Time.now - t
@@ -1753,7 +1778,7 @@ module Flk
         when "pause"
           VM.pause(m)
           begin
-            Backup.copy(src, dst)
+            Backup.copy(src, dst, idle: false) # the machine is frozen: be quick
           ensure
             VM.resume(m)
             window = Time.now - t

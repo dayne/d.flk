@@ -55,6 +55,24 @@ module Flk
       vm["size"].to_s =~ /-cpu-(\d+)x\z/ ? $1.to_i : 1
     end
 
+    # [[vm]] huge_pages = "2M": back guest memory with 2M pages from a
+    # reserved hugetlbfs pool (vm.nr_hugepages): fewer TLB misses for big
+    # heaps, never swapped, held whether used or not. nil: 4K pages.
+    # (Firecracker's "Transparent" mode left guest memory without THP on
+    # Firecracker 1.17 here, so flk doesn't offer it; host-wide THP
+    # `always` is the no-reservation alternative.)
+    def huge_pages
+      v = vm["huge_pages"]
+      return nil if v.nil? || v == false || v.to_s.downcase == "none"
+      unless %w[2m 2mb 2mib].include?(v.to_s.downcase)
+        raise Error, "[[vm]] huge_pages must be \"2M\" (got '#{v}'); Firecracker has no 1G pages, and for THP " \
+                     "set the host's /sys/kernel/mm/transparent_hugepage/enabled to always instead"
+      end
+      mode = "2M"
+      raise Error, "[[vm]] huge_pages needs memory in whole 2MB steps (#{memory_mb}MB isn't)" if memory_mb.odd?
+      mode
+    end
+
     # Mirrors fly presets: shared-cpu-Nx = 256MB*N, performance-Nx = 2GB*N
     def memory_mb
       return vm["memory_mb"].to_i if vm["memory_mb"]
@@ -209,7 +227,8 @@ module Flk
       "" => %w[app primary_region kill_signal kill_timeout swap_size_mb console_command build deploy env
                experimental files http_service services mounts processes statics vm checks metrics restart flk],
       "build" => %w[image dockerfile args build-target build_target ignorefile builder builtin buildpacks settings],
-      "vm" => %w[size memory memory_mb cpus cpu_kind gpus gpu_kind processes kernel_args host_dedication_id persist_rootfs],
+      "vm" => %w[size memory memory_mb cpus cpu_kind gpus gpu_kind processes kernel_args host_dedication_id persist_rootfs
+                 huge_pages],
       "mounts" => %w[source destination processes initial_size auto_extend_size_threshold auto_extend_size_increment
                      auto_extend_size_limit snapshot_retention scheduled_snapshots],
       "services" => %w[internal_port protocol ports concurrency tcp_checks http_checks auto_stop_machines
@@ -298,7 +317,8 @@ module Flk
         "stdin" => app_stdin,
         "restart" => restart,
         "bind" => bind,
-        "checks" => checks
+        "checks" => checks,
+        "huge_pages" => huge_pages
       }
     end
 
