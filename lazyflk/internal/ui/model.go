@@ -81,6 +81,9 @@ type Model struct {
 	footPairs []string
 
 	loadGen   int  // the newest context load; older answers are dropped
+	ev          *eventFeed // flk events --follow (G7), nil until started
+	reloadAgain bool       // an event came in during a load: load again after
+	lastLoad    time.Time  // when the last full context load started
 	quitting  bool // quit once the running job ends
 	quitArmed bool // q pressed once while a job runs
 }
@@ -100,12 +103,17 @@ func New(opt Options) *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Batch(m.load(), m.tick())
+	cmds := []tea.Cmd{m.load(), m.tick()}
+	if m.opt.Refresh > 0 { // a live session: follow flk's events
+		cmds = append(cmds, m.startEvents())
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) load() tea.Cmd {
 	m.loadGen++
 	m.loading = true
+	m.lastLoad = m.now()
 	load, gen := m.loadContext(m.opt.Client, m.quick()), m.loadGen
 	return func() tea.Msg {
 		hc, quick, err := load(context.Background())
@@ -173,11 +181,23 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 			m.raw = nil
 			m.setContext(msg.hc)
 		}
+		if m.reloadAgain { // an event came in while this loaded
+			m.reloadAgain = false
+			return m.reload()
+		}
 	case tickMsg:
-		if m.loading {
-			return m.tick()
+		if m.loading || (m.eventsLive() && m.now().Sub(m.lastLoad) < eventBackstop) {
+			return m.tick() // events say when something changes
 		}
 		return tea.Batch(m.load(), m.tick())
+	case eventStartMsg:
+		return m.eventStart(msg)
+	case eventChunkMsg:
+		return m.eventChunk(msg)
+	case eventRetryMsg:
+		if m.ev != nil && msg.gen == m.ev.gen && !m.ev.alive {
+			return m.startEvents()
+		}
 	case fetchedMsg:
 		m.gotFetched(msg)
 		if msg.key == m.doctorSource().cmd && m.raw != nil {
@@ -324,6 +344,7 @@ func (m *Model) quit() tea.Cmd {
 		if m.logs != nil {
 			m.logs.stop()
 		}
+		m.stopEvents()
 		return tea.Quit
 	}
 	if !m.quitArmed {

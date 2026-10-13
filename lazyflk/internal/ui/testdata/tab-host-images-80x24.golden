@@ -1,22 +1,22 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ flk images --json                             │
-│   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ minecraft-flk                                   │
-│ ▾ vintagestory-flk  1/1 ●  │   v9     352M  running · current                │
-│   ● frosty-river-2714      │               built 2026-10-13 08:31Z ·         │
-│   ▢ vsdata 40GB (external) │             cb185335b4e7                        │
-│   ⇄ tcp/42420 udp/42420    │   v8     352M  older release                    │
-│                            │               built 2026-10-12 06:41Z ·         │
-│ Host                       │             7f0a0298ab17                        │
-│   health ✔                 │   v7     352M  same image as v8                 │
-│                            │               built 2026-10-12 06:41Z ·         │
-│ Storage                    │             7f0a0298ab17                        │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │ vintagestory-flk                                │
-│   /data/vintagestory 56%   │   v3     560M  running · current                │
-│                            │ … 7 more (pgdn)                                 │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk images --json                             │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ minecraft-flk                                   │
+│   ● frosty-river-2714      │   v9     352M  running · current                │
+│   ▢ vsdata 40GB (external) │               built 2026-10-13 08:31Z ·         │
+│   ⇄ tcp/42420 udp/42420    │             cb185335b4e7                        │
+│                            │   v8     352M  older release                    │
+│ Host                       │               built 2026-10-12 06:41Z ·         │
+│   health ✔                 │             7f0a0298ab17                        │
+│                            │   v7     352M  same image as v8                 │
+│ Storage                    │               built 2026-10-12 06:41Z ·         │
+│   / 21%                    │             7f0a0298ab17                        │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 56%   │ vintagestory-flk                                │
+│                            │ … 8 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

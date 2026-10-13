@@ -169,6 +169,9 @@ func TestEveryFixtureServed(t *testing.T) {
 			t.Errorf("files cat %s: %v", p, err)
 		}
 	}
+	if out, err := c.Run(ctx, "events", "--all", "--json", "-n", "200"); err != nil || !strings.Contains(string(out), `"type":"deploy.succeeded"`) {
+		t.Errorf("events: %v", err)
+	}
 	c.QuickContext(ctx)
 	c.Stats(ctx)
 	c.DiskUse(ctx)

@@ -5,7 +5,8 @@
 │ attention, from flk context --all. Below Host: Storage, Podman and Services, │
 │ the rest of what this host runs. Each tab shows the command that fills it,   │
 │ and every action shows the command it runs before running it (L lists them   │
-│ all).                                                                        │
+│ all). Changes show as they happen (flk events --follow); the Events tabs     │
+│ list them.                                                                   │
 │                                                                              │
 │ ↑ ↓  k j           move in the tree                                          │
 │ ← →                fold or unfold an app                                     │
@@ -17,8 +18,7 @@
 │ s                  start or stop the selected machine                        │
 │ c                  attach to the machine's console (detach: Ctrl-b d)        │
 │ >                  type a line into the machine's console, and watch its lo… │
-│ d                  deploy the selected app                                   │
-│ … 7 more (↓)                                                                 │
+│ … 8 more (↓)                                                                 │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ scroll · any other key closes this help                                   │
 └──────────────────────────────────────────────────────────────────────────────┘

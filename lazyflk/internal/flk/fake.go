@@ -71,6 +71,9 @@ func fixtureFor(args []string) (string, bool) {
 		app, args = args[1], args[2:]
 	}
 	cmd := strings.Join(args, " ")
+	if len(args) > 0 && args[0] == "events" {
+		return "events.txt", true
+	}
 	if app == "" && len(args) == 2 && args[0] == "help" && !strings.HasPrefix(args[1], "-") {
 		return "help-" + args[1] + ".txt", true
 	}

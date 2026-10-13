@@ -1,5 +1,5 @@
 ┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Events  Ports  Volumes  Releases  Secrets  Config                                  │
 │ ▾ minecraft-flk  0/1 ○ !               │                                                                                                                     │
 │   ! mellow-aurora-7882                 │ release v9 (of 9) · 2026-10-13 08:31Z                                                                               │
 │   ▢ world 40GB (external)              │                                                                                                                     │

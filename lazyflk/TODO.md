@@ -1,8 +1,7 @@
 # lazyflk TODO
 
 lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
-("For lazyflk") and SPEC section 9; G1–G6 and G8–G10 are done, G7
-(events) is later.
+("For lazyflk") and SPEC section 9; G1–G11 are done.
 
 ## Future
 
@@ -72,6 +71,15 @@ attention fix rolled it back).
   on purpose: writes need the machine stopped and stay on the command
   line. Checked live on a test app.
 - [ ] Recapture fixtures on a quiet host (help-all.json gains `files`).
+
+## From flk M3
+
+- [x] G7 events (c0a98f4): one `flk events --all --json --follow` per
+  session; a live event reloads the main view at once (and drops that
+  app's cached tabs), so polling is a 30s backstop; reconnects with
+  `--since`, dropping repeats; Events tabs on the host, apps, machines.
+  Checked live: a machine stopped from the CLI showed within 1s.
+- [ ] exec over vsock (next in flk).
 
 ## Polish (2026-10-13)
 

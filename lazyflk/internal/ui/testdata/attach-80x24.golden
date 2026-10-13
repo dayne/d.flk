@@ -1,6 +1,6 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
-│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Events  Record                 │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
 │   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │

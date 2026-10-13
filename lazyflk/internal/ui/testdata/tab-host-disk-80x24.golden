@@ -1,22 +1,22 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ df -k --output=target,size,used,avail,pcent   │
-│   ▢ world 40GB (external)  │   /home/dayne/.local/share/flk                  │
-│   ⇄ tcp/25565 udp/19132    │   /data/minecraft/flk /data/vintagestory/flk    │
-│ ▾ vintagestory-flk  1/1 ●  │                                                 │
-│   ● frosty-river-2714      │  21% ██░░░░░░░░ /                               │
-│   ▢ vsdata 40GB (external) │      74G free of 98G                            │
-│   ⇄ tcp/42420 udp/42420    │      holds /home/dayne/.local/share/flk         │
-│                            │                                                 │
-│ Host                       │  66% ██████░░░░ /data/minecraft                 │
-│   health ✔                 │      32G free of 98G                            │
-│                            │      holds /data/minecraft/flk                  │
-│ Storage                    │                                                 │
-│   / 21%                    │  56% █████░░░░░ /data/vintagestory              │
-│   /data/minecraft 66%      │      62G free of 147G                           │
-│   /data/vintagestory 56%   │      holds /data/vintagestory/flk               │
-│                            │ … 24 more (pgdn)                                │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ df -k --output=target,size,used,avail,pcent   │
+│   ⇄ tcp/25565 udp/19132    │   /home/dayne/.local/share/flk                  │
+│ ▾ vintagestory-flk  1/1 ●  │   /data/minecraft/flk /data/vintagestory/flk    │
+│   ● frosty-river-2714      │                                                 │
+│   ▢ vsdata 40GB (external) │  21% ██░░░░░░░░ /                               │
+│   ⇄ tcp/42420 udp/42420    │      74G free of 98G                            │
+│                            │      holds /home/dayne/.local/share/flk         │
+│ Host                       │                                                 │
+│   health ✔                 │  66% ██████░░░░ /data/minecraft                 │
+│                            │      32G free of 98G                            │
+│ Storage                    │      holds /data/minecraft/flk                  │
+│   / 21%                    │                                                 │
+│   /data/minecraft 66%      │  56% █████░░░░░ /data/vintagestory              │
+│   /data/vintagestory 56%   │      62G free of 147G                           │
+│                            │ … 25 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

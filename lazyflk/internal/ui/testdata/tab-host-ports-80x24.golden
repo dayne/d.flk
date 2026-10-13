@@ -1,22 +1,22 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ flk ports list --json                         │
-│   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ helper    installed                             │
-│ ▾ vintagestory-flk  1/1 ●  │ host      10.47.11.3 · ports from 1024          │
-│   ● frosty-river-2714      │                                                 │
-│   ▢ vsdata 40GB (external) │ tcp/25565 → 10.47.11.3:25565                    │
-│   ⇄ tcp/42420 udp/42420    │   minecraft-flk / mellow-aurora-7882            │
-│                            │     172.30.0.10:25565                           │
-│ Host                       │ udp/19132 → 10.47.11.3:19132                    │
-│   health ✔                 │   minecraft-flk / mellow-aurora-7882            │
-│                            │     172.30.0.10:19132                           │
-│ Storage                    │ tcp/42420 → 10.47.11.3:42420                    │
-│   / 21%                    │   vintagestory-flk / frosty-river-2714          │
-│   /data/minecraft 66%      │     172.30.0.11:42420                           │
-│   /data/vintagestory 56%   │ udp/42420 → 10.47.11.3:42420                    │
-│                            │ … 2 more (pgdn)                                 │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk ports list --json                         │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ helper    installed                             │
+│   ● frosty-river-2714      │ host      10.47.11.3 · ports from 1024          │
+│   ▢ vsdata 40GB (external) │                                                 │
+│   ⇄ tcp/42420 udp/42420    │ tcp/25565 → 10.47.11.3:25565                    │
+│                            │   minecraft-flk / mellow-aurora-7882            │
+│ Host                       │     172.30.0.10:25565                           │
+│   health ✔                 │ udp/19132 → 10.47.11.3:19132                    │
+│                            │   minecraft-flk / mellow-aurora-7882            │
+│ Storage                    │     172.30.0.10:19132                           │
+│   / 21%                    │ tcp/42420 → 10.47.11.3:42420                    │
+│   /data/minecraft 66%      │   vintagestory-flk / frosty-river-2714          │
+│   /data/vintagestory 56%   │     172.30.0.11:42420                           │
+│                            │ … 3 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

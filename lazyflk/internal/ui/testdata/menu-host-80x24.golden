@@ -1,8 +1,8 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ flk doctor --json                             │
-│   ▢ world 40GB (external)  │                                                 │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk doctor --json                             │
 │ ┌ host ─ actions ──────────────────────────────────────────────────────────┐ │
 │ │ u  resume all     nothing to resume                                      │ │
 │ │ S  stop all       stop every running machine, remembering to resume them │ │
@@ -16,7 +16,7 @@
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │ … 23 more (pgdn)                                │
+│                            │ … 24 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

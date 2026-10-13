@@ -19,11 +19,11 @@ import (
 func tabNames(k nodeKind) []string {
 	switch k {
 	case kindApp:
-		return []string{"Overview", "Logs", "Ports", "Volumes", "Releases", "Secrets", "Config"}
+		return []string{"Overview", "Logs", "Events", "Ports", "Volumes", "Releases", "Secrets", "Config"}
 	case kindMachine:
-		return []string{"Overview", "Logs", "Record"}
+		return []string{"Overview", "Logs", "Events", "Record"}
 	case kindHost:
-		return []string{"Health", "Services", "Ports", "Disk", "Images"}
+		return []string{"Health", "Events", "Services", "Ports", "Disk", "Images"}
 	case kindVolume:
 		return []string{"Overview", "Backups"}
 	}
@@ -221,6 +221,16 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 	if n.kind == kindProvider {
 		_, lines := m.providerDetail(n, w)
 		return lines
+	}
+	if tab == "Events" { // from the events stream, not a command per tab
+		switch n.kind {
+		case kindApp:
+			return m.eventLines(m.apps[n.app].Name, "", w)
+		case kindMachine:
+			a := m.apps[n.app]
+			return m.eventLines(a.Name, a.Machines[n.machine].ID, w)
+		}
+		return m.eventLines("", "", w)
 	}
 	src := m.tabSource(n, tab)
 	if src == nil {

@@ -1,5 +1,5 @@
 ┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ Host ─  Health  Services  Ports  Disk  Images                                                                       │
+│ Apps                                   │ Host ─  Health  Events  Services  Ports  Disk  Images                                                               │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ df -k --output=target,size,used,avail,pcent /home/dayne/.local/share/flk /data/minecraft/flk                      │
 │   ▢ world 40GB (external)              │   /data/vintagestory/flk                                                                                            │

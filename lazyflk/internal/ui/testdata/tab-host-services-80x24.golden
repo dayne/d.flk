@@ -1,19 +1,19 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ flk doctor --json                             │
-│   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ ✔ flk-net.service  active (exited)              │
-│ ▾ vintagestory-flk  1/1 ●  │   enabled · since 2026-10-12 05:44Z             │
-│   ● frosty-river-2714      │   at boot: the bridge, NAT and port forwarding  │
-│   ▢ vsdata 40GB (external) │                                                 │
-│   ⇄ tcp/42420 udp/42420    │ ✔ flk-machines.service  active (exited)         │
-│                            │   enabled · since 2026-10-12 05:44Z             │
-│ Host                       │   at boot: flk resume; at shutdown: stops       │
-│   health ✔                 │     machines gracefully                         │
-│                            │                                                 │
-│ Storage                    │ oneshot units: healthy is active (exited)       │
-│   / 21%                    │                                                 │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk doctor --json                             │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ ✔ flk-net.service  active (exited)              │
+│   ● frosty-river-2714      │   enabled · since 2026-10-12 05:44Z             │
+│   ▢ vsdata 40GB (external) │   at boot: the bridge, NAT and port forwarding  │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
+│                            │ ✔ flk-machines.service  active (exited)         │
+│ Host                       │   enabled · since 2026-10-12 05:44Z             │
+│   health ✔                 │   at boot: flk resume; at shutdown: stops       │
+│                            │     machines gracefully                         │
+│ Storage                    │                                                 │
+│   / 21%                    │ oneshot units: healthy is active (exited)       │
 │   /data/minecraft 66%      │                                                 │
 │   /data/vintagestory 56%   │                                                 │
 │                            │                                                 │

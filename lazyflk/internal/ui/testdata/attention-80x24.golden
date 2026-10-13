@@ -1,6 +1,6 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
 │ Apps                       │ minecraft-flk                                   │
-│ ▾ minecraft-flk  0/1 ○ !   │  Overview  Logs  Ports  Volumes  Releases ›     │
+│ ▾ minecraft-flk  0/1 ○ !   │  Overview  Logs  Events  Ports  Volumes ›       │
 │   ! mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ release v9 (of 9) · 2026-10-13 08:31Z           │
 │   ⇄ tcp/25565 udp/19132    │                                                 │

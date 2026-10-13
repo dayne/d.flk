@@ -1,22 +1,22 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
-│ ▾ minecraft-flk  1/1 ●     │                                                 │
-│   ● mellow-aurora-7882     │ $ flk doctor --json                             │
-│   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ flk       0.1.0                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ state     /home/dayne/.local/share/flk          │
-│   ● frosty-river-2714      │ source    /home/dayne/flk                       │
-│   ▢ vsdata 40GB (external) │ LAN IP    10.47.11.116                          │
-│   ⇄ tcp/42420 udp/42420    │ address   10.47.11.3 (advertised; host.toml     │
-│                            │           address)                              │
-│ Host                       │ boot      installed                             │
-│   health ✔                 │ health    ✔ ready                               │
-│                            │ data dirs /home/dayne/.local/share/flk          │
-│ Storage                    │           /data/minecraft/flk                   │
-│   / 21%                    │           /data/vintagestory/flk                │
-│   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │ ✔ /dev/kvm read/write                           │
-│                            │ … 23 more (pgdn)                                │
+│ Apps                       │ Host                                            │
+│ ▾ minecraft-flk  1/1 ●     │  Health  Events  Services  Ports  Disk  Images  │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk doctor --json                             │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ flk       0.1.0                                 │
+│   ● frosty-river-2714      │ state     /home/dayne/.local/share/flk          │
+│   ▢ vsdata 40GB (external) │ source    /home/dayne/flk                       │
+│   ⇄ tcp/42420 udp/42420    │ LAN IP    10.47.11.116                          │
+│                            │ address   10.47.11.3 (advertised; host.toml     │
+│ Host                       │           address)                              │
+│   health ✔                 │ boot      installed                             │
+│                            │ health    ✔ ready                               │
+│ Storage                    │ data dirs /home/dayne/.local/share/flk          │
+│   / 21%                    │           /data/minecraft/flk                   │
+│   /data/minecraft 66%      │           /data/vintagestory/flk                │
+│   /data/vintagestory 56%   │                                                 │
+│                            │ … 24 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

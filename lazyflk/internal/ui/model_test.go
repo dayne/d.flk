@@ -236,15 +236,15 @@ func TestNavigation(t *testing.T) {
 func TestTabs(t *testing.T) {
 	m := demoModel(t, 80, 24)
 	tab := func() string { return m.tabName(m.nodes[m.cursor]) }
-	press(m, "tab", "tab")
+	press(m, "tab", "tab", "tab")
 	if tab() != "Ports" {
-		t.Errorf("tab tab: %s", tab())
+		t.Errorf("tab tab tab: %s", tab())
 	}
 	press(m, "shift+tab")
-	if tab() != "Logs" {
+	if tab() != "Events" {
 		t.Errorf("shift+tab: %s", tab())
 	}
-	press(m, "shift+tab", "shift+tab")
+	press(m, "shift+tab", "shift+tab", "shift+tab")
 	if tab() != "Config" {
 		t.Errorf("wraps around: %s", tab())
 	}
@@ -289,7 +289,7 @@ func TestTabFetchCaching(t *testing.T) {
 		}
 		return n
 	}
-	press(m, "5", "down", "up", "down", "up")
+	press(m, "6", "down", "up", "down", "up")
 	if count() != 1 {
 		t.Errorf("releases fetched %d times", count())
 	}
@@ -326,7 +326,7 @@ func TestFlkErrors(t *testing.T) {
 
 	// a tab whose command fails shows flk's error under the command
 	m.cache["flk -a minecraft-flk releases --json"] = &fetched{err: fmt.Errorf("Error: app is locked"), at: m.now()}
-	press(m, "5")
+	press(m, "6")
 	s = ansi.Strip(m.Render())
 	if !strings.Contains(s, "$ flk -a minecraft-flk releases --json") || !strings.Contains(s, "Error: app is locked") {
 		t.Errorf("tab error:\n%s", s)
@@ -413,10 +413,10 @@ func TestTabBar(t *testing.T) {
 		active, w int
 		want      string
 	}{
-		{0, 80, " Overview  Logs  Ports  Volumes  Releases  Secrets  Config "},
-		{0, 30, " Overview  Logs  Ports ›"},
-		{6, 30, "‹ Releases  Secrets  Config "},
-		{3, 30, "‹ Ports  Volumes  Releases ›"},
+		{0, 80, " Overview  Logs  Events  Ports  Volumes  Releases  Secrets  Config "},
+		{0, 30, " Overview  Logs  Events ›"},
+		{7, 30, "‹ Releases  Secrets  Config "},
+		{4, 30, "‹ Ports  Volumes  Releases ›"},
 	} {
 		if got := ansi.Strip(tabBar(names, c.active, c.w)); got != c.want {
 			t.Errorf("active %d, w %d: %q, want %q", c.active, c.w, got, c.want)

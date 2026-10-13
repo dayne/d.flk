@@ -162,7 +162,8 @@ docs are one key away and always match the installed flk.
 
 | Data | Command | When |
 |---|---|---|
-| Everything on the main view | `flk context --all --json` | start, every 5s, after any action |
+| Everything on the main view | `flk context --all --json` | start, after any action, on a live event; every 5s without events, every 30s with them |
+| What happened (G7) | `flk events --all --json --follow` (`--since` on reconnect) | the whole session; Events tabs |
 | Host health | `flk doctor --json` | Health tab open, after actions; at most every 30s |
 | Disk space | `df --output=target,size,used,avail,pcent PATH...` for flk's state dir (`flk.state_dir`) and each volume's directory (`mount_dirs` in `context --all --json`) | every 30s |
 | Ports (all apps) | `flk ports list --json` | Ports tabs |
@@ -254,7 +255,7 @@ before the matching lazyflk milestone.
 | G4 no live resource numbers | CPU and memory per machine on the Overview. | `flk machine stats [--json]` from the firecracker process (CPU %, RSS) plus `pid` in machine JSON. |
 | G5 no quick context | Polling every 5s shouldn't run all the doctor checks (podman, sudo, systemctl). | `flk context --all --json --no-host` (skip doctor), plus a separate `doctor --json` at a slower cadence. |
 | G6 JSON has no version | Detect a flk that's too old or too new. | A top-level `"schema": 1` in `context`/`help --all` JSON, and a documented compatibility rule. |
-| G7 no events | Polling is fine for v1; events would make it instant. | Later: `flk events --json` (one line per state change, fed by the tmux exit hook and lifecycle commands). |
+| G7 no events | Polling is fine for v1; events would make it instant. | `flk events [--all] [-f] [--since T] [--json]`, one line per change, fed by every flk process and the exit hook (flk c0a98f4). |
 | G8 no disk breakdown | Show what flk uses (release images, rootfs copies, volumes, logs) when a disk fills. | `flk disk [--json]`: bytes per app and category, actual (sparse-aware) and apparent. |
 | G9 no unit status | Host Services tab: is `flk-net` / `flk-machines` running or failed, not just installed. | Unit state (installed, enabled, active, since) in `doctor --json`, and a warn for a failed unit. |
 | G10 no image list | Host Images tab: flk's container images, which are in use, which are orphans. | `flk images --json` (repo, tag, app, release, in_use, orphan, size). |
@@ -309,8 +310,8 @@ shows its command, and nothing runs as root.
 ## 11. Milestones
 
 All done (2026-10-13): M0 24af5a0, M1 a444a67, M2 d0cc8f5, M3 e3aec5e,
-M4 065e0c6, M5 c31c05f (plus mouse support). Gaps G1–G6 and G8–G11 landed
-in flk; G7 (events) is later. Open items: `TODO.md`.
+M4 065e0c6, M5 c31c05f (plus mouse support). Gaps G1–G11 landed
+in flk (G7 events: c0a98f4). Open items: `TODO.md`.
 
 1. **M0 skeleton:** client and types, fake flk serving `fixtures/`, `--demo`
    renders the main view from fixtures.

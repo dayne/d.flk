@@ -355,6 +355,18 @@ type BackupCopy struct {
 	Error   string  `json:"error"`
 }
 
+// Event is a line of `flk events --json` (flk c0a98f4, G7): something
+// that happened to an app or machine. Machine is "" for app events
+// (deploy.*, backup.copied); Release and Detail when there's one.
+type Event struct {
+	At      string `json:"at"` // UTC, milliseconds
+	App     string `json:"app"`
+	Machine string `json:"machine"`
+	Type    string `json:"type"` // machine.started, deploy.failed, … (flk help --all, "Events")
+	Release int    `json:"release"`
+	Detail  string `json:"detail"`
+}
+
 // FileEntry is a row of `flk files ls VOL:PATH --json` (flk ef6f865).
 type FileEntry struct {
 	Name  string `json:"name"`

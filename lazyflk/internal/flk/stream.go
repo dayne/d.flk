@@ -69,6 +69,14 @@ func (s *Stream) send(ch chan Line, l Line) {
 
 // Stream starts a long-running flk command such as `logs -f`. It has no
 // timeout: the caller stops it.
+// EndedStream is a stream that has already ended with err (tests, fakes).
+func EndedStream(err error) *Stream {
+	s, ch := newStream()
+	s.setErr(err)
+	close(ch)
+	return s
+}
+
 func (c *Client) Stream(ctx context.Context, args ...string) (*Stream, error) {
 	return c.Runner.Stream(ctx, "", args...)
 }
