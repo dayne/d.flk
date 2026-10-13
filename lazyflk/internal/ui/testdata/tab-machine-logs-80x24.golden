@@ -4,18 +4,18 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk logs -i 225d58f615e7e6   │
 │   ⇄ tcp/25565 udp/19132    │   -n 200 --no-tail                              │
-│                            │                                                 │
-│ Host                       │ [23:08:56] [Server thread/INFO]: Registered 19… │
-│   health ✔                 │ [23:08:56] [Server thread/INFO]: Registered 2 … │
-│                            │ [23:08:56] [Server thread/INFO]: Registered 7 … │
-│                            │ [23:08:57] [Server thread/INFO]: Registered 1 … │
-│                            │ [23:08:57] [GeyserServer-3-1/INFO]: Started Ge… │
-│                            │ [23:08:57] [Server thread/INFO]: Done (2.59s)!… │
-│                            │ [23:08:58] [Server thread/WARN]: Can't keep up… │
-│                            │ [23:08:58] [ForkJoinPool.commonPool-worker-3/I… │
-│                            │ list                                            │
-│                            │ [23:08:58] [Server thread/INFO]: There are 0 o… │
-│                            │ [23:09:57] [Server thread/INFO]: Server empty … │
+│ ▾ vintagestory-flk  1/1 ●  │                                                 │
+│   ● frosty-river-2714      │ [22:27:32] [Server thread/INFO]: Automatic sav… │
+│   ▢ vsdata 40GB (external) │ [22:27:32] [Server thread/INFO]: Saving the ga… │
+│   ⇄ tcp/42420 udp/42420    │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
+│                            │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
+│ Host                       │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
+│   health ✔                 │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
+│                            │ [22:27:32] [Server thread/INFO]: Saved the game │
+│                            │ save-on                                         │
+│                            │ [22:28:22] [Server thread/INFO]: Automatic sav… │
+│                            │ [22:28:23] [RCON Listener #1/INFO]: Thread RCO… │
+│                            │ [22:28:23] [RCON Client /172.30.0.1 #5/INFO]: … │
 │                            │ l: follow, search, wrap (full screen)           │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
-│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
-│ Host                                   │                                                                                                                     │
-│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│   ● frosty-river-2714                  │   cpu 2% · 2976MB used · up 38m                                                                                     │
+│   ▢ vsdata 40GB (external)             │                                                                                                                     │
+│   ⇄ tcp/42420 udp/42420                │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
 │                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
-│                                        │ volume world 40GB (external)                                                                                        │
-│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
-│                                     ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │
+│ Host                                   │ volume world 40GB (external)                                                                                        │
+│   health ✔                          ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────────────┐                                     │
 │                                     │ Copy volumes (default: all of the app's) to the backup dir, then prune old       │                                     │
 │                                     │ copies                                                                           │                                     │
 │                                     │ · How the app is kept from writing comes from [flk.backup] in flk.toml (see flk  │                                     │

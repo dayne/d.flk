@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ tcp/25565 → 10.47.11.116:25565                  │
 │   ⇄ tcp/25565 udp/19132    │   mellow-aurora-7882 172.30.0.10:25565          │
-│                            │ udp/19132 → 10.47.11.116:19132                  │
-│ Host                       │   mellow-aurora-7882 172.30.0.10:19132          │
+│ ▾ vintagestory-flk  1/1 ●  │ udp/19132 → 10.47.11.116:19132                  │
+│   ● frosty-river-2714      │   mellow-aurora-7882 172.30.0.10:19132          │
+│   ▢ vsdata 40GB (external) │                                                 │
+│   ⇄ tcp/42420 udp/42420    │ from this host: 172.30.0.10:25565               │
+│                            │                                                 │
+│ Host                       │                                                 │
 │   health ✔                 │                                                 │
-│                            │ from this host: 172.30.0.10:25565               │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │

@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882      ┌ flk commands ─ from flk help --all --json ───────────────────────────────────────────────────────┐                             │
 │   ▢ world 40GB (external)   │ : vol back▏                                                                                      │                             │
 │   ⇄ tcp/25565 udp/19132     │ volumes backup   Copy volumes (default: all of the app's) to the backup dir, then prune old cop… │                             │
-│                             │ volumes backups  List a volume's backups (default: all of the app's volumes), newest first       │                             │
+│ ▾ vintagestory-flk  1/1 ●   │ volumes backups  List a volume's backups (default: all of the app's volumes), newest first       │                             │
+│   ● frosty-river-2714       │                                                                                                  │                             │
+│   ▢ vsdata 40GB (external)  │                                                                                                  │                             │
+│   ⇄ tcp/42420 udp/42420     │                                                                                                  │                             │
+│                             │                                                                                                  │                             │
 │ Host                        │                                                                                                  │                             │
 │   health ✔                  │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
-│                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │
 │                             │                                                                                                  │                             │

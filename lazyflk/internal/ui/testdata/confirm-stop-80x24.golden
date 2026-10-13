@@ -4,7 +4,7 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
 │   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │
-│                            │ state     ● started                             │
+│ ▾ vintagestory-flk  1/1 ●  │ state     ● started                             │
 │ ┌ stop ─ minecraft-flk / mellow-aurora-7882 ───────────────────────────────┐ │
 │ │ $ flk -a minecraft-flk machine stop 225d58f615e7e6                       │ │
 │ │                                                                          │ │
@@ -15,8 +15,8 @@
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 │ │ y run  n esc cancel                                                      │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │                                                 │
-│                            │                                                 │
+│                            │ volumes   world → /server                       │
+│                            │ … 2 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

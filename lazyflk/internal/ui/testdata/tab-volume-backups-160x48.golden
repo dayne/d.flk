@@ -3,19 +3,19 @@
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk volumes backups --json                                                                       │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ no backups of world yet (enter: back up)                                                                            │
-│                                        │                                                                                                                     │
-│ Host                                   │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ world-20261013T062733Z.ext4                                                                                         │
+│ ▾ vintagestory-flk  1/1 ●              │   2026-10-13 06:28Z · 20G used · checked clean (journal replayed)                                                   │
+│   ● frosty-river-2714                  │   mode live · release v8 · took 49s                                                                                 │
+│   ▢ vsdata 40GB (external)             │                                                                                                                     │
+│   ⇄ tcp/42420 udp/42420                │ world-20261013T062240Z.ext4                                                                                         │
+│                                        │   2026-10-13 06:23Z · 20G used · repaired                                                                           │
+│ Host                                   │   mode live · release v8 · took 49s                                                                                 │
 │   health ✔                             │                                                                                                                     │
+│                                        │ world-20261013T055118Z.ext4                                                                                         │
+│                                        │   2026-10-13 05:52Z · 20G used · repaired                                                                           │
+│                                        │   mode live · release v8 · took 50s                                                                                 │
 │                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│                                        │ restore: stop the machine first                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

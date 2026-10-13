@@ -32,6 +32,7 @@ type Model struct {
 	now           func() time.Time
 
 	hc      *flk.HostContext // last good `flk context --all --json`
+	raw     *flk.HostContext // the last quick (--no-host) one, before doctor's merged in
 	apps    []flk.App        // hc.Apps, problems first
 	err     error            // last load error, shown alongside stale data
 	loading bool
@@ -71,9 +72,10 @@ type Model struct {
 }
 
 type contextMsg struct {
-	gen int
-	hc  flk.HostContext
-	err error
+	gen   int
+	hc    flk.HostContext
+	quick bool // --no-host: the host part comes from doctor
+	err   error
 }
 
 type tickMsg struct{}
@@ -90,10 +92,10 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) load() tea.Cmd {
 	m.loadGen++
 	m.loading = true
-	c, gen := m.opt.Client, m.loadGen
+	load, gen := m.loadContext(m.opt.Client, m.quick()), m.loadGen
 	return func() tea.Msg {
-		hc, err := c.HostContext(context.Background())
-		return contextMsg{gen, hc, err}
+		hc, quick, err := load(context.Background())
+		return contextMsg{gen, hc, quick, err}
 	}
 }
 
@@ -123,7 +125,18 @@ func (m *Model) sync() tea.Cmd {
 		return nil
 	}
 	n := m.nodes[m.cursor]
-	return tea.Batch(m.want(m.tabSource(n, m.tabName(n))), m.want(m.diskSource()))
+	tab := m.tabName(n)
+	cmds := []tea.Cmd{m.want(m.tabSource(n, tab)), m.want(m.diskSource())}
+	if m.quick() {
+		cmds = append(cmds, m.want(m.doctorSource()))
+	}
+	if tab == "Overview" && (n.kind == kindMachine || n.kind == kindApp) && m.hc.Schema >= 1 {
+		cmds = append(cmds, m.want(m.statsSource()))
+	}
+	if n.kind == kindHost && tab == "Disk" && m.hc.Schema >= 1 {
+		cmds = append(cmds, m.want(m.diskUseSource()))
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m *Model) update(msg tea.Msg) tea.Cmd {
@@ -136,7 +149,13 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		}
 		m.loading = false
 		m.err = msg.err
-		if msg.err == nil {
+		switch {
+		case msg.err != nil:
+		case msg.quick:
+			m.raw = &msg.hc
+			m.setContext(m.withHost(msg.hc))
+		default:
+			m.raw = nil
 			m.setContext(msg.hc)
 		}
 	case tickMsg:
@@ -146,6 +165,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		return tea.Batch(m.load(), m.tick())
 	case fetchedMsg:
 		m.gotFetched(msg)
+		if msg.key == m.doctorSource().cmd && m.raw != nil {
+			m.setContext(m.withHost(*m.raw))
+		}
 	case logStartMsg:
 		if msg.v == m.logs {
 			return m.logs.handleStart(msg)
@@ -490,6 +512,9 @@ func (m *Model) attnItems() []attnItem {
 		items = append(items, it)
 	}
 	for _, s := range m.diskWarnings() {
+		items = append(items, attnItem{icon: styleWarn.Render("!"), text: s})
+	}
+	if s := m.schemaWarning(); s != "" {
 		items = append(items, attnItem{icon: styleWarn.Render("!"), text: s})
 	}
 	return items

@@ -4,16 +4,18 @@
 │   ● mellow-aurora-7882      │ : ▏                                                                                              │                             │
 │   ▢ world 40GB (external)   │ context          What flk sees right now: host health, the current app, machines, ports, next s… │                             │
 │   ⇄ tcp/25565 udp/19132     │ help             Show help for flk, a command, or a topic (cheatsheet, install, first-app, oper… │                             │
-│                             │ completion       Print a tab-completion script (bash; zsh via bashcompinit)                      │                             │
-│ Host                        │ setup            Download firecracker + guest kernel (no root), then run doctor                  │                             │
-│   health ✔                  │ doctor           Check host readiness                                                            │                             │
-│                             │ version          Print the flk version                                                           │                             │
+│ ▾ vintagestory-flk  1/1 ●   │ completion       Print a tab-completion script (bash; zsh via bashcompinit)                      │                             │
+│   ● frosty-river-2714       │ setup            Download firecracker + guest kernel (no root), then run doctor                  │                             │
+│   ▢ vsdata 40GB (external)  │ doctor           Check host readiness                                                            │                             │
+│   ⇄ tcp/42420 udp/42420     │ version          Print the flk version                                                           │                             │
 │                             │ resume           Start every machine that should be running (after a reboot, or after stop-all)  │                             │
-│                             │ stop-all         Gracefully stop every running machine, remembering to resume them               │                             │
-│                             │ launch           Create flk.toml (if missing) in the current directory, register the app, deploy │                             │
+│ Host                        │ stop-all         Gracefully stop every running machine, remembering to resume them               │                             │
+│   health ✔                  │ launch           Create flk.toml (if missing) in the current directory, register the app, deploy │                             │
 │                             │ deploy           Build the image and roll machines to a new release                              │                             │
 │                             │ status           App and machine overview                                                        │                             │
 │                             │ releases         Release history                                                                 │                             │
+│                             │ disk             Disk space flk uses, per app: release images, machine disks, volumes, logs; an… │                             │
+│                             │ images           flk's container images (flk.local/APP:vN): size, whether a machine runs that r… │                             │
 │                             │ apps list        All apps on this host                                                           │                             │
 │                             │ apps destroy     Destroy an app, its machines and volumes                                        │                             │
 │                             │ apps prune       Remove container images left behind by apps that no longer exist                │                             │
@@ -24,6 +26,7 @@
 │                             │ machine restart  Stop, then boot                                                                 │                             │
 │                             │ machine destroy  Delete machines (their volumes are kept, unattached)                            │                             │
 │                             │ machine revive   Restart a machine that exited on its own, per its restart policy (run by flk i… │                             │
+│                             │ machine stats    CPU and memory use of machines (default: all of the app's)                      │                             │
 │                             │ machine status   Machine record and state as JSON (an array when given several IDs)              │                             │
 │                             │ machine config   The Firecracker VM config as JSON (an array when given several IDs)             │                             │
 │                             │ scale count      Create or destroy machines to reach N                                           │                             │
@@ -36,11 +39,8 @@
 │                             │ ports reap       Tidy machines that exited on their own and hand their ports on (run automatica… │                             │
 │                             │ secrets list     Names and digests (never values)                                                │                             │
 │                             │ secrets set      Set secrets (VALUE '-' reads it from stdin)                                     │                             │
-│                             │ secrets unset    Remove secrets                                                                  │                             │
-│                             │ secrets import   Set secrets from KEY=VALUE lines on stdin                                       │                             │
-│                             │ volumes list     Volumes and what they're attached to                                            │                             │
 │                             │                                                                                                  │                             │
-│                             │ flk context [--all] [--json]                                                                     │                             │
+│                             │ flk context [--all] [--json] [--no-host]                                                         │                             │
 ├ Needs attention ────────────├──────────────────────────────────────────────────────────────────────────────────────────────────┤─────────────────────────────┤
 │ ✔ nothing needs attention   │ type to find  ↑↓ choose  enter fill in and run  esc close                                        │                             │
 ├─────────────────────────────└──────────────────────────────────────────────────────────────────────────────────────────────────┘─────────────────────────────┤

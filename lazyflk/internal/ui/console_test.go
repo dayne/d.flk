@@ -21,7 +21,7 @@ func typeText(m *Model, s string) {
 func lastCall(m *Model) []string {
 	calls := fake(m).Calls()
 	for i := len(calls) - 1; i >= 0; i-- {
-		if strings.Join(calls[i], " ") != "context --all --json" {
+		if !isRead(calls[i]) {
 			return calls[i]
 		}
 	}

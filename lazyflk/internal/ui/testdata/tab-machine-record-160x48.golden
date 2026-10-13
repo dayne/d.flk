@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk machine status 225d58f615e7e6                                                                │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ {                                                                                                                   │
-│                                        │   "id": "225d58f615e7e6",                                                                                           │
-│ Host                                   │   "name": "mellow-aurora-7882",                                                                                     │
-│   health ✔                             │   "app": "minecraft-flk",                                                                                           │
-│                                        │   "tap_index": 0,                                                                                                   │
+│ ▾ vintagestory-flk  1/1 ●              │   "id": "225d58f615e7e6",                                                                                           │
+│   ● frosty-river-2714                  │   "name": "mellow-aurora-7882",                                                                                     │
+│   ▢ vsdata 40GB (external)             │   "app": "minecraft-flk",                                                                                           │
+│   ⇄ tcp/42420 udp/42420                │   "tap_index": 0,                                                                                                   │
 │                                        │   "ip": "172.30.0.10",                                                                                              │
-│                                        │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
-│                                        │   "release": 8,                                                                                                     │
+│ Host                                   │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
+│   health ✔                             │   "release": 8,                                                                                                     │
 │                                        │   "config": {                                                                                                       │
 │                                        │     "cpus": 4,                                                                                                      │
 │                                        │     "memory_mb": 11264,                                                                                             │

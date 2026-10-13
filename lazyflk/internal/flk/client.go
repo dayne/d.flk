@@ -108,6 +108,27 @@ func (c *Client) HostContext(ctx context.Context) (HostContext, error) {
 	return decode[HostContext](c, ctx, "context", "--all", "--json")
 }
 
+// QuickContext is HostContext without the host checks (G5): cheap enough
+// to poll. Host health comes from Doctor instead.
+func (c *Client) QuickContext(ctx context.Context) (HostContext, error) {
+	return decode[HostContext](c, ctx, "context", "--all", "--json", "--no-host")
+}
+
+// Stats are every machine's live numbers (G4); ~0.5s while any runs.
+func (c *Client) Stats(ctx context.Context) ([]MachineStats, error) {
+	return decode[[]MachineStats](c, ctx, "machine", "stats", "--all", "--json")
+}
+
+// DiskUse is what flk keeps where (G8).
+func (c *Client) DiskUse(ctx context.Context) (DiskUse, error) {
+	return decode[DiskUse](c, ctx, "disk", "--json")
+}
+
+// Images are flk's container images, one per tag (G10).
+func (c *Client) Images(ctx context.Context) ([]Image, error) {
+	return decode[[]Image](c, ctx, "images", "--json")
+}
+
 func (c *Client) AppContext(ctx context.Context, app string) (AppContext, error) {
 	return decode[AppContext](c, ctx, "-a", app, "context", "--json")
 }

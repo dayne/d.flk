@@ -4,14 +4,14 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ machine 225d58f615e7e6 ● started 172.30.0.10    │
-│ Host                       │   mellow-aurora-7882 · 4 cpus · 11264MB · v8    │
-│   health ✔                 │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ● started 172.30.0.10    │
+│   ● frosty-river-2714      │   mellow-aurora-7882 · 4 cpus · 11264MB · v8    │
+│   ▢ vsdata 40GB (external) │   cpu 2% · 2976MB used · up 38m                 │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
 │                            │ ports  tcp/25565 → 10.47.11.116:25565           │
-│                            │        udp/19132 → 10.47.11.116:19132           │
-│                            │ volume world 40GB (external)                    │
+│ Host                       │        udp/19132 → 10.47.11.116:19132           │
+│   health ✔                 │ volume world 40GB (external)                    │
 │                            │   /data/minecraft/flk/world.ext4                │
-│                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │

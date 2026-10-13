@@ -76,13 +76,17 @@ func fixtureFor(args []string) (string, bool) {
 	}
 	if app == "" {
 		name, ok := map[string]string{
-			"context":              "context.txt",
-			"context --all":        "context-all.txt",
-			"context --all --json": "context-all.json",
-			"help --all --json":    "help-all.json",
-			"doctor --json":        "doctor.json",
-			"apps list --json":     "apps-list.json",
-			"ports list --json":    "ports-list.json",
+			"context":                        "context.txt",
+			"context --all":                  "context-all.txt",
+			"context --all --json":           "context-all.json",
+			"context --all --json --no-host": "context-all-nohost.json",
+			"machine stats --all --json":     "machine-stats.json",
+			"disk --json":                    "disk.json",
+			"images --json":                  "images.json",
+			"help --all --json":              "help-all.json",
+			"doctor --json":                  "doctor.json",
+			"apps list --json":               "apps-list.json",
+			"ports list --json":              "ports-list.json",
 		}[cmd]
 		return name, ok
 	}

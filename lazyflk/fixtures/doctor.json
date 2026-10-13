@@ -1,4 +1,5 @@
 {
+  "schema": 1,
   "ok": true,
   "checks": [
     {
@@ -70,6 +71,31 @@
       "label": "exit hook (/home/dayne/flk/bin/flk)",
       "status": "pass",
       "hint": null
+    },
+    {
+      "label": "backups go to /data/flk-backups (296.1GB free)",
+      "status": "pass",
+      "hint": null
+    }
+  ],
+  "services": [
+    {
+      "unit": "flk-net.service",
+      "installed": true,
+      "enabled": true,
+      "active": "active",
+      "sub": "exited",
+      "result": "success",
+      "since": "2026-10-12T05:44:13Z"
+    },
+    {
+      "unit": "flk-machines.service",
+      "installed": true,
+      "enabled": true,
+      "active": "active",
+      "sub": "exited",
+      "result": "success",
+      "since": "2026-10-12T05:44:13Z"
     }
   ]
 }

@@ -4,14 +4,14 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ world 40GB (external)                           │
-│ Host                       │   id        vol_28392490d0d4d4c7                │
-│   health ✔                 │   size      40GB                                │
-│                            │   path      /data/minecraft/flk/world.ext4      │
+│ ▾ vintagestory-flk  1/1 ●  │ world 40GB (external)                           │
+│   ● frosty-river-2714      │   id        vol_28392490d0d4d4c7                │
+│   ▢ vsdata 40GB (external) │   size      40GB                                │
+│   ⇄ tcp/42420 udp/42420    │   path      /data/minecraft/flk/world.ext4      │
 │                            │             external: outside flk's state dir   │
-│                            │   attached  mellow-aurora-7882 (225d58f615e7e6) │
-│                            │   created   2026-10-12 05:01Z                   │
-│                            │   backup    none yet                            │
+│ Host                       │   attached  mellow-aurora-7882 (225d58f615e7e6) │
+│   health ✔                 │   created   2026-10-12 05:01Z                   │
+│                            │   backup    2026-10-13 06:28Z (checked clean (… │
 │                            │                                                 │
 │                            │ enter on a volume: back up, restore, extend     │
 │                            │                                                 │

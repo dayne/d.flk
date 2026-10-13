@@ -1,5 +1,5 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Apps                       │ Host ─  Health  Ports  Disk                     │
+│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk doctor --json                             │
 │   ▢ world 40GB (external)  │                                                 │
@@ -16,7 +16,7 @@
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │ … 10 more (pgdn)                                │
+│                            │ … 12 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

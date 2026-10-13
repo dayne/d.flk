@@ -22,7 +22,7 @@ func tabNames(k nodeKind) []string {
 	case kindMachine:
 		return []string{"Overview", "Logs", "Record"}
 	case kindHost:
-		return []string{"Health", "Ports", "Disk"}
+		return []string{"Health", "Services", "Ports", "Disk", "Images"}
 	case kindVolume:
 		return []string{"Overview", "Backups"}
 	}
@@ -111,8 +111,10 @@ func (m *Model) tabSource(n node, tab string) *source {
 		}
 	case kindHost:
 		switch tab {
-		case "Health":
-			return flkSource([]string{"doctor", "--json"}, 30*time.Second, c.Doctor)
+		case "Health", "Services":
+			return m.doctorSource()
+		case "Images":
+			return m.imagesSource()
 		case "Ports":
 			return flkSource([]string{"ports", "list", "--json"}, 5*time.Second, c.Ports)
 		case "Disk":
@@ -248,11 +250,25 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 		}
 		return append(out, m.appVolumeLines(a, v)...)
 	case flk.Doctor:
+		if tab == "Services" {
+			return append(out, serviceLines(v.Services, w)...)
+		}
 		return append(append(append(out, m.hostOverview()...), ""), doctorLines(v, w)...)
+	case []flk.Image:
+		return append(out, imageLines(v)...)
 	case flk.PortsList:
 		return append(out, m.hostPortLines(v)...)
 	case []host.Disk:
-		return append(out, diskLines(v)...)
+		out = append(out, diskLines(v)...)
+		if f := m.cache[m.diskUseSource().cmd]; f != nil {
+			out = append(out, "", styleDim.Render("$ "+m.diskUseSource().cmd))
+			if du, ok := f.val.(flk.DiskUse); ok {
+				out = append(out, diskUseLines(du)...)
+			} else if f.err != nil {
+				out = append(out, styleDim.Render("flk disk failed (needs flk with G8): "+firstLine(f.err.Error())))
+			}
+		}
+		return out
 	}
 	return out
 }
@@ -355,6 +371,9 @@ func volumeBackups(v flk.Volume, all []flk.Backup) []flk.Backup {
 func checkText(b flk.Backup) string {
 	switch b.Check {
 	case "clean":
+		if b.Journal {
+			return styleOK.Render("checked clean") + " (journal replayed)"
+		}
 		return styleOK.Render("checked clean")
 	case "repaired":
 		return styleWarn.Render("repaired")

@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk config show                                                                                  │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ {                                                                                                                   │
-│                                        │   "file": "/home/dayne/minecraft.flk/flk.toml",                                                                     │
-│ Host                                   │   "parsed": {                                                                                                       │
-│   health ✔                             │     "app": "minecraft-flk",                                                                                         │
-│                                        │     "kill_timeout": 120,                                                                                            │
+│ ▾ vintagestory-flk  1/1 ●              │   "file": "/home/dayne/minecraft.flk/flk.toml",                                                                     │
+│   ● frosty-river-2714                  │   "parsed": {                                                                                                       │
+│   ▢ vsdata 40GB (external)             │     "app": "minecraft-flk",                                                                                         │
+│   ⇄ tcp/42420 udp/42420                │     "kill_timeout": 120,                                                                                            │
 │                                        │     "build": {                                                                                                      │
-│                                        │       "dockerfile": "Dockerfile"                                                                                    │
-│                                        │     },                                                                                                              │
+│ Host                                   │       "dockerfile": "Dockerfile"                                                                                    │
+│   health ✔                             │     },                                                                                                              │
 │                                        │     "env": {                                                                                                        │
 │                                        │       "TZ": "America/Anchorage",                                                                                    │
 │                                        │       "MC_HEAP": "8G",                                                                                              │
@@ -27,20 +27,20 @@
 │                                        │         "retries": 1                                                                                                │
 │                                        │       }                                                                                                             │
 │                                        │     ],                                                                                                              │
-│                                        │     "vm": [                                                                                                         │
-│                                        │       {                                                                                                             │
-│                                        │         "cpus": 4,                                                                                                  │
-│                                        │         "memory": "11gb"                                                                                            │
-│                                        │       }                                                                                                             │
-│                                        │     ],                                                                                                              │
-│                                        │     "mounts": [                                                                                                     │
-│                                        │       {                                                                                                             │
-│                                        │         "source": "world",                                                                                          │
-│                                        │         "destination": "/server"                                                                                    │
-│                                        │       }                                                                                                             │
-│                                        │     ],                                                                                                              │
-│                                        │     "services": [                                                                                                   │
-│                                        │ … 61 more (pgdn)                                                                                                    │
+│                                        │     "flk": {                                                                                                        │
+│                                        │       "backup": {                                                                                                   │
+│                                        │         "mode": "live",                                                                                             │
+│                                        │         "pre": [                                                                                                    │
+│                                        │           {                                                                                                         │
+│                                        │             "console": "save-off"                                                                                   │
+│                                        │           },                                                                                                        │
+│                                        │           {                                                                                                         │
+│                                        │             "console": "save-all flush",                                                                            │
+│                                        │             "wait": "Saved the game",                                                                               │
+│                                        │             "timeout": 300                                                                                          │
+│                                        │           }                                                                                                         │
+│                                        │         ],                                                                                                          │
+│                                        │ … 82 more (pgdn)                                                                                                    │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤

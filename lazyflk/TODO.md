@@ -1,7 +1,8 @@
 # lazyflk TODO
 
 lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
-("For lazyflk", gaps G4–G10) and SPEC section 9.
+("For lazyflk") and SPEC section 9; G1–G6 and G8–G10 are done, G7
+(events) is later.
 
 ## Future
 
@@ -28,8 +29,6 @@ lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
 
 ## Known gaps
 
-- [ ] **Host Services and Images tabs** wait for flk gaps G9 (unit
-  status) and G10 (`flk images --json`).
 - [ ] **Reboots and log rotation** show as highlighted lines in the log,
   not a banner pinned to the top (SPEC 5.2 asks for a banner).
 - [ ] **Detaching from the console inside tmux** (`Ctrl-b Ctrl-b d`) is

@@ -22,6 +22,26 @@
       "app": "minecraft-flk",
       "machine": "225d58f615e7e6",
       "address": "10.47.11.116:19132"
+    },
+    {
+      "key": "tcp/42420",
+      "proto": "tcp",
+      "port": 42420,
+      "ip": "172.30.0.11",
+      "internal_port": 42420,
+      "app": "vintagestory-flk",
+      "machine": "f8f979ffff11cf",
+      "address": "10.47.11.116:42420"
+    },
+    {
+      "key": "udp/42420",
+      "proto": "udp",
+      "port": 42420,
+      "ip": "172.30.0.11",
+      "internal_port": 42420,
+      "app": "vintagestory-flk",
+      "machine": "f8f979ffff11cf",
+      "address": "10.47.11.116:42420"
     }
   ],
   "waiting": [

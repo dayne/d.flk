@@ -5,5 +5,12 @@
     "started": 1,
     "release": 8,
     "config_path": "/home/dayne/minecraft.flk/flk.toml"
+  },
+  {
+    "name": "vintagestory-flk",
+    "machines": 1,
+    "started": 1,
+    "release": 3,
+    "config_path": "/home/dayne/vintagestory.flk/flk.toml"
   }
 ]

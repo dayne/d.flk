@@ -13,13 +13,14 @@ func TestParseDFFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	paths := []string{"/home/dayne/.local/share/flk", "/data/minecraft/flk"}
+	paths := []string{"/home/dayne/.local/share/flk", "/data/minecraft/flk", "/data/vintagestory/flk"}
 	disks, err := ParseDF(string(out), paths)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(disks) != 2 || disks[0].Target != "/" || disks[1].Target != "/data/minecraft" ||
-		disks[1].Percent != 66 || disks[1].SizeKB != 102626232 || !reflect.DeepEqual(disks[1].Paths, paths[1:]) {
+	if len(disks) != 3 || disks[0].Target != "/" || disks[1].Target != "/data/minecraft" ||
+		disks[1].Percent != 66 || disks[1].SizeKB != 102626232 || !reflect.DeepEqual(disks[1].Paths, paths[1:2]) ||
+		!reflect.DeepEqual(disks[2].Paths, paths[2:]) {
 		t.Errorf("%+v", disks)
 	}
 }

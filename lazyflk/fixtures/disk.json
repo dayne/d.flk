@@ -1,0 +1,100 @@
+{
+  "state_dir": {
+    "path": "/home/dayne/.local/share/flk",
+    "bytes": 2958639104,
+    "apparent": 6695543286
+  },
+  "apps": [
+    {
+      "app": "minecraft-flk",
+      "images": {
+        "bytes": 772022272,
+        "apparent": 1979711488
+      },
+      "rootfs": {
+        "bytes": 390762496,
+        "apparent": 998244352
+      },
+      "volumes": {
+        "bytes": 0,
+        "apparent": 0
+      },
+      "logs": {
+        "bytes": 585728,
+        "apparent": 579980
+      },
+      "external_volumes": {
+        "bytes": 22167695360,
+        "apparent": 42949672960
+      },
+      "total": {
+        "bytes": 1163370496,
+        "apparent": 2978535820
+      }
+    },
+    {
+      "app": "vintagestory-flk",
+      "images": {
+        "bytes": 1192660992,
+        "apparent": 2450522112
+      },
+      "rootfs": {
+        "bytes": 570245120,
+        "apparent": 1234173952
+      },
+      "volumes": {
+        "bytes": 0,
+        "apparent": 0
+      },
+      "logs": {
+        "bytes": 647168,
+        "apparent": 641218
+      },
+      "external_volumes": {
+        "bytes": 8651468800,
+        "apparent": 42949672960
+      },
+      "total": {
+        "bytes": 1763553280,
+        "apparent": 3685337282
+      }
+    }
+  ],
+  "totals": {
+    "images": {
+      "bytes": 1964683264,
+      "apparent": 4430233600
+    },
+    "rootfs": {
+      "bytes": 961007616,
+      "apparent": 2232418304
+    },
+    "volumes": {
+      "bytes": 0,
+      "apparent": 0
+    },
+    "logs": {
+      "bytes": 1232896,
+      "apparent": 1221198
+    },
+    "external_volumes": {
+      "bytes": 30819164160,
+      "apparent": 85899345920
+    }
+  },
+  "backups": {
+    "dir": "/data/flk-backups",
+    "apps": {
+      "minecraft-flk": {
+        "bytes": 65676931072,
+        "apparent": 128849019802
+      },
+      "vintagestory-flk": {
+        "bytes": 16460394496,
+        "apparent": 85899346520
+      }
+    },
+    "bytes": 82137325568,
+    "apparent": 214748366322
+  }
+}

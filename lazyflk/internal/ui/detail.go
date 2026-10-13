@@ -54,6 +54,9 @@ func (m *Model) appOverview(a flk.App) []string {
 		out = append(out,
 			fmt.Sprintf("%s %s %s %s %s", styleLabel.Render("machine"), mc.ID, machineIcon(mc), stateText(mc), mc.IP),
 			fmt.Sprintf("  %s · %s · v%d", or(mc.Name, "-"), size(mc.CPUs, mc.MemoryMB), mc.Release))
+		if live := m.liveShort(mc.ID); live != "" {
+			out = append(out, styleDim.Render("  "+strings.TrimPrefix(live, " · ")))
+		}
 	}
 	out = append(out, "")
 	out = append(out, portLines(a.Ports, "ports  ")...)
@@ -82,6 +85,7 @@ func (m *Model) machineOverview(a flk.App, mc flk.Machine) []string {
 		field("ip", mc.IP+portSuffix(mc.InternalPort)),
 		field("size", size(mc.CPUs, mc.MemoryMB)),
 	}
+	out = append(out, m.liveLines(mc)...)
 	if r := mc.Restart; r != nil {
 		out = append(out, field("restart", restartText(*r, mc.Restarts)))
 	}

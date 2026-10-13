@@ -22,6 +22,27 @@
         "retries": 1
       }
     ],
+    "flk": {
+      "backup": {
+        "mode": "live",
+        "pre": [
+          {
+            "console": "save-off"
+          },
+          {
+            "console": "save-all flush",
+            "wait": "Saved the game",
+            "timeout": 300
+          }
+        ],
+        "post": [
+          {
+            "console": "save-on"
+          }
+        ],
+        "settle": 35
+      }
+    },
     "vm": [
       {
         "cpus": 4,

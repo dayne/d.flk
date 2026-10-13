@@ -14,9 +14,9 @@
 │ │ deploy           Build the image and roll machines to a new release      │ │
 │ │ status           App and machine overview                                │ │
 │ │ releases         Release history                                         │ │
-│ │ apps list        All apps on this host                                   │ │
+│ │ disk             Disk space flk uses, per app: release images, machine … │ │
 │ │                                                                          │ │
-│ │ flk context [--all] [--json]                                             │ │
+│ │ flk context [--all] [--json] [--no-host]                                 │ │
 ├ ├──────────────────────────────────────────────────────────────────────────┤─┤
 │ │ type to find  ↑↓ choose  enter fill in and run  esc close                │ │
 ├─└──────────────────────────────────────────────────────────────────────────┘─┤

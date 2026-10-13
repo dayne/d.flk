@@ -1,19 +1,19 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Apps                       │ Host ─  Health  Ports  Disk                     │
+│ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk ports list --json                         │
 │   ▢ world 40GB (external)  │                                                 │
 │   ⇄ tcp/25565 udp/19132    │ helper    installed                             │
-│                            │ host      10.47.11.116 · ports from 1024        │
-│ Host                       │                                                 │
-│   health ✔                 │ tcp/25565 → 10.47.11.116:25565                  │
-│                            │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
+│ ▾ vintagestory-flk  1/1 ●  │ host      10.47.11.116 · ports from 1024        │
+│   ● frosty-river-2714      │                                                 │
+│   ▢ vsdata 40GB (external) │ tcp/25565 → 10.47.11.116:25565                  │
+│   ⇄ tcp/42420 udp/42420    │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
 │                            │ udp/19132 → 10.47.11.116:19132                  │
-│                            │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
+│ Host                       │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
+│   health ✔                 │ tcp/42420 → 10.47.11.116:42420                  │
+│                            │   vintagestory-flk / frosty-river-2714 172.30.… │
+│                            │ udp/42420 → 10.47.11.116:42420                  │
+│                            │   vintagestory-flk / frosty-river-2714 172.30.… │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │

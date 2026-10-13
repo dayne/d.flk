@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk machine status           │
 │   ⇄ tcp/25565 udp/19132    │   225d58f615e7e6                                │
-│                            │                                                 │
-│ Host                       │ {                                               │
-│   health ✔                 │   "id": "225d58f615e7e6",                       │
-│                            │   "name": "mellow-aurora-7882",                 │
+│ ▾ vintagestory-flk  1/1 ●  │                                                 │
+│   ● frosty-river-2714      │ {                                               │
+│   ▢ vsdata 40GB (external) │   "id": "225d58f615e7e6",                       │
+│   ⇄ tcp/42420 udp/42420    │   "name": "mellow-aurora-7882",                 │
 │                            │   "app": "minecraft-flk",                       │
-│                            │   "tap_index": 0,                               │
-│                            │   "ip": "172.30.0.10",                          │
+│ Host                       │   "tap_index": 0,                               │
+│   health ✔                 │   "ip": "172.30.0.10",                          │
 │                            │   "mac": "06:00:ac:1e:00:0a",                   │
 │                            │   "release": 8,                                 │
 │                            │   "config": {                                   │

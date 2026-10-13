@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk config show              │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ {                                               │
-│ Host                       │   "file": "/home/dayne/minecraft.flk/flk.toml", │
-│   health ✔                 │   "parsed": {                                   │
-│                            │     "app": "minecraft-flk",                     │
+│ ▾ vintagestory-flk  1/1 ●  │ {                                               │
+│   ● frosty-river-2714      │   "file": "/home/dayne/minecraft.flk/flk.toml", │
+│   ▢ vsdata 40GB (external) │   "parsed": {                                   │
+│   ⇄ tcp/42420 udp/42420    │     "app": "minecraft-flk",                     │
 │                            │     "kill_timeout": 120,                        │
-│                            │     "build": {                                  │
-│                            │       "dockerfile": "Dockerfile"                │
+│ Host                       │     "build": {                                  │
+│   health ✔                 │       "dockerfile": "Dockerfile"                │
 │                            │     },                                          │
 │                            │     "env": {                                    │
 │                            │       "TZ": "America/Anchorage",                │
 │                            │       "MC_HEAP": "8G",                          │
 │                            │       "RESTART_DELAY": "10",                    │
-│                            │ … 86 more (pgdn)                                │
+│                            │ … 107 more (pgdn)                               │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

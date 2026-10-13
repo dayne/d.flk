@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ no backups of world yet (enter: back up)        │
-│ Host                       │                                                 │
-│   health ✔                 │                                                 │
+│ ▾ vintagestory-flk  1/1 ●  │ world-20261013T062733Z.ext4                     │
+│   ● frosty-river-2714      │   2026-10-13 06:28Z · 20G used · checked clean… │
+│   ▢ vsdata 40GB (external) │   mode live · release v8 · took 49s             │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
+│                            │ world-20261013T062240Z.ext4                     │
+│ Host                       │   2026-10-13 06:23Z · 20G used · repaired       │
+│   health ✔                 │   mode live · release v8 · took 49s             │
 │                            │                                                 │
+│                            │ world-20261013T055118Z.ext4                     │
+│                            │   2026-10-13 05:52Z · 20G used · repaired       │
+│                            │   mode live · release v8 · took 50s             │
 │                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
+│                            │ restore: stop the machine first                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

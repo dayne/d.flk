@@ -145,7 +145,9 @@ func TestTabSnapshots(t *testing.T) {
 	for _, sz := range [][2]int{{80, 24}, {160, 48}} {
 		t.Run(fmt.Sprintf("%dx%d", sz[0], sz[1]), func(t *testing.T) {
 			m := demoModel(t, sz[0], sz[1])
+			kinds := map[string]nodeKind{"app": kindApp, "machine": kindMachine, "volume": kindVolume, "ports": kindPorts, "host": kindHost}
 			for _, sel := range []string{"app", "machine", "volume", "ports", "host"} {
+				goTo(m, kinds[sel])
 				names := tabNames(m.nodes[m.cursor].kind)
 				for i, tab := range names {
 					press(m, fmt.Sprint(i+1))
@@ -191,24 +193,24 @@ func TestNavigation(t *testing.T) {
 		t.Errorf("bottom is %s", sel())
 	}
 	press(m, "k")
-	if sel() != "ports/minecraft-flk" {
+	if sel() != "ports/vintagestory-flk" {
 		t.Errorf("above host is %s", sel())
 	}
 	press(m, "left") // collapse from a child selects the app
-	if sel() != "app/minecraft-flk" || len(m.nodes) != 5 {
+	if sel() != "app/vintagestory-flk" || len(m.nodes) != 9 {
 		t.Errorf("collapsed: on %s, %d nodes", sel(), len(m.nodes))
 	}
-	if !strings.Contains(m.Render(), "▸ minecraft-flk") {
+	if !strings.Contains(m.Render(), "▸ vintagestory-flk") {
 		t.Error("collapsed app should show ▸")
 	}
 	press(m, "right", "down")
-	if sel() != "machine/minecraft-flk/225d58f615e7e6" {
+	if sel() != "machine/vintagestory-flk/f8f979ffff11cf" {
 		t.Errorf("expanded: on %s", sel())
 	}
 	// a refresh keeps the selection
 	hc, _ := m.opt.Client.HostContext(context.Background())
 	send(m, contextMsg{gen: m.loadGen, hc: hc})
-	if sel() != "machine/minecraft-flk/225d58f615e7e6" {
+	if sel() != "machine/vintagestory-flk/f8f979ffff11cf" {
 		t.Errorf("after refresh: on %s", sel())
 	}
 	if _, cmd := m.Update(key("q")); cmd == nil {

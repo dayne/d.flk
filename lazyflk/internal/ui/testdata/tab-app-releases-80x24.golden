@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk releases --json          │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ v8   2026-10-12 07:08Z  Dockerfile  current     │
-│ Host                       │      running on mellow-aurora-7882              │
-│   health ✔                 │ v7   2026-10-12 06:58Z  Dockerfile              │
-│                            │ v6   2026-10-12 06:41Z  Dockerfile              │
+│ ▾ vintagestory-flk  1/1 ●  │ v8   2026-10-12 07:08Z  Dockerfile  current     │
+│   ● frosty-river-2714      │      running on mellow-aurora-7882              │
+│   ▢ vsdata 40GB (external) │ v7   2026-10-12 06:58Z  Dockerfile              │
+│   ⇄ tcp/42420 udp/42420    │ v6   2026-10-12 06:41Z  Dockerfile              │
 │                            │ v5   2026-10-12 06:34Z  Dockerfile              │
-│                            │ v4   2026-10-12 05:35Z  Dockerfile              │
-│                            │ v3   2026-10-12 05:30Z  Dockerfile              │
+│ Host                       │ v4   2026-10-12 05:35Z  Dockerfile              │
+│   health ✔                 │ v3   2026-10-12 05:30Z  Dockerfile              │
 │                            │ v2   2026-10-12 05:20Z  Dockerfile              │
 │                            │ v1   2026-10-12 05:01Z  Dockerfile              │
 │                            │                                                 │

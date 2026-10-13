@@ -1,16 +1,17 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ Host ─  Health  Ports  Disk                                                                                         │
+│ Apps                                   │ Host ─  Health  Services  Ports  Disk  Images                                                                       │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk doctor --json                                                                                                 │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ flk       0.1.0                                                                                                     │
-│                                        │ state     /home/dayne/.local/share/flk                                                                              │
-│ Host                                   │ source    /home/dayne/flk                                                                                           │
-│   health ✔                             │ LAN IP    10.47.11.116                                                                                              │
-│                                        │ boot      installed                                                                                                 │
+│ ▾ vintagestory-flk  1/1 ●              │ state     /home/dayne/.local/share/flk                                                                              │
+│   ● frosty-river-2714                  │ source    /home/dayne/flk                                                                                           │
+│   ▢ vsdata 40GB (external)             │ LAN IP    10.47.11.116                                                                                              │
+│   ⇄ tcp/42420 udp/42420                │ boot      installed                                                                                                 │
 │                                        │ health    ✔ ready                                                                                                   │
-│                                        │ data dirs /home/dayne/.local/share/flk                                                                              │
-│                                        │           /data/minecraft/flk                                                                                       │
+│ Host                                   │ data dirs /home/dayne/.local/share/flk                                                                              │
+│   health ✔                             │           /data/minecraft/flk                                                                                       │
+│                                        │           /data/vintagestory/flk                                                                                    │
 │                                        │                                                                                                                     │
 │                                        │ ✔ /dev/kvm read/write                                                                                               │
 │                                        │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
@@ -26,8 +27,7 @@
 │                                        │ ✔ port helper (host ports from 1024)                                                                                │
 │                                        │ ✔ boot service (machines come back after a reboot)                                                                  │
 │                                        │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│                                        │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

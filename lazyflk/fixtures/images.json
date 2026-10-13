@@ -1,0 +1,54 @@
+[
+  {
+    "repo": "flk.local/vintagestory-flk",
+    "tag": "v3",
+    "id": "e2e7f90d5314",
+    "size_bytes": 587225627,
+    "created_at": "2026-10-13T05:19:18Z",
+    "app": "vintagestory-flk",
+    "release": 3,
+    "orphan": false,
+    "current": true,
+    "in_use": true,
+    "running": true
+  },
+  {
+    "repo": "flk.local/vintagestory-flk",
+    "tag": "v2",
+    "id": "b54f5b0c0cc6",
+    "size_bytes": 585397788,
+    "created_at": "2026-10-13T04:47:53Z",
+    "app": "vintagestory-flk",
+    "release": 2,
+    "orphan": false,
+    "current": false,
+    "in_use": false,
+    "running": false
+  },
+  {
+    "repo": "flk.local/minecraft-flk",
+    "tag": "v8",
+    "id": "7f0a0298ab17",
+    "size_bytes": 369583267,
+    "created_at": "2026-10-12T06:41:08Z",
+    "app": "minecraft-flk",
+    "release": 8,
+    "orphan": false,
+    "current": true,
+    "in_use": true,
+    "running": true
+  },
+  {
+    "repo": "flk.local/minecraft-flk",
+    "tag": "v7",
+    "id": "7f0a0298ab17",
+    "size_bytes": 369583267,
+    "created_at": "2026-10-12T06:41:08Z",
+    "app": "minecraft-flk",
+    "release": 7,
+    "orphan": false,
+    "current": false,
+    "in_use": false,
+    "running": false
+  }
+]

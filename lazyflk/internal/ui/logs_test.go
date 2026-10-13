@@ -204,7 +204,9 @@ func TestLogsScreen(t *testing.T) {
 	if m.logs == nil || m.logs.app != "minecraft-flk" {
 		t.Error("volume: no logs")
 	}
-	press(m, "esc", "j", "j", "l") // the host has none
+	press(m, "esc")
+	goTo(m, kindHost)
+	press(m, "l") // the host has none
 	if m.logs != nil {
 		t.Error("host: logs opened")
 	}

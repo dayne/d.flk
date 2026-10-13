@@ -4,7 +4,7 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│                            │ machine 225d58f615e7e6 ● started 172.30.0.10    │
+│ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ● started 172.30.0.10    │
 │ ┌ destroy app ─ minecraft-flk ─────────────────────────────────────────────┐ │
 │ │ $ flk apps destroy minecraft-flk --yes                                   │ │
 │ │                                                                          │ │

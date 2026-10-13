@@ -33,15 +33,15 @@ func TestDecodeFixtures(t *testing.T) {
 	if hc.Flk.Version != "0.1.0" || !hc.Host.OK || hc.Host.LanIP != "10.47.11.116" || !hc.Host.BootService {
 		t.Errorf("host context: %+v", hc)
 	}
-	if len(hc.Apps) != 1 || hc.Apps[0].Name != app || hc.Apps[0].Release.Version != 8 || hc.Apps[0].Scale != nil || hc.Apps[0].ConfigPath != "/home/dayne/minecraft.flk/flk.toml" {
+	if len(hc.Apps) != 2 || hc.Schema != Schema || hc.Apps[0].Name != app || hc.Apps[0].Release.Version != 8 || hc.Apps[0].Scale != nil || hc.Apps[0].ConfigPath != "/home/dayne/minecraft.flk/flk.toml" {
 		t.Fatalf("apps: %+v", hc.Apps)
 	}
 	a := hc.Apps[0]
 	if m := a.Machines[0]; m.ID != id || !m.Started() || m.ShouldRun() || m.MemoryMB != 11264 || len(m.Ports) != 2 ||
-		m.Restart == nil || m.Restart.Policy != "on-failure" || m.Restarts != nil {
+		m.Restart == nil || m.Restart.Policy != "on-failure" || m.Restarts != nil || m.PID == nil || *m.PID == 0 {
 		t.Errorf("machine: %+v", m)
 	}
-	if len(a.Ports.Active) != 2 || a.Ports.Active[1].Address != "10.47.11.116:19132" || len(hc.MountDirs) != 2 || len(hc.NextSteps) != 0 {
+	if len(a.Ports.Active) != 2 || a.Ports.Active[1].Address != "10.47.11.116:19132" || len(hc.MountDirs) != 3 || len(hc.NextSteps) != 0 {
 		t.Errorf("ports %+v, mount dirs %v", a.Ports, hc.MountDirs)
 	}
 
@@ -49,16 +49,39 @@ func TestDecodeFixtures(t *testing.T) {
 	if err != nil || ac.App == nil || ac.App.Name != app || len(ac.NextSteps) != 1 {
 		t.Errorf("app context: %+v, %v", ac, err)
 	}
+	if s := hc.Host.Services; len(s) != 2 || s[0].Unit != "flk-net.service" || !s[1].Installed || s[1].Active != "active" || s[1].Sub != "exited" {
+		t.Errorf("host services: %+v", s)
+	}
 	doc, err := c.Doctor(ctx)
-	if err != nil || !doc.OK || len(doc.Checks) != 14 || doc.Checks[0].Status != "pass" {
+	if err != nil || !doc.OK || len(doc.Checks) != 15 || doc.Checks[0].Status != "pass" || doc.Schema != 1 || len(doc.Services) != 2 {
 		t.Errorf("doctor: %+v, %v", doc, err)
 	}
+
+	// G5: no host checks, same apps
+	quick, err := c.QuickContext(ctx)
+	if err != nil || quick.Host.LanIP != "10.47.11.116" || quick.Host.OK || quick.Host.Services != nil || len(quick.Apps) != len(hc.Apps) {
+		t.Errorf("quick context: %+v, %v", quick.Host, err)
+	}
+	// G4, G8, G10
+	stats, err := c.Stats(ctx)
+	if err != nil || len(stats) != 2 || stats[0].CPUPercent == nil || stats[0].RSSMB == nil || stats[0].UptimeS == nil || stats[0].MemoryMB != 11264 {
+		t.Errorf("stats: %+v, %v", stats, err)
+	}
+	du, err := c.DiskUse(ctx)
+	if err != nil || du.StateDir.Path == "" || du.StateDir.Bytes == 0 || len(du.Apps) != 2 || du.Apps[0].Images.Bytes == 0 ||
+		du.Apps[0].ExternalVolumes.Apparent == 0 || du.Backups == nil || du.Backups.Apps[app].Bytes == 0 {
+		t.Errorf("disk: %+v, %v", du, err)
+	}
+	imgs, err := c.Images(ctx)
+	if err != nil || len(imgs) != 4 || imgs[0].Release == nil || !imgs[0].Running || imgs[1].InUse || imgs[0].SizeBytes == 0 {
+		t.Errorf("images: %+v, %v", imgs, err)
+	}
 	apps, err := c.Apps(ctx)
-	if err != nil || len(apps) != 1 || apps[0].Started != 1 || apps[0].ConfigPath == "" {
+	if err != nil || len(apps) != 2 || apps[0].Started != 1 || apps[0].ConfigPath == "" {
 		t.Errorf("apps: %+v, %v", apps, err)
 	}
 	pl, err := c.Ports(ctx)
-	if err != nil || !pl.HelperInstalled || pl.MinPort != 1024 || len(pl.Active) != 2 {
+	if err != nil || !pl.HelperInstalled || pl.MinPort != 1024 || len(pl.Active) != 4 {
 		t.Errorf("ports: %+v, %v", pl, err)
 	}
 	st, err := c.Status(ctx, app)
@@ -82,7 +105,7 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("machine status: %+v, %v", rec, err)
 	}
 	help, err := c.Help(ctx)
-	if err != nil || len(help.Commands) == 0 || len(help.Topics) != 6 {
+	if err != nil || len(help.Commands) == 0 || len(help.Topics) != 6 || help.Schema != 1 {
 		t.Fatalf("help: %v", err)
 	}
 	var console *Command
@@ -124,9 +147,13 @@ func TestEveryFixtureServed(t *testing.T) {
 			t.Errorf("help %s: %v", topic, err)
 		}
 	}
-	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || b == nil || len(b) != 0 {
+	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || len(b) != 3 || !b[0].Journal || b[1].Check != "repaired" {
 		t.Errorf("backups: %v %v", b, err)
 	}
+	c.QuickContext(ctx)
+	c.Stats(ctx)
+	c.DiskUse(ctx)
+	c.Images(ctx)
 
 	served := map[string]bool{}
 	for _, args := range f.Calls() {

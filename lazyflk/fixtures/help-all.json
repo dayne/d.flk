@@ -1,4 +1,5 @@
 {
+  "schema": 1,
   "version": "0.1.0",
   "state_dir": "/home/dayne/.local/share/flk",
   "global_options": [
@@ -18,7 +19,7 @@
   "commands": [
     {
       "name": "context",
-      "usage": "flk context [--all] [--json]",
+      "usage": "flk context [--all] [--json] [--no-host]",
       "summary": "What flk sees right now: host health, the current app, machines, ports, next steps",
       "options": [
         {
@@ -32,6 +33,12 @@
             "--json"
           ],
           "description": "Print JSON"
+        },
+        {
+          "switches": [
+            "--no-host"
+          ],
+          "description": "Skip the host checks (flk doctor): cheap enough to poll; host is just lan_ip"
         }
       ],
       "json": true,
@@ -104,7 +111,8 @@
       ],
       "json": true,
       "notes": [
-        "--json prints {\"ok\", \"checks\": [{\"label\", \"status\", \"hint\"}]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails."
+        "--json prints {\"schema\", \"ok\", \"checks\": [{\"label\", \"status\", \"hint\"}], \"services\": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.",
+        "services: flk-net.service and flk-machines.service as systemd sees them: {\"unit\", \"installed\", \"enabled\", \"active\", \"sub\", \"result\", \"since\"}."
       ]
     },
     {
@@ -242,6 +250,41 @@
         }
       ],
       "json": true
+    },
+    {
+      "name": "disk",
+      "usage": "flk disk [--json]",
+      "summary": "Disk space flk uses, per app: release images, machine disks, volumes, logs; and backups",
+      "options": [
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "Sizes are allocated bytes (sparse files count only what they use); --json also gives apparent sizes.",
+        "External volumes (--path / import) are counted apart: they're on other disks."
+      ]
+    },
+    {
+      "name": "images",
+      "usage": "flk images [--json]",
+      "summary": "flk's container images (flk.local/APP:vN): size, whether a machine runs that release, orphans",
+      "options": [
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "Read-only. Images of destroyed apps (orphan) go with flk apps prune; deploys keep the last two per app."
+      ]
     },
     {
       "name": "apps",
@@ -415,6 +458,30 @@
 
           ],
           "json": false
+        },
+        {
+          "name": "stats",
+          "usage": "flk machine stats [ID...] [--all] [--json]",
+          "summary": "CPU and memory use of machines (default: all of the app's)",
+          "args": "[ID...]",
+          "options": [
+            {
+              "switches": [
+                "--all"
+              ],
+              "description": "Every app's machines (no -a needed)"
+            },
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true,
+          "notes": [
+            "cpu_percent is over a 0.5s sample; 100 means one host CPU. rss_mb is what the VM really uses of its memory_mb."
+          ]
         },
         {
           "name": "status",

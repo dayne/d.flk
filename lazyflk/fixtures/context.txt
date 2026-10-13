@@ -12,6 +12,7 @@ app: none (pass -a APP or cd to a directory with flk.toml)
 
 ## Other apps
 - minecraft-flk: 1/1 machines started
+- vintagestory-flk: 1/1 machines started
 
 ## Next steps
 - no flk.toml or fly.toml in /home/dayne: cd to an app directory, pass -a APP, or create one with: flk launch

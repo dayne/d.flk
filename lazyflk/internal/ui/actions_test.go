@@ -129,7 +129,7 @@ func TestStopMachine(t *testing.T) {
 	if !reflect.DeepEqual(calls[before], want) {
 		t.Errorf("ran %v", calls[before])
 	}
-	if !reflect.DeepEqual(calls[before+1], []string{"context", "--all", "--json"}) {
+	if !reflect.DeepEqual(calls[before+1], []string{"context", "--all", "--json", "--no-host"}) {
 		t.Errorf("no reload after the action: %v", calls[before+1:])
 	}
 	j := m.shown
@@ -300,12 +300,15 @@ func TestRunsWhatItShows(t *testing.T) {
 	dir := t.TempDir()
 	ctxJSON, _ := fixtures.FS.ReadFile("context-all.json")
 	os.WriteFile(filepath.Join(dir, "context.json"), ctxJSON, 0o644)
+	quickJSON, _ := fixtures.FS.ReadFile("context-all-nohost.json")
+	os.WriteFile(filepath.Join(dir, "quick.json"), quickJSON, 0o644)
 	log := filepath.Join(dir, "argv")
 	script := filepath.Join(dir, "flk")
 	os.WriteFile(script, []byte(`#!/bin/sh
 printf '%s\0' "$@" >> `+log+`
 printf '\n' >> `+log+`
 [ "$*" = "context --all --json" ] && cat `+filepath.Join(dir, "context.json")+`
+[ "$*" = "context --all --json --no-host" ] && cat `+filepath.Join(dir, "quick.json")+`
 exit 0
 `), 0o755)
 	m := New(Options{Client: flk.New(flk.Exec{Path: script})})
@@ -334,7 +337,7 @@ exit 0
 	var ran [][]string
 	for _, rec := range strings.Split(strings.TrimSuffix(string(raw), "\n"), "\n") {
 		argv := strings.Split(strings.TrimSuffix(rec, "\x00"), "\x00")
-		if strings.Join(argv, " ") != "context --all --json" {
+		if !isRead(argv) {
 			ran = append(ran, argv)
 		}
 	}
@@ -351,4 +354,15 @@ exit 0
 	if !strings.Contains(m.jobs[1].line, "'world 2'") || !strings.Contains(m.jobs[1].line, "'/srv/old world'") {
 		t.Errorf("quoting: %s", m.jobs[1].line)
 	}
+}
+
+// isRead is a command lazyflk runs on its own to show things, not an action.
+func isRead(argv []string) bool {
+	line := strings.Join(argv, " ")
+	for _, p := range []string{"context --all --json", "doctor --json", "machine stats --all --json", "disk --json", "images --json", "help --all --json"} {
+		if strings.HasPrefix(line, p) {
+			return true
+		}
+	}
+	return false
 }

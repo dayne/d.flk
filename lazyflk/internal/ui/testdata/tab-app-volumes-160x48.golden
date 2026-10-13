@@ -4,13 +4,13 @@
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk volumes backups --json                                                                       │
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ tcp/25565 udp/19132                │ world 40GB (external)                                                                                               │
-│                                        │   id        vol_28392490d0d4d4c7                                                                                    │
-│ Host                                   │   size      40GB                                                                                                    │
-│   health ✔                             │   path      /data/minecraft/flk/world.ext4                                                                          │
-│                                        │             external: outside flk's state dir                                                                       │
+│ ▾ vintagestory-flk  1/1 ●              │   id        vol_28392490d0d4d4c7                                                                                    │
+│   ● frosty-river-2714                  │   size      40GB                                                                                                    │
+│   ▢ vsdata 40GB (external)             │   path      /data/minecraft/flk/world.ext4                                                                          │
+│   ⇄ tcp/42420 udp/42420                │             external: outside flk's state dir                                                                       │
 │                                        │   attached  mellow-aurora-7882 (225d58f615e7e6)                                                                     │
-│                                        │   created   2026-10-12 05:01Z                                                                                       │
-│                                        │   backup    none yet                                                                                                │
+│ Host                                   │   created   2026-10-12 05:01Z                                                                                       │
+│   health ✔                             │   backup    2026-10-13 06:28Z (checked clean (journal replayed), 3 kept)                                            │
 │                                        │                                                                                                                     │
 │                                        │ enter on a volume: back up, restore, extend                                                                         │
 │                                        │                                                                                                                     │

@@ -30,6 +30,14 @@ log. `:` is every flk command from `flk help --all --json`, with a form
 built from its args and options. `H` browses flk's guides (`flk help
 TOPIC`).
 
+Host: the Health, Services (flk-net / flk-machines units), Ports, Disk
+(`df` plus `flk disk`: what flk uses per app, and backups) and Images
+(`flk images`) tabs. Machines show live CPU, memory and uptime (`flk
+machine stats`). With a flk that has them (schema 1), polling uses `flk
+context --all --json --no-host` and takes host health from `flk doctor
+--json` every 30s; an older flk still works, with the full context each
+time and those tabs saying what's missing.
+
 Tests: `go test ./...`. Main view snapshots are in
 `internal/ui/testdata/`; after an intended change to the screen, rewrite
 them with `go test ./internal/ui -update` and review the diff.

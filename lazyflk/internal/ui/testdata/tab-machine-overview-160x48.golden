@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
 │   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
 │   ⇄ tcp/25565 udp/19132                │ state     ● started                                                                                                 │
-│                                        │ release   v8                                                                                                        │
-│ Host                                   │ ip        172.30.0.10:25565                                                                                         │
-│   health ✔                             │ size      4 cpus · 11264MB                                                                                          │
+│ ▾ vintagestory-flk  1/1 ●              │ release   v8                                                                                                        │
+│   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
+│   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
+│   ⇄ tcp/42420 udp/42420                │ cpu       2% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    2976MB used of 11264MB                                                                                    │
+│ Host                                   │ up        38m                                                                                                       │
+│   health ✔                             │ pid       1473109 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
 │                                        │ ports     tcp/25565 → 10.47.11.116:25565                                                                            │
 │                                        │           udp/19132 → 10.47.11.116:19132                                                                            │
 │                                        │ volumes   world → /server                                                                                           │
 │                                        │ created   2026-10-12 05:01Z                                                                                         │
-│                                        │ updated   2026-10-12 07:08Z                                                                                         │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│                                        │ updated   2026-10-13 06:13Z                                                                                         │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

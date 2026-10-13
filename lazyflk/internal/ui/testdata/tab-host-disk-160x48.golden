@@ -1,35 +1,35 @@
 ┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ Host ─  Health  Ports  Disk                                                                                         │
+│ Apps                                   │ Host ─  Health  Services  Ports  Disk  Images                                                                       │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ df -k --output=target,size,used,avail,pcent /home/dayne/.local/share/flk /data/minecraft/flk                      │
-│   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │  17% █░░░░░░░░░ /                                                                                                   │
-│                                        │      78G free of 98G                                                                                                │
-│ Host                                   │      holds /home/dayne/.local/share/flk                                                                             │
-│   health ✔                             │                                                                                                                     │
+│   ▢ world 40GB (external)              │   /data/vintagestory/flk                                                                                            │
+│   ⇄ tcp/25565 udp/19132                │                                                                                                                     │
+│ ▾ vintagestory-flk  1/1 ●              │  20% ██░░░░░░░░ /                                                                                                   │
+│   ● frosty-river-2714                  │      75G free of 98G                                                                                                │
+│   ▢ vsdata 40GB (external)             │      holds /home/dayne/.local/share/flk                                                                             │
+│   ⇄ tcp/42420 udp/42420                │                                                                                                                     │
 │                                        │  66% ██████░░░░ /data/minecraft                                                                                     │
-│                                        │      32G free of 98G                                                                                                │
-│                                        │      holds /data/minecraft/flk                                                                                      │
+│ Host                                   │      32G free of 98G                                                                                                │
+│   health ✔                             │      holds /data/minecraft/flk                                                                                      │
 │                                        │                                                                                                                     │
+│                                        │  56% █████░░░░░ /data/vintagestory                                                                                  │
+│                                        │      62G free of 147G                                                                                               │
+│                                        │      holds /data/vintagestory/flk                                                                                   │
 │                                        │                                                                                                                     │
+│                                        │ $ flk disk --json                                                                                                   │
+│                                        │ What flk uses  (allocated; sparse files count what's written)                                                       │
+│                                        │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
 │                                        │                                                                                                                     │
+│                                        │ app                images   rootfs  volumes     logs external                                                       │
+│                                        │ minecraft-flk        736M     373M        -     572K      21G                                                       │
+│                                        │ vintagestory-flk     1.1G     544M        -     632K     8.1G                                                       │
+│                                        │ all                  1.8G     916M        -     1.2M      29G                                                       │
 │                                        │                                                                                                                     │
+│                                        │ backups   76G in /data/flk-backups                                                                                  │
+│                                        │           minecraft-flk    61G                                                                                      │
+│                                        │           vintagestory-flk 15G                                                                                      │
 │                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
-│                                        │                                                                                                                     │
+│                                        │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

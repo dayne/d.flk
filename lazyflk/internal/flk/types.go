@@ -4,8 +4,15 @@ package flk
 // null any of them, and unknown fields are ignored. Timestamps stay strings
 // so a format change degrades one value, not the whole decode.
 
-// HostContext is `flk context --all --json`.
+// Schema is the JSON schema version lazyflk understands (flk's G6 rule:
+// new fields keep the number; renaming, removing or retyping bumps it).
+// 0 means an older flk that doesn't say.
+const Schema = 1
+
+// HostContext is `flk context --all --json` (with --no-host, Host has
+// only LanIP and NextSteps only the per-app items).
 type HostContext struct {
+	Schema    int      `json:"schema"`
 	Flk       FlkInfo  `json:"flk"`
 	MountDirs []string `json:"mount_dirs"`
 	Host      Host     `json:"host"`
@@ -25,6 +32,19 @@ type Host struct {
 	Problems    []DoctorCheck `json:"problems"`
 	LanIP       string        `json:"lan_ip"`
 	BootService bool          `json:"boot_service"`
+	Services    []Service     `json:"services"`
+}
+
+// Service is one of flk's systemd units (flk-net, flk-machines). Both are
+// oneshot: healthy is active "active", sub "exited".
+type Service struct {
+	Unit      string `json:"unit"`
+	Installed bool   `json:"installed"`
+	Enabled   *bool  `json:"enabled"`
+	Active    string `json:"active"` // active, inactive, failed, ...
+	Sub       string `json:"sub"`
+	Result    string `json:"result"`
+	Since     string `json:"since"`
 }
 
 // App is one entry of context's "apps" (or its "app").
@@ -55,6 +75,7 @@ type Machine struct {
 	Name         string        `json:"name"`
 	State        string        `json:"state"`
 	DesiredState string        `json:"desired_state"`
+	PID          *int          `json:"pid"` // firecracker's; null when not running
 	Restart      *Restart      `json:"restart"`
 	Restarts     *Restarts     `json:"restarts"`
 	Release      int           `json:"release"`
@@ -150,8 +171,10 @@ type AppSummary struct {
 
 // Doctor is `flk doctor --json`.
 type Doctor struct {
-	OK     bool          `json:"ok"`
-	Checks []DoctorCheck `json:"checks"`
+	Schema   int           `json:"schema"`
+	OK       bool          `json:"ok"`
+	Checks   []DoctorCheck `json:"checks"`
+	Services []Service     `json:"services"`
 }
 
 type DoctorCheck struct {
@@ -219,6 +242,7 @@ type MachineConfig struct {
 
 // Help is `flk help --all --json`: the command table.
 type Help struct {
+	Schema        int               `json:"schema"`
 	Version       string            `json:"version"`
 	StateDir      string            `json:"state_dir"`
 	GlobalOptions []Option          `json:"global_options"`
@@ -261,5 +285,76 @@ type Backup struct {
 	Release   int     `json:"release"`
 	Mode      string  `json:"mode"`  // stop, live, pause, offline
 	Check     string  `json:"check"` // clean, repaired, errors, unchecked
+	Journal   bool    `json:"journal_replayed"`
 	Seconds   float64 `json:"seconds"`
+}
+
+// MachineStats is a row of `flk machine stats --all --json`. The live
+// numbers are null when the machine isn't running.
+type MachineStats struct {
+	App        string   `json:"app"`
+	ID         string   `json:"id"`
+	Name       string   `json:"name"`
+	State      string   `json:"state"`
+	PID        *int     `json:"pid"`
+	CPUs       int      `json:"cpus"`
+	MemoryMB   int      `json:"memory_mb"`
+	CPUPercent *float64 `json:"cpu_percent"` // 100 = one host CPU
+	RSSMB      *int     `json:"rss_mb"`
+	UptimeS    *int     `json:"uptime_s"`
+}
+
+// Size is disk use: Bytes allocated (sparse-aware) and Apparent.
+type Size struct {
+	Bytes    int64 `json:"bytes"`
+	Apparent int64 `json:"apparent"`
+}
+
+// DiskUse is `flk disk --json`: what flk keeps where.
+type DiskUse struct {
+	StateDir struct {
+		Path string `json:"path"`
+		Size
+	} `json:"state_dir"`
+	Apps   []AppDisk `json:"apps"`
+	Totals struct {
+		Images          Size `json:"images"`
+		Rootfs          Size `json:"rootfs"`
+		Volumes         Size `json:"volumes"`
+		Logs            Size `json:"logs"`
+		ExternalVolumes Size `json:"external_volumes"`
+	} `json:"totals"`
+	Backups *struct {
+		Dir string `json:"dir"`
+		Size
+		Apps map[string]Size `json:"apps"`
+	} `json:"backups"` // null without a backup_dir
+}
+
+// AppDisk is one app's use; Total is inside the state dir (external
+// volumes aren't in it).
+type AppDisk struct {
+	App             string `json:"app"`
+	Images          Size   `json:"images"`
+	Rootfs          Size   `json:"rootfs"`
+	Volumes         Size   `json:"volumes"`
+	Logs            Size   `json:"logs"`
+	ExternalVolumes Size   `json:"external_volumes"`
+	Total           Size   `json:"total"`
+}
+
+// Image is a row of `flk images --json`, one per tag (two tags of one
+// image share ID and size).
+type Image struct {
+	Repo      string `json:"repo"`
+	Tag       string `json:"tag"`
+	ID        string `json:"id"`
+	SizeBytes int64  `json:"size_bytes"`
+	CreatedAt string `json:"created_at"`
+	App       string `json:"app"`
+	Release   *int   `json:"release"`
+	Orphan    bool   `json:"orphan"`  // its app is gone (apps prune)
+	Current   bool   `json:"current"` // the app's latest release
+	InUse     bool   `json:"in_use"`  // a machine is on it
+	Running   bool   `json:"running"` // a running machine is on it
 }
