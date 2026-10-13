@@ -187,3 +187,34 @@ test_disk_json_has_backups_per_volume() {
   assert_eq "$BK" "$(json_get backups.dir <<<"$out")"
   [[ $(json_get "backups.apps.$APP.volumes.data.count" <<<"$out") -ge 1 ]] || fail "no per-volume count: $out"
 }
+
+# ---------- backups of destroyed apps ----------
+
+test_destroyed_apps_keep_backups_until_pruned() {
+  local keep_app="$APP" keep_dir="$APP_DIR" out
+  stage_app hello gone
+  flk launch --no-deploy >/dev/null
+  flk volumes create v --size 1 >/dev/null
+  flk volumes backup v >/dev/null || fail "backup failed"
+  out=$("$FLK_BIN" apps destroy "$APP" --yes)
+  assert_contains "$out" "kept its backups in $BK/$APP"
+  [[ -d $BK/$APP ]] || fail "backups deleted with the app"
+  mkdir -p "$BK/flkt-not-backups/x" && touch "$BK/flkt-not-backups/x/notes.txt"
+  out=$("$FLK_BIN" apps prune)
+  assert_contains "$out" "$APP"
+  assert_contains "$out" "flk apps prune --backups"
+  [[ -d $BK/$APP ]] || fail "prune without --backups deleted backups"
+  out=$("$FLK_BIN" apps prune --backups)
+  assert_contains "$out" "Deleted backups of destroyed app $APP"
+  [[ ! -e $BK/$APP ]] || fail "still there: $BK/$APP"
+  [[ -f $BK/flkt-not-backups/x/notes.txt ]] || fail "deleted a dir that isn't flk's backups"
+  rm -rf "$BK/flkt-not-backups"
+  # --with-backups deletes them with the app
+  flk launch --no-deploy >/dev/null
+  flk volumes create v --size 1 >/dev/null
+  flk volumes backup v >/dev/null || fail "backup failed"
+  out=$("$FLK_BIN" apps destroy "$APP" --yes --with-backups)
+  assert_contains "$out" "deleted its backups"
+  [[ ! -e $BK/$APP ]] || fail "--with-backups left $BK/$APP"
+  APP=$keep_app APP_DIR=$keep_dir
+}

@@ -1107,13 +1107,60 @@ module Flk
       Image.untag(name)
       puts "Destroyed app #{name}"
       kept.each { puts "  kept external volume #{_1['name']} (#{_1['id']}): #{_1['path']}" }
+      root = (Backup.root!(nil) rescue nil)
+      bdir = root && File.join(root, name)
+      return unless bdir && File.directory?(bdir)
+      if o[:with_backups]
+        delete_backups!(bdir)
+        puts "  deleted its backups in #{bdir}"
+      else
+        puts "  kept its backups in #{bdir} (#{Backup.gb(du_tree(bdir)['bytes'])}); delete them with: flk apps prune --backups"
+      end
     end
 
-    def apps_prune(_args, _o)
+    def apps_prune(_args, o)
       names = Image.orphan_repos
-      return puts("Nothing to prune") if names.empty?
-      n = names.sum { Image.untag(_1) }
-      puts "Removed #{n} image tag#{'s' unless n == 1} of #{names.size} destroyed app#{'s' unless names.size == 1}: #{names.join(', ')}"
+      if names.any?
+        n = names.sum { Image.untag(_1) }
+        puts "Removed #{n} image tag#{'s' unless n == 1} of #{names.size} destroyed app#{'s' unless names.size == 1}: #{names.join(', ')}"
+      end
+      root = o[:backups] || o[:to] ? Backup.root!(o[:to]) : (Backup.root!(nil) rescue nil)
+      gone = root ? gone_backup_dirs(root) : []
+      if gone.any? && o[:backups]
+        gone.each do |d|
+          size = Backup.gb(du_tree(d)["bytes"])
+          delete_backups!(d)
+          puts "Deleted backups of destroyed app #{File.basename(d)} (#{size}): #{d}"
+        end
+      elsif gone.any?
+        puts "#{gone.size} destroyed app#{'s' if gone.size > 1} still #{gone.size > 1 ? 'have' : 'has'} backups in #{root}: " \
+             "#{gone.map { File.basename(_1) }.join(', ')} (flk apps prune --backups deletes them)"
+      end
+      puts "Nothing to prune" if names.empty? && gone.empty?
+    end
+
+    # Per-app dirs in a backup root whose app is gone and that hold only
+    # flk's backup files (anything else there: left alone).
+    def gone_backup_dirs(root)
+      Dir.children(root).sort.filter_map do |n|
+        d = File.join(root, n)
+        next unless File.directory?(d) && App::NAME_RE.match?(n) && !App.new(n).exists?
+        d if backup_files_only?(d)
+      end
+    end
+
+    BACKUP_FILE_RE = /\A[a-z0-9_]+-\d{8}T\d{6}Z\.(?:ext4|json|fsck\.log|verify\.log|ext4\.partial)\z/
+
+    def backup_files_only?(dir)
+      Dir.children(dir).all? do |vol|
+        vd = File.join(dir, vol)
+        File.directory?(vd) && Dir.children(vd).all? { BACKUP_FILE_RE.match?(_1) && File.file?(File.join(vd, _1)) }
+      end
+    end
+
+    def delete_backups!(dir)
+      raise Error, "#{dir} holds files that aren't flk backups; not deleting it" unless backup_files_only?(dir)
+      FileUtils.rm_rf(dir)
     end
 
     def config_show(_args, _o)

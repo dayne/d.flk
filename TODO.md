@@ -243,6 +243,10 @@ To consider:
   what's there; it warns when `keep` copies won't fit. Doctor estimates all
   volumes at their keep counts. `flk disk --json` has
   `backups.apps.APP.volumes.VOL = { bytes, apparent, count }`.
+- [x] Backups of destroyed apps stay (restore with `--as` after relaunching);
+  `apps destroy --with-backups` deletes them with the app, `apps prune
+  --backups [--to DIR]` deletes those of apps that are gone (only dirs that
+  hold nothing but flk's backup files). Plain `apps prune` mentions them.
 
 - [x] Graceful stop: `/flk/init` now disables the kernel's Ctrl-Alt-Del hard
   reboot, so stop sends the app SIGTERM instead of pulling the plug.

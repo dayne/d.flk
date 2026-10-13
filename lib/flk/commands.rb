@@ -119,10 +119,14 @@ module Flk
       { name: "apps", group: "Apps", default_sub: "list", summary: "List or destroy apps",
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "All apps on this host" },
-          { name: "destroy", args: "NAME", opts: [["-y", "--yes", "Don't ask for confirmation"]],
+          { name: "destroy", args: "NAME", opts: [["-y", "--yes", "Don't ask for confirmation"],
+                                                  ["--with-backups", "Also delete its backups in backup_dir (kept by default)"]],
             summary: "Destroy an app, its machines and volumes",
-            notes: ["Without a terminal (agents, scripts) --yes is required; otherwise it asks."] },
-          { name: "prune", summary: "Remove container images left behind by apps that no longer exist" }
+            notes: ["Without a terminal (agents, scripts) --yes is required; otherwise it asks.",
+                    "Its volume backups stay in backup_dir unless --with-backups: launch an app of the same name " \
+                    "and flk volumes restore VOLUME --as NEW brings one back. Copies elsewhere (backup_copy_to) are never deleted."] },
+          { name: "prune", opts: [["--backups", "Also delete backups (in backup_dir, or --to) of apps that no longer exist"], BACKUP_TO_OPT],
+            summary: "Remove container images (and with --backups, backups) left behind by apps that no longer exist" }
         ] },
       { name: "config", group: "Apps", default_sub: "show", summary: "Inspect the app config",
         subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
@@ -240,7 +244,8 @@ module Flk
             summary: "List a volume's backups (default: all of the app's volumes), newest first" },
           { name: "restore", args: "ID|NAME [BACKUP]",
             opts: [BACKUP_TO_OPT,
-                   ["--as NEW", "Restore into a new volume NEW instead (no stop, the volume is untouched)"],
+                   ["--as NEW", "Restore into a new volume NEW instead (no stop, the volume is untouched); " \
+                                "names are lowercase letters, digits and underscores (e.g. world_restored)"],
                    ["--path FILE", "With --as: create the new volume's image at FILE (flk never deletes it)"]],
             summary: "Replace a volume's data with a backup (default: the latest); its machine must be stopped",
             notes: ["BACKUP is a file name from flk volumes backups, or part of it (e.g. its date). " \
