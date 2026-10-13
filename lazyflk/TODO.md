@@ -30,8 +30,8 @@ lazyflk's own backlog. What lazyflk needs from flk is in `../TODO.md`
 
 ## Known gaps
 
-- [ ] **Reboots and log rotation** show as highlighted lines in the log,
-  not a banner pinned to the top (SPEC 5.2 asks for a banner).
+- [x] **Reboots and log rotation** pin a banner in the followed log
+  (`x` dismisses); checked live with a restart.
 - [ ] **Detaching from the console inside tmux** (`Ctrl-b Ctrl-b d`) is
   only checked by reading; the automated run could only send `Ctrl-b d`
   straight to the inner tmux. Try it once by hand.

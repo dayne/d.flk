@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -40,6 +41,12 @@ type logsView struct {
 	prog  string
 	fixed []string
 	title string
+
+	// banner pins the latest reboot or log rotation seen while watching
+	// (not in the history loaded at open), until dismissed with x
+	banner  string
+	started time.Time
+	now     func() time.Time
 
 	canSend bool   // > types a line into the machine's console (not read-only)
 	sending bool   // the > prompt is open
@@ -127,6 +134,7 @@ func (v *logsView) start() tea.Cmd {
 	v.stop()
 	v.gen++
 	v.lines, v.top, v.follow, v.match, v.ended, v.err, v.note = nil, 0, true, -1, false, nil, ""
+	v.banner, v.started = "", v.clock()
 	c, args, gen := v.client, v.args(), v.gen
 	return func() tea.Msg {
 		s, err := c.Stream(context.Background(), args...)
@@ -190,8 +198,13 @@ func (v *logsView) handleChunk(msg logChunkMsg) tea.Cmd {
 	if msg.gen != v.gen || v.stream == nil {
 		return nil
 	}
+	live := v.clock().Sub(v.started) > 2*time.Second // past the history -n loads
 	for _, l := range msg.lines {
-		v.lines = append(v.lines, classifyLog(l, v.machineName))
+		ll := classifyLog(l, v.machineName)
+		v.lines = append(v.lines, ll)
+		if live && ll.kind == logBanner {
+			v.banner = v.clock().Format("15:04") + "  " + ll.text
+		}
 	}
 	if drop := len(v.lines) - logMax; drop > 0 {
 		v.lines = append([]logLine(nil), v.lines[drop:]...)
@@ -320,7 +333,17 @@ func (v *logsView) openSend() {
 	}
 }
 
+func (v *logsView) clock() time.Time {
+	if v.now != nil {
+		return v.now()
+	}
+	return time.Now()
+}
+
 func (v *logsView) key(msg tea.KeyPressMsg, w, h int) (tea.Cmd, bool) {
+	if v.banner != "" {
+		h-- // the banner takes a row
+	}
 	if v.sending {
 		switch msg.String() {
 		case "enter":
@@ -384,6 +407,8 @@ func (v *logsView) key(msg tea.KeyPressMsg, w, h int) (tea.Cmd, bool) {
 		v.editing, v.input = true, v.query
 	case ">":
 		v.openSend()
+	case "x":
+		v.banner = ""
 	case "n":
 		v.find(1, w, h)
 	case "N":
@@ -417,6 +442,9 @@ func (v *logsView) key(msg tea.KeyPressMsg, w, h int) (tea.Cmd, bool) {
 // render draws the log screen at w x h.
 func (v *logsView) render(w, h int) string {
 	bw, bh := w-4, h-5
+	if v.banner != "" {
+		bh--
+	}
 	var b strings.Builder
 	line := func(s string) { b.WriteString(s + "\n") }
 
@@ -445,6 +473,9 @@ func (v *logsView) render(w, h int) string {
 	}
 	line("┌" + rule(title, w-2-ansi.StringWidth(right)) + right + "┐")
 	line("│ " + fit(styleDim.Render("$ "+v.commandLine()), w-4) + " │")
+	if v.banner != "" {
+		line("│ " + fit(styleWarn.Render("⚑ "+v.banner), w-4) + " │")
+	}
 
 	var rows []string
 	for i := v.firstShown(bw, bh); i < len(v.lines) && len(rows) < bh; i++ {
@@ -480,6 +511,9 @@ func (v *logsView) render(w, h int) string {
 	hints := []string{"f", "follow", "/", "search", "n/N", "match", "w", "wrap", "g/G", "top/end"}
 	if len(v.machines) > 1 {
 		hints = append(hints, "[ ]", "machine")
+	}
+	if v.banner != "" {
+		hints = append([]string{"x", "dismiss ⚑"}, hints...)
 	}
 	if _, ok := v.sendTarget(); ok && v.canSend {
 		hints = append(hints, ">", "send a line")

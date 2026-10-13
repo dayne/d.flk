@@ -55,6 +55,7 @@ var logsHelp = struct {
 		{"n  N", "next or previous match"},
 		{"w", "wrap long lines on or off"},
 		{"[  ]", "previous or next machine (or all machines)"},
+		{"x", "dismiss the banner (a reboot or log rotation seen while watching)"},
 		{">", "type a line into this machine's console (its stdin); the answer shows here"},
 		{"esc  q", "back to the main view"},
 	},

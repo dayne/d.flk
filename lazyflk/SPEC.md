@@ -221,6 +221,25 @@ an admin can:
 5. Run any flk command through the palette.
 6. Leave the UI responsive while a deploy is running in another terminal.
 
+### Acceptance run (2026-10-13): v1 done
+
+Run on the reference host against flk 6183c62 with lazyflk 0b15539 plus
+the logs banner, 110x40 in tmux. Actions only on the test app
+`flkt-lazyflk-v1` (mcshadow without its host port), destroyed afterwards;
+minecraft-flk and vintagestory-flk were only looked at.
+
+| # | Result | How |
+|---|---|---|
+| 1 | pass | Tree: `●` per running machine, live CPU/memory, ports with their bound address (`10.47.11.3: tcp/25565 udp/19132`); a stopped-but-meant-to-run machine showed `!` on it and its app. |
+| 2 | pass | `l` followed the test machine's log, `/Done` found the server's ready line; `c` showed the detach keys, attached (flk's tmux status bar), `Ctrl-b d` came back to lazyflk. |
+| 3 | pass | Stop (3s), start, restart (4s) and deploy (v1 to v2), each showing `$ flk -a flkt-lazyflk-v1 …` first and its output after. |
+| 4 | pass | After "stop all", Needs attention showed flk's "should be running but isn't"; `a`, enter ran `flk -a flkt-lazyflk-v1 resume`, and the panel went back to "nothing needs attention". |
+| 5 | pass | `:` "releases" filled `-a` from the selection and ran `flk -a flkt-lazyflk-v1 releases`. |
+| 6 | pass | During a deploy with a 20s build in another tmux window, 26 key presses each showed on screen within 0.04s (median 0.04s), and the refresh picked up v3 by itself. |
+
+Also seen live: restarting the machine from the other window pinned the
+reboot banner in the followed log (SPEC 5.2), and `x` dismissed it.
+
 ## 9. What flk needs to add first (gaps)
 
 These are flk changes, made in the parent directory (its `AGENTS.md` explains how; the
@@ -287,6 +306,10 @@ The same principles hold: providers use their tools' CLIs, every action
 shows its command, and nothing runs as root.
 
 ## 11. Milestones
+
+All done (2026-10-13): M0 24af5a0, M1 a444a67, M2 d0cc8f5, M3 e3aec5e,
+M4 065e0c6, M5 c31c05f (plus mouse support). Gaps G1–G6 and G8–G10 landed
+in flk; G7 (events) is later. Open items: `TODO.md`.
 
 1. **M0 skeleton:** client and types, fake flk serving `fixtures/`, `--demo`
    renders the main view from fixtures.

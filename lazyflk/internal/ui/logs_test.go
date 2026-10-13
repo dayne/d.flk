@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/charmbracelet/x/ansi"
 
@@ -209,5 +210,35 @@ func TestLogsScreen(t *testing.T) {
 	press(m, "l") // the host has none
 	if m.logs != nil {
 		t.Error("host: logs opened")
+	}
+}
+
+// A reboot or rotation seen while watching pins a banner; the same lines
+// in the history loaded at open don't.
+func TestLogsBanner(t *testing.T) {
+	now := time.Date(2026, 10, 13, 9, 0, 0, 0, time.UTC)
+	v := newLogsView(nil, "app", []flk.Machine{{ID: "225d58f615e7e6", Name: "mellow"}}, -1)
+	v.now = func() time.Time { return now }
+	v.stream = &flk.Stream{}
+	v.started = now
+	boot := flk.Line{Text: "--- flk: booting 225d58f615e7e6 (release v8) at 2026-10-13T09:00:04Z ---"}
+	v.handleChunk(logChunkMsg{v: v, gen: v.gen, lines: []flk.Line{{Text: "old"}, boot}})
+	if v.banner != "" {
+		t.Errorf("history pinned %q", v.banner)
+	}
+	now = now.Add(5 * time.Second)
+	v.handleChunk(logChunkMsg{v: v, gen: v.gen, lines: []flk.Line{boot, {Text: "Starting minecraft server"}}})
+	s := ansi.Strip(v.render(80, 24))
+	if !strings.Contains(s, "⚑ 09:00  --- flk: booting 225d58f615e7e6") || !strings.Contains(s, "x dismiss ⚑") {
+		t.Errorf("no banner:\n%s", s)
+	}
+	checkSize(t, v.render(80, 24), 80, 24)
+	v.handleChunk(logChunkMsg{v: v, gen: v.gen, lines: []flk.Line{{Text: "tail: 'x/console.log' has been replaced;  following new file", Stderr: true}}})
+	if !strings.Contains(v.banner, "log rotated") {
+		t.Errorf("rotation: %q", v.banner)
+	}
+	v.key(key("x"), 76, 19)
+	if v.banner != "" || strings.Contains(ansi.Strip(v.render(80, 24)), "⚑") {
+		t.Error("x dismisses")
 	}
 }
