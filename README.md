@@ -69,7 +69,7 @@ flk help cheatsheet          # one screen, by task; also: install, first-app, op
 flk help --all [--json]      # full reference: concepts, every command, config, all the guides
 flk completion bash          # tab completion (commands, options, app names, machine IDs)
 flk resume | stop-all        # bring back / gracefully stop every machine (boot and shutdown)
-flk launch | deploy | status | releases
+flk launch | deploy [--no-rollback] | status | releases [rollback [vN]]
 flk machine list|start|stop|restart|destroy|status|config ID...
 flk scale count N
 flk logs [-i ID] [-n N] [-f]                # follows only in a terminal

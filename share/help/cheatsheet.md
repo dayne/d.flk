@@ -34,6 +34,8 @@ Change things
   edit flk.toml, then flk deploy     flk config show: what flk understood
   flk scale count N                  new machines need their own volumes
   flk secrets set|unset ...          restarts machines (unless --stage)
+  flk releases rollback [vN]         back to an older release (image + config)
+  [checks.NAME] type = "log"|"tcp"|"http"   deploys wait for these; failures roll back
 
 Data
   flk volumes backup [NAME]          copy to backup_dir (~/.config/flk/host.toml) or --to DIR

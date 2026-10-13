@@ -9,6 +9,8 @@ require "socket"
 require "digest"
 require "set"
 require "etc"
+require "did_you_mean"
+require "net/http"
 require "rbconfig"
 
 module Flk

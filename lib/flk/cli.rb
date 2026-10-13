@@ -245,6 +245,13 @@ module Flk
       if eng && (orphans = Image.orphan_repos).any?
         record["#{orphans.size} destroyed app#{'s' if orphans.size > 1} still have container images", "warn", "flk apps prune"]
       end
+      if eng && Image.podman?(eng)
+        old = Image.storage_containers.select { (Time.now - Time.parse(_1[2].to_s) rescue 0) > 3600 }
+        if old.any?
+          record["#{old.size} build container#{'s' if old.size > 1} left over (interrupted builds?): #{old.map { _1[1] }.join(', ')}",
+                 "warn", "if no build is running: #{Image.cleanup_command(old)}"]
+        end
+      end
       port_helper_check(record)
       boot_service_check(record)
       exit_hook_check(record)
@@ -307,6 +314,9 @@ module Flk
         record["exit hook missing: machines that exit won't be noticed", "warn", "flk resume (re-installs it)"]
       elsif !File.executable?(bin)
         record["exit hook runs #{bin}, which is gone", "warn", "flk resume (re-installs it)"]
+      elsif bin != VM.hook_bin
+        record["exit hook runs #{bin}, not #{VM.hook_bin} (the boot service's flk)", "warn",
+               "#{VM.hook_bin} resume (re-installs it)"]
       else
         record["exit hook (#{bin})", "pass", nil]
       end
@@ -319,12 +329,13 @@ module Flk
       s = Host.settings
       local = Net.local_addresses
       wanted = s["address"] ? { s["address"] => "address in #{Host::PATH}" } : {}
-      Array(s["bind"]).each { wanted[_1] ||= "bind in #{Host::PATH}" }
+      ps = Host.port_settings
+      Array(ps["bind"]).each { wanted[_1] ||= "bind in #{Host::HOST_FILE}" }
       App.all.each do |a|
         a.machines.each { |m| Array(m.config["bind"]).each { wanted[_1] ||= "[flk] bind of #{a.name}" } }
       end
       wanted.delete("all")
-      bound = (Array(s["bind"]) - ["all"]).any? ||
+      bound = (Array(ps["bind"]) - ["all"]).any? ||
               App.all.any? { |a| a.machines.any? { (Array(_1.config["bind"]) - ["all"]).any? } }
       if bound && Ports.available? && !Ports.per_address?
         record["bind is set, but the port helper predates it: ports still answer on every host address", "warn",
@@ -700,6 +711,7 @@ module Flk
       end
       a = App.new(cfg.app)
       a.create! unless a.exists?
+      config_warnings(cfg)
       mconfig = cfg.machine_config
 
       deploy_capacity!(a, mconfig) # before the slow build
@@ -717,14 +729,7 @@ module Flk
           meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)
           recorded = true
-          if machines.empty?
-            count = [meta["scale"] || 1, 1].max
-            puts "==> Creating #{count} machine#{'s' if count > 1}"
-            count.times { create_machine(a, rel, mconfig) }
-          else
-            puts "==> Updating #{machines.size} machine#{'s' if machines.size > 1} (rolling)"
-            machines.each { update_machine(_1, rel, mconfig) }
-          end
+          roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback])
         end
       ensure
         unless recorded
@@ -732,13 +737,123 @@ module Flk
           Image.untag(a.name) { _1 == "v#{version}" }
         end
       end
-      Image.prune(a)
+      Image.prune(a, keep: cfg.keep_releases)
 
       puts Util.green("\n✔ Deployed #{a.name} v#{version}")
       if (port = mconfig["internal_port"])
         a.machines.each { |m| puts "   #{m.name}  http://#{m.ip}:#{port}" }
       end
       next_step("flk status", "flk logs", "flk context")
+    end
+
+    # Warnings about the config that don't stop anything: unknown keys.
+    def config_warnings(cfg)
+      cfg.unknown_keys.each do |k|
+        warn Util.yellow("⚠ #{File.basename(cfg.path)}: flk doesn't know #{k}; it's ignored")
+      end
+    end
+
+    # Puts every machine of the app on rel: creates them on a first deploy,
+    # else stops, updates and boots each in turn. With health checks, a
+    # machine that fails them stops the roll: it goes back to the release
+    # and config it had (unless no_rollback), the release is marked failed,
+    # and machines not reached yet are left as they were.
+    def roll!(a, rel, mconfig, machines, no_rollback: false)
+      checks = Array(mconfig["checks"])
+      if machines.empty?
+        count = [a.meta["scale"] || 1, 1].max
+        puts "==> Creating #{count} machine#{'s' if count > 1}"
+        count.times do
+          m = create_machine(a, rel, mconfig)
+          next if (why = health_failure(m, checks)).nil?
+          fail_release!(a, rel, why)
+          raise Error, "v#{rel['version']} failed its health checks on new machine #{m.id}: #{why}. " \
+                       "Nothing older to go back to; fix it and deploy again (logs: flk logs -i #{m.id} --no-tail)"
+        end
+        return
+      end
+      puts "==> Updating #{machines.size} machine#{'s' if machines.size > 1} (rolling)"
+      done = []
+      machines.each do |m|
+        before = { "release" => m.release, "config" => m.h["config"] }
+        update_machine(m, rel, mconfig)
+        if (why = health_failure(m, checks)).nil?
+          done << m
+          next
+        end
+        fail_release!(a, rel, why)
+        back = rollback_machine(m, before) unless no_rollback
+        msg = "v#{rel['version']} failed its health checks on #{m.id} [#{m.name}]: #{why}. " +
+              (back ? "#{m.id} is back on v#{before['release']}" : "#{m.id} was left on v#{rel['version']} (logs: flk logs -i #{m.id} --no-tail)")
+        msg += "; #{done.map(&:id).join(', ')} already moved to v#{rel['version']} (back: flk releases rollback)" if done.any?
+        rest = machines.size - done.size - 1
+        msg += "; #{rest} machine#{'s' if rest > 1} not touched" if rest.positive?
+        raise Error, msg
+      end
+    end
+
+    def fail_release!(a, rel, why)
+      meta = a.meta
+      r = meta["releases"].find { _1["version"] == rel["version"] }
+      r.merge!("status" => "failed", "failure" => why, "failed_at" => Util.now)
+      a.save_meta(meta)
+    end
+
+    # Back to the release and config a machine had before an update.
+    def rollback_machine(m, before)
+      old = m.app.release(before["release"])
+      unless old && File.exist?(old["path"].to_s)
+        warn Util.yellow("  can't put #{m.id} back: v#{before['release']}'s image is gone")
+        return false
+      end
+      puts "  #{m.id} [#{m.name}] going back to v#{old['version']}"
+      VM.stop(m)
+      m.h["release"] = old["version"]
+      m.h["config"] = before["config"]
+      m.save!
+      install_rootfs(m, old)
+      boot(m, "Machine #{m.id} [#{m.name}] back on v#{old['version']}")
+      true
+    rescue Error => e
+      warn Util.red("  couldn't put #{m.id} back on v#{before['release']}: #{e.message}")
+      false
+    end
+
+    # nil when every check passes within its grace_period, else why not.
+    def health_failure(m, checks)
+      checks.each do |c|
+        what = c["type"] == "log" ? "log /#{c['match']}/" : "#{c['type']} :#{c['port']}#{c['path']}"
+        print "    check #{c['name']} (#{what}, up to #{c['grace_period']}s) "
+        $stdout.flush
+        t0 = Time.now
+        passed = Util.wait_for(c["grace_period"], 1) do
+          return "machine #{m.id} exited (flk logs -i #{m.id} --no-tail)".tap { puts Util.red("✘") } unless m.running?
+          check_passes?(m, c)
+        end
+        unless passed
+          puts Util.red("✘")
+          return "check #{c['name']} (#{what}) didn't pass within #{c['grace_period']}s"
+        end
+        puts "#{Util.green('✔')} #{(Time.now - t0).round}s"
+      end
+      nil
+    end
+
+    def check_passes?(m, c)
+      case c["type"]
+      when "tcp"
+        Socket.tcp(m.ip, c["port"], connect_timeout: 2) { true }
+      when "http"
+        res = Net::HTTP.start(m.ip, c["port"], open_timeout: 2, read_timeout: 5) { _1.get(c["path"]) }
+        res.code.to_i.between?(200, 399)
+      when "log"
+        log = m.path("console.log")
+        tail = File.open(log, "rb") { |f| f.seek([f.size - 262_144, 0].max); f.read }.to_s
+        since = tail.rindex("--- flk: booting") || 0
+        tail[since..].scrub.match?(Regexp.new(c["match"]))
+      end
+    rescue SystemCallError, IOError, Net::OpenTimeout, Net::ReadTimeout, Net::HTTPBadResponse, EOFError
+      false
     end
 
     # Raises unless the deploy can create or update all its machines; returns
@@ -794,12 +909,72 @@ module Flk
       machine_table(a)
     end
 
-    def cmd_releases(_args, o)
-      rels = app.meta["releases"]
-      return puts(JSON.pretty_generate(rels)) if o[:json]
-      return puts("No releases") if rels.empty?
-      Util.table(%w[VERSION TAG SOURCE CREATED],
-                 rels.reverse.map { ["v#{_1['version']}", _1["tag"], _1["source"], Util.ago(_1["created_at"])] })
+    def releases_list(_args, o)
+      a = app
+      rels = a.meta["releases"]
+      cur = a.current_release&.dig("version")
+      on = a.machines.map(&:release)
+      rows = rels.map do |r|
+        r.reject { |k, _| k == "config" }.merge("current" => r["version"] == cur, "image" => File.exist?(r["path"].to_s),
+                                              "machines" => on.count(r["version"]))
+      end
+      return puts(JSON.pretty_generate(rows)) if o[:json]
+      return puts("No releases") if rows.empty?
+      Util.table(%w[VERSION STATUS MACHINES SOURCE CREATED], rows.reverse.map do |r|
+        status = if r["status"] == "failed" then "failed: #{r['failure']}"
+                 elsif r["current"] then "current"
+                 elsif r["image"] then "kept (flk releases rollback v#{r['version']})"
+                 else "image pruned"
+                 end
+        ["v#{r['version']}", status, r["machines"], r["source"], Util.ago(r["created_at"])]
+      end)
+    end
+
+    # A new release with an older one's image and machine config, rolled
+    # out like a deploy (health checks included).
+    def releases_rollback(args, o)
+      raise Error, "rollback takes at most one release (e.g. v3)" if args.size > 1
+      a = app
+      cur = a.current_release or raise Error, "#{a.name} has no release yet"
+      target = if args[0]
+                 v = args[0].delete_prefix("v")
+                 raise Error, "'#{args[0]}' isn't a release (e.g. v3)" unless v.match?(/\A\d+\z/)
+                 a.release(v.to_i) or raise Error, "#{a.name} has no release v#{v} (see: flk releases)"
+               else
+                 a.meta["releases"].reverse.find { _1["version"] < cur["version"] && _1["status"] != "failed" } or
+                   raise Error, "no release before v#{cur['version']} to go back to"
+               end
+      raise Error, "v#{target['version']} is already the current release" if target["version"] == cur["version"]
+      raise Error, "v#{target['version']} failed its health checks; pick another (flk releases)" if target["status"] == "failed"
+      unless File.exist?(target["path"].to_s)
+        kept = a.meta["releases"].select { File.exist?(_1["path"].to_s) }.map { "v#{_1['version']}" }
+        raise Error, "v#{target['version']}'s image was pruned; releases with images: #{kept.join(', ')} " \
+                     "(keep more with [flk] keep_releases)"
+      end
+      mconfig = target["config"]
+      unless mconfig
+        cfg = config_for(a.name) or raise Error, "v#{target['version']} predates recorded configs and flk can't find #{a.name}'s flk.toml"
+        mconfig = cfg.machine_config
+        warn Util.yellow("⚠ v#{target['version']} predates recorded configs: using #{cfg.path} as it is now")
+      end
+      Util.with_lock do
+        machines = deploy_capacity!(a, mconfig)
+        meta = a.meta
+        version = meta["releases"].last["version"] + 1
+        puts "==> Release v#{version} of #{a.name}: rollback to v#{target['version']}"
+        path = File.join(a.dir, "images", "v#{version}.ext4")
+        Util.run!("cp", "--reflink=auto", "--sparse=always", target["path"], path)
+        tag = "#{Image.repo(a.name)}:v#{version}"
+        system(Image.engine, "tag", target["tag"], tag, out: File::NULL, err: File::NULL) rescue nil
+        rel = { "version" => version, "tag" => tag, "path" => path, "source" => "rollback to v#{target['version']}",
+                "rollback_of" => target["version"], "created_at" => Util.now, "config" => mconfig }
+        meta["releases"] << rel
+        a.save_meta(meta)
+        roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback])
+      end
+      Image.prune(a, keep: (config_for(a.name)&.keep_releases || 2))
+      puts Util.green("\n✔ #{a.name} is on v#{a.current_release['version']} (the image and config of v#{target['version']})")
+      next_step("flk status", "flk releases")
     end
 
     def apps_summary
@@ -844,7 +1019,8 @@ module Flk
     end
 
     def config_show(_args, _o)
-      puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config)
+      puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config,
+                                "warnings" => config.unknown_keys.map { "unknown key #{_1}; flk ignores it" })
     end
 
     # ---------- machines ----------

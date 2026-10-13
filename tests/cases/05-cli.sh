@@ -53,7 +53,7 @@ test_unknown_arguments_rejected() {
   assert_contains "$out" "did you mean 'status'"
   out=$(flk machine strat 2>&1) && fail "accepted 'machine strat'"
   assert_contains "$out" "did you mean 'start'"
-  out=$(flk releases extra 2>&1) && fail "accepted an extra argument"
+  out=$(flk status extra 2>&1) && fail "accepted an extra argument"
   assert_contains "$out" "unexpected argument 'extra'"
   out=$(flk machine stop 2>&1) && fail "accepted machine stop without an ID"
   assert_contains "$out" "missing arguments"

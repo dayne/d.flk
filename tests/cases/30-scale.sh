@@ -28,7 +28,7 @@ test_machines_have_distinct_ips_and_ids() {
 # next one takes over, and it comes back when the first restarts.
 test_host_port_follows_running_machine() {
   port_helper_ready || skip_test "port helper not installed; run: sudo ./setup-host.sh"
-  local ip m1 m2; ip=$(host_lan_ip); m1=$(machine_id 1); m2=$(machine_id 2)
+  local ip m1 m2; ip=$(port_address); m1=$(machine_id 1); m2=$(machine_id 2)
   assert_eq "$m1" "$(mcping "$ip" "$HOST_PORT" -q flk.machine_id)" "owner with both running"
   flk machine stop "$m1"
   assert_eq "$m2" "$(mcping "$ip" "$HOST_PORT" -q flk.machine_id)" "owner after machine 1 stops"

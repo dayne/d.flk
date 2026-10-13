@@ -76,7 +76,9 @@ module Flk
     def meta_path = File.join(dir, "app.json")
     def meta      = Util.read_json(meta_path, { "name" => name, "releases" => [], "created_at" => Util.now })
     def save_meta(m) = Util.write_json(meta_path, m)
-    def current_release = meta["releases"].last
+    # The newest release that didn't fail its health checks.
+    def current_release = meta["releases"].reject { _1["status"] == "failed" }.last
+    def release(version) = meta["releases"].find { _1["version"] == version }
 
     def machines
       Dir.glob(File.join(dir, "machines", "*", "machine.json"))

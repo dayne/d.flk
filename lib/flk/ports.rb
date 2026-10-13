@@ -79,7 +79,7 @@ module Flk
     # With a helper that predates per-address maps, all: dropping the
     # forwarding instead would take the app offline (doctor says to update).
     def binds(m)
-      b = m.config["bind"] || Array(Host.settings["bind"]).then { _1.empty? ? nil : _1 }
+      b = m.config["bind"] || Array(Host.port_settings["bind"]).then { _1.empty? ? nil : _1 }
       b.nil? || b.include?("all") || !per_address? ? [nil] : b
     rescue Error
       [nil]

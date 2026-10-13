@@ -117,6 +117,14 @@ also its own help page: {{TOPICS}}.
 - `[[vm]]`: `cpus`, `memory` (`"1gb"`, `"512mb"`), `memory_mb`, or `size`
   (`shared-cpu-Nx` = 256MB x N, `performance-cpu-Nx` = 2GB x N)
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
+- `[checks.NAME]`: health checks a deploy waits for: `type` = `"tcp"`
+  (`port`), `"http"` (`port`, `path`; 2xx/3xx passes) or flk's `"log"`
+  (`match` = a regex for a console line since boot). Each must pass within
+  `grace_period` (default 60s) or the machine goes back to its previous
+  release and the deploy stops. Also read: `[[services.tcp_checks]]`,
+  `[[services.http_checks]]` (on that service's port), `[[http_service.checks]]`.
+- `[flk] keep_releases`: release images kept for `flk releases rollback`
+  (default 2).
 - `[flk] bind` (flk only): forward this app's host ports only on these host
   addresses (`"10.47.11.3"` or a list) instead of on every host address;
   `"all"` overrides a host-wide `bind`. Apps can then share a port on

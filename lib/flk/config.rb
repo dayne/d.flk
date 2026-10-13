@@ -96,14 +96,19 @@ module Flk
       v
     end
 
+    # 30, "30s" or "2m" as seconds, like fly's durations; default when nil.
+    def self.seconds(v, default, label)
+      return default if v.nil?
+      s = v.to_s.strip.downcase
+      raise Error, "can't parse #{label} '#{v}' (want seconds, e.g. 30 or \"30s\")" unless s =~ /\A(\d+)(s|m)?\z/
+      $2 == "m" ? $1.to_i * 60 : $1.to_i
+    end
+
     # fly's kill_timeout: seconds between the stop signal and a hard kill.
     # Accepts 30 or "30s"/"2m", like fly. Default 10 (flk's old fixed value).
     def kill_timeout
       v = data["kill_timeout"]
-      return 10 if v.nil?
-      s = v.to_s.strip.downcase
-      raise Error, "can't parse kill_timeout '#{v}' (want seconds, e.g. 30 or \"30s\")" unless s =~ /\A(\d+)(s|m)?\z/
-      secs = $2 == "m" ? $1.to_i * 60 : $1.to_i
+      secs = AppConfig.seconds(v, 10, "kill_timeout")
       if secs > MAX_KILL_TIMEOUT
         raise Error, "kill_timeout #{v} is over the #{MAX_KILL_TIMEOUT}s (#{MAX_KILL_TIMEOUT / 60}m) limit; " \
                      "stop would wait that long before killing the machine"
@@ -134,6 +139,114 @@ module Flk
         raise Error, "host port #{key} is listed twice" if rows.size > 1
       end
       list
+    end
+
+    # Health checks a deploy waits for before moving on: fly's [checks]
+    # (type "tcp" or "http"), [[services.tcp_checks]] / [[services.http_checks]]
+    # (on that service's internal_port), [[http_service.checks]], and flk's
+    # own type = "log": a console line matching `match` (e.g. a game
+    # server's "Done ("). Each must pass within its grace_period (default
+    # 60s) after the machine boots.
+    def checks
+      list = []
+      c = data["checks"]
+      raise Error, "[checks] must be a table of named checks ([checks.NAME])" unless c.nil? || c.is_a?(Hash)
+      (c || {}).each { |name, h| list << check_spec(name, h, nil) }
+      [data["services"]].flatten.compact.each do |svc|
+        %w[tcp http].each do |t|
+          [svc["#{t}_checks"]].flatten.compact.each_with_index do |h, j|
+            list << check_spec("services.#{t}_checks.#{j}", h.merge("type" => t), svc["internal_port"])
+          end
+        end
+      end
+      if (hs = data["http_service"]).is_a?(Hash)
+        [hs["checks"]].flatten.compact.each_with_index do |h, j|
+          list << check_spec("http_service.checks.#{j}", h.merge("type" => "http"), hs["internal_port"])
+        end
+      end
+      list
+    end
+
+    CHECK_TYPES = %w[tcp http log].freeze
+
+    def check_spec(name, h, default_port)
+      raise Error, "check #{name} must be a table" unless h.is_a?(Hash)
+      type = (h["type"] || "tcp").to_s
+      raise Error, "check #{name}: type must be tcp, http or log (got '#{type}')" unless CHECK_TYPES.include?(type)
+      spec = { "name" => name.to_s, "type" => type,
+               "grace_period" => AppConfig.seconds(h["grace_period"], 60, "check #{name} grace_period") }
+      if type == "log"
+        m = h["match"] or raise Error, "check #{name}: type = \"log\" needs match = \"REGEX\""
+        begin
+          Regexp.new(m.to_s)
+        rescue RegexpError => e
+          raise Error, "check #{name}: bad match regex: #{e.message}"
+        end
+        spec["match"] = m.to_s
+      else
+        port = h["port"] || default_port or raise Error, "check #{name} needs a port"
+        spec["port"] = Integer(port)
+        spec["path"] = (h["path"] || "/").to_s if type == "http"
+      end
+      spec
+    rescue ArgumentError, TypeError
+      raise Error, "check #{name}: port must be a number"
+    end
+
+    # [flk] keep_releases: release images kept for rollback (default 2).
+    def keep_releases
+      n = Integer(data.dig("flk", "keep_releases") || 2)
+      raise Error, "[flk] keep_releases must be at least 1" if n < 1
+      n
+    rescue ArgumentError, TypeError
+      raise Error, "[flk] keep_releases must be a number"
+    end
+
+    # Keys flk reads, plus fly.toml keys it knows and ignores, by section;
+    # anything else is likely a typo (kill_timout), so deploy and config
+    # show warn. Checked one level into the sections flk uses.
+    KNOWN_KEYS = {
+      "" => %w[app primary_region kill_signal kill_timeout swap_size_mb console_command build deploy env
+               experimental files http_service services mounts processes statics vm checks metrics restart flk],
+      "build" => %w[image dockerfile args build-target build_target ignorefile builder builtin buildpacks settings],
+      "vm" => %w[size memory memory_mb cpus cpu_kind gpus gpu_kind processes kernel_args host_dedication_id persist_rootfs],
+      "mounts" => %w[source destination processes initial_size auto_extend_size_threshold auto_extend_size_increment
+                     auto_extend_size_limit snapshot_retention scheduled_snapshots],
+      "services" => %w[internal_port protocol ports concurrency tcp_checks http_checks auto_stop_machines
+                       auto_start_machines min_machines_running processes script_checks],
+      "services.ports" => %w[port handlers force_https start_port end_port tls_options http_options proxy_proto_options],
+      "restart" => %w[policy retries max_retries processes],
+      "http_service" => %w[internal_port force_https auto_stop_machines auto_start_machines min_machines_running
+                           processes concurrency checks http_options tls_options],
+      "check" => %w[type port path method grace_period interval timeout headers protocol tls_skip_verify
+                    tls_server_name match processes],
+      "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases],
+      "flk.backup" => %w[mode pre post settle keep]
+    }.freeze
+
+    # ["kill_timout (did you mean kill_timeout?)", ...]
+    def unknown_keys
+      out = []
+      look = lambda do |h, sect, prefix|
+        return unless h.is_a?(Hash)
+        (h.keys - KNOWN_KEYS[sect]).each do |k|
+          guess = DidYouMean::SpellChecker.new(dictionary: KNOWN_KEYS[sect]).correct(k).first
+          out << "#{prefix}#{k}#{" (did you mean #{guess}?)" if guess}"
+        end
+      end
+      look[data, "", ""]
+      %w[build vm mounts services restart http_service flk].each do |s|
+        [data[s]].flatten.compact.each { look[_1, s, "#{s}."] }
+      end
+      [data["services"]].flatten.compact.each do |svc|
+        next unless svc.is_a?(Hash)
+        [svc["ports"]].flatten.compact.each { look[_1, "services.ports", "services.ports."] }
+        %w[tcp_checks http_checks].each { |t| [svc[t]].flatten.compact.each { look[_1, "check", "services.#{t}."] } }
+      end
+      [data.dig("http_service", "checks")].flatten.compact.each { look[_1, "check", "http_service.checks."] } if data["http_service"].is_a?(Hash)
+      data["checks"].each { |n, h| look[h, "check", "checks.#{n}."] } if data["checks"].is_a?(Hash)
+      look[data.dig("flk", "backup"), "flk.backup", "flk.backup."] if data["flk"].is_a?(Hash)
+      out.uniq
     end
 
     # [flk] bind: forward this app's host ports only on these host
@@ -184,7 +297,8 @@ module Flk
         "kernel_args" => data.dig("flk", "kernel_args"),
         "stdin" => app_stdin,
         "restart" => restart,
-        "bind" => bind
+        "bind" => bind,
+        "checks" => checks
       }
     end
 
@@ -246,24 +360,32 @@ module Flk
   #   bind        = "10.47.11.3"          # forward ports only there (default
   #                                       # for apps without [flk] bind)
   module Host
-    PATH = ENV["FLK_HOST_CONFIG"] ||
-           File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
+    # FLK_HOST_CONFIG (tests) swaps the file for this process. Except for
+    # `bind`: the port map is one for the whole host, and every flk process
+    # rewrites all of it, so bind always comes from the host's own file
+    # (else a test run would move every app's ports; see port_settings).
+    HOST_FILE = File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
+    PATH = ENV["FLK_HOST_CONFIG"] || HOST_FILE
     KEYS = %w[backup_dir backup_keep address bind].freeze
 
     module_function
 
-    def settings
-      return {} unless File.exist?(PATH)
-      h = TOML.load_file(PATH)
+    def settings(path = PATH)
+      return {} unless File.exist?(path)
+      h = TOML.load_file(path)
       unknown = h.keys - KEYS
-      raise Error, "#{PATH}: unknown setting(s) #{unknown.join(', ')} (known: #{KEYS.join(', ')})" if unknown.any?
-      AppConfig.bind_list(h["address"], "#{PATH}: address")&.then do |a|
-        raise Error, "#{PATH}: address is one address" unless a.size == 1 && a != ["all"]
+      raise Error, "#{path}: unknown setting(s) #{unknown.join(', ')} (known: #{KEYS.join(', ')})" if unknown.any?
+      AppConfig.bind_list(h["address"], "#{path}: address")&.then do |a|
+        raise Error, "#{path}: address is one address" unless a.size == 1 && a != ["all"]
       end
-      h["bind"] = AppConfig.bind_list(h["bind"], "#{PATH}: bind") if h.key?("bind")
+      h["bind"] = AppConfig.bind_list(h["bind"], "#{path}: bind") if h.key?("bind")
       h
     rescue TOML::ParseError => e
-      raise Error, "#{PATH}: #{e.message}"
+      raise Error, "#{path}: #{e.message}"
     end
+
+    # The settings that shape the host-wide port map (bind): always the
+    # host's own file, whatever FLK_HOST_CONFIG says.
+    def port_settings = settings(HOST_FILE)
   end
 end

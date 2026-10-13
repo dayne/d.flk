@@ -97,6 +97,9 @@ port_helper_ready() { sudo -n -l /usr/local/libexec/flk-ports >/dev/null 2>&1; }
 port_map() { sudo -n /usr/local/libexec/flk-ports list; } # the live nft map
 # host_listening PORT: a TCP socket listens on PORT (ss exits 0 either way)
 host_listening() { ss -Hltn "sport = :$1" | grep -q .; }
+# where flk says its forwarded port answers (ADDRESS of the first active
+# row): the LAN IP, or the host's bind address when one is set
+port_address() { flk ports --json | json_get active.0.address | cut -d: -f1; }
 host_lan_ip() { ip -o route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}'; }
 
 # Called by the runner after a failed vm test: append context to its log.

@@ -140,8 +140,9 @@ test_reachable_on_host_lan_ip() {
   port_helper_ready || skip_test "port helper not installed; run: sudo ./setup-host.sh"
   ensure_up
   assert_contains "$(flk ports)" "tcp/$HOST_PORT" "flk ports"
-  local ip; ip=$(host_lan_ip)
-  assert_eq "$ip:$HOST_PORT" "$(flk ports --json | json_get active.0.address)" "ports --json address"
+  local ip; ip=$(port_address)
+  ip -o -4 addr show | grep -q "inet $ip/" || fail "flk ports gives $ip, which isn't on this host"
+  [[ $ip == "$(host_lan_ip)" || -s ${HOME}/.config/flk/host.toml ]] || fail "address $ip isn't the LAN IP and no host settings explain it"
   assert_contains "$(flk ports)" "not 127.0.0.1" "flk ports explains loopback"
   mc_up "$ip" "$HOST_PORT" || fail "no status ping on $ip:$HOST_PORT"
   assert_eq "$APP" "$(mcping "$ip" "$HOST_PORT" -q flk.app)" "app answering on the LAN port"

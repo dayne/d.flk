@@ -54,7 +54,13 @@ module Flk
         raise Error, "no [build] image and no #{cfg.dockerfile} in #{cfg.dir}" unless File.exist?(df)
         puts "==> Building #{tag} with #{eng}"
         args = cfg.build_args.flat_map { |k, v| ["--build-arg", "#{k}=#{v}"] }
-        engine_run!(eng, "build", "-t", tag, "-f", df, *args, cfg.dir)
+        before = storage_containers
+        begin
+          engine_run!(eng, "build", "--force-rm", "-t", tag, "-f", df, *args, cfg.dir)
+        rescue Exception # rubocop:disable Lint/RescueException -- Ctrl-C too
+          leftovers_note(storage_containers - before)
+          raise
+        end
       end
 
       icfg = JSON.parse(Util.run!(eng, "image", "inspect", "--format", "{{json .Config}}", tag)) || {}
@@ -66,7 +72,8 @@ module Flk
         Util.sh!(File.join(LIBEXEC, "flk-build-rootfs"), eng, tag, ov, out, cfg.rootfs_extra_mb.to_s)
       end
 
-      { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now }
+      { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
+        "config" => cfg.machine_config }
     end
 
     # The image's ENTRYPOINT/CMD/ENV/WORKDIR/USER, baked in as plain
@@ -92,12 +99,40 @@ module Flk
 
     def repo(app_name) = "flk.local/#{app_name}"
 
-    # Keep the last `keep` releases: their rootfs files and their engine tags.
+    # Keep the images (rootfs file and engine tag) of the last `keep`
+    # releases that didn't fail, and of any release a machine is on.
     def prune(app, keep: 2)
-      imgs = Dir.glob(File.join(app.dir, "images", "v*.ext4")).sort_by { File.basename(_1)[/\d+/].to_i }
-      imgs[0...-keep].to_a.each { FileUtils.rm_f(_1) }
-      kept = imgs.last(keep).map { File.basename(_1, ".ext4") }
-      untag(app.name) { !kept.include?(_1) }
+      ok = app.meta["releases"].reject { _1["status"] == "failed" }.last(keep).map { _1["version"] }
+      keep_v = (ok + app.machines.map(&:release)).uniq
+      Dir.glob(File.join(app.dir, "images", "v*.ext4")).each do |f|
+        FileUtils.rm_f(f) unless keep_v.include?(File.basename(f)[/\d+/].to_i)
+      end
+      untag(app.name) { !keep_v.include?(_1.delete_prefix("v").to_i) }
+    end
+
+    # podman's build containers ("working containers", buildah's, shown by
+    # `podman ps --external` in state Storage) as [id, name, created_at].
+    # An interrupted build leaves its own behind, still mounted.
+    def storage_containers
+      return [] unless podman?
+      out, st = Open3.capture2e(engine, "ps", "-a", "--external", "--format", "{{.ID}}\t{{.Names}}\t{{.Status}}\t{{.CreatedAt}}")
+      return [] unless st.success?
+      out.lines.map { _1.chomp.split("\t") }.select { _1[2].to_s.match?(/storage/i) }.map { [_1[0], _1[1], _1[3]] }
+    rescue Error, SystemCallError
+      []
+    end
+
+    # Never removed by flk: another build may be running right now, and its
+    # containers look the same. The command is printed instead.
+    def leftovers_note(rows)
+      return if rows.empty?
+      warn Util.yellow("The interrupted build left #{rows.size} build container#{'s' if rows.size > 1} " \
+                       "(#{rows.map { _1[1] }.join(', ')}), still mounted. Remove them with:\n  #{cleanup_command(rows)}")
+    end
+
+    def cleanup_command(rows)
+      ids = rows.map(&:first).join(" ")
+      Util.which("buildah") ? "buildah rm #{ids}" : "podman rm --force --storage #{ids}"
     end
 
     # flk's vN tags for an app (never other tags someone added by hand).

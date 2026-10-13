@@ -345,10 +345,23 @@ module Flk
     def install_exit_hook
       log = File.join(ROOT, "hooks.log")
       cmd = "FLK_HOME=#{ROOT.shellescape} FLK_TMUX_SOCKET=#{SOCKET.shellescape} " \
-            "#{BIN.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"
+            "#{hook_bin.shellescape} ports reap >/dev/null 2>>#{log.shellescape}"
       raise Error, "can't install the exit hook: a path contains a single quote" if cmd.include?("'")
       tmux_quiet("set-option", "-g", "exit-empty", "off")
       tmux_quiet("set-hook", "-g", "session-closed", "run-shell -b '#{cmd}'")
+    end
+
+    # The flk the exit hook should run: on flk's real tmux server, the one
+    # flk-machines.service runs (the host's stable checkout) when that's
+    # installed, so running flk from another checkout (a git worktree, a
+    # manual test) never repoints it; else this flk. A test's own tmux
+    # server (FLK_TMUX_SOCKET) always gets this flk.
+    def hook_bin
+      return BIN unless SOCKET == "flk"
+      svc = File.read("/etc/systemd/system/flk-machines.service")[%r{^ExecStart=-?\S+ (/\S+/bin/flk) resume}, 1]
+      svc && File.executable?(svc) ? svc : BIN
+    rescue SystemCallError
+      BIN
     end
 
     # The flk binary the exit hook runs, or nil (no server, or no hook).

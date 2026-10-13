@@ -6,8 +6,28 @@ port on the host, and what needs attention. In an app directory,
 
 **Ship a change.** Edit code or `flk.toml`, then `flk deploy` from the app
 directory. Each deploy is a new release (`flk releases`); machines are
-updated one at a time. There's no rollback command yet: check out the old
-code and deploy again.
+updated one at a time. flk warns about flk.toml keys it doesn't know
+(typos like `kill_timout`).
+
+**Health checks and rollback.** With checks in flk.toml, a deploy waits
+for each machine to pass them before updating the next:
+
+    [checks.ready]
+      type = "log"               # flk's own: a console line (game servers)
+      match = "Done \\("
+      grace_period = "3m"        # how long it may take (default 60s)
+    [checks.port]
+      type = "tcp"               # or "http" with path = "/health"
+      port = 25565
+
+A machine that fails goes back to its previous release, the new release is
+marked failed (`flk releases` says why), and the deploy stops; `--no-rollback`
+leaves it there to debug. fly's `[[services.tcp_checks]]`,
+`[[services.http_checks]]` and `[[http_service.checks]]` work too.
+`flk releases rollback [vN]` goes back to an older release's image and
+config (default: the one before), as a new release with the same checks.
+The last two images are kept; `[flk] keep_releases = N` keeps more. Data
+on volumes isn't rolled back: that's `flk volumes restore`.
 
 **Logs.** `flk logs` shows the last 50 lines of every machine (`-n 500`
 for more, `-i ID` for one, `-f` to follow). Logs rotate at 10MB

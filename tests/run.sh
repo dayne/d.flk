@@ -35,7 +35,11 @@ HOST_PORT=$(free_port)
 # Test machines run on their own tmux server, so its exit hook runs the flk
 # under test, and the real machines' server (and hook) is never touched.
 FLK_TMUX_SOCKET="flkt-$RUN_ID"
-export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT FLK_TMUX_SOCKET
+# ...and without the host's settings (~/.config/flk/host.toml: bind,
+# address, backup_dir): a file that doesn't exist means the defaults.
+# Tests that need settings write their own.
+FLK_HOST_CONFIG="${TMPDIR:-/tmp}/flk-tests-host-$RUN_ID.toml"
+export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT FLK_TMUX_SOCKET FLK_HOST_CONFIG
 
 TIER=all FORCE=0 KEEP=0 LIST=0 FILTERS=() CUR=""
 COLOR=1; [[ -t 1 && -z ${NO_COLOR:-} ]] || COLOR=0

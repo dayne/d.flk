@@ -34,20 +34,15 @@ Each entry says where the issue is caught today, and where a fix could go.
   loopback is skipped on purpose; making it work needs `route_localnet`
   on the bridge path, a host-wide security trade-off. `flk proxy` covers
   TCP; nothing covers UDP yet.
-- [ ] **Deploys don't wait for health.** A machine that never listens only
-  gets a warning, and the roll continues. Stop the roll instead (Fly's
-  `[[http_service.checks]]` / `[checks]` are a model).
-
+- [x] **Deploys wait for health checks** (`[checks]`, fly's service/http_service
+  checks, flk's `type = "log"`); a failing machine goes back to its
+  previous release, the release is marked failed, the roll stops.
 ## Config and releases
 
-- [ ] **Typos in flk.toml are silently ignored.** Unknown keys are dropped on
-  purpose (fly.toml compatibility), so `kill_timout = 60` does nothing.
-  Warn on keys that are neither flk's nor known Fly keys, in `deploy` and
-  `config show`.
-- [ ] **No rollback.** `flk releases` lists history but there's no
-  `flk deploy --release vN` / `flk releases rollback`. Only the last two
-  rootfs images are kept.
-
+- [x] **flk.toml typos warn** (`deploy`, `config show` warnings), with
+  did-you-mean, against flk's keys and the fly.toml keys it knows.
+- [x] **`flk releases rollback [vN]`**: a new release from an old one's image
+  and recorded machine config; `[flk] keep_releases` (default 2).
 ## For lazyflk (TUI, spec in lazyflk/SPEC.md section 9)
 
 lazyflk only uses flk's CLI, so these are flk changes. M1–M3 are done
@@ -145,17 +140,10 @@ To consider:
 
 ## Builds
 
-- [ ] **An interrupted build leaves buildah working containers.** Ctrl-C
-  during `flk deploy`'s podman build (seen by the lazyflk session:
-  `ruby-working-container`, `4b61b6598784-working-container`, status
-  Storage in `podman ps -a --external`) leaves them pinning layers;
-  `apps destroy` and `apps prune` don't see them. Build with `--force-rm`,
-  remove the build's working containers on Interrupt, and have
-  `apps prune` / doctor report leftover external containers. They stay
-  mounted, so `podman rm --storage ID` fails ("is mounted and cannot be
-  removed without using force"): clean up with `buildah rm ID` (unmounts
-  first) or `podman rm --force --storage ID`.
-
+- [x] **Interrupted builds**: `--force-rm`; on Ctrl-C/failure flk prints
+  the `buildah rm` for the build containers it left (never removes them
+  itself: another build's look the same); doctor warns about ones older
+  than an hour.
 ## Bigger features
 
 - [ ] **Exec into a machine.** A small vsock agent in the guest for a real
@@ -220,6 +208,10 @@ To consider:
   stopping so its own stops are never taken for crashes (that race was real:
   1 in 3 stops). Tests run on their own tmux server, so they never repoint
   the real exit hook, and doctor checks the hook's flk exists.
+- [x] The tmux exit hook always runs the boot service's flk (from
+  flk-machines.service) when that's installed, so flk run from a worktree
+  or a manual test can't repoint it (it did once: a manual deploy from a
+  worktree); doctor warns when it points anywhere else.
 - [x] Volume backups: `flk volumes backup` (stop / live / pause modes,
   `[flk.backup]` pre/post hooks as host commands or console lines with a
   log wait, e2fsck of each copy, `keep` pruning), `backups`, `restore`
