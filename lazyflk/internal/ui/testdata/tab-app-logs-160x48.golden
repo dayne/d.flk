@@ -3,43 +3,43 @@
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk logs -n 200 --no-tail                                                                        │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │     at knot//io.netty.channel.ChannelOutboundHandlerAdapter.write(ChannelOutboundHandlerAdapter.java:113)           │
-│ ▾ vintagestory-flk  1/1 ●              │     at knot//net.minecraft.network.Connection$2.write(Connection.java:489)                                          │
-│   ● frosty-river-2714                  │     at knot//io.netty.channel.AbstractChannelHandlerContext.write(AbstractChannelHandlerContext.java:800)           │
-│   ▢ vsdata 40GB (external)             │     at knot//io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:776)   │
-│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │     at knot//io.netty.channel.AbstractChannelHandlerContext.writeAndFlush(AbstractChannelHandlerContext.java:859)   │
-│                                        │     at knot//io.netty.channel.DefaultChannelPipeline.writeAndFlush(DefaultChannelPipeline.java:1046)                │
-│ Host                                   │     at knot//io.netty.channel.Channel.writeAndFlush(Channel.java:257)                                               │
-│   health ✔                             │     at knot//net.minecraft.network.Connection.doSendPacket(Connection.java:325)                                     │
-│                                        │     at knot//net.minecraft.network.Connection.sendPacket(Connection.java:317)                                       │
-│ Storage                                │     at knot//net.minecraft.network.Connection.send(Connection.java:299)                                             │
-│   / 21%                                │     at knot//net.minecraft.network.Connection.send(Connection.java:293)                                             │
-│   /data/minecraft 66%                  │     at knot//net.minecraft.network.Connection.exceptionCaught(Connection.java:144)                                  │
-│   /data/vintagestory 56%               │     at knot//io.netty.channel.AbstractChannelHandlerContext.invokeExceptionCaught(AbstractChannelHandlerContext.ja… │
-│                                        │     at knot//io.netty.channel.AbstractChannelHandlerContext.fireExceptionCaught(AbstractChannelHandlerContext.java… │
-│ Podman                                 │     at knot//io.netty.channel.DefaultChannelPipeline$HeadContext.exceptionCaught(DefaultChannelPipeline.java:1396)  │
-│   ◇ itzg/minecraft-server:latest 868M  │     at knot//io.netty.channel.DefaultChannelPipeline.fireExceptionCaught(DefaultChannelPipeline.java:890)           │
-│   ◇ dotnet/runtime:10.0 197M           │     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.handleReadException(AbstractEpoll… │
-│   ◇ eclipse-temurin:25-jre 341M        │     at knot//io.netty.channel.epoll.AbstractEpollStreamChannel$EpollStreamUnsafe.epollInReady(AbstractEpollStreamC… │
-│   ◇ ruby:3.3-alpine 69M                │     at knot//io.netty.channel.epoll.AbstractEpollChannel$AbstractEpollUnsafe.handle(AbstractEpollChannel.java:487)  │
-│   ◇ alpine:3.20 7.7M                   │     at knot//io.netty.channel.epoll.EpollIoHandler$DefaultEpollIoRegistration.handle(EpollIoHandler.java:349)       │
-│   4 flk images: host Images tab        │     at knot//io.netty.channel.epoll.EpollIoHandler.processReady(EpollIoHandler.java:546)                            │
-│                                        │     at knot//io.netty.channel.epoll.EpollIoHandler.run(EpollIoHandler.java:491)                                     │
-│ Services                               │     at knot//io.netty.channel.SingleThreadIoEventLoop.runIo(SingleThreadIoEventLoop.java:225)                       │
-│   ● flk-net                            │     at knot//io.netty.channel.SingleThreadIoEventLoop.run(SingleThreadIoEventLoop.java:196)                         │
-│   ● flk-machines                       │     at knot//io.netty.util.concurrent.SingleThreadEventExecutor$5.run(SingleThreadEventExecutor.java:1195)          │
-│   ● ssh                                │     at knot//io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)                              │
-│   ● snap.mosquitto.mosquitto           │     at java.base/java.lang.Thread.run(Unknown Source)                                                               │
-│   ● chrony                             │ [09:57:25] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ [11:02:15] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ [12:01:02] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ [12:58:25] [Server thread/INFO]: FaintWolf7391 (/178.63.179.212:18325) lost connection: Disconnected                │
-│                                        │ [13:08:24] [Server thread/INFO]: HollowWolf7134 (/178.63.179.210:58571) lost connection: Disconnected               │
-│                                        │ [13:18:25] [Server thread/INFO]: GrandLynx0904 (/178.63.179.212:62139) lost connection: Disconnected                │
-│                                        │ [13:30:11] [Server thread/INFO]: SlyOwl0456 (/178.63.123.78:16721) lost connection: Disconnected                    │
-│                                        │ [13:41:37] [Server thread/INFO]: EpicOwl9598 (/176.65.148.253:39620) lost connection: Disconnected                  │
-│                                        │ [13:48:48] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                      │
-│                                        │ [13:51:11] [Server thread/INFO]: HappyCrab8189 (/46.4.84.241:59653) lost connection: Disconnected                   │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ [14:19:01] [Server thread/INFO]: Server empty for 60 seconds, pausing                                               │
+│ ▾ vintagestory-flk  1/1 ●              │ [14:27:05] [Server thread/INFO]: FaintToad1529 (/178.63.179.210:62039) lost connection: Disconnected                │
+│   ● frosty-river-2714                  │ [14:30:45] [WebSocketConnectReadThread-116/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│   ▢ vsdata 40GB (external)             │ [14:30:54] [WebSocketConnectReadThread-118/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ [14:30:54] [WebSocketConnectReadThread-118/ERROR]: Error while handling onClose                                     │
+│                                        │ java.lang.IllegalArgumentException: Invalid JSON: api.geysermc.org                                                  │
+│ Host                                   │     at knot//org.geysermc.geyser.util.JsonUtils.parseJson(JsonUtils.java:56)                                        │
+│   health ✔                             │     at knot//org.geysermc.geyser.skin.FloodgateSkinUploader$1.onClose(FloodgateSkinUploader.java:205)               │
+│                                        │     at knot//org.java_websocket.client.WebSocketClient.onWebsocketClose(WebSocketClient.java:688)                   │
+│ Storage                                │     at knot//org.java_websocket.WebSocketImpl.closeConnection(WebSocketImpl.java:557)                               │
+│   / 23%                                │     at knot//org.java_websocket.WebSocketImpl.closeConnection(WebSocketImpl.java:581)                               │
+│   /data/minecraft 66%                  │     at knot//org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:512)                                │
+│   /data/vintagestory 13%               │     at java.base/java.lang.Thread.run(Unknown Source)                                                               │
+│                                        │ [14:31:05] [WebSocketConnectReadThread-119/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│ Podman                                 │ [14:31:21] [WebSocketConnectReadThread-120/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │ [14:31:30] [WebSocketConnectReadThread-121/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│   ◇ itzg/minecraft-server:latest 868M  │ [14:31:30] [WebSocketConnectReadThread-121/ERROR]: Error while handling onClose                                     │
+│   ◇ dotnet/runtime:10.0 197M           │ java.lang.IllegalArgumentException: Invalid JSON: api.geysermc.org                                                  │
+│   ◇ eclipse-temurin:25-jre 341M        │     at knot//org.geysermc.geyser.util.JsonUtils.parseJson(JsonUtils.java:56)                                        │
+│   ◇ ruby:3.3-alpine 69M                │     at knot//org.geysermc.geyser.skin.FloodgateSkinUploader$1.onClose(FloodgateSkinUploader.java:205)               │
+│   ◇ alpine:3.20 7.7M                   │     at knot//org.java_websocket.client.WebSocketClient.onWebsocketClose(WebSocketClient.java:688)                   │
+│   5 flk images: host Images tab        │     at knot//org.java_websocket.WebSocketImpl.closeConnection(WebSocketImpl.java:557)                               │
+│                                        │     at knot//org.java_websocket.WebSocketImpl.closeConnection(WebSocketImpl.java:581)                               │
+│ Services                               │     at knot//org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:512)                                │
+│   ● flk-net                            │     at java.base/java.lang.Thread.run(Unknown Source)                                                               │
+│   ● flk-machines                       │ [14:33:34] [WebSocketConnectReadThread-127/ERROR]: Got an error                                                     │
+│   ● ssh                                │ java.net.SocketException: Network is unreachable                                                                    │
+│   ● snap.mosquitto.mosquitto           │     at java.base/sun.nio.ch.Net.connect0(Native Method)                                                             │
+│   ● chrony                             │     at java.base/sun.nio.ch.Net.connect(Unknown Source)                                                             │
+│                                        │     at java.base/sun.nio.ch.Net.connect(Unknown Source)                                                             │
+│                                        │     at java.base/sun.nio.ch.NioSocketImpl.connect(Unknown Source)                                                   │
+│                                        │     at java.base/java.net.Socket.connect(Unknown Source)                                                            │
+│                                        │     at knot//org.java_websocket.client.WebSocketClient.run(WebSocketClient.java:491)                                │
+│                                        │     at java.base/java.lang.Thread.run(Unknown Source)                                                               │
+│                                        │ [14:33:49] [WebSocketConnectReadThread-129/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│                                        │ [14:34:05] [WebSocketConnectReadThread-131/ERROR]: Unable to resolve the skin api! This can be caused by your conn… │
+│                                        │ [14:36:25] [Server thread/INFO]: DampCrab4410 (/46.4.84.241:58973) lost connection: Disconnected                    │
 │                                        │ l: follow, search, wrap (full screen)                                                                               │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │

@@ -134,6 +134,13 @@ there), `flk volumes backups` shows where each backup was copied, and
 `flk doctor` warns when a volume's newest copy is older than
 `backup_copy_warn_days` (8).
 
+**Files in a volume.** `flk files ls|cat|cp|rm|mkdir|chown` work on a
+volume's files without mounting it or root (`VOL:PATH`, e.g.
+`flk files cp ./server.properties world:/`). Reading works any time, and
+on backups with `--backup`; writing needs the machine stopped and ends
+with an e2fsck. Copied-in files get the target directory's owner (or
+`--owner UID:GID`), not your host user's.
+
 **Volume files.** `flk volumes extend NAME --size GB` grows a volume
 (machine stopped), and `flk volumes move NAME --dir DIR` moves its file to
 another disk (machine stopped). Backups are full copies on ext4; with the

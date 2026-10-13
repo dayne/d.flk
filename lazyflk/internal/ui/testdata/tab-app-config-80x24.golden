@@ -13,10 +13,10 @@
 │   health ✔                 │   "parsed": {                                   │
 │                            │     "app": "minecraft-flk",                     │
 │ Storage                    │     "kill_timeout": 120,                        │
-│   / 21%                    │     "build": {                                  │
+│   / 23%                    │     "build": {                                  │
 │   /data/minecraft 66%      │       "dockerfile": "Dockerfile"                │
-│   /data/vintagestory 56%   │     },                                          │
-│                            │ … 182 more (pgdn)                               │
+│   /data/vintagestory 13%   │     },                                          │
+│                            │ … 184 more (pgdn)                               │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

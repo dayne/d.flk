@@ -6,16 +6,16 @@
 │   ⇄ tcp/25565 udp/19132    │   /home/dayne/.local/share/flk                  │
 │ ▾ vintagestory-flk  1/1 ●  │   /data/minecraft/flk /data/vintagestory/flk    │
 │   ● frosty-river-2714      │                                                 │
-│   ▢ vsdata 40GB (external) │  21% ██░░░░░░░░ /                               │
-│   ⇄ tcp/42420 udp/42420    │      74G free of 98G                            │
+│   ▢ vsdata 40GB (external) │  23% ██░░░░░░░░ /                               │
+│   ⇄ tcp/42420 udp/42420    │      72G free of 98G                            │
 │                            │      holds /home/dayne/.local/share/flk         │
 │ Host                       │                                                 │
 │   health ✔                 │  66% ██████░░░░ /data/minecraft                 │
 │                            │      32G free of 98G                            │
 │ Storage                    │      holds /data/minecraft/flk                  │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │  56% █████░░░░░ /data/vintagestory              │
-│   /data/vintagestory 56%   │      62G free of 147G                           │
+│   / 23%                    │                                                 │
+│   /data/minecraft 66%      │  13% █░░░░░░░░░ /data/vintagestory              │
+│   /data/vintagestory 13%   │      122G free of 147G                          │
 │                            │ … 25 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

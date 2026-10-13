@@ -11,11 +11,11 @@
 │                            │             external: outside flk's state dir   │
 │ Host                       │   attached  mellow-aurora-7882 (225d58f615e7e6) │
 │   health ✔                 │   created   2026-10-12 05:01Z                   │
-│                            │   backup    2026-10-13 11:14Z (checked clean    │
-│ Storage                    │     (journal replayed), 6 kept)                 │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │ enter on a volume: back up, restore, extend     │
-│   /data/vintagestory 56%   │                                                 │
+│                            │   backup    2026-10-13 22:15Z (checked clean    │
+│ Storage                    │     (journal replayed), 7 kept)                 │
+│   / 23%                    │             verified clean 2026-10-13 22:15Z    │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 13%   │ enter on a volume: back up, restore, extend     │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

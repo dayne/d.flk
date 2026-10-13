@@ -53,7 +53,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 79372214272,
+                     "fsavail": 77716594688,
                      "mountpoints": [
                          "/"
                      ],
@@ -65,7 +65,7 @@
                      "size": 161061273600,
                      "fstype": "ext4",
                      "fssize": 157396975616,
-                     "fsavail": 66393227264,
+                     "fsavail": 130960015360,
                      "mountpoints": [
                          "/data/vintagestory"
                      ],
@@ -77,7 +77,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 33902178304,
+                     "fsavail": 33901760512,
                      "mountpoints": [
                          "/data/minecraft"
                      ],
@@ -89,7 +89,7 @@
                      "size": 429496729600,
                      "fstype": "ext4",
                      "fssize": 421606629376,
-                     "fsavail": 243760091136,
+                     "fsavail": 195667251200,
                      "mountpoints": [
                          "/data/flk-backups"
                      ],

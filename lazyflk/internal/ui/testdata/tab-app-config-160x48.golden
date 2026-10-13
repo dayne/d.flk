@@ -13,25 +13,25 @@
 │   health ✔                             │     "kill_timeout": 120,                                                                                            │
 │                                        │     "build": {                                                                                                      │
 │ Storage                                │       "dockerfile": "Dockerfile"                                                                                    │
-│   / 21%                                │     },                                                                                                              │
+│   / 23%                                │     },                                                                                                              │
 │   /data/minecraft 66%                  │     "env": {                                                                                                        │
-│   /data/vintagestory 56%               │       "TZ": "America/Anchorage",                                                                                    │
+│   /data/vintagestory 13%               │       "TZ": "America/Anchorage",                                                                                    │
 │                                        │       "MC_HEAP": "8G",                                                                                              │
 │ Podman                                 │       "MC_JAVA_OPTS": "-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200                            │
-│   ◇ itzg/minecraft-server:latest 868M  │         -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30         │
-│   ◇ dotnet/runtime:10.0 197M           │         -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5         │
-│   ◇ eclipse-temurin:25-jre 341M        │         -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90       │
-│   ◇ ruby:3.3-alpine 69M                │         -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem                         │
-│   ◇ alpine:3.20 7.7M                   │         -XX:MaxTenuringThreshold=1 -XX:+UseCompactObjectHeaders",                                                   │
-│   4 flk images: host Images tab        │       "RESTART_DELAY": "10",                                                                                        │
-│                                        │       "MAX_RESTARTS": "5",                                                                                          │
-│ Services                               │       "RESTART_WINDOW": "600",                                                                                      │
-│   ● flk-net                            │       "STOP_TIMEOUT": "100",                                                                                        │
-│   ● flk-machines                       │       "DISCORD_NAME": "Minecraft",                                                                                  │
-│   ● ssh                                │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
-│   ● snap.mosquitto.mosquitto           │     },                                                                                                              │
-│   ● chrony                             │     "restart": [                                                                                                    │
-│                                        │       {                                                                                                             │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │         -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30         │
+│   ◇ itzg/minecraft-server:latest 868M  │         -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5         │
+│   ◇ dotnet/runtime:10.0 197M           │         -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90       │
+│   ◇ eclipse-temurin:25-jre 341M        │         -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem                         │
+│   ◇ ruby:3.3-alpine 69M                │         -XX:MaxTenuringThreshold=1 -XX:+UseCompactObjectHeaders",                                                   │
+│   ◇ alpine:3.20 7.7M                   │       "RESTART_DELAY": "10",                                                                                        │
+│   5 flk images: host Images tab        │       "MAX_RESTARTS": "5",                                                                                          │
+│                                        │       "RESTART_WINDOW": "600",                                                                                      │
+│ Services                               │       "STOP_TIMEOUT": "100",                                                                                        │
+│   ● flk-net                            │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│   ● flk-machines                       │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│   ● ssh                                │     },                                                                                                              │
+│   ● snap.mosquitto.mosquitto           │     "restart": [                                                                                                    │
+│   ● chrony                             │       {                                                                                                             │
 │                                        │         "policy": "on-failure",                                                                                     │
 │                                        │         "retries": 1                                                                                                │
 │                                        │       }                                                                                                             │
@@ -40,7 +40,7 @@
 │                                        │       "backup": {                                                                                                   │
 │                                        │         "mode": "live",                                                                                             │
 │                                        │         "pre": [                                                                                                    │
-│                                        │ … 128 more (pgdn)                                                                                                   │
+│                                        │ … 130 more (pgdn)                                                                                                   │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤

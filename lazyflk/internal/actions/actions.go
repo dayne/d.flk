@@ -224,13 +224,20 @@ func machineActions(a flk.App, m flk.Machine) []Action {
 	run := Action{Key: "e", Label: "run a command", Help: "run one command inside it and show its output (flk exec)",
 		Confirm: Ask, Long: true,
 		Fields: []Field{{Name: "cmd", Label: "command", Required: true, Help: "a shell line, run with sh -c inside the machine"},
+			{Name: "how", Label: "run it", Choices: []string{"with sh -c", "as is"},
+				Help: "as is: split into words and run directly, for images without a shell (scratch, distroless)"},
 			{Name: "user", Label: "as user", Help: "empty: root"}},
 		build: func(v map[string]string) Command {
 			args := app(a, "exec", "-i", id)
 			if u := strings.TrimSpace(v["user"]); u != "" {
 				args = append(args, "--user", u)
 			}
-			return Command{Args: append(args, "--", "sh", "-c", strings.TrimSpace(v["cmd"])),
+			line := strings.TrimSpace(v["cmd"])
+			cmd := []string{"sh", "-c", line}
+			if v["how"] == "as is" {
+				cmd = strings.Fields(line)
+			}
+			return Command{Args: append(append(args, "--"), cmd...),
 				Warn: fmt.Sprintf("Runs it inside %s (as %s), through flk's agent. Its output shows here; flk exits with its status.", machineName(m), or(strings.TrimSpace(v["user"]), "root"))}
 		}}
 	if !m.Started() {

@@ -1,5 +1,55 @@
 [
     {
+        "Id": "8149e56d2f500066c4196be95f82a4f423ee590c3b8cd073ed9eca5e76db4117",
+        "ParentId": "bf8527eb54c3680e728d5b4b383a8ba730d72dae7236fbc8dff97ed6b224a731",
+        "RepoTags": null,
+        "RepoDigests": [],
+        "Size": 9154751,
+        "SharedSize": 0,
+        "VirtualSize": 9154751,
+        "Labels": {
+            "io.buildah.version": "1.42.1"
+        },
+        "Containers": 0,
+        "Dangling": true,
+        "Digest": "sha256:4ca234e7cecfee888b4bb164b36dbd311c5474350e12946f8b2f9b3ab4e6fb51",
+        "History": [
+            "docker.io/library/56a3cb39777d8df90a5244fbf27753d6d9982b9197c7912b19036f0bd05da391-tmp:latest"
+        ],
+        "Created": 1791930858,
+        "CreatedAt": "2026-10-13T22:34:18Z"
+    },
+    {
+        "Id": "39469341aaf542e5a0ea9622aae57c2ad9541c8e3679139f87fcbc968f7784a0",
+        "ParentId": "5326b21a709c740c628689c324a2d535c97b884337b0a44ae8b9c11e1270dfb4",
+        "RepoTags": null,
+        "RepoDigests": [
+            "flk.local/vintagestory-flk@sha256:646d825756596336483c91a9359cbd1c638c0cba7d8e005f2beb8f714880c05b"
+        ],
+        "Size": 815596176,
+        "SharedSize": 0,
+        "VirtualSize": 815596176,
+        "Labels": {
+            "io.buildah.version": "1.42.1",
+            "org.opencontainers.image.version": "24.04"
+        },
+        "Containers": 0,
+        "Digest": "sha256:646d825756596336483c91a9359cbd1c638c0cba7d8e005f2beb8f714880c05b",
+        "History": [
+            "flk.local/vintagestory-flk:v4",
+            "flk.local/vintagestory-candidate:mods-in-image",
+            "flk.local/vintagestory-staging:v2",
+            "flk.local/vintagestory-staging:v5",
+            "flk.local/vintagestory-staging:v4",
+            "flk.local/vintagestory-staging:v3"
+        ],
+        "Names": [
+            "flk.local/vintagestory-flk:v4"
+        ],
+        "Created": 1791929811,
+        "CreatedAt": "2026-10-13T22:16:51Z"
+    },
+    {
         "Id": "cb185335b4e7e5af2d050fe17b3e5a67d4b12725dd00038ba4f1abf1fc42dab9",
         "ParentId": "5e52a2f4a23e1ed1413038b7a0fee70a9d2575c7aa0b3d2635e318e888dfc86a",
         "RepoTags": null,
@@ -45,8 +95,8 @@
         "Digest": "sha256:a80525f488cb51e3a062113d8fc1626dfd9bcb11e462749eeca49e3449360607",
         "History": [
             "flk.local/vintagestory-flk:v3",
-            "flk.local/vintagestory-candidate:1.22.7",
-            "flk.local/vintagestory-staging:v1"
+            "flk.local/vintagestory-staging:v1",
+            "flk.local/vintagestory-candidate:1.22.7"
         ],
         "Names": [
             "flk.local/vintagestory-flk:v3"

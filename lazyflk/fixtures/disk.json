@@ -1,8 +1,8 @@
 {
   "state_dir": {
     "path": "/home/dayne/.local/share/flk",
-    "bytes": 3331391488,
-    "apparent": 7685756935
+    "bytes": 4159946752,
+    "apparent": 9200120205
   },
   "apps": [
     {
@@ -12,7 +12,7 @@
         "apparent": 2969567232
       },
       "rootfs": {
-        "bytes": 374681600,
+        "bytes": 375177216,
         "apparent": 998244352
       },
       "volumes": {
@@ -20,65 +20,65 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 663552,
-        "apparent": 660011
+        "bytes": 704512,
+        "apparent": 699687
       },
       "external_volumes": {
-        "bytes": 22193537024,
+        "bytes": 22193954816,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1533378560,
-        "apparent": 3968471595
+        "bytes": 1533915136,
+        "apparent": 3968511271
       }
     },
     {
       "app": "vintagestory-flk",
       "images": {
-        "bytes": 1192660992,
-        "apparent": 2450522112
+        "bytes": 1904070656,
+        "apparent": 3818913792
       },
       "rootfs": {
-        "bytes": 572715008,
-        "apparent": 1234173952
+        "bytes": 685985792,
+        "apparent": 1376780288
       },
       "volumes": {
         "bytes": 0,
         "apparent": 0
       },
       "logs": {
-        "bytes": 921600,
-        "apparent": 916162
+        "bytes": 1171456,
+        "apparent": 1165373
       },
       "external_volumes": {
-        "bytes": 8651468800,
+        "bytes": 8758562816,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1766297600,
-        "apparent": 3685612226
+        "bytes": 2591227904,
+        "apparent": 5196859453
       }
     }
   ],
   "totals": {
     "images": {
-      "bytes": 2350694400,
-      "apparent": 5420089344
+      "bytes": 3062104064,
+      "apparent": 6788481024
     },
     "rootfs": {
-      "bytes": 947396608,
-      "apparent": 2232418304
+      "bytes": 1061163008,
+      "apparent": 2375024640
     },
     "volumes": {
       "bytes": 0,
       "apparent": 0
     },
     "logs": {
-      "bytes": 1585152,
-      "apparent": 1576173
+      "bytes": 1875968,
+      "apparent": 1865060
     },
     "external_volumes": {
-      "bytes": 30845005824,
+      "bytes": 30952517632,
       "apparent": 85899345920
     }
   },
@@ -86,29 +86,29 @@
     "dir": "/data/flk-backups",
     "apps": {
       "minecraft-flk": {
-        "bytes": 131487404032,
-        "apparent": 257698039654,
+        "bytes": 154206064640,
+        "apparent": 301197792328,
         "volumes": {
           "world": {
-            "bytes": 131487404032,
-            "apparent": 257698039654,
-            "count": 6
+            "bytes": 153655853056,
+            "apparent": 300647714503,
+            "count": 7
           }
         }
       },
       "vintagestory-flk": {
-        "bytes": 24865378304,
-        "apparent": 128849019813,
+        "bytes": 50239463424,
+        "apparent": 257698040520,
         "volumes": {
           "vsdata": {
-            "bytes": 24865378304,
-            "apparent": 128849019813,
-            "count": 3
+            "bytes": 50239463424,
+            "apparent": 257698040520,
+            "count": 6
           }
         }
       }
     },
-    "bytes": 156352782336,
-    "apparent": 386547059467
+    "bytes": 204445528064,
+    "apparent": 558895832848
   }
 }

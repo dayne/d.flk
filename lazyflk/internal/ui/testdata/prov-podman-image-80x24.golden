@@ -1,21 +1,21 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│   ● mellow-aurora-7882     │ image docker.io/itzg/minecraft-server:latest    │
-│   ▢ world 40GB (external)  │  Overview                                       │
-│   ⇄ tcp/25565 udp/19132    │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ $ podman ps -a --external --format json ·       │
-│   ● frosty-river-2714      │   podman images --format json                   │
-│   ▢ vsdata 40GB (external) │                                                 │
-│   ⇄ tcp/42420 udp/42420    │ id        f9dfcd225ce9                          │
-│                            │ size      868M                                  │
-│ Host                       │ created   2026-10-10T22:25:04Z                  │
-│   health ✔                 │ names     docker.io/itzg/minecraft-server:lates │
-│                            │           t                                     │
-│ Storage                    │ used      no container uses it                  │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │ Not one of flk's (flk.local/*). A Dockerfile's  │
-│   /data/vintagestory 56%   │   FROM image stays here as                      │
-│                            │ the build cache, so later deploys don't         │
-│ Podman                     │   download it again.                            │
+│   ▢ world 40GB (external)  │ image docker.io/itzg/minecraft-server:latest    │
+│   ⇄ tcp/25565 udp/19132    │  Overview                                       │
+│ ▾ vintagestory-flk  1/1 ●  │                                                 │
+│   ● frosty-river-2714      │ $ podman ps -a --external --format json ·       │
+│   ▢ vsdata 40GB (external) │   podman images --format json                   │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
+│                            │ id        f9dfcd225ce9                          │
+│ Host                       │ size      868M                                  │
+│   health ✔                 │ created   2026-10-10T22:25:04Z                  │
+│                            │ names     docker.io/itzg/minecraft-server:lates │
+│ Storage                    │           t                                     │
+│   / 23%                    │ used      no container uses it                  │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 13%   │ Not one of flk's (flk.local/*). A Dockerfile's  │
+│                            │   FROM image stays here as                      │
+│ Podman                     │ the build cache, so later deploys don't         │
+│   ◇ 8149e56d2f50 (untagge… │   download it again.                            │
 │   ◇ itzg/minecraft-server… │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

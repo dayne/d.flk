@@ -13,9 +13,9 @@
 │   health ✔                 │ udp/19132 → 10.47.11.3:19132                    │
 │                            │   minecraft-flk / mellow-aurora-7882            │
 │ Storage                    │     172.30.0.10:19132                           │
-│   / 21%                    │ tcp/42420 → 10.47.11.3:42420                    │
+│   / 23%                    │ tcp/42420 → 10.47.11.3:42420                    │
 │   /data/minecraft 66%      │   vintagestory-flk / frosty-river-2714          │
-│   /data/vintagestory 56%   │     172.30.0.11:42420                           │
+│   /data/vintagestory 13%   │     172.30.0.11:42420                           │
 │                            │ … 3 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

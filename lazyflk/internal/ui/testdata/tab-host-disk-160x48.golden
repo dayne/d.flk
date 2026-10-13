@@ -4,34 +4,34 @@
 │   ● mellow-aurora-7882                 │ $ df -k --output=target,size,used,avail,pcent /home/dayne/.local/share/flk /data/minecraft/flk                      │
 │   ▢ world 40GB (external)              │   /data/vintagestory/flk                                                                                            │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │                                                                                                                     │
-│ ▾ vintagestory-flk  1/1 ●              │  21% ██░░░░░░░░ /                                                                                                   │
-│   ● frosty-river-2714                  │      74G free of 98G                                                                                                │
+│ ▾ vintagestory-flk  1/1 ●              │  23% ██░░░░░░░░ /                                                                                                   │
+│   ● frosty-river-2714                  │      72G free of 98G                                                                                                │
 │   ▢ vsdata 40GB (external)             │      holds /home/dayne/.local/share/flk                                                                             │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │                                                                                                                     │
 │                                        │  66% ██████░░░░ /data/minecraft                                                                                     │
 │ Host                                   │      32G free of 98G                                                                                                │
 │   health ✔                             │      holds /data/minecraft/flk                                                                                      │
 │                                        │                                                                                                                     │
-│ Storage                                │  56% █████░░░░░ /data/vintagestory                                                                                  │
-│   / 21%                                │      62G free of 147G                                                                                               │
+│ Storage                                │  13% █░░░░░░░░░ /data/vintagestory                                                                                  │
+│   / 23%                                │      122G free of 147G                                                                                              │
 │   /data/minecraft 66%                  │      holds /data/vintagestory/flk                                                                                   │
-│   /data/vintagestory 56%               │                                                                                                                     │
+│   /data/vintagestory 13%               │                                                                                                                     │
 │                                        │ $ flk disk --json                                                                                                   │
 │ Podman                                 │ What flk uses  (allocated; sparse files count what's written)                                                       │
-│   ◇ itzg/minecraft-server:latest 868M  │ state     3.1G in /home/dayne/.local/share/flk                                                                      │
-│   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
-│   ◇ eclipse-temurin:25-jre 341M        │ app                images   rootfs  volumes     logs external                                                       │
-│   ◇ ruby:3.3-alpine 69M                │ minecraft-flk        1.1G     357M        -     648K      21G                                                       │
-│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     546M        -     900K     8.1G                                                       │
-│   4 flk images: host Images tab        │ all                  2.2G     904M        -     1.5M      29G                                                       │
-│                                        │                                                                                                                     │
-│ Services                               │ backups   146G in /data/flk-backups                                                                                 │
-│   ● flk-net                            │           minecraft-flk    122G                                                                                     │
-│   ● flk-machines                       │             world          122G in 6 backups                                                                        │
-│   ● ssh                                │           vintagestory-flk 23G                                                                                      │
-│   ● snap.mosquitto.mosquitto           │             vsdata         23G in 3 backups                                                                         │
-│   ● chrony                             │                                                                                                                     │
-│                                        │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │ state     3.9G in /home/dayne/.local/share/flk                                                                      │
+│   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
+│   ◇ dotnet/runtime:10.0 197M           │ app                images   rootfs  volumes     logs external                                                       │
+│   ◇ eclipse-temurin:25-jre 341M        │ minecraft-flk        1.1G     358M        -     688K      21G                                                       │
+│   ◇ ruby:3.3-alpine 69M                │ vintagestory-flk     1.8G     654M        -     1.1M     8.2G                                                       │
+│   ◇ alpine:3.20 7.7M                   │ all                  2.9G    1012M        -     1.8M      29G                                                       │
+│   5 flk images: host Images tab        │                                                                                                                     │
+│                                        │ backups   190G in /data/flk-backups                                                                                 │
+│ Services                               │           minecraft-flk    144G                                                                                     │
+│   ● flk-net                            │             world          143G in 7 backups                                                                        │
+│   ● flk-machines                       │           vintagestory-flk 47G                                                                                      │
+│   ● ssh                                │             vsdata         47G in 6 backups                                                                         │
+│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● chrony                             │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

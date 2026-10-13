@@ -1,4 +1,4 @@
-Mounted on         1K-blocks     Used    Avail Use%
-/                  102626232 19855040 77511928  21%
-/data/minecraft    102626232 64259372 33107596  66%
-/data/vintagestory 153707984 80990144 64837136  56%
+Mounted on         1K-blocks     Used     Avail Use%
+/                  102626232 21471856  75895112  23%
+/data/minecraft    102626232 64259780  33107188  66%
+/data/vintagestory 153707984 17936640 127890640  13%

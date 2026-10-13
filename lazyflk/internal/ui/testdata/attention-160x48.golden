@@ -5,7 +5,7 @@
 │   ▢ world 40GB (external)              │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ! stopped, should be started 172.30.0.10                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v9                                                                        │
-│   ● frosty-river-2714                  │   cpu 6% · 10507MB used · up 13h 22m                                                                                │
+│   ● frosty-river-2714                  │   cpu 6% · 9427MB used · up 25m                                                                                     │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  tcp/25565 → 10.47.11.3:25565                                                                                 │
 │                                        │        udp/19132 → 10.47.11.3:19132                                                                                 │
@@ -13,17 +13,18 @@
 │   health ✔                             │   /data/minecraft/flk/world.ext4                                                                                    │
 │                                        │                                                                                                                     │
 │ Storage                                │ ! machine 225d58f615e7e6 should be running but is stopped                                                           │
-│   / 21%                                │ ! machine 225d58f615e7e6 [mellow-aurora-7882] should be running but isn't (it exited, or the host restarted); see   │
+│   / 23%                                │ ! machine 225d58f615e7e6 [mellow-aurora-7882] should be running but isn't (it exited, or the host restarted); see   │
 │   /data/minecraft 66%                  │   why: flk logs -i 225d58f615e7e6 --no-tail; bring it back: flk resume                                              │
-│   /data/vintagestory 56%               │ ! host port tcp/25565 is held by another machine; this one gets it when that stops                                  │
+│   /data/vintagestory 13%               │ ! host port tcp/25565 is held by another machine; this one gets it when that stops                                  │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   4 flk images: host Images tab        │                                                                                                                     │
+│   5 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │
@@ -31,7 +32,6 @@
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │
-│                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

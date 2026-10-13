@@ -1,6 +1,6 @@
 # Fixtures
 
-Real output from the reference host (flk 0.1.0, commit fbedbe7, 2026-10-13),
+Real output from the reference host (flk 0.1.0, commit c49d762, 2026-10-13),
 captured with the commands below by `./capture.sh` (read-only; run it on a
 quiet host, then review the diff). Never edit them by hand. No secret values: `secrets list --json` has names and
 digests only.

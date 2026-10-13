@@ -13,9 +13,9 @@
 │   health ✔                 │   "ip": "172.30.0.10",                          │
 │                            │   "mac": "06:00:ac:1e:00:0a",                   │
 │ Storage                    │   "release": 9,                                 │
-│   / 21%                    │   "config": {                                   │
+│   / 23%                    │   "config": {                                   │
 │   /data/minecraft 66%      │     "cpus": 4,                                  │
-│   /data/vintagestory 56%   │     "memory_mb": 11264,                         │
+│   /data/vintagestory 13%   │     "memory_mb": 11264,                         │
 │                            │ … 85 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

@@ -13,10 +13,10 @@
 │   health ✔                 │ boot      installed                             │
 │                            │ health    ✔ ready                               │
 │ Storage                    │ data dirs /home/dayne/.local/share/flk          │
-│   / 21%                    │           /data/minecraft/flk                   │
+│   / 23%                    │           /data/minecraft/flk                   │
 │   /data/minecraft 66%      │           /data/vintagestory/flk                │
-│   /data/vintagestory 56%   │                                                 │
-│                            │ … 24 more (pgdn)                                │
+│   /data/vintagestory 13%   │                                                 │
+│                            │ … 26 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

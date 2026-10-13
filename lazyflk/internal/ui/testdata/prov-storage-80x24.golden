@@ -13,9 +13,9 @@
 │   health ✔                 │   /dev/nvme0n1  disk, 1.8T · WD_BLACK SN770 2TB │
 │                            │                                                 │
 │ Storage                    │ 1.1T of /dev/nvme0n1p3 isn't in any logical     │
-│   / 21%                    │   volume yet: room to grow /data/minecraft      │
+│   / 23%                    │   volume yet: room to grow /data/minecraft      │
 │   /data/minecraft 66%      │   (e.g. sudo lvextend -r -L +10G                │
-│   /data/vintagestory 56%   │     /dev/mapper/ubuntu--vg-mc--data)            │
+│   /data/vintagestory 13%   │     /dev/mapper/ubuntu--vg-mc--data)            │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

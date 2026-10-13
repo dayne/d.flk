@@ -9,7 +9,7 @@ host: ready, address 10.47.11.3, boot service installed
   port 10.47.11.3:udp/19132 -> 10.47.11.3:19132
   volumes: world 40GB
 
-## vintagestory-flk  (v3, 1/1 started)
+## vintagestory-flk  (v4, 1/1 started)
   f8f979ffff11cf [frosty-river-2714] started 172.30.0.11:42420
   port 10.47.11.3:tcp/42420 -> 10.47.11.3:42420
   port 10.47.11.3:udp/42420 -> 10.47.11.3:42420

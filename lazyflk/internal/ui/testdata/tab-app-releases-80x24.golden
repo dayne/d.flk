@@ -13,9 +13,9 @@
 │   health ✔                 │ v4   2026-10-12 05:35Z  Dockerfile  pruned      │
 │                            │ v3   2026-10-12 05:30Z  Dockerfile  pruned      │
 │ Storage                    │ v2   2026-10-12 05:20Z  Dockerfile  pruned      │
-│   / 21%                    │ v1   2026-10-12 05:01Z  Dockerfile  pruned      │
+│   / 23%                    │ v1   2026-10-12 05:01Z  Dockerfile  pruned      │
 │   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │ kept: can be rolled back to (enter, r) ·        │
+│   /data/vintagestory 13%   │ kept: can be rolled back to (enter, r) ·        │
 │                            │   pruned: its image is gone                     │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

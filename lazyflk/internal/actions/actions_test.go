@@ -478,6 +478,9 @@ func TestExecActions(t *testing.T) {
 	if run.Check(nil) == "" {
 		t.Error("a command is required")
 	}
+	if got := strings.Join(run.Command(map[string]string{"cmd": "/app/server --version", "how": "as is"}).Args, " "); got != "-a minecraft-flk exec -i "+m.ID+" -- /app/server --version" {
+		t.Errorf("no shell: %s", got)
+	}
 	if find(t, acts, "shell").View != ViewShell {
 		t.Error("shell")
 	}

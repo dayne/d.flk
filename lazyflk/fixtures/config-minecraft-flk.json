@@ -40,7 +40,9 @@
           {
             "console": "save-on"
           }
-        ]
+        ],
+        "verify": "bin/mc-verify-backup",
+        "before_deploy": true
       },
       "keep_releases": 3
     },

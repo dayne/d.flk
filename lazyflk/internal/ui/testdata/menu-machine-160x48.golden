@@ -8,30 +8,30 @@
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
 │   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       6% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    10507MB used of 11264MB                                                                                   │
-│ Host                                   │ up        13h 22m                                                                                                   │
-│   health ✔                             │ pid       1676117 (firecracker)                                                                                     │
+│                                        │ memory    9427MB used of 11264MB                                                                                    │
+│ Host                                   │ up        25m                                                                                                       │
+│   health ✔                             │ pid       2273109 (firecracker)                                                                                     │
 │                                     ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────────────┐                                     │
 │ Storage                             │ s  start          already running                                                │                                     │
-│   / 21%                             │ S  stop           stop gracefully; it stays stopped, also after reboots          │                                     │
+│   / 23%                             │ S  stop           stop gracefully; it stays stopped, also after reboots          │                                     │
 │   /data/minecraft 66%               │ r  restart        stop, then boot                                                │                                     │
-│   /data/vintagestory 56%            │ e  run a command  run one command inside it and show its output (flk exec)       │                                     │
+│   /data/vintagestory 13%            │ e  run a command  run one command inside it and show its output (flk exec)       │                                     │
 │                                     │ h  shell          a shell inside it (bash, else sh), through flk's agent (flk s… │                                     │
 │ Podman                              │ l  logs           follow its console output                                      │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ c  console        attach to its serial console (detach: Ctrl-b d)                │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │ >  send a line    type one line into the app's stdin and watch the log answer (… │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ R  record         flk machine status: its record and state                       │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ 1  who            who's online (RCON)                                            │                                     │
-│   ◇ alpine:3.20 7.7M                │ 2  say            broadcast a message to the players (RCON)                      │                                     │
-│   4 flk images: host Images tab     │ 3  save           write the world to disk now and wait until it's saved          │                                     │
-│                                     │ 4  backup         the nightly backup, now: live (no restart, ~25s), checked, ne… │                                     │
-│ Services                            │ 5  backup-check   preflight only: mounts, flk, lock, status; makes no backup     │                                     │
-│   ● flk-net                         │ 6  whitelist      let a player in: type their name (RCON)                        │                                     │
-│   ● flk-machines                    │                                                                                  │                                     │
-│   ● ssh                             │ boot it                                                                          │                                     │
-│   ● snap.mosquitto.mosquitto        │ not now: already running                                                         │                                     │
-│   ● chrony                          ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│                                     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│   ◇ 8149e56d2f50 (untagged) 8.7M    │ c  console        attach to its serial console (detach: Ctrl-b d)                │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ >  send a line    type one line into the app's stdin and watch the log answer (… │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ R  record         flk machine status: its record and state                       │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ 1  who            who's online (RCON)                                            │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ 2  say            broadcast a message to the players (RCON)                      │                                     │
+│   ◇ alpine:3.20 7.7M                │ 3  save           write the world to disk now and wait until it's saved          │                                     │
+│   5 flk images: host Images tab     │ 4  backup         the nightly backup, now: live (no restart, ~25s), checked, ne… │                                     │
+│                                     │ 5  backup-check   preflight only: mounts, flk, lock, status; makes no backup     │                                     │
+│ Services                            │ 6  whitelist      let a player in: type their name (RCON)                        │                                     │
+│   ● flk-net                         │                                                                                  │                                     │
+│   ● flk-machines                    │ boot it                                                                          │                                     │
+│   ● ssh                             │ not now: already running                                                         │                                     │
+│   ● snap.mosquitto.mosquitto        ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● chrony                          │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
 │                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

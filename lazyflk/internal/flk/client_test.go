@@ -73,7 +73,17 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("disk: %+v, %v", du, err)
 	}
 	imgs, err := c.Images(ctx)
-	if err != nil || len(imgs) != 5 || imgs[0].Release == nil || !imgs[0].Running || imgs[2].InUse || imgs[0].SizeBytes == 0 {
+	running, unused := 0, 0
+	for _, im := range imgs {
+		if im.Running {
+			running++
+		}
+		if !im.InUse {
+			unused++
+		}
+	}
+	// the reference host runs both games; older releases' images are kept
+	if err != nil || imgs[0].Release == nil || !imgs[0].Running || imgs[0].SizeBytes == 0 || running != 2 || unused == 0 {
 		t.Errorf("images: %+v, %v", imgs, err)
 	}
 	apps, err := c.Apps(ctx)
@@ -153,8 +163,14 @@ func TestEveryFixtureServed(t *testing.T) {
 			t.Errorf("help %s: %v", topic, err)
 		}
 	}
-	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || len(b) != 6 || !b[0].Journal || b[4].Check != "repaired" {
+	b, err := c.Backups(ctx, "minecraft-flk")
+	if err != nil || len(b) == 0 || b[0].File == "" || b[0].Mode != "live" {
 		t.Errorf("backups: %v %v", b, err)
+	}
+	for _, x := range b {
+		if !strings.Contains(" clean repaired errors unchecked ", " "+x.Check+" ") || x.CreatedAt > b[0].CreatedAt {
+			t.Errorf("backup %s: check %q, newest first", x.File, x.Check)
+		}
 	}
 	for _, dir := range []string{"/", "/world", "/world/region", "/logs"} {
 		if es, err := c.FilesLs(ctx, "minecraft-flk", "world", dir, ""); err != nil || len(es) == 0 {

@@ -683,13 +683,65 @@
         "Detach with Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Attaching needs a terminal; --send doesn't.",
         "--send types TEXT and Enter into the app's stdin (needs [flk] stdin = \"console\", the default). With --wait-log it then prints the console output until a line matches REGEX (exit 1 after --timeout). The console echoes what you type; that echo is skipped when matching.",
         "It's the serial console, not a shell: you see app output and type to its stdin (server consoles: stop, say, op...). Ctrl-C here doesn't signal the app; use flk machine stop.",
-        "`flk ssh console` is an alias."
+        "For a shell in the machine, use flk ssh console; to run a command, flk exec."
+      ]
+    },
+    {
+      "name": "exec",
+      "usage": "flk exec CMD... [--instance ID] [--user USER] [--cwd DIR] [--tty] [--stdin] [--timeout SECONDS]",
+      "summary": "Run a command in a running machine and return its output and exit status",
+      "args": "CMD...",
+      "options": [
+        {
+          "switches": [
+            "-i",
+            "--instance ID"
+          ],
+          "description": "Which machine (default: the app's first running one)"
+        },
+        {
+          "switches": [
+            "--user USER"
+          ],
+          "description": "Run as this user: a name, UID or UID:GID (default: root)"
+        },
+        {
+          "switches": [
+            "--cwd DIR"
+          ],
+          "description": "Working directory (default /)"
+        },
+        {
+          "switches": [
+            "-t",
+            "--tty"
+          ],
+          "description": "Give it a terminal (needs one here): for interactive programs"
+        },
+        {
+          "switches": [
+            "--stdin"
+          ],
+          "description": "Pass this command's stdin to it (default: its stdin is empty)"
+        },
+        {
+          "switches": [
+            "--timeout SECONDS"
+          ],
+          "description": "Kill it after this long (exit status 124)"
+        }
+      ],
+      "json": false,
+      "notes": [
+        "Put -- before the command when it has options of its own: flk exec -- ls -la /data. stdout and stderr stay apart, and flk exits with the command's status. No terminal needed.",
+        "It runs beside the app (not as its child), with the app's environment, as root unless --user. Ctrl-C is passed on to the command.",
+        "Needs the flk agent in the machine: releases built since flk had exec include it (building it needs Go; see flk doctor)."
       ]
     },
     {
       "name": "ssh",
       "usage": "flk ssh SUBCOMMAND",
-      "summary": "Alias: `flk ssh console` = `flk console`",
+      "summary": "A shell in a running machine: flk ssh console",
       "options": [
 
       ],
@@ -698,10 +750,23 @@
       "subcommands": [
         {
           "name": "console",
-          "usage": "flk ssh console [ID] [--send TEXT] [--wait-log REGEX] [--timeout SECONDS]",
-          "summary": "Same as flk console",
+          "usage": "flk ssh console [ID] [--command CMD] [--user USER] [--send TEXT] [--wait-log REGEX] [--timeout SECONDS]",
+          "summary": "An interactive shell in a machine (like fly ssh console); -C runs one command",
           "args": "[ID]",
           "options": [
+            {
+              "switches": [
+                "-C",
+                "--command CMD"
+              ],
+              "description": "Run CMD (through sh -c) instead of an interactive shell"
+            },
+            {
+              "switches": [
+                "--user USER"
+              ],
+              "description": "As this user (default: root)"
+            },
             {
               "switches": [
                 "--send TEXT"
@@ -722,7 +787,11 @@
             }
           ],
           "json": false,
-          "blocks": "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`"
+          "blocks": "an interactive shell needs a terminal; agents: use -C CMD or flk exec",
+          "notes": [
+            "The shell is bash if the image has it, else sh. Without -C it needs a terminal here.",
+            "--send/--wait-log type into the app's stdin over the serial console, as with flk console (kept for scripts that used flk ssh console as an alias of it)."
+          ]
         }
       ]
     },
@@ -865,6 +934,206 @@
             }
           ],
           "json": false
+        }
+      ]
+    },
+    {
+      "name": "events",
+      "usage": "flk events [--all] [--follow] [--since TIME] [--lines N] [--json]",
+      "summary": "What happened to apps and machines: starts, stops, exits, deploys, checks, backups, ports",
+      "options": [
+        {
+          "switches": [
+            "--all"
+          ],
+          "description": "Every app (default: the app here or -a APP; every app when there's none)"
+        },
+        {
+          "switches": [
+            "-f",
+            "--follow"
+          ],
+          "description": "Keep printing new events until interrupted"
+        },
+        {
+          "switches": [
+            "--since TIME"
+          ],
+          "description": "From this time on: ISO (2026-10-13T12:00:00Z) or a duration back (30s, 10m, 2h, 3d)"
+        },
+        {
+          "switches": [
+            "-n",
+            "--lines N"
+          ],
+          "description": "How many recent events (default 50; with --since, all since then)"
+        },
+        {
+          "switches": [
+            "--json"
+          ],
+          "description": "Print JSON instead of a table"
+        }
+      ],
+      "json": true,
+      "notes": [
+        "--json prints one object per line: { at, app, machine, type, release?, detail? }; at is UTC with milliseconds, and --since TIME includes events at TIME (so a reconnecting reader may see one twice).",
+        "Types: machine.created, machine.started, machine.updated, machine.restarted, machine.stopped, machine.exited, machine.gave_up, machine.rolled_back, machine.paused, machine.resumed, machine.destroyed, check.passed, check.failed, deploy.started, deploy.succeeded, deploy.failed, backup.succeeded, backup.failed, backup.copied, backup.copy_failed, volume.restored, port.forwarded, port.dropped. The full list with meanings is in flk help --all.",
+        "Kept in STATE/events.jsonl (rotated at 4MB to events.jsonl.1). --follow blocks by design; stop it with Ctrl-C."
+      ]
+    },
+    {
+      "name": "files",
+      "usage": "flk files SUBCOMMAND",
+      "summary": "Files inside a volume (or a backup of one): list, read, copy in and out; no mount, no root",
+      "options": [
+
+      ],
+      "json": false,
+      "notes": [
+        "VOL:PATH names a path in volume VOL (its name or ID); PATH is absolute inside it, default /. Built on debugfs (e2fsprogs).",
+        "Reading works any time: on a running machine's volume it shows what's on disk, which can lag a little; --backup reads a backup instead. Writing (cp into a volume, rm, mkdir, chown) needs its machine stopped, and ends with an e2fsck of the volume."
+      ],
+      "default_subcommand": null,
+      "subcommands": [
+        {
+          "name": "ls",
+          "usage": "flk files ls VOL[:PATH] [--to DIR] [--backup BACKUP] [--json]",
+          "summary": "List a directory in a volume",
+          "args": "VOL[:PATH]",
+          "options": [
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--backup BACKUP"
+              ],
+              "description": "Read a backup of VOL instead (latest, or part of its name)"
+            },
+            {
+              "switches": [
+                "--json"
+              ],
+              "description": "Print JSON instead of a table"
+            }
+          ],
+          "json": true,
+          "notes": [
+            "--json: [{ name, type (file, dir, symlink, other), size, uid, gid, mode (\"0644\"), mtime (to the minute) }]."
+          ]
+        },
+        {
+          "name": "cat",
+          "usage": "flk files cat VOL:PATH [--to DIR] [--backup BACKUP]",
+          "summary": "Print a file from a volume",
+          "args": "VOL:PATH",
+          "options": [
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--backup BACKUP"
+              ],
+              "description": "Read a backup of VOL instead"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "cp",
+          "usage": "flk files cp SRC DST [--to DIR] [--backup BACKUP] [--owner UID[:GID]]",
+          "summary": "Copy a file or directory into or out of a volume (one side is VOL:PATH)",
+          "args": "SRC DST",
+          "options": [
+            {
+              "switches": [
+                "--to DIR"
+              ],
+              "description": "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"
+            },
+            {
+              "switches": [
+                "--backup BACKUP"
+              ],
+              "description": "When copying out: read a backup of VOL instead"
+            },
+            {
+              "switches": [
+                "--owner UID[:GID]"
+              ],
+              "description": "When copying in: owner of the new files (default: the target directory's owner)"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "Like cp -r: into an existing directory it goes inside it; a file in the volume is replaced. Modes come from the copied file (also when it replaces one: the local file's mode, not the old one's; chmod it first if needed); owners come from --owner or the directory copied into, not the host's user IDs.",
+            "Examples: flk files cp ./server.properties world:/ ; flk files cp world:/logs ./logs"
+          ]
+        },
+        {
+          "name": "rm",
+          "usage": "flk files rm VOL:PATH [--recursive]",
+          "summary": "Delete a file (or with -r, a directory) in a volume; its machine must be stopped",
+          "args": "VOL:PATH",
+          "options": [
+            {
+              "switches": [
+                "-r",
+                "--recursive"
+              ],
+              "description": "Delete a directory and everything in it"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "mkdir",
+          "usage": "flk files mkdir VOL:PATH [--parents] [--owner UID[:GID]]",
+          "summary": "Make a directory in a volume; its machine must be stopped",
+          "args": "VOL:PATH",
+          "options": [
+            {
+              "switches": [
+                "-p",
+                "--parents"
+              ],
+              "description": "Make missing parents too; no error if it exists"
+            },
+            {
+              "switches": [
+                "--owner UID[:GID]"
+              ],
+              "description": "Owner (default: the parent directory's)"
+            }
+          ],
+          "json": false
+        },
+        {
+          "name": "chown",
+          "usage": "flk files chown UID[:GID] VOL:PATH [--recursive]",
+          "summary": "Change the owner of files in a volume (numeric IDs); its machine must be stopped",
+          "args": "UID[:GID] VOL:PATH",
+          "options": [
+            {
+              "switches": [
+                "-r",
+                "--recursive"
+              ],
+              "description": "Everything under a directory too"
+            }
+          ],
+          "json": false,
+          "notes": [
+            "E.g. a volume made with --from-dir has a root-owned /: flk files chown 1000:1000 data:/"
+          ]
         }
       ]
     },

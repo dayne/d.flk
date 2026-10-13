@@ -70,7 +70,8 @@ attention fix rolled it back).
   backup (`b`), copy out (`c`, to the dir lazyflk started in). Read-only
   on purpose: writes need the machine stopped and stay on the command
   line. Checked live on a test app.
-- [ ] Recapture fixtures on a quiet host (help-all.json gains `files`).
+- [x] Fixtures recaptured at flk c49d762 (help-all.json has files,
+  events, exec).
 
 ## From flk M3
 
@@ -84,7 +85,8 @@ attention fix rolled it back).
   (`flk ssh console`, the terminal handed over like the console; `!` on
   the main view). The palette puts exec's command after `--` and treats
   ssh console without -C/--send and exec --tty as interactive. Checked
-  live.
+  live. "run it: as is" skips sh -c, for images without a shell (static
+  init, 4f47d96).
 
 ## Polish (2026-10-13)
 

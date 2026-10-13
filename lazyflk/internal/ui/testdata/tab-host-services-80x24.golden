@@ -13,9 +13,9 @@
 │   health ✔                 │   at boot: flk resume; at shutdown: stops       │
 │                            │     machines gracefully                         │
 │ Storage                    │                                                 │
-│   / 21%                    │ oneshot units: healthy is active (exited)       │
+│   / 23%                    │ oneshot units: healthy is active (exited)       │
 │   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │                                                 │
+│   /data/vintagestory 13%   │                                                 │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │

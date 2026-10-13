@@ -13,17 +13,18 @@
 │   health ✔                             │ pinned by default; edit ~/.config/lazyflk/pins (one unit per line) to change                                        │
 │                                        │                                                                                                                     │
 │ Storage                                │                                                                                                                     │
-│   / 21%                                │                                                                                                                     │
+│   / 23%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
-│   /data/vintagestory 56%               │                                                                                                                     │
+│   /data/vintagestory 13%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
 │   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
 │   ◇ alpine:3.20 7.7M                   │                                                                                                                     │
-│   4 flk images: host Images tab        │                                                                                                                     │
+│   5 flk images: host Images tab        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Services                               │                                                                                                                     │
 │   ● flk-net                            │                                                                                                                     │
@@ -31,7 +32,6 @@
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │
-│                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

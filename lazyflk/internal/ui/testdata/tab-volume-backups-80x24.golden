@@ -4,19 +4,19 @@
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
 │   ⇄ tcp/25565 udp/19132    │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ world-20261013T111353Z.ext4                     │
-│   ● frosty-river-2714      │   2026-10-13 11:14Z · 20G used · checked clean  │
+│ ▾ vintagestory-flk  1/1 ●  │ world-20261013T221456Z.ext4                     │
+│   ● frosty-river-2714      │   2026-10-13 22:15Z · 20G used · checked clean  │
 │   ▢ vsdata 40GB (external) │     (journal replayed)                          │
-│   ⇄ tcp/42420 udp/42420    │   mode live · release v9 · took 24s             │
-│                            │                                                 │
-│ Host                       │ world-20261013T100001Z.ext4                     │
-│   health ✔                 │   2026-10-13 10:00Z · 20G used · checked clean  │
-│                            │     (journal replayed)                          │
-│ Storage                    │   mode live · release v9 · took 20s             │
-│   / 21%                    │                                                 │
-│   /data/minecraft 66%      │ world-20261013T082359Z.ext4                     │
-│   /data/vintagestory 56%   │   2026-10-13 08:24Z · 20G used · checked clean  │
-│                            │ … 18 more (pgdn)                                │
+│   ⇄ tcp/42420 udp/42420    │   mode live · release v9 · took 27s             │
+│                            │   verified clean 2026-10-13 22:15Z              │
+│ Host                       │                                                 │
+│   health ✔                 │ world-20261013T220808Z.ext4                     │
+│                            │   2026-10-13 22:08Z · 20G used · checked clean  │
+│ Storage                    │     (journal replayed)                          │
+│   / 23%                    │   mode live · release v9 · took 26s             │
+│   /data/minecraft 66%      │   verified clean 2026-10-13 22:08Z              │
+│   /data/vintagestory 13%   │                                                 │
+│                            │ … 31 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

@@ -13,10 +13,10 @@
 │   health ✔                 │             7f0a0298ab17                        │
 │                            │   v7     352M  same image as v8                 │
 │ Storage                    │               built 2026-10-12 06:41Z ·         │
-│   / 21%                    │             7f0a0298ab17                        │
+│   / 23%                    │             7f0a0298ab17                        │
 │   /data/minecraft 66%      │                                                 │
-│   /data/vintagestory 56%   │ vintagestory-flk                                │
-│                            │ … 8 more (pgdn)                                 │
+│   /data/vintagestory 13%   │ vintagestory-flk                                │
+│                            │ … 11 more (pgdn)                                │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤

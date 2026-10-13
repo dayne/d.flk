@@ -4,23 +4,23 @@
     "id": "225d58f615e7e6",
     "name": "mellow-aurora-7882",
     "state": "started",
-    "pid": 1676117,
+    "pid": 2273109,
     "cpus": 4,
     "memory_mb": 11264,
     "cpu_percent": 6.0,
-    "rss_mb": 10507,
-    "uptime_s": 48132
+    "rss_mb": 9427,
+    "uptime_s": 1512
   },
   {
     "app": "vintagestory-flk",
     "id": "f8f979ffff11cf",
     "name": "frosty-river-2714",
     "state": "started",
-    "pid": 1707546,
+    "pid": 2697988,
     "cpus": 4,
     "memory_mb": 6144,
-    "cpu_percent": 8.0,
-    "rss_mb": 3384,
-    "uptime_s": 44607
+    "cpu_percent": 10.0,
+    "rss_mb": 3399,
+    "uptime_s": 785
   }
 ]

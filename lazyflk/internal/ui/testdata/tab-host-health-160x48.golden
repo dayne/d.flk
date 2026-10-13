@@ -13,25 +13,25 @@
 │   health ✔                             │ data dirs /home/dayne/.local/share/flk                                                                              │
 │                                        │           /data/minecraft/flk                                                                                       │
 │ Storage                                │           /data/vintagestory/flk                                                                                    │
-│   / 21%                                │                                                                                                                     │
+│   / 23%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │ ✔ /dev/kvm read/write                                                                                               │
-│   /data/vintagestory 56%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
+│   /data/vintagestory 13%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
 │                                        │ ✔ guest kernel /home/dayne/.local/share/flk/kernel/vmlinux                                                          │
 │ Podman                                 │ ✔ bridge flkbr0                                                                                                     │
-│   ◇ itzg/minecraft-server:latest 868M  │ ✔ tap pool 16/16                                                                                                    │
-│   ◇ dotnet/runtime:10.0 197M           │ ✔ ipv4 forwarding                                                                                                   │
-│   ◇ eclipse-temurin:25-jre 341M        │ ✔ tmux                                                                                                              │
-│   ◇ ruby:3.3-alpine 69M                │ ✔ mkfs.ext4                                                                                                         │
-│   ◇ alpine:3.20 7.7M                   │ ✔ fakeroot                                                                                                          │
-│   4 flk images: host Images tab        │ ✔ container engine (podman)                                                                                         │
-│                                        │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
-│ Services                               │ ✔ port helper (host ports from 1024)                                                                                │
-│   ● flk-net                            │ ✔ boot service (machines come back after a reboot)                                                                  │
-│   ● flk-machines                       │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
-│   ● ssh                                │ ✔ backups go to /data/flk-backups: 145.6GB now, about 201.1GB at their keep counts; 227.0GB free; full copies (ext4 │
-│   ● snap.mosquitto.mosquitto           │   has no reflinks)                                                                                                  │
-│   ● chrony                             │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
-│                                        │                                                                                                                     │
+│   ◇ 8149e56d2f50 (untagged) 8.7M       │ ✔ tap pool 16/16                                                                                                    │
+│   ◇ itzg/minecraft-server:latest 868M  │ ✔ ipv4 forwarding                                                                                                   │
+│   ◇ dotnet/runtime:10.0 197M           │ ✔ tmux                                                                                                              │
+│   ◇ eclipse-temurin:25-jre 341M        │ ✔ mkfs.ext4                                                                                                         │
+│   ◇ ruby:3.3-alpine 69M                │ ✔ fakeroot                                                                                                          │
+│   ◇ alpine:3.20 7.7M                   │ ✔ container engine (podman)                                                                                         │
+│   5 flk images: host Images tab        │ ✔ podman resolves short image names (FROM ruby:3.3)                                                                 │
+│                                        │ ✔ port helper (host ports from 1024)                                                                                │
+│ Services                               │ ✔ boot service (machines come back after a reboot)                                                                  │
+│   ● flk-net                            │ ✔ exit hook (/home/dayne/flk/bin/flk)                                                                               │
+│   ● flk-machines                       │ ✔ backups go to /data/flk-backups: 189.9GB now, about 201.8GB at their keep counts; 182.2GB free; full copies (ext4 │
+│   ● ssh                                │   has no reflinks)                                                                                                  │
+│   ● snap.mosquitto.mosquitto           │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
+│   ● chrony                             │ ✔ flk-agent is older than its source (built at the next deploy)                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

@@ -73,12 +73,17 @@
       "hint": null
     },
     {
-      "label": "backups go to /data/flk-backups: 145.6GB now, about 201.1GB at their keep counts; 227.0GB free; full copies (ext4 has no reflinks)",
+      "label": "backups go to /data/flk-backups: 189.9GB now, about 201.8GB at their keep counts; 182.2GB free; full copies (ext4 has no reflinks)",
       "status": "pass",
       "hint": null
     },
     {
       "label": "10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host",
+      "status": "pass",
+      "hint": null
+    },
+    {
+      "label": "flk-agent is older than its source (built at the next deploy)",
       "status": "pass",
       "hint": null
     }

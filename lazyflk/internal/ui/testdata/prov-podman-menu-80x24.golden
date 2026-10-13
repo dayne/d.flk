@@ -1,10 +1,10 @@
 ┌ lazyflk ─ host ready · 10.47.11.3 · boot ok ─────────────────────────── demo ┐
-│   ● mellow-aurora-7882     │ image docker.io/itzg/minecraft-server:latest    │
-│   ▢ world 40GB (external)  │  Overview                                       │
-│   ⇄ tcp/25565 udp/19132    │                                                 │
-│ ▾ vintagestory-flk  1/1 ●  │ $ podman ps -a --external --format json ·       │
-│   ● frosty-river-2714      │   podman images --format json                   │
-│   ▢ vsdata 40GB (external) │                                                 │
+│   ▢ world 40GB (external)  │ image docker.io/itzg/minecraft-server:latest    │
+│   ⇄ tcp/25565 udp/19132    │  Overview                                       │
+│ ▾ vintagestory-flk  1/1 ●  │                                                 │
+│   ● frosty-river-2714      │ $ podman ps -a --external --format json ·       │
+│   ▢ vsdata 40GB (external) │   podman images --format json                   │
+│   ⇄ tcp/42420 udp/42420    │                                                 │
 │ ┌ image docker.io/itzg/minecraft-server:latest ─ actions ──────────────────┐ │
 │ │ c  copy: podman image rm docker.io/itz…  lazyflk doesn't delete images;… │ │
 │ │ p  copy: podman image prune              removes images nothing uses or… │ │
@@ -14,8 +14,8 @@
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│                            │ the build cache, so later deploys don't         │
-│ Podman                     │   download it again.                            │
+│ Podman                     │ the build cache, so later deploys don't         │
+│   ◇ 8149e56d2f50 (untagge… │   download it again.                            │
 │   ◇ itzg/minecraft-server… │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
