@@ -267,6 +267,14 @@ module Flk
                     "debugfs -R 'stat /world/level.dat' \"$FLK_BACKUP\". flk volumes backup runs it too, after its own check.",
                     "The result is kept with the backup (verify, verified_at in flk volumes backups --json). " \
                     "Exits 1 when any backup isn't clean."] },
+          { name: "move", args: "ID|NAME",
+            opts: [["--dir DIR", "Move the image into DIR (e.g. a bigger disk, or XFS for instant backups)"],
+                   ["--path FILE", "Move it to exactly FILE"]],
+            summary: "Move a volume's image file to another directory or disk; its machine must be stopped",
+            notes: ["A sparse copy, checked with e2fsck, then the volume points at it. The old file is deleted if it was in " \
+                    "flk's state dir; an external one (--path / import) is kept for you to delete.",
+                    "Moving into flk's state dir makes it an ordinary volume again. On another disk, the boot service must " \
+                    "start after that disk is mounted (flk prints what to do if not)."] },
           { name: "extend", args: "ID|NAME", opts: [["-s", "--size GB", Integer, "New size in GB (required; grow only)"]],
             summary: "Grow a volume and its filesystem; its machine must be stopped" }
         ] }

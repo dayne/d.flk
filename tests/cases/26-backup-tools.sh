@@ -218,3 +218,27 @@ test_destroyed_apps_keep_backups_until_pruned() {
   [[ ! -e $BK/$APP ]] || fail "--with-backups left $BK/$APP"
   APP=$keep_app APP_DIR=$keep_dir
 }
+
+# ---------- volumes move ----------
+
+test_move_a_volume_and_back() {
+  local d="$WORK/elsewhere-$RUN_ID" old new out
+  mkdir -p "$d"
+  old=$(vol_path data)
+  out=$(flk volumes move data --dir "$d") || fail "move failed: $out"
+  new=$(vol_path data)
+  assert_eq "$d" "$(dirname "$new")" "new place"
+  [[ ! -e $old ]] || fail "the old file in the state dir is still there"
+  assert_eq true "$(flk volumes list --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["name"] == "data" }["external"]')" "external now"
+  assert_eq v1 "$(/usr/sbin/debugfs -R 'cat /data.txt' "$new" 2>/dev/null)" "data after the move"
+  out=$(flk volumes move data --path "$new" 2>&1) && fail "moved onto itself"
+  out=$(flk volumes move data 2>&1) && fail "moved with no destination"
+  assert_contains "$out" "--dir DIR or --path FILE"
+  # back into the state dir: ordinary again; flk keeps the external file
+  out=$(flk volumes move data --dir "$FLK_HOME/apps/$APP/volumes") || fail "move back failed: $out"
+  assert_contains "$out" "old file is kept"
+  [[ -f $new ]] || fail "deleted an external file"
+  rm -f "$new"
+  assert_eq "" "$(flk volumes list --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["name"] == "data" }["external"]')" "internal again"
+  assert_eq v1 "$(/usr/sbin/debugfs -R 'cat /data.txt' "$(vol_path data)" 2>/dev/null)" "data after moving back"
+}

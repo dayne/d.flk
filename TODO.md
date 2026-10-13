@@ -196,6 +196,10 @@ To consider:
   before the old release boots. `flk releases rollback --with-volumes [vN]`
   backs up the current data, then restores vN's before-deploy backups.
   Full copies on ext4 add to deploy downtime; instant on XFS/btrfs.
+- [x] `flk volumes move NAME --dir DIR | --path FILE` (PLAN.md M1.5): sparse
+  copy + e2fsck -n, then the volume points there; old file deleted if flk's,
+  kept if external. Doctor's backup line says whether copies are full
+  (ext4) or reflinks (xfs/btrfs).
 - [ ] **Volume snapshots.** Backups and extend are done; instant
   snapshots need volumes on a reflink filesystem (an XFS LV for flk's
   volumes: `cp --reflink` is instant, so `pause` mode freezes the VM for

@@ -132,8 +132,14 @@ new backup there too, keeping `backup_copy_keep` (default `backup_keep`) per
 volume. `flk volumes copy` sends one by hand (it skips what's already
 there), `flk volumes backups` shows where each backup was copied, and
 `flk doctor` warns when a volume's newest copy is older than
-`backup_copy_warn_days` (8). `flk volumes extend NAME --size GB`
-grows a volume (machine stopped).
+`backup_copy_warn_days` (8).
+
+**Volume files.** `flk volumes extend NAME --size GB` grows a volume
+(machine stopped), and `flk volumes move NAME --dir DIR` moves its file to
+another disk (machine stopped). Backups are full copies on ext4; with the
+volumes and `backup_dir` on one XFS (or btrfs) filesystem they're reflinks:
+instant, and taking space only as the volume changes, which also makes
+`pause` mode and `before_deploy` cheap.
 
 On a schedule, with a systemd user timer (no root;
 `loginctl enable-linger $USER` once so it runs while you're logged out):

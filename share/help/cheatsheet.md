@@ -43,6 +43,7 @@ Data
   flk volumes verify [NAME]          check the latest backup (e2fsck -n + verify hook), no stop
   flk volumes restore NAME --as NEW  a backup into a new volume (test a restore, no stop)
   flk volumes copy [NAME]            latest backup to backup_copy_to (another disk/host)
+  flk volumes move NAME --dir DIR    move a volume's file to another disk (machine stopped)
   flk volumes extend NAME --size GB  grow a volume (machine stopped)
 
 Clean up

@@ -430,8 +430,9 @@ module Flk
         end
       end
       room = free + now
+      fs = fs_type(root)
       label = "backups go to #{root}: #{Backup.gb(now)} now, about #{Backup.gb(steady)} at their keep counts; " \
-              "#{Backup.gb(free)} free"
+              "#{Backup.gb(free)} free; #{%w[xfs btrfs].include?(fs) ? "#{fs}: copies of volumes on it are instant" : "full copies (#{fs || '?'} has no reflinks)"}"
       if steady > room * 0.9
         record["#{label}: that's tight (#{(100.0 * steady / room).round}% of #{Backup.gb(room)})", "warn",
                "lower backup_keep / [flk.backup] keep, or give #{root} more space"]
@@ -2175,6 +2176,53 @@ module Flk
       end
       puts "Restored #{v['name']}. The previous image is kept at #{aside}; delete it when you're happy."
       next_step(v["attached_machine"] ? "flk machine start #{v['attached_machine']}" : "flk deploy")
+    end
+
+    def volumes_move(args, o)
+      a = app
+      v = a.volume!(args.first)
+      raise Error, "pass --dir DIR or --path FILE" unless o[:dir] || o[:path]
+      raise Error, "--dir and --path don't go together" if o[:dir] && o[:path]
+      if (m = volume_user(a, v))
+        raise Error, "machine #{m.id} [#{m.name}] is using #{v['name']}; stop it first: flk machine stop #{m.id}"
+      end
+      src = v["path"]
+      raise Error, "#{src} is missing (is its disk mounted?)" unless File.exist?(src)
+      dst = File.expand_path(o[:path] || File.join(o[:dir], App.external_volume?(v) ? File.basename(src) : "#{a.name}-#{v['name']}-#{v['id']}.ext4"))
+      raise Error, "#{v['name']} is already at #{dst}" if dst == src
+      raise Error, "#{dst} already exists" if File.exist?(dst)
+      raise Error, "#{File.dirname(dst)} doesn't exist" unless File.directory?(File.dirname(dst))
+      internal = dst.start_with?("#{ROOT}/")
+      external_path!(dst) unless internal # another volume's file?
+      Backup.room!(src, File.dirname(dst))
+      puts "==> Moving #{v['name']} (#{Backup.gb(Backup.used_bytes(src))} used) to #{dst}"
+      t0 = Time.now
+      Util.with_lock do
+        raise Error, "#{v['name']} is in use again" if volume_user(a, v)
+        begin
+          Backup.copy(src, dst, idle: false)
+          raise Error, "the copy at #{dst} isn't clean (e2fsck -n); the volume still uses #{src}" unless Backup.fsck_readonly(dst) == "clean"
+        rescue StandardError
+          FileUtils.rm_f(dst)
+          raise
+        end
+        vols = a.volumes
+        rec = vols.find { _1["id"] == v["id"] }
+        rec["path"] = dst
+        internal ? rec.delete("external") : rec["external"] = true
+        a.save_volumes(vols)
+      end
+      old_kept = App.external_volume?(v)
+      FileUtils.rm_f(src) unless old_kept
+      puts "Moved #{v['name']} in #{(Time.now - t0).round(1)}s#{" (#{fs_type(dst)}#{', backups there are instant' if %w[xfs btrfs].include?(fs_type(dst))})" if fs_type(dst)}."
+      puts old_kept ? "The old file is kept (flk doesn't delete external files): #{src}" : "Deleted the old file #{src}."
+      boot_unit_note(dst) unless internal
+      next_step(v["attached_machine"] ? "flk machine start #{v['attached_machine']}" : "flk deploy")
+    end
+
+    def fs_type(path)
+      out, st = Open3.capture2("stat", "-f", "-c", "%T", File.directory?(path) ? path : File.dirname(path))
+      st.success? ? out.strip : nil
     end
 
     def volumes_extend(args, o)

@@ -43,7 +43,7 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
 
 ## Milestones
 
-### M1: Backups you can trust (next)
+### M1: Backups you can trust (done 2026-10-13: 4ff9e9b, a04fcc6, 4b26b65, 1bdb910, 3f618a4, and the move commit)
 
 1. **`flk volumes restore --as NAME`** restores a backup into a new
    volume (or `--path`) next to the live one. Nothing stops and nothing
