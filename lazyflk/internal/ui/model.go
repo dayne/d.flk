@@ -52,9 +52,10 @@ type Model struct {
 	detailTop int              // detail pane scroll
 	cache     map[string]*fetched
 
-	logs    *logsView // full-screen logs, when open
-	help    bool      // help screen, when open
-	helpTop int       // its scroll
+	logs    *logsView  // full-screen logs, when open
+	files   *filesView // a volume's files (flk files), when open
+	help    bool       // help screen, when open
+	helpTop int        // its scroll
 
 	// actions (M2): at most one of menu, form, confirm is open
 	menu    *menuView
@@ -261,6 +262,8 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 		return m.cmdlogKey(k)
 	case m.guides != nil:
 		return m.guideKey(msg)
+	case m.files != nil:
+		return m.filesKey(msg)
 	case m.logs != nil:
 		cmd, open := m.logs.key(msg, m.width-4, m.height-5)
 		if !open {
@@ -679,6 +682,8 @@ func (m *Model) Render() string {
 		base = m.cmdlogScreen()
 	case m.guides != nil:
 		base = m.guideScreen()
+	case m.files != nil:
+		base = m.filesScreen()
 	case m.logs != nil:
 		base = m.logs.render(m.width, m.height)
 		v := m.logs

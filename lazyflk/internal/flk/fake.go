@@ -105,6 +105,17 @@ func fixtureFor(args []string) (string, bool) {
 		return "backups-" + app + ".json", true
 	case cmd == "config show", cmd == "config show --json":
 		return "config-" + app + ".json", true
+	case len(args) >= 3 && args[0] == "files" && (args[1] == "ls" || args[1] == "cat"):
+		// files-ls-PATH.json / files-cat-PATH.txt, PATH with / as -
+		_, p, _ := strings.Cut(args[2], ":")
+		p = strings.ReplaceAll(strings.Trim(p, "/"), "/", "-")
+		if p == "" {
+			p = "root"
+		}
+		if args[1] == "ls" {
+			return "files-ls-" + p + ".json", true
+		}
+		return "files-cat-" + p + ".txt", true
 	case len(args) == 3 && args[0] == "machine" && args[1] == "status":
 		return "machine-status.json", true
 	case len(args) > 0 && args[0] == "logs" && !hasAny(args, "-f", "--follow"):

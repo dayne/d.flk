@@ -355,6 +355,28 @@ type BackupCopy struct {
 	Error   string  `json:"error"`
 }
 
+// FileEntry is a row of `flk files ls VOL:PATH --json` (flk ef6f865).
+type FileEntry struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"` // file, dir, symlink, other
+	Size  int64  `json:"size"`
+	UID   int    `json:"uid"`
+	GID   int    `json:"gid"`
+	Mode  string `json:"mode"`  // "0644"
+	MTime string `json:"mtime"` // to the minute
+}
+
+// FilesArgs is a flk files read (ls, cat, cp out) of VOL:PATH in app,
+// from a backup when backup isn't "".
+func FilesArgs(app, sub, vol, path, backup string, rest ...string) []string {
+	args := []string{"-a", app, "files", sub, vol + ":" + path}
+	args = append(args, rest...)
+	if backup != "" {
+		args = append(args, "--backup", backup)
+	}
+	return args
+}
+
 // MachineStats is a row of `flk machine stats --all --json`. The live
 // numbers are null when the machine isn't running.
 type MachineStats struct {

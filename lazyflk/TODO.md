@@ -64,6 +64,15 @@ attention fix rolled it back).
   `--path`, machine stopped). Checked live, out and back into the state
   dir.
 
+## From flk M2 (files in volumes)
+
+- [x] ef6f865: volume menu `f` browse files: directories, text files (up
+  to 1M; binary and bigger ones are copied out), the live volume or any
+  backup (`b`), copy out (`c`, to the dir lazyflk started in). Read-only
+  on purpose: writes need the machine stopped and stay on the command
+  line. Checked live on a test app.
+- [ ] Recapture fixtures on a quiet host (help-all.json gains `files`).
+
 ## Polish (2026-10-13)
 
 - [x] `{input}` takes any one line (apostrophes too): passed to sh as $1.

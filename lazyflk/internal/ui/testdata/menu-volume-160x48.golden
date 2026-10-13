@@ -14,23 +14,23 @@
 │                                        │                                                                                                                     │
 │ Storage                                │                                                                                                                     │
 │   / 21%                             ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────────────┐                                     │
-│   /data/minecraft 66%               │ b  back up            copy world to the backup dir, then prune old copies        │                                     │
-│   /data/vintagestory 56%            │ v  verify             check backups without changing them: e2fsck -n, then the … │                                     │
-│                                     │ c  copy               copy a backup off this disk or host (rsync), then prune o… │                                     │
-│ Podman                              │ t  restore            machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ a  restore as new     copy a backup into a new volume, to test it or look insid… │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ m  move               machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ D  unregister         attached to machine 225d58f615e7e6: destroy that machine … │                                     │
-│   ◇ alpine:3.20 7.7M                │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that machine … │                                     │
-│   4 flk images: host Images tab     │ n  new volume         create a volume for [[mounts]] source = NAME               │                                     │
-│                                     │                                                                                  │                                     │
-│ Services                            │ copy world to the backup dir, then prune old copies                              │                                     │
-│   ● flk-net                         │ $ flk -a minecraft-flk volumes backup world                                      │                                     │
-│   ● flk-machines                    ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│   ● ssh                             │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
-│   ● snap.mosquitto.mosquitto        └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│   ● chrony                             │                                                                                                                     │
+│   /data/minecraft 66%               │ f  browse files       look inside it, or a backup of it: list, read, copy out (… │                                     │
+│   /data/vintagestory 56%            │ b  back up            copy world to the backup dir, then prune old copies        │                                     │
+│                                     │ v  verify             check backups without changing them: e2fsck -n, then the … │                                     │
+│ Podman                              │ c  copy               copy a backup off this disk or host (rsync), then prune o… │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ t  restore            machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ a  restore as new     copy a backup into a new volume, to test it or look insid… │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ m  move               machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
+│   ◇ alpine:3.20 7.7M                │ D  unregister         attached to machine 225d58f615e7e6: destroy that machine … │                                     │
+│   4 flk images: host Images tab     │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that machine … │                                     │
+│                                     │ n  new volume         create a volume for [[mounts]] source = NAME               │                                     │
+│ Services                            │                                                                                  │                                     │
+│   ● flk-net                         │ look inside it, or a backup of it: list, read, copy out (flk files)              │                                     │
+│   ● flk-machines                    │ opens in lazyflk                                                                 │                                     │
+│   ● ssh                             ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● snap.mosquitto.mosquitto        │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│   ● chrony                          └──────────────────────────────────────────────────────────────────────────────────┘                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │

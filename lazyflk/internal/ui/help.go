@@ -61,10 +61,32 @@ var logsHelp = struct {
 	},
 }
 
+var filesHelp = struct {
+	about string
+	keys  []helpKey
+}{
+	about: "A volume's files, or a backup's, through flk files (debugfs: no mount, no root). " +
+		"On a running machine's volume it's what's on disk now; the guest may still have " +
+		"newer writes in its cache. It only reads: changing files needs the machine " +
+		"stopped (flk files cp/rm/mkdir/chown in a shell).",
+	keys: []helpKey{
+		{"↑ ↓  k j", "move"},
+		{"enter  → l", "open a directory, or read a text file (up to 1M)"},
+		{"← h  backspace", "up a directory (or back from a file)"},
+		{"b", "next source: the live volume, then each backup, newest first"},
+		{"c", "copy the selection (or the directory) out to this host"},
+		{"r", "list again"},
+		{"esc  q", "back to the main view"},
+	},
+}
+
 func (m *Model) helpScreen() string {
 	title, h := "Help ─ main view", mainHelp
-	if m.logs != nil {
+	switch {
+	case m.logs != nil:
 		title, h = "Help ─ logs", logsHelp
+	case m.files != nil:
+		title, h = "Help ─ files", filesHelp
 	}
 	w := m.width - 4
 	lines := wrap(h.about, w)

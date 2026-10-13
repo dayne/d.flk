@@ -156,6 +156,19 @@ func TestEveryFixtureServed(t *testing.T) {
 	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || len(b) != 6 || !b[0].Journal || b[4].Check != "repaired" {
 		t.Errorf("backups: %v %v", b, err)
 	}
+	for _, dir := range []string{"/", "/world", "/world/region", "/logs"} {
+		if es, err := c.FilesLs(ctx, "minecraft-flk", "world", dir, ""); err != nil || len(es) == 0 {
+			t.Errorf("files ls %s: %v", dir, err)
+		}
+	}
+	if es, _ := c.FilesLs(ctx, "minecraft-flk", "world", "/", "latest"); len(es) != 5 || es[4].Name != "world" || es[4].Type != "dir" || es[4].UID != 1000 || es[3].Mode != "0644" {
+		t.Errorf("files ls: %+v", es)
+	}
+	for _, p := range []string{"/server.properties", "/logs/latest.log"} {
+		if out, err := c.Run(ctx, FilesArgs("minecraft-flk", "cat", "world", p, "")...); err != nil || len(out) == 0 {
+			t.Errorf("files cat %s: %v", p, err)
+		}
+	}
 	c.QuickContext(ctx)
 	c.Stats(ctx)
 	c.DiskUse(ctx)

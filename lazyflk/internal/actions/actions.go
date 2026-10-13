@@ -99,6 +99,7 @@ const (
 	ViewCopy   View = "copy"   // copy Copy to the clipboard
 	ViewAttach View = "attach" // the console, in the real terminal
 	ViewSend   View = "send"   // type one line into the console
+	ViewFiles  View = "files"  // browse the volume's files (flk files)
 )
 
 type Action struct {
@@ -547,6 +548,25 @@ func or(s, fallback string) string {
 	return s
 }
 
+// CopyOut copies a file or directory out of a volume (or a backup of it)
+// to this host: flk files cp VOL:PATH LOCAL. dest is where it goes by
+// default: a directory, so the copy keeps its name.
+func CopyOut(a flk.App, vol, path, backup, dest string) Action {
+	from := vol + ":" + path
+	if backup != "" {
+		from += " (backup " + backup + ")"
+	}
+	return Action{Key: "c", Label: "copy out", Help: "copy " + from + " to this host",
+		Confirm: Ask, Long: true,
+		Fields: []Field{{Name: "to", Label: "to", Default: dest, Required: true,
+			Help: "a dir that exists (ends in /: the copy keeps its name), or a new name"}},
+		build: func(v map[string]string) Command {
+			to := strings.TrimSpace(v["to"])
+			return Command{Args: flk.FilesArgs(a.Name, "cp", vol, path, backup, to),
+				Warn: "Copies " + from + " to " + to + " on this host. Nothing in the volume changes."}
+		}}
+}
+
 // restoredName is restore --as's default: NAME_restored, within 30.
 func restoredName(name string) string {
 	return name[:min(len(name), 30-len("_restored"))] + "_restored"
@@ -708,7 +728,9 @@ func volumeActions(t Target) []Action {
 		move.Disabled = inUse
 	}
 
-	acts := []Action{backup(t, &v), verify, cp, restore, restoreAs, extend, move}
+	browse := Action{Key: "f", Label: "browse files", Help: "look inside it, or a backup of it: list, read, copy out (flk files)", View: ViewFiles}
+
+	acts := []Action{browse, backup(t, &v), verify, cp, restore, restoreAs, extend, move}
 	attached := ""
 	if v.AttachedMachine != "" {
 		attached = "attached to machine " + v.AttachedMachine + ": destroy that machine (or scale down) first"

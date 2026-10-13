@@ -2,6 +2,7 @@
 │ Apps                       │ minecraft-flk / volume world                    │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
 │ ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────┐ │
+│ │ f  browse files       look inside it, or a backup of it: list, read, co… │ │
 │ │ b  back up            copy world to the backup dir, then prune old copi… │ │
 │ │ v  verify             check backups without changing them: e2fsck -n, t… │ │
 │ │ c  copy               copy a backup off this disk or host (rsync), then… │ │
@@ -13,12 +14,11 @@
 │ │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that … │ │
 │ │ n  new volume         create a volume for [[mounts]] source = NAME       │ │
 │ │                                                                          │ │
-│ │ copy world to the backup dir, then prune old copies                      │ │
-│ │ $ flk -a minecraft-flk volumes backup world                              │ │
+│ │ look inside it, or a backup of it: list, read, copy out (flk files)      │ │
+│ │ opens in lazyflk                                                         │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
-│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
-├ └──────────────────────────────────────────────────────────────────────────┘─┤
-│ ✔ nothing needs attention                                                    │
+├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
+│ └──────────────────────────────────────────────────────────────────────────┘ │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  ←→ fold │
 └──────────────────────────────────────────────────────────────────────────────┘
