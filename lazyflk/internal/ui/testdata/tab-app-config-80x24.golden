@@ -16,9 +16,9 @@
 │   / 20%                    │ … 111 more (pgdn)                               │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ! podman: build container ruby-working-container was left behind (an         │
-│   interrupted build?): podman rm --storage f7cd17e4bfbc                      │
+│   interrupted build?): buildah rm f7cd17e4bfbc                               │
 │ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): podman rm --storage 58883446ce9b                      │
+│   interrupted build?): buildah rm 58883446ce9b                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q … │
 └──────────────────────────────────────────────────────────────────────────────┘

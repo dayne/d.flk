@@ -61,9 +61,13 @@ func (p Podman) Load(ctx context.Context, h Host, env Env) ([]Item, error) {
 	if err := json.Unmarshal(out, &cs); err != nil {
 		return nil, fmt.Errorf("podman ps: bad JSON: %w", err)
 	}
+	// buildah owns build containers: buildah rm unmounts, then removes.
+	// Without it, podman needs --force for a mounted one.
+	_, err = run(ctx, h, "buildah", "--version")
+	hasBuildah := err == nil
 	var items []Item
 	for _, c := range cs {
-		items = append(items, containerItem(c, now()))
+		items = append(items, containerItem(c, now(), hasBuildah))
 	}
 	out, err = run(ctx, h, "podman", "images", "--format", "json")
 	if err != nil {
@@ -95,7 +99,7 @@ func (p Podman) Load(ctx context.Context, h Host, env Env) ([]Item, error) {
 	return items, nil
 }
 
-func containerItem(c podmanContainer, now time.Time) Item {
+func containerItem(c podmanContainer, now time.Time, hasBuildah bool) Item {
 	name := c.ID[:min(12, len(c.ID))]
 	if len(c.Names) > 0 {
 		name = c.Names[0]
@@ -123,8 +127,15 @@ func containerItem(c podmanContainer, now time.Time) Item {
 			"A build container (buildah's working container): a build that was",
 			"interrupted (e.g. Ctrl-C during flk deploy) leaves these behind. They pin",
 			"their image's layers. Nothing runs in them; removing one is safe.")
-		rm := actions.Command{Program: "podman", Args: []string{"rm", "--storage", c.ID[:min(12, len(c.ID))]}}
-		a := actions.Run("D", "remove", "remove this leftover build container (podman rm --storage)", actions.Type, name, rm)
+		id := c.ID[:min(12, len(c.ID))]
+		rm := actions.Command{Program: "buildah", Args: []string{"rm", id}}
+		how := "buildah rm: unmounts it, then removes it"
+		if !hasBuildah {
+			// a build container is usually still mounted; nothing runs in it
+			rm = actions.Command{Program: "podman", Args: []string{"rm", "--force", "--storage", id}}
+			how = "podman rm --force --storage: it's still mounted, but nothing runs in it"
+		}
+		a := actions.Run("D", "remove", "remove this leftover build container ("+how+")", actions.Type, name, rm)
 		it.Actions = append(it.Actions, a)
 		it.Problems = append(it.Problems, fmt.Sprintf("podman: build container %s was left behind (an interrupted build?): %s", name, rm.Line()))
 		it.Fix = &a

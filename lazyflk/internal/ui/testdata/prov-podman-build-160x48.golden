@@ -12,7 +12,7 @@
 │ Host                                   │ interrupted (e.g. Ctrl-C during flk deploy) leaves these behind. They pin                                           │
 │   health ✔                             │ their image's layers. Nothing runs in them; removing one is safe.                                                   │
 │                                        │                                                                                                                     │
-│ Storage                                │ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd… │
+│ Storage                                │ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc   │
 │   / 20%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │
@@ -41,8 +41,8 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): podman rm --storage f7cd17e4bfbc                                   │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): podman rm --storage 58883446ce9b                           │
+│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
+│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

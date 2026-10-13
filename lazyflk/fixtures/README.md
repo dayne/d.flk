@@ -39,4 +39,5 @@ Host commands for the providers (SPEC 10), as run by lazyflk:
 | lsblk.json | `lsblk -e7 -b --json -o NAME,PATH,TYPE,SIZE,FSTYPE,FSSIZE,FSAVAIL,MOUNTPOINTS,MODEL` |
 | systemctl-show.txt | `systemctl show --timestamp=utc -p Id,Description,LoadState,ActiveState,SubState,UnitFileState,ActiveEnterTimestamp,StateChangeTimestamp,MainPID,Result,NRestarts` for flk's units and the default pins |
 | id-groups.txt | `id -Gn` |
+| buildah-version.txt | `buildah --version` (present: build containers are removed with buildah rm) |
 | journal-chrony.txt | `journalctl -u chrony.service -n 40 --no-pager -o short-iso` |

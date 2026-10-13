@@ -42,7 +42,7 @@
 │                             │                                                                                                  │                             │
 ├ Needs attention ────────────│ flk context [--all] [--json] [--no-host]                                                         │─────────────────────────────┤
 │ ! podman: build container ru├──────────────────────────────────────────────────────────────────────────────────────────────────┤                             │
-│ ! podman: build container 4b│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │9b                           │
+│ ! podman: build container 4b│ type to find  ↑↓ choose  enter fill in and run  esc close                                        │                             │
 ├─────────────────────────────└──────────────────────────────────────────────────────────────────────────────────────────────────┘─────────────────────────────┤
 │ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

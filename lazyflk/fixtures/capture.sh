@@ -42,6 +42,7 @@ systemctl show --timestamp=utc \
   -p Id,Description,LoadState,ActiveState,SubState,UnitFileState,ActiveEnterTimestamp,StateChangeTimestamp,MainPID,Result,NRestarts \
   flk-net.service flk-machines.service ssh.service snap.mosquitto.mosquitto.service chrony.service > systemctl-show.txt
 id -Gn > id-groups.txt
+buildah --version > buildah-version.txt
 journalctl -u chrony.service -n 40 --no-pager -o short-iso > journal-chrony.txt
 
 echo "captured at flk $(git -C "$(dirname "$(readlink -f "$(command -v flk)")")/.." log -1 --format=%h 2>/dev/null || echo '?'); update fixtures/README.md"

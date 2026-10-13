@@ -18,7 +18,7 @@
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
 │ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): podman rm --storage 58883446ce9b                      │
+│   interrupted build?): buildah rm 58883446ce9b                               │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q qu… │
 └──────────────────────────────────────────────────────────────────────────────┘

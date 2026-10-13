@@ -54,7 +54,7 @@ func TestPodman(t *testing.T) {
 	}
 	b := items[0]
 	if b.Label != "▢ ruby-working-container (build)" || b.State != Warn || len(b.Problems) != 1 || b.Fix == nil ||
-		b.Fix.Command(nil).Line() != "podman rm --storage f7cd17e4bfbc" || b.Fix.Confirm != actions.Type {
+		b.Fix.Command(nil).Line() != "buildah rm f7cd17e4bfbc" || b.Fix.Confirm != actions.Type {
 		t.Errorf("build container: %+v", b)
 	}
 	var names []string
@@ -74,11 +74,16 @@ func TestPodman(t *testing.T) {
 func TestPodmanTestContainer(t *testing.T) {
 	now := time.Date(2026, 10, 13, 0, 0, 0, 0, time.UTC)
 	it := containerItem(podmanContainer{ID: "0123456789abcdef", Names: []string{"mc-run-test"}, Image: "docker.io/itzg/minecraft-server",
-		State: "running", Status: "Up 3 days", StartedAt: now.Add(-72 * time.Hour).Unix()}, now)
+		State: "running", Status: "Up 3 days", StartedAt: now.Add(-72 * time.Hour).Unix()}, now, false)
 	if it.State != Warn || len(it.Problems) != 1 || it.Fix == nil || it.Fix.Command(nil).Line() != "podman stop mc-run-test" || it.Logs == nil {
 		t.Errorf("%+v", it)
 	}
-	it = containerItem(podmanContainer{ID: "0123456789abcdef", Names: []string{"web"}, State: "exited"}, now)
+	it = containerItem(podmanContainer{ID: "0123456789abcdef", Names: []string{"web"}, State: "exited"}, now, false)
+	// with buildah, a build container goes the owner's way
+	b := containerItem(podmanContainer{ID: "f7cd17e4bfbcde38", Names: []string{"ruby-working-container"}, State: "storage"}, now, true)
+	if b.Fix == nil || b.Fix.Command(nil).Line() != "buildah rm f7cd17e4bfbc" {
+		t.Errorf("buildah: %+v", b.Fix)
+	}
 	if it.State != Off || it.Actions[0].Label != "remove" || it.Actions[0].TypeName != "web" {
 		t.Errorf("exited: %+v", it)
 	}

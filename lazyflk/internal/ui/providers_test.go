@@ -55,14 +55,14 @@ func TestProviderActions(t *testing.T) {
 	}
 	goToKey(t, m, "prov/podman/c/f7cd17e4bfbcde38fc0f8004e487566b35476a57b502a4ea6f7a703825b6695f")
 	press(m, "enter", "D")
-	if m.confirm == nil || !strings.Contains(screen(m), "$ podman rm --storage f7cd17e4bfbc") ||
+	if m.confirm == nil || !strings.Contains(screen(m), "$ buildah rm f7cd17e4bfbc") ||
 		!strings.Contains(screen(m), "Type ruby-working-container to confirm") {
 		t.Fatalf("confirm:\n%s", screen(m))
 	}
 	typeText(m, "ruby-working-container")
 	press(m, "enter")
-	if len(m.jobs) != 1 || m.jobs[0].line != "podman rm --storage f7cd17e4bfbc" ||
-		!strings.Contains(screen(m), "demo mode: podman was not run") {
+	if len(m.jobs) != 1 || m.jobs[0].line != "buildah rm f7cd17e4bfbc" ||
+		!strings.Contains(screen(m), "demo mode: buildah was not run") {
 		t.Errorf("job: %v\n%s", actionCalls(m), screen(m))
 	}
 	press(m, "esc")

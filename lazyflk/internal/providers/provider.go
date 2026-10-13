@@ -83,7 +83,8 @@ var DemoFiles = map[string]string{
 	"podman images --format json":           "podman-images.json",
 	"lsblk -e7 -b --json -o " + lsblkCols:   "lsblk.json",
 	"systemctl show --timestamp=utc -p " + unitProps + " " + strings.Join(append(flkUnits, DefaultPins...), " "): "systemctl-show.txt",
-	"id -Gn": "id-groups.txt",
+	"id -Gn":            "id-groups.txt",
+	"buildah --version": "buildah-version.txt",
 }
 
 func (f *Fake) For(prog string) flk.Runner { return fakeProg{f, prog} }
