@@ -34,6 +34,11 @@ Change things
   flk scale count N                  new machines need their own volumes
   flk secrets set|unset ...          restarts machines (unless --stage)
 
+Data
+  flk volumes backup [NAME]          copy to backup_dir (~/.config/flk/host.toml) or --to DIR
+  flk volumes backups                list them; restore NAME [BACKUP] with the machine stopped
+  flk volumes extend NAME --size GB  grow a volume (machine stopped)
+
 Clean up
   flk apps destroy APP --yes         machines, volumes, images (external volume files are kept)
   flk apps prune                     images of apps that are already gone

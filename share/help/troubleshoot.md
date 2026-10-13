@@ -21,6 +21,11 @@ problems show up there with the fix. Then find the symptom below.
 - `short-name ... did not resolve`: run the one-liner flk prints, or use a
   full image name (`docker.io/library/ruby:3.3`).
 - `not enough free volumes`: `flk volumes create NAME --size N`, one per machine.
+- `a backup of its volume is running`: a `stop`-mode `flk volumes backup`
+  has the machine down; it starts it again when the copy is done.
+- A backup reports `fsck: errors`: the app was writing during a `live`
+  copy. Add `pre` hooks that make it save and stop writing, use
+  `mode = "pause"`, or the default `stop`. Older backups are kept.
 - `tap pool exhausted` / `flktapN missing`: `sudo {{SRC}}/setup-host.sh`
   (with `FLK_TAPS=32` for more machines).
 - The build itself fails: the same Dockerfile should fail under `podman build`.

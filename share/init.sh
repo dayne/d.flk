@@ -24,6 +24,12 @@ ln -sf /proc/kcore /dev/core
 # init systems turn it off at boot. flk stops VMs with Ctrl-Alt-Del, so turn
 # it into SIGINT to us (trapped below) and the app gets a clean SIGTERM.
 echo 0 > /proc/sys/kernel/ctrl-alt-del
+# Write cached file data to disk within about a second (kernel default:
+# 30s), and volumes commit their journal every second (ext4 default: 5s),
+# so a host-side copy a few seconds after the app flushes (flk volumes
+# backup, mode "live") holds that flush, and a crash loses less.
+echo 100 > /proc/sys/vm/dirty_expire_centisecs
+echo 100 > /proc/sys/vm/dirty_writeback_centisecs
 
 mkdir -p /flk/config
 mount -t ext4 -o ro /dev/vdb /flk/config 2>/dev/null || log "WARNING: config drive missing"
@@ -55,7 +61,7 @@ if [ -f /flk/config/mounts ]; then
   while read -r dev path; do
     [ -n "$dev" ] || continue
     mkdir -p "$path"
-    if mount -t ext4 "$dev" "$path"; then log "mounted volume $dev at $path"
+    if mount -t ext4 -o commit=1 "$dev" "$path"; then log "mounted volume $dev at $path"
     else log "WARNING: failed to mount $dev at $path"; fi
   done < /flk/config/mounts
 fi

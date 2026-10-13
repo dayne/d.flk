@@ -167,7 +167,43 @@ module Flk
       }
     end
 
+    # [flk.backup]: how `flk volumes backup` keeps the app from writing
+    # while its volume is copied.
+    #   mode = "stop"  (default) stop the machine, copy, start it again
+    #          "live"  copy while it runs, after the pre hooks (the app must
+    #                  stop writing and flush, e.g. Minecraft's save-off)
+    #          "pause" pause the VM during the copy: a crash-consistent
+    #                  image (like a power cut), instant on XFS/btrfs
+    #   pre / post = hooks, in order: "a host command" (run in this file's
+    #     directory) or { console = "line", wait = "REGEX", timeout = 60 }
+    #   settle = seconds between the pre hooks and the copy (default 5): the
+    #     guest writes its cached data out within about a second
+    #   keep = backups to keep of each volume (else host backup_keep, else 7)
+    BACKUP_MODES = %w[stop live pause].freeze
+
+    def backup
+      b = data.dig("flk", "backup") || {}
+      raise Error, "[flk.backup] must be a table" unless b.is_a?(Hash)
+      mode = (b["mode"] || "stop").to_s
+      raise Error, "[flk.backup] mode must be stop, live or pause (got '#{mode}')" unless BACKUP_MODES.include?(mode)
+      hooks = %w[pre post].to_h { |k| [k, Array(b[k]).map { backup_hook(_1, k) }] }
+      { "mode" => mode, "settle" => Integer(b["settle"] || 5),
+        "keep" => b["keep"] && Integer(b["keep"]) }.merge(hooks)
+    rescue ArgumentError, TypeError
+      raise Error, "[flk.backup] settle and keep must be numbers"
+    end
+
     private
+
+    def backup_hook(h, key)
+      case h
+      when String then { "run" => h }
+      when Hash
+        raise Error, "[flk.backup] #{key} hook needs console = \"...\" (or a plain string: a host command)" unless h["console"]
+        { "console" => h["console"].to_s, "wait" => h["wait"]&.to_s, "timeout" => Integer(h["timeout"] || 60) }
+      else raise Error, "[flk.backup] #{key} hooks are strings (host commands) or { console = ... } tables"
+      end
+    end
 
     def argv(v)
       return nil if v.nil?
@@ -179,6 +215,27 @@ module Flk
       s = v.to_s.strip.downcase
       raise Error, "can't parse memory '#{v}'" unless s =~ /\A(\d+(?:\.\d+)?)\s*(gb|g|mb|m)?\z/
       ($2.to_s.start_with?("g") ? $1.to_f * 1024 : $1.to_f).to_i
+    end
+  end
+
+  # Settings for this host (not an app): ~/.config/flk/host.toml.
+  #   backup_dir  = "/data/flk-backups"   # where flk volumes backup copies to
+  #   backup_keep = 7                     # backups kept per volume
+  module Host
+    PATH = ENV["FLK_HOST_CONFIG"] ||
+           File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
+    KEYS = %w[backup_dir backup_keep].freeze
+
+    module_function
+
+    def settings
+      return {} unless File.exist?(PATH)
+      h = TOML.load_file(PATH)
+      unknown = h.keys - KEYS
+      raise Error, "#{PATH}: unknown setting(s) #{unknown.join(', ')} (known: #{KEYS.join(', ')})" if unknown.any?
+      h
+    rescue TOML::ParseError => e
+      raise Error, "#{PATH}: #{e.message}"
     end
   end
 end

@@ -19,6 +19,7 @@ module Flk
   #   hidden         left out of the short `flk help`
   module Commands
     JSON_OPT = ["--json", "Print JSON instead of a table"].freeze
+    BACKUP_TO_OPT = ["--to DIR", "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"].freeze
 
     CONSOLE_OPTS = [["--send TEXT", "Type one line into the app's stdin, then return (no terminal needed)"],
                     ["--wait-log REGEX", "With --send: print console output until a line matches REGEX"],
@@ -183,7 +184,25 @@ module Flk
             notes: ["Size comes from the file. Don't mount it on the host while a machine uses it."] },
           { name: "destroy", aliases: %w[rm], args: "ID|NAME",
             opts: [["--delete-data", "Also delete an external (--path / import) volume's file"]],
-            summary: "Delete an unattached volume and its data (external volumes: unregister, keep the file)" }
+            summary: "Delete an unattached volume and its data (external volumes: unregister, keep the file)" },
+          { name: "backup", args: "[ID|NAME...]",
+            opts: [BACKUP_TO_OPT, ["--keep N", Integer, "Keep this many backups per volume (default: [flk.backup] keep, host backup_keep, 7)"],
+                   ["--mode MODE", "stop, live or pause: override [flk.backup] mode"],
+                   ["--no-check", "Skip the e2fsck of the copy"]],
+            summary: "Copy volumes (default: all of the app's) to the backup dir, then prune old copies",
+            notes: ["How the app is kept from writing comes from [flk.backup] in flk.toml (see flk help --all): " \
+                    "by default its machine is stopped for the copy and started again; " \
+                    "mode = \"live\" with pre/post hooks (e.g. save-off / save-on) copies while it runs.",
+                    "Copies are sparse, and instant on XFS/btrfs when the backup dir shares the volume's filesystem. " \
+                    "The copy is checked with e2fsck (a copy of a running machine gets its journal replayed)."] },
+          { name: "backups", args: "[ID|NAME...]", opts: [BACKUP_TO_OPT, JSON_OPT], json: true,
+            summary: "List a volume's backups (default: all of the app's volumes), newest first" },
+          { name: "restore", args: "ID|NAME [BACKUP]", opts: [BACKUP_TO_OPT],
+            summary: "Replace a volume's data with a backup (default: the latest); its machine must be stopped",
+            notes: ["BACKUP is a file name from flk volumes backups, or part of it (e.g. its date). " \
+                    "The current image is kept beside it as FILE.before-restore-TIME, not deleted."] },
+          { name: "extend", args: "ID|NAME", opts: [["-s", "--size GB", Integer, "New size in GB (required; grow only)"]],
+            summary: "Grow a volume and its filesystem; its machine must be stopped" }
         ] }
     ].freeze
 

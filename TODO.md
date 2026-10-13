@@ -99,7 +99,12 @@ To consider:
   `flk ssh console` and `flk ssh console -C "cmd"` (like Fly's hallpass).
 - [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
   from machine records).
-- [ ] **Volume snapshots, extend, backup.**
+- [ ] **Volume snapshots.** Backups and extend are done; instant
+  snapshots need volumes on a reflink filesystem (an XFS LV for flk's
+  volumes: `cp --reflink` is instant, so `pause` mode freezes the VM for
+  milliseconds) or LVM thin volumes (root helper). Then: backups to the
+  NAS / a second drive as just another `--to`, or rsync/restic of
+  backup_dir; an in-guest `sync`/fsfreeze once exec (vsock) exists.
 - [ ] **Snapshots of machines** (Firecracker snapshot/restore): suspend and
   sub-second resume.
 - [ ] **Static init** (Go/Rust) so distroless/scratch images boot without `/bin/sh`.
@@ -147,6 +152,13 @@ To consider:
   stopping so its own stops are never taken for crashes (that race was real:
   1 in 3 stops). Tests run on their own tmux server, so they never repoint
   the real exit hook, and doctor checks the hook's flk exists.
+- [x] Volume backups: `flk volumes backup` (stop / live / pause modes,
+  `[flk.backup]` pre/post hooks as host commands or console lines with a
+  log wait, e2fsck of each copy, `keep` pruning), `backups`, `restore`
+  (keeps the replaced image), `extend`. Host settings in
+  `~/.config/flk/host.toml` (`backup_dir`, `backup_keep`). Guests write
+  cached data within ~1s and volumes commit every 1s, so a live copy a few
+  seconds after a flush holds it.
 - [x] New volumes on another disk no longer ask for `--install-service`:
   a plain /etc/fstab mount is already ordered before the boot service
   (local-fs.target); doctor only warns for nofail, network or hand-made

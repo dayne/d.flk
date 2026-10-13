@@ -116,6 +116,19 @@ also its own help page: {{TOPICS}}.
   `rootfs_extra_mb` (default 512), `stdin` (`"console"`, the default: the app
   reads what you type in `flk console`; `"null"`: /dev/null, like
   `docker run` without `-i`)
+- `[flk.backup]` (flk only): how `flk volumes backup` keeps the app from
+  writing during the copy. `mode` = `"stop"` (default: stop the machine,
+  copy, start it), `"live"` (copy while it runs, after the `pre` hooks made
+  the app flush and stop writing) or `"pause"` (freeze the VM during the
+  copy: like a power cut, which journaled filesystems and SQLite survive).
+  `pre` / `post`: hooks run in order, each a host command run in the
+  flk.toml's directory (with `FLK_APP`, `FLK_MACHINE`, `FLK_MACHINE_IP`) or
+  `{ console = "LINE", wait = "REGEX", timeout = 60 }` typed into the app's
+  stdin. `post` hooks run even if the backup failed. `settle` (default 5):
+  seconds between `pre` and the copy, for the guest to write out its cache.
+  `keep`: backups per volume. Example (Minecraft, over its console):
+  `mode = "live"`, `pre = [{ console = "save-off" }, { console = "save-all flush", wait = "Saved the game" }]`,
+  `post = [{ console = "save-on" }]`.
 
 Everything else in a fly.toml (regions, checks, concurrency, statics) is ignored.
 `flk config show` prints what flk understood.

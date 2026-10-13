@@ -62,7 +62,7 @@ def status_json
       "hostname" => ENV["FLK_HOSTNAME"], "ip" => ENV["FLY_PRIVATE_IP"],
       "region" => ENV["FLY_REGION"], "release" => ENV["FLK_RELEASE"],
       "uid" => Process.uid, "uptime" => (Time.now - STARTED).round(1),
-      "boots" => $world["boots"], "saves" => $world["saves"],
+      "boots" => $world["boots"], "saves" => $world["saves"], "console_saves" => $world["console_saves"].to_i,
       "secret_digest" => secret && Digest::SHA256.hexdigest(secret)[0, 16],
       "egress" => $egress
     }
@@ -137,6 +137,18 @@ end
 # ---------- main loop + graceful shutdown ----------
 $stopping = false
 %w[TERM INT].each { |sig| trap(sig) { $stopping = true } }
+
+# Console commands on stdin, like a real server: save-all writes the world.
+Thread.new do
+  $stdin.each_line do |l|
+    next unless l.strip == "save-all"
+    $world["console_saves"] = $world["console_saves"].to_i + 1
+    save_world($world)
+    log "Saved the game (save-all)"
+  end
+rescue IOError
+  nil
+end
 
 log "Starting minecraft server version 1.21.1 (flk shadow)"
 log "Starting Minecraft server on *:#{PORT} (boot ##{$world['boots']})"

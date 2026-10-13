@@ -77,6 +77,7 @@ flk console [ID]                            # Ctrl-b d to detach (Ctrl-b Ctrl-b 
 flk proxy 8080[:80] [ID] [--bind 0.0.0.0]
 flk secrets list | set K=V (V='-' reads stdin) | unset K | import  [--stage]
 flk volumes list | create NAME [-s GB] [--path FILE] [--from-dir DIR] | import NAME --path FILE | destroy ID|NAME
+flk volumes backup [NAME...] [--to DIR] [--keep N] | backups | restore NAME [BACKUP] | extend NAME --size GB
 flk apps list | destroy NAME [--yes] | prune
 flk ports [list|sync]                       # host ports forwarded to machines
 flk config show

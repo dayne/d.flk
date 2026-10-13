@@ -244,6 +244,7 @@ module Flk
       port_helper_check(record)
       boot_service_check(record)
       exit_hook_check(record)
+      backup_check(record)
       results
     end
 
@@ -303,6 +304,22 @@ module Flk
       else
         record["exit hook (#{bin})", "pass", nil]
       end
+    end
+
+    # Only when some app has volumes: where `flk volumes backup` copies to.
+    def backup_check(record)
+      dir = Host.settings["backup_dir"]
+      if dir.nil?
+        return unless App.all.any? { _1.volumes.any? }
+        record["no backup_dir set: flk volumes backup needs --to DIR", "warn",
+               "add backup_dir = \"/path\" to #{Host::PATH}"]
+      elsif !File.directory?(dir) || !File.writable?(dir)
+        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn", "mount it, or fix #{Host::PATH}"]
+      else
+        record["backups go to #{dir} (#{Backup.gb(Backup.free_bytes(dir))} free)", "pass", nil]
+      end
+    rescue Error => e
+      record[e.message, "warn", "fix #{Host::PATH}"]
     end
 
     # Optional: without it nothing comes back after a reboot.
@@ -1267,6 +1284,201 @@ module Flk
       puts "Don't mount it on the host while a machine uses it."
       boot_unit_note(path)
       next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")
+    end
+
+    def backup_volumes(a, args) = args.empty? ? a.volumes : args.map { a.volume!(_1) }
+
+    # The running machine using a volume, or nil.
+    def volume_user(a, v)
+      id = v["attached_machine"] or return nil
+      a.machines.find { _1.id == id && _1.running? }
+    end
+
+    DEFAULT_BACKUP = { "mode" => "stop", "settle" => 5, "keep" => nil, "pre" => [], "post" => [] }.freeze
+
+    # Copies each volume's image to the backup dir, keeping the app from
+    # writing meanwhile as [flk.backup] says (AppConfig#backup).
+    def volumes_backup(args, o)
+      a = app
+      vols = backup_volumes(a, args)
+      raise Error, "#{a.name} has no volumes" if vols.empty?
+      root = Backup.root!(o[:to])
+      cfg = config_for(a.name)
+      plan = cfg ? cfg.backup : DEFAULT_BACKUP
+      if o[:mode]
+        raise Error, "--mode must be stop, live or pause" unless AppConfig::BACKUP_MODES.include?(o[:mode])
+        plan = plan.merge("mode" => o[:mode])
+      end
+      keep = Backup.keep(o[:keep] || plan["keep"])
+      raise Error, "--keep must be at least 1" if keep < 1
+      failed = vols.reject do |v|
+        backup_one(a, v, root, plan, keep, cfg&.dir || Dir.pwd, check: !o[:no_check])
+        true
+      rescue Error => e
+        warn Util.red("  ✘ #{v['name']}: #{e.message}")
+        false
+      end
+      raise Error, "#{failed.size} of #{vols.size} volume backups failed (see above)" if failed.any?
+      next_step("flk volumes backups#{" --to #{o[:to]}" if o[:to]}")
+    end
+
+    def backup_one(a, v, root, plan, keep, hook_dir, check:)
+      src = v["path"]
+      raise Error, "#{src} is missing (is its disk mounted?)" unless File.exist?(src)
+      dir = Backup.dir_for(root, a.name, v)
+      FileUtils.mkdir_p(dir)
+      Backup.room!(src, dir)
+      m = volume_user(a, v)
+      mode = m ? plan["mode"] : "offline"
+      dst = File.join(dir, "#{v['name']}-#{Time.now.utc.strftime(Backup::STAMP)}.ext4")
+      puts "==> #{a.name}/#{v['name']}: #{Backup.gb(Backup.used_bytes(src))} used, " \
+           "#{m ? "machine #{m.id} running, mode #{mode}" : 'no machine running'} -> #{dst}"
+      t0 = Time.now
+      window = backup_copy(m, src, dst, mode, plan, hook_dir)
+      took = Time.now - t0
+      state = check ? Backup.check(dst) : "unchecked"
+      Backup.write_meta(dst, { "app" => a.name, "volume_id" => v["id"], "volume" => v["name"], "size_gb" => v["size_gb"],
+                               "source" => src, "machine" => m&.id, "release" => m&.release, "mode" => mode,
+                               "check" => state, "created_at" => Util.now, "seconds" => took.round(1) })
+      what = { "stop" => "machine down", "pause" => "machine paused", "live" => "copied live" }[mode]
+      puts "  #{Util.green('✔')} #{File.basename(dst)} in #{took.round(1)}s" \
+           "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}"
+      puts Util.yellow("  ⚠ e2fsck found errors in the copy; keep older backups until you've checked it") if state == "errors"
+      if Backup.same_fs?(src, dir)
+        puts "  note: same disk as the volume (covers mistakes and corruption, not a failed disk)"
+      end
+      pruned = Backup.prune(root, a.name, v, keep)
+      puts "  pruned #{pruned.size} old backup#{'s' if pruned.size > 1} (keeping #{keep})" if pruned.any?
+    end
+
+    # The copy itself; returns how long the machine was down, paused or
+    # (live) being copied. Post hooks run even when something failed, so a
+    # save-off is always undone.
+    def backup_copy(m, src, dst, mode, plan, hook_dir)
+      unless m
+        Backup.copy(src, dst)
+        return 0
+      end
+      begin
+        backup_hooks(m, plan["pre"], "pre", hook_dir)
+        sleep plan["settle"] if mode != "stop" && plan["settle"].positive?
+        t = Time.now
+        case mode
+        when "stop"
+          File.write(m.path("backup"), Process.pid.to_s)
+          begin
+            VM.stop(m, keep_desired: true, sync_ports: false)
+            Backup.copy(src, dst)
+          ensure
+            FileUtils.rm_f(m.path("backup"))
+            window = Time.now - t
+            boot(m, "Machine #{m.id} [#{m.name}] started again after the backup")
+          end
+        when "pause"
+          VM.pause(m)
+          begin
+            Backup.copy(src, dst)
+          ensure
+            VM.resume(m)
+            window = Time.now - t
+          end
+        else
+          Backup.copy(src, dst)
+          window = Time.now - t
+        end
+      ensure
+        begin
+          backup_hooks(m, plan["post"], "post", hook_dir)
+        rescue Error => e
+          warn Util.red("  ✘ post hook: #{e.message}")
+        end
+      end
+      window
+    end
+
+    # [flk.backup] pre/post hooks: host commands (in the flk.toml's dir, with
+    # FLK_APP, FLK_MACHINE, FLK_MACHINE_IP set) or console lines.
+    def backup_hooks(m, hooks, phase, dir)
+      hooks.each do |h|
+        if h["run"]
+          puts "  #{phase}: #{h['run']}"
+          env = { "FLK_APP" => m.app.name, "FLK_MACHINE" => m.id, "FLK_MACHINE_IP" => m.ip }
+          pid = Process.spawn(env, "sh", "-c", h["run"], chdir: dir, in: File::NULL)
+          unless Util.wait_for(120, 0.1) { Process.wait(pid, Process::WNOHANG) }
+            VM.kill(pid, "KILL")
+            Process.wait(pid)
+            raise Error, "#{phase} hook timed out after 120s: #{h['run']}"
+          end
+          raise Error, "#{phase} hook failed (exit #{$?.exitstatus}): #{h['run']}" unless $?.success?
+        else
+          puts "  #{phase}: console: #{h['console']}"
+          log = m.path("console.log")
+          offset = File.size?(log) || 0
+          VM.send_line(m, h["console"])
+          wait_for_log(log, offset, Regexp.new(h["wait"]), h["console"], h["timeout"]) if h["wait"]
+        end
+      end
+    end
+
+    def volumes_backups(args, o)
+      a = app
+      root = Backup.root!(o[:to])
+      rows = backup_volumes(a, args).flat_map { |v| Backup.list(root, a.name, v).map { _1.merge("volume" => v["name"]) } }
+      return puts(JSON.pretty_generate(rows)) if o[:json]
+      return puts("No backups of #{a.name} in #{root}") if rows.empty?
+      Util.table(%w[VOLUME BACKUP CREATED USED MODE CHECK],
+                 rows.map { [_1["volume"], _1["file"], Util.ago(_1["created_at"]), Backup.gb(_1["bytes_used"]),
+                             _1["mode"] || "-", _1["check"] || "-"] })
+    end
+
+    def volumes_restore(args, o)
+      raise Error, "restore takes a volume and optionally a backup" unless (1..2).cover?(args.size)
+      a = app
+      v = a.volume!(args[0])
+      b = Backup.find!(Backup.root!(o[:to]), a.name, v, args[1])
+      if (m = volume_user(a, v))
+        raise Error, "machine #{m.id} [#{m.name}] is using #{v['name']}; stop it first: flk machine stop #{m.id}"
+      end
+      dst = v["path"]
+      Backup.room!(b["path"], File.dirname(dst))
+      aside = "#{dst}.before-restore-#{Time.now.utc.strftime(Backup::STAMP)}"
+      puts "==> Restoring #{v['name']} from #{b['file']} (#{Util.ago(b['created_at'])})"
+      Util.with_lock do
+        raise Error, "#{v['name']} is in use again" if volume_user(a, v)
+        Backup.copy(b["path"], "#{dst}.restoring")
+        File.rename(dst, aside) if File.exist?(dst)
+        File.rename("#{dst}.restoring", dst)
+        set_volume_size(a, v, dst)
+      end
+      puts "Restored #{v['name']}. The previous image is kept at #{aside}; delete it when you're happy."
+      next_step(v["attached_machine"] ? "flk machine start #{v['attached_machine']}" : "flk deploy")
+    end
+
+    def volumes_extend(args, o)
+      a = app
+      v = a.volume!(args.first)
+      size = o[:size] or raise Error, "--size GB is required"
+      raise Error, "#{v['name']} is #{v['size_gb']}GB; volumes only grow (--size more than that)" unless size > v["size_gb"].to_i
+      if (m = volume_user(a, v))
+        raise Error, "machine #{m.id} [#{m.name}] is using #{v['name']}; stop it first: flk machine stop #{m.id}"
+      end
+      path = v["path"]
+      Util.with_lock do
+        fsck = Util.which("e2fsck") || "/usr/sbin/e2fsck"
+        out, st = Open3.capture2e(fsck, "-fy", path)
+        raise Error, "e2fsck found errors it couldn't fix in #{path}:\n#{out}" if st.exitstatus.to_i > 2
+        File.open(path, "r+") { _1.truncate(size * 1024**3) } # sparse: takes no space until used
+        Util.run!(Util.which("resize2fs") || "/usr/sbin/resize2fs", path)
+        set_volume_size(a, v, path)
+      end
+      puts "Extended #{v['name']} to #{size}GB"
+      next_step(v["attached_machine"] ? "flk machine start #{v['attached_machine']}" : "flk deploy")
+    end
+
+    def set_volume_size(a, v, path)
+      vols = a.volumes
+      vols.find { _1["id"] == v["id"] }["size_gb"] = (File.size(path) / 1024.0**3).ceil
+      a.save_volumes(vols)
     end
 
     # External volumes (--path / import) are only unregistered unless

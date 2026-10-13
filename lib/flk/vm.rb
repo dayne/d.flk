@@ -78,6 +78,9 @@ module Flk
       raise Error, "guest kernel not found at #{kernel}; run: flk setup" unless File.exist?(kernel)
       raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo #{SETUP_HOST}" unless Net.tap_exists?(m.tap_index)
       raise Error, "tmux is required" unless Util.which("tmux")
+      if (pid = backup_pid(m))
+        raise Error, "a backup of its volume is running (flk, pid #{pid}); the machine starts again when it's done"
+      end
       m.config["mounts"].each do |mt|
         v = m.app.volume!(mt["volume"])
         next if File.exist?(v["path"])
@@ -253,6 +256,18 @@ module Flk
         rest.empty? ? nil : JSON.parse(rest)
       end
     end
+
+    # A stop-mode backup is copying this machine's volume: the pid of that
+    # flk, while it lives.
+    def backup_pid(m)
+      pid = File.read(m.path("backup")).to_i
+      pid.positive? && Process.kill(0, pid) ? pid : nil
+    rescue SystemCallError
+      nil
+    end
+
+    def pause(m) = api(m.path("fc.sock"), "PATCH", "/vm", { "state" => "Paused" })
+    def resume(m) = api(m.path("fc.sock"), "PATCH", "/vm", { "state" => "Resumed" })
 
     def kill(pid, sig)
       Process.kill(sig, pid) if pid

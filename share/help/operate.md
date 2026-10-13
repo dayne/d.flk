@@ -43,13 +43,46 @@ running machine; the next takes over when it stops.
 
 **Disk.** Everything is under `{{ROOT}}`: two release images per app,
 volumes (unless created with `--path`), logs. `flk apps prune` removes
-images of destroyed apps. To back up a volume, stop its machine and copy
-the file (`flk volumes list --json` shows the path): a stop unmounts it
-cleanly, so the copy is consistent. Volumes on other disks (`--path`):
+images of destroyed apps. Volumes on other disks (`--path`):
 put the disk in `/etc/fstab` (without `nofail`) and reboots mount it before
 machines start, and stop machines before unmounting it. `flk doctor` warns
 if a disk isn't covered, e.g. a `nofail` or network mount: then re-run
 `sudo {{SRC}}/setup-host.sh --install-service` once.
+
+**Backups.** Set where they go once, in `~/.config/flk/host.toml`:
+
+    backup_dir  = "/data/flk-backups"   # ideally another disk than the volumes
+    backup_keep = 7                     # per volume
+
+Then `flk volumes backup` copies all of the app's volumes there (sparse:
+only used space), checks each copy with e2fsck, and deletes the oldest past
+`keep`. By default the machine is stopped for the copy and started again
+(seconds to minutes of downtime, by size); `[flk.backup]` in flk.toml can
+copy while it runs instead, with hooks that make the app save and pause
+writing (`flk help --all`, Config). `flk volumes backups` lists them;
+`flk volumes restore NAME [BACKUP]` (machine stopped) puts one back and
+keeps the replaced image beside it. `flk volumes extend NAME --size GB`
+grows a volume (machine stopped).
+
+On a schedule, with a systemd user timer (no root;
+`loginctl enable-linger $USER` once so it runs while you're logged out):
+
+    # ~/.config/systemd/user/flk-backup-APP.service
+    [Service]
+    Type=oneshot
+    ExecStart={{SRC}}/bin/flk -a APP volumes backup
+
+    # ~/.config/systemd/user/flk-backup-APP.timer
+    [Timer]
+    OnCalendar=*-*-* 04:00
+    Persistent=true
+    [Install]
+    WantedBy=timers.target
+
+    systemctl --user daemon-reload && systemctl --user enable --now flk-backup-APP.timer
+
+Machines deployed before flk had `live` backups write their cache out
+lazily (up to 35s): redeploy them, or use `settle = 35` until then.
 
 **Updating flk.** `git -C {{SRC}} pull`, then `flk setup` for a newer
 firecracker or kernel. Running machines pick changes up on their next
