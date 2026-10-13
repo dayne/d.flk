@@ -99,6 +99,11 @@ To consider:
   `flk ssh console` and `flk ssh console -C "cmd"` (like Fly's hallpass).
 - [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
   from machine records).
+- [ ] **Files in a stopped volume without sudo.** `flk volumes ls/cp/rm
+  VOL` on top of `debugfs -w` (`write`, `rm`, `rdump`), refusing while a
+  machine uses it. Gotcha (from the vintagestory session): `write` creates
+  files as uid 0; follow with `sif PATH uid N` / `gid N`. Minecraft's
+  `bin/mc-edit` and VS's tooling each do a version of this today.
 - [ ] **Volume snapshots.** Backups and extend are done; instant
   snapshots need volumes on a reflink filesystem (an XFS LV for flk's
   volumes: `cp --reflink` is instant, so `pause` mode freezes the VM for
