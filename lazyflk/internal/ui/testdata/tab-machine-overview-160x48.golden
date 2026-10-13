@@ -1,26 +1,23 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk / mellow-aurora-7882 ─  Overview  Logs  Record                                                        │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
 │   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
-│   ⇄ tcp/25565 udp/19132                │ state     ● started                                                                                                 │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ state     ● started                                                                                                 │
 │ ▾ vintagestory-flk  1/1 ●              │ release   v8                                                                                                        │
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
-│   ⇄ tcp/42420 udp/42420                │ cpu       4% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    2983MB used of 11264MB                                                                                    │
-│ Host                                   │ up        59m                                                                                                       │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       2% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    3007MB used of 11264MB                                                                                    │
+│ Host                                   │ up        1h 49m                                                                                                    │
 │   health ✔                             │ pid       1473109 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
-│ Storage                                │ ports     tcp/25565 → 10.47.11.116:25565                                                                            │
-│   / 20%                                │           udp/19132 → 10.47.11.116:19132                                                                            │
+│ Storage                                │ ports     tcp/25565 → 10.47.11.3:25565                                                                              │
+│   / 20%                                │           udp/19132 → 10.47.11.3:19132                                                                              │
 │   /data/minecraft 66%                  │ volumes   world → /server                                                                                           │
 │   /data/vintagestory 56%               │ created   2026-10-12 05:01Z                                                                                         │
 │                                        │ updated   2026-10-13 06:13Z                                                                                         │
 │ Podman                                 │                                                                                                                     │
-│   ▢ ruby-working-container (build)     │                                                                                                                     │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                 │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

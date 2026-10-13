@@ -106,7 +106,12 @@ func containerItem(c podmanContainer, now time.Time, hasBuildah bool) Item {
 	}
 	it := Item{Key: "podman/c/" + c.ID, Title: "container " + name}
 	build := c.State == "storage" || (len(c.Command) > 0 && c.Command[0] == "buildah")
+	// every build has one while it runs: only an old one was left behind
+	// (the same hour flk's doctor uses)
+	stale := build && c.Created > 0 && now.Sub(time.Unix(c.Created, 0)) > time.Hour
 	switch {
+	case build && !stale:
+		it.Label, it.State = "▢ "+name+" (building)", Off
 	case build:
 		it.Label, it.State = "▢ "+name+" (build)", Warn
 	case c.State == "running":
@@ -122,11 +127,17 @@ func containerItem(c podmanContainer, now time.Time, hasBuildah bool) Item {
 	if c.Created > 0 {
 		it.Lines = append(it.Lines, field("created", time.Unix(c.Created, 0).UTC().Format("2006-01-02 15:04Z")))
 	}
+	if build && !stale {
+		it.Lines = append(it.Lines, "",
+			"A build's working container (buildah): every build has one while it runs.",
+			"If it's still here an hour from now, the build was interrupted and left it.")
+		return it
+	}
 	if build {
 		it.Lines = append(it.Lines, "",
-			"A build container (buildah's working container): a build that was",
-			"interrupted (e.g. Ctrl-C during flk deploy) leaves these behind. They pin",
-			"their image's layers. Nothing runs in them; removing one is safe.")
+			"A build container (buildah's working container), over an hour old: a build",
+			"that was interrupted (e.g. Ctrl-C during flk deploy) left it behind. It pins",
+			"its image's layers. Nothing runs in it; removing it is safe.")
 		id := c.ID[:min(12, len(c.ID))]
 		rm := actions.Command{Program: "buildah", Args: []string{"rm", id}}
 		how := "buildah rm: unmounts it, then removes it"

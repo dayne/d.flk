@@ -1,39 +1,40 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk / mellow-aurora-7882 ─  Overview  Logs  Record                                                        │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ id        225d58f615e7e6                                                                                            │
 │   ▢ world 40GB (external)              │ name      mellow-aurora-7882                                                                                        │
-│   ⇄ tcp/25565 udp/19132                │ state     ● started                                                                                                 │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ state     ● started                                                                                                 │
 │ ▾ vintagestory-flk  1/1 ●              │ release   v8                                                                                                        │
 │   ● frosty-river-2714                  │ ip        172.30.0.10:25565                                                                                         │
 │   ▢ vsdata 40GB (external)             │ size      4 cpus · 11264MB                                                                                          │
-│   ⇄ tcp/42420 udp/42420                │ cpu       4% (100% = one host CPU; it has 4)                                                                        │
-│                                        │ memory    2983MB used of 11264MB                                                                                    │
-│ Host                                   │ up        59m                                                                                                       │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ cpu       2% (100% = one host CPU; it has 4)                                                                        │
+│                                        │ memory    3007MB used of 11264MB                                                                                    │
+│ Host                                   │ up        1h 49m                                                                                                    │
 │   health ✔                             │ pid       1473109 (firecracker)                                                                                     │
 │                                        │ restart   on-failure · 1 retry                                                                                      │
-│ Storage                                │ ports     tcp/25565 → 10.47.11.116:25565                                                                            │
-│   / 20%                                │           udp/19132 → 10.47.11.116:19132                                                                            │
-│   /data/minecraft 66%                  │ volumes   world → /server                                                                                           │
-│   /data/vintagestory 56%            ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────────────┐                                     │
-│                                     │ s  start        already running                                                  │                                     │
-│ Podman                              │ S  stop         stop gracefully; it stays stopped, also after reboots            │                                     │
-│   ▢ ruby-working-container (build)  │ r  restart      stop, then boot                                                  │                                     │
-│   ▢ 4b61b6598784-working-container (│ l  logs         follow its console output                                        │                                     │
-│   ◇ 4b61b6598784 (untagged) 69M     │ c  console      attach to its serial console (detach: Ctrl-b d)                  │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ >  send a line  type one line into the app's stdin and watch the log answer (co… │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │ R  record       flk machine status: its record and state                         │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │                                                                                  │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ boot it                                                                          │                                     │
-│   ◇ alpine:3.20 7.7M                │ not now: already running                                                         │                                     │
-│   3 flk images: host Images tab     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│                                     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
-│ Services                            └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│   ● flk-net                            │                                                                                                                     │
-│   ● flk-machines                       │                                                                                                                     │
-│   ● ssh                                │                                                                                                                     │
-│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
-│   ● chrony                             │                                                                                                                     │
+│ Storage                             ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────────────┐                                     │
+│   / 20%                             │ s  start         already running                                                 │                                     │
+│   /data/minecraft 66%               │ S  stop          stop gracefully; it stays stopped, also after reboots           │                                     │
+│   /data/vintagestory 56%            │ r  restart       stop, then boot                                                 │                                     │
+│                                     │ l  logs          follow its console output                                       │                                     │
+│ Podman                              │ c  console       attach to its serial console (detach: Ctrl-b d)                 │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ >  send a line   type one line into the app's stdin and watch the log answer (c… │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ R  record        flk machine status: its record and state                        │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ 1  who           who's online (RCON)                                             │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ 2  say           broadcast a message to the players (RCON)                       │                                     │
+│   ◇ alpine:3.20 7.7M                │ 3  save          write the world to disk now and wait until it's saved           │                                     │
+│   3 flk images: host Images tab     │ 4  backup        the nightly backup, now: live (no restart, ~50s), checked, new… │                                     │
+│                                     │ 5  backup-check  preflight only: mounts, flk, lock, status; makes no backup      │                                     │
+│ Services                            │ 6  whitelist     let a player in: type their name (RCON)                         │                                     │
+│   ● flk-net                         │                                                                                  │                                     │
+│   ● flk-machines                    │ boot it                                                                          │                                     │
+│   ● ssh                             │ not now: already running                                                         │                                     │
+│   ● snap.mosquitto.mosquitto        ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● chrony                          │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -41,8 +42,7 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                 │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

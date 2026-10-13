@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk images --json                             │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ minecraft-flk                                   │
+│   ⇄ 10.47.11.3: tcp/25565… │ minecraft-flk                                   │
 │ ▾ vintagestory-flk  1/1 ●  │   v8     352M  running · current                │
 │   ● frosty-river-2714      │               built 2026-10-12 06:41Z · 7f0a02… │
 │   ▢ vsdata 40GB (external) │   v7     352M  same image as v8                 │
-│   ⇄ tcp/42420 udp/42420    │               built 2026-10-12 06:41Z · 7f0a02… │
+│   ⇄ 10.47.11.3: tcp/42420… │               built 2026-10-12 06:41Z · 7f0a02… │
 │                            │                                                 │
 │ Host                       │ vintagestory-flk                                │
 │   health ✔                 │   v3     560M  running · current                │
 │                            │               built 2026-10-13 05:19Z · e2e7f9… │
 │ Storage                    │   v2     558M  older release                    │
-│   / 20%                    │ … 3 more (pgdn)                                 │
+│   / 20%                    │               built 2026-10-13 04:47Z · b54f5b… │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 56%   │ 1.4G in 3 images                                │
+│                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an         │
-│   interrupted build?): buildah rm f7cd17e4bfbc                               │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
+│ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
 └──────────────────────────────────────────────────────────────────────────────┘

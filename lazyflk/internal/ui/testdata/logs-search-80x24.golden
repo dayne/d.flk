@@ -1,8 +1,5 @@
-┌ Logs ─ minecraft-flk / mellow-aurora-7882 ─────────────── paused · /RCON 7/7 ┐
+┌ Logs ─ minecraft-flk / mellow-aurora-7882 ─────────────── paused · /RCON 9/9 ┐
 │ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 1000 -f                     │
-│ [22:22:40] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions … │
-│ [22:22:40] [Server thread/INFO]: Saved the game                              │
-│ save-on                                                                      │
 │ [22:23:30] [Server thread/INFO]: Automatic saving is now enabled             │
 │ [22:23:30] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started   │
 │ [22:23:30] [RCON Client /172.30.0.1 #4/INFO]: Thread RCON Client /172.30.0.… │
@@ -19,6 +16,9 @@
 │ [22:28:22] [Server thread/INFO]: Automatic saving is now enabled             │
 │ [22:28:23] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started   │
 │ [22:28:23] [RCON Client /172.30.0.1 #5/INFO]: Thread RCON Client /172.30.0.… │
+│ [23:30:19] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost conne… │
+│ [23:58:39] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started   │
+│ [23:58:39] [RCON Client /172.30.0.1 #6/INFO]: Thread RCON Client /172.30.0.… │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ f follow  / search  n/N match  w wrap  g/G top/end  > send a line  esc back… │
 └──────────────────────────────────────────────────────────────────────────────┘

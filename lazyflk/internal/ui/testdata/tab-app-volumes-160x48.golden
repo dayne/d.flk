@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk volumes backups --json                                                                       │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ world 40GB (external)                                                                                               │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ world 40GB (external)                                                                                               │
 │ ▾ vintagestory-flk  1/1 ●              │   id        vol_28392490d0d4d4c7                                                                                    │
 │   ● frosty-river-2714                  │   size      40GB                                                                                                    │
 │   ▢ vsdata 40GB (external)             │   path      /data/minecraft/flk/world.ext4                                                                          │
-│   ⇄ tcp/42420 udp/42420                │             external: outside flk's state dir                                                                       │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │             external: outside flk's state dir                                                                       │
 │                                        │   attached  mellow-aurora-7882 (225d58f615e7e6)                                                                     │
 │ Host                                   │   created   2026-10-12 05:01Z                                                                                       │
 │   health ✔                             │   backup    2026-10-13 06:28Z (checked clean (journal replayed), 3 kept)                                            │
@@ -18,9 +18,6 @@
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
-│   ▢ ruby-working-container (build)     │                                                                                                                     │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -1,12 +1,17 @@
 package ui
 
 import (
+	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"lazyflk/fixtures"
+	"lazyflk/internal/actions"
 	"lazyflk/internal/flk"
+	"lazyflk/internal/providers"
 )
 
 func goToKey(t *testing.T, m *Model, key string) {
@@ -21,13 +26,31 @@ func goToKey(t *testing.T, m *Model, key string) {
 	t.Fatalf("no node %s", key)
 }
 
+// firstImageID is the fixture's first image that isn't flk's.
+func firstImageID(t *testing.T) string {
+	t.Helper()
+	var imgs []struct {
+		ID    string   `json:"Id"`
+		Names []string `json:"Names"`
+	}
+	raw, _ := fixtures.FS.ReadFile("podman-images.json")
+	json.Unmarshal(raw, &imgs)
+	for _, im := range imgs {
+		if len(im.Names) > 0 && !strings.HasPrefix(im.Names[0], "flk.local/") {
+			return im.ID
+		}
+	}
+	t.Fatal("no non-flk image in the fixture")
+	return ""
+}
+
 func TestProviderSnapshots(t *testing.T) {
 	for _, sz := range [][2]int{{80, 24}, {160, 48}} {
 		m := demoModel(t, sz[0], sz[1])
 		goToKey(t, m, "prov/storage//data/minecraft")
 		snap(t, m, "prov-storage")
-		goToKey(t, m, "prov/podman/c/f7cd17e4bfbcde38fc0f8004e487566b35476a57b502a4ea6f7a703825b6695f")
-		snap(t, m, "prov-podman-build")
+		goToKey(t, m, "prov/podman/i/"+firstImageID(t))
+		snap(t, m, "prov-podman-image")
 		press(m, "enter")
 		snap(t, m, "prov-podman-menu")
 		press(m, "esc")
@@ -40,12 +63,27 @@ func TestProviderSnapshots(t *testing.T) {
 	}
 }
 
+// stubProvider has one item whose action needs the name typed, like a
+// leftover build container (the live fixture may have none).
+type stubProvider struct{}
+
+func (stubProvider) Name() string    { return "Stub" }
+func (stubProvider) Command() string { return "stub list" }
+func (stubProvider) Load(context.Context, providers.Host, providers.Env) ([]providers.Item, error) {
+	rm := actions.Run("D", "remove", "remove it", actions.Type, "old-build",
+		actions.Command{Program: "buildah", Args: []string{"rm", "0123456789ab"}})
+	return []providers.Item{{Key: "stub/1", Label: "▢ old-build (build)", State: providers.Warn, Title: "container old-build",
+		Problems: []string{"stub: old-build was left behind"}, Fix: &rm, Actions: []actions.Action{rm}}}, nil
+}
+
 func TestProviderActions(t *testing.T) {
 	m := demoModel(t, 100, 30)
-	// the build container is in Needs attention, with a typed-confirm fix
+	m.opt.Providers = append(m.opt.Providers, stubProvider{})
+	send(m, runCmd(m.reload())...)
+	// a provider's problem is in Needs attention, with its fix
 	var fix *attnItem
 	for _, it := range m.attnItems() {
-		if strings.Contains(it.text, "ruby-working-container was left behind") {
+		if it.text == "stub: old-build was left behind" {
 			it := it
 			fix = &it
 		}
@@ -53,15 +91,15 @@ func TestProviderActions(t *testing.T) {
 	if fix == nil || fix.fix == nil {
 		t.Fatalf("no attention item: %+v", m.attnItems())
 	}
-	goToKey(t, m, "prov/podman/c/f7cd17e4bfbcde38fc0f8004e487566b35476a57b502a4ea6f7a703825b6695f")
+	goToKey(t, m, "prov/stub/1")
 	press(m, "enter", "D")
-	if m.confirm == nil || !strings.Contains(screen(m), "$ buildah rm f7cd17e4bfbc") ||
-		!strings.Contains(screen(m), "Type ruby-working-container to confirm") {
+	if m.confirm == nil || !strings.Contains(screen(m), "$ buildah rm 0123456789ab") ||
+		!strings.Contains(screen(m), "Type old-build to confirm") {
 		t.Fatalf("confirm:\n%s", screen(m))
 	}
-	typeText(m, "ruby-working-container")
+	typeText(m, "old-build")
 	press(m, "enter")
-	if len(m.jobs) != 1 || m.jobs[0].line != "buildah rm f7cd17e4bfbc" ||
+	if len(m.jobs) != 1 || m.jobs[0].line != "buildah rm 0123456789ab" ||
 		!strings.Contains(screen(m), "demo mode: buildah was not run") {
 		t.Errorf("job: %v\n%s", actionCalls(m), screen(m))
 	}

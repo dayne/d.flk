@@ -1,25 +1,5 @@
 [
     {
-        "Id": "4b61b659878443c71af903637f75fe61c1cdb3e5220388246028377aa69c31cf",
-        "ParentId": "bcb4ac884729525309f5eef7e42253caf915fa0ea8b35f9d677b3724625780d2",
-        "RepoTags": null,
-        "RepoDigests": [],
-        "Size": 72298951,
-        "SharedSize": 0,
-        "VirtualSize": 72298951,
-        "Labels": {
-            "io.buildah.version": "1.42.1"
-        },
-        "Containers": 1,
-        "Dangling": true,
-        "Digest": "sha256:ba0c26d360b3e6f200af5dd7caced5d7eb91a9aaec6a4039851b5e96f9b9d7b2",
-        "History": [
-            "docker.io/library/1b5699e97dca329b5c0b7762400f2003c3552d09ecb13b297e7ee2c91f08e5ab-tmp:latest"
-        ],
-        "Created": 1791870780,
-        "CreatedAt": "2026-10-13T05:53:00Z"
-    },
-    {
         "Id": "e2e7f90d53141ac755584bc4ee31bde362a95326d5018370f7c7067d7dd5c1ab",
         "ParentId": "e31d5ab04e5577de0a67baa4c45f002397ccfa24640f44b63aa281ddf35ec0eb",
         "RepoTags": null,
@@ -232,7 +212,7 @@
         "SharedSize": 0,
         "VirtualSize": 72301317,
         "Labels": null,
-        "Containers": 1,
+        "Containers": 0,
         "Digest": "sha256:d9e5298c8c7dad54b40facac94be1baa10f593db7dec7a9afb47bd44a64c15a9",
         "History": [
             "docker.io/library/ruby:3.3-alpine"

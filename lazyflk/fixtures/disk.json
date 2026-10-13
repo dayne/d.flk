@@ -1,8 +1,8 @@
 {
   "state_dir": {
     "path": "/home/dayne/.local/share/flk",
-    "bytes": 2958692352,
-    "apparent": 6695547582
+    "bytes": 2958835712,
+    "apparent": 6695558758
   },
   "apps": [
     {
@@ -21,7 +21,7 @@
       },
       "logs": {
         "bytes": 585728,
-        "apparent": 579980
+        "apparent": 580247
       },
       "external_volumes": {
         "bytes": 22167695360,
@@ -29,7 +29,7 @@
       },
       "total": {
         "bytes": 1163370496,
-        "apparent": 2978535820
+        "apparent": 2978536087
       }
     },
     {
@@ -39,7 +39,7 @@
         "apparent": 2450522112
       },
       "rootfs": {
-        "bytes": 570294272,
+        "bytes": 570429440,
         "apparent": 1234173952
       },
       "volumes": {
@@ -47,16 +47,16 @@
         "apparent": 0
       },
       "logs": {
-        "bytes": 651264,
-        "apparent": 645514
+        "bytes": 659456,
+        "apparent": 656423
       },
       "external_volumes": {
         "bytes": 8651468800,
         "apparent": 42949672960
       },
       "total": {
-        "bytes": 1763606528,
-        "apparent": 3685341578
+        "bytes": 1763749888,
+        "apparent": 3685352487
       }
     }
   ],
@@ -66,7 +66,7 @@
       "apparent": 4430233600
     },
     "rootfs": {
-      "bytes": 961056768,
+      "bytes": 961191936,
       "apparent": 2232418304
     },
     "volumes": {
@@ -74,8 +74,8 @@
       "apparent": 0
     },
     "logs": {
-      "bytes": 1236992,
-      "apparent": 1225494
+      "bytes": 1245184,
+      "apparent": 1236670
     },
     "external_volumes": {
       "bytes": 30819164160,

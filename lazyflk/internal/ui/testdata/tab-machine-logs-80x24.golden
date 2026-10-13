@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
 │ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
 │   ● mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ $ flk -a minecraft-flk logs -i 225d58f615e7e6   │
-│   ⇄ tcp/25565 udp/19132    │   -n 200 --no-tail                              │
+│   ⇄ 10.47.11.3: tcp/25565… │   -n 200 --no-tail                              │
 │ ▾ vintagestory-flk  1/1 ●  │                                                 │
 │   ● frosty-river-2714      │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
 │   ▢ vsdata 40GB (external) │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
-│   ⇄ tcp/42420 udp/42420    │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
+│   ⇄ 10.47.11.3: tcp/42420… │ [22:27:32] [Server thread/INFO]: ThreadedAnvil… │
 │                            │ [22:27:32] [Server thread/INFO]: Saved the game │
 │ Host                       │ save-on                                         │
 │   health ✔                 │ [22:28:22] [Server thread/INFO]: Automatic sav… │
 │                            │ [22:28:23] [RCON Listener #1/INFO]: Thread RCO… │
 │ Storage                    │ [22:28:23] [RCON Client /172.30.0.1 #5/INFO]: … │
-│   / 20%                    │ l: follow, search, wrap (full screen)           │
+│   / 20%                    │ [23:30:19] [Server thread/INFO]: FishNet (/176… │
+│   /data/minecraft 66%      │ [23:58:39] [RCON Listener #1/INFO]: Thread RCO… │
+│   /data/vintagestory 56%   │ [23:58:39] [RCON Client /172.30.0.1 #6/INFO]: … │
+│                            │ l: follow, search, wrap (full screen)           │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an         │
-│   interrupted build?): buildah rm f7cd17e4bfbc                               │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
+│ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q qu… │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
 └──────────────────────────────────────────────────────────────────────────────┘

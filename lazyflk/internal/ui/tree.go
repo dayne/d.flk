@@ -89,18 +89,40 @@ func sortApps(apps []flk.App, steps []string) []flk.App {
 	return out
 }
 
+// portKeys is an app's ports for its tree line, grouped by the address
+// they're bound to: "tcp/25565 udp/19132", or "10.47.11.3: tcp/25565
+// udp/19132". Waiting ones end in ?, blocked ones in !.
 func portKeys(t flk.PortTable) []string {
-	var keys []string
+	var order []string
+	byBind := map[string][]string{}
+	add := func(p flk.Port, mark string) {
+		b := ""
+		if p.Bind != nil {
+			b = *p.Bind
+		}
+		if _, ok := byBind[b]; !ok {
+			order = append(order, b)
+		}
+		byBind[b] = append(byBind[b], p.Key+mark)
+	}
 	for _, p := range t.Active {
-		keys = append(keys, p.Shown())
+		add(p, "")
 	}
 	for _, p := range t.Waiting {
-		keys = append(keys, p.Shown()+"?")
+		add(p, "?")
 	}
 	for _, p := range t.Blocked {
-		keys = append(keys, p.Shown()+"!")
+		add(p, "!")
 	}
-	return keys
+	var out []string
+	for _, b := range order {
+		keys := byBind[b]
+		if b != "" {
+			keys[0] = b + ": " + keys[0]
+		}
+		out = append(out, keys...)
+	}
+	return out
 }
 
 func startedCount(a flk.App) int {

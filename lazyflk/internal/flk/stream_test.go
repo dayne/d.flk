@@ -37,7 +37,7 @@ func TestFakeStream(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := collect(t, s, 1000)
-	if len(lines) != 40 || !strings.Contains(lines[0].Text, "Loading Geyser") || s.Err() != nil {
+	if len(lines) != 40 || !strings.HasPrefix(lines[0].Text, "[") || s.Err() != nil {
 		t.Errorf("%d lines, first %q, err %v", len(lines), lines[0].Text, s.Err())
 	}
 

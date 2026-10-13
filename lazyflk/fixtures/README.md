@@ -1,6 +1,6 @@
 # Fixtures
 
-Real output from the reference host (flk 0.1.0, commit 5643a8b, 2026-10-12),
+Real output from the reference host (flk 0.1.0, commit 6183c62, 2026-10-13),
 captured with the commands below by `./capture.sh` (read-only; run it on a
 quiet host, then review the diff). Never edit them by hand. No secret values: `secrets list --json` has names and
 digests only.
@@ -34,7 +34,7 @@ Host commands for the providers (SPEC 10), as run by lazyflk:
 
 | File | Command |
 |---|---|
-| podman-ps.json | `podman ps -a --external --format json` (two build containers an interrupted flk deploy left behind) |
+| podman-ps.json | `podman ps -a --external --format json` (none at capture; the tests use a stub for leftovers) |
 | podman-images.json | `podman images --format json` |
 | lsblk.json | `lsblk -e7 -b --json -o NAME,PATH,TYPE,SIZE,FSTYPE,FSSIZE,FSAVAIL,MOUNTPOINTS,MODEL` |
 | systemctl-show.txt | `systemctl show --timestamp=utc -p Id,Description,LoadState,ActiveState,SubState,UnitFileState,ActiveEnterTimestamp,StateChangeTimestamp,MainPID,Result,NRestarts` for flk's units and the default pins |

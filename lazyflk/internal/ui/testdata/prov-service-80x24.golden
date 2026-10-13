@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Podman                     │ service ssh.service ─  Overview                 │
-│   ▢ ruby-working-containe… │                                                 │
-│   ▢ 4b61b6598784-working-… │ $ systemctl show --timestamp=utc -p ... UNIT... │
-│   ◇ 4b61b6598784 (untagge… │   · journalctl -u UNIT                          │
-│   ◇ itzg/minecraft-server… │                                                 │
-│   ◇ dotnet/runtime:10.0 1… │ unit      ssh.service                           │
-│   ◇ eclipse-temurin:25-jr… │ what      OpenBSD Secure Shell server           │
-│   ◇ ruby:3.3-alpine 69M    │ state     active (running)                      │
-│   ◇ alpine:3.20 7.7M       │ enabled   disabled                              │
-│   3 flk images: host Imag… │ since     Sat 2026-10-10 04:46:52 UTC           │
-│                            │ pid       9022                                  │
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
+│                            │ service ssh.service ─  Overview                 │
+│ Storage                    │                                                 │
+│   / 20%                    │ $ systemctl show --timestamp=utc -p ... UNIT... │
+│   /data/minecraft 66%      │   · journalctl -u UNIT                          │
+│   /data/vintagestory 56%   │                                                 │
+│                            │ unit      ssh.service                           │
+│ Podman                     │ what      OpenBSD Secure Shell server           │
+│   ◇ itzg/minecraft-server… │ state     active (running)                      │
+│   ◇ dotnet/runtime:10.0 1… │ enabled   disabled                              │
+│   ◇ eclipse-temurin:25-jr… │ since     Sat 2026-10-10 04:46:52 UTC           │
+│   ◇ ruby:3.3-alpine 69M    │ pid       9022                                  │
+│   ◇ alpine:3.20 7.7M       │                                                 │
+│   3 flk images: host Imag… │ pinned by default; edit ~/.config/lazyflk/pins… │
+│                            │                                                 │
 │ Services                   │                                                 │
-│   ● flk-net                │ pinned by default; edit ~/.config/lazyflk/pins… │
+│   ● flk-net                │                                                 │
 │   ● flk-machines           │                                                 │
 │   ● ssh                    │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an         │
-│   interrupted build?): buildah rm f7cd17e4bfbc                               │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
+│ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -1,4 +1,4 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ ┌ volumes backup ─ minecraft-flk ──────────────────────────────────────────┐ │
 │ │ Copy volumes (default: all of the app's) to the backup dir, then prune   │ │
 │ │ old copies                                                               │ │
@@ -14,10 +14,10 @@
 │ │ ID|NAME...  [                                                          ] │ │
 │ │ --to DIR    [                                                          ] │ │
 │ │ --keep N    [                                                          ] │ │
-├ │ --mode MODE [                                                          ] │─┤
+│ │ --mode MODE [                                                          ] │ │
 │ │ --no-check  ‹ no ›                                                       │ │
 │ │                                                                          │ │
-│ │ $ flk -a minecraft-flk volumes backup                                    │ │
+├ │ $ flk -a minecraft-flk volumes backup                                    │─┤
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
 ├─│ tab ↑↓ field  ←→ choose  enter next step  esc cancel                     │─┤
 │ └──────────────────────────────────────────────────────────────────────────┘ │

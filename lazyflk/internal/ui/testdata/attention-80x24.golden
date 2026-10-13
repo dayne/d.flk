@@ -1,15 +1,15 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  0/1 ○ !   │  Overview  Logs  Ports  Volumes  Releases ›     │
 │   ! mellow-aurora-7882     │                                                 │
 │   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
-│   ⇄ tcp/25565 udp/19132    │                                                 │
+│   ⇄ 10.47.11.3: tcp/25565… │                                                 │
 │ ▾ vintagestory-flk  1/1 ●  │ machine 225d58f615e7e6 ! stopped, should be st… │
 │   ● frosty-river-2714      │   mellow-aurora-7882 · 4 cpus · 11264MB · v8    │
-│   ▢ vsdata 40GB (external) │   cpu 4% · 2983MB used · up 59m                 │
-│   ⇄ tcp/42420 udp/42420    │                                                 │
-│                            │ ports  tcp/25565 → 10.47.11.116:25565           │
-│ Host                       │        udp/19132 → 10.47.11.116:19132           │
+│   ▢ vsdata 40GB (external) │   cpu 2% · 3007MB used · up 1h 49m              │
+│   ⇄ 10.47.11.3: tcp/42420… │                                                 │
+│                            │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565  │
+│ Host                       │        10.47.11.3:udp/19132 → 10.47.11.3:19132  │
 │   health ✔                 │ volume world 40GB (external)                    │
 │                            │ … 5 more (pgdn)                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
@@ -18,7 +18,7 @@
 │   running but isn't (it exited, or the host restarted); see why: flk logs -i │
 │   225d58f615e7e6 --no-tail; bring it back: flk resume                        │
 │   → enter: fix: flk -a minecraft-flk resume                                  │
-│ … 3 more: flk context --all                                                  │
+│ ! minecraft-flk: host port tcp/25565 is held by another machine; this one…   │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  enter fix  esc back                                                 │
 └──────────────────────────────────────────────────────────────────────────────┘

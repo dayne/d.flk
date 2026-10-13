@@ -1,26 +1,23 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
-│ Apps                                   │ container ruby-working-container ─  Overview                                                                        │
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ image docker.io/itzg/minecraft-server:latest ─  Overview                                                            │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ podman ps -a --external --format json · podman images --format json                                               │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ id        f7cd17e4bfbc                                                                                              │
-│ ▾ vintagestory-flk  1/1 ●              │ image     docker.io/library/ruby:3.3-alpine                                                                         │
-│   ● frosty-river-2714                  │ state     Storage                                                                                                   │
-│   ▢ vsdata 40GB (external)             │ created   2026-10-13 05:55Z                                                                                         │
-│   ⇄ tcp/42420 udp/42420                │                                                                                                                     │
-│                                        │ A build container (buildah's working container): a build that was                                                   │
-│ Host                                   │ interrupted (e.g. Ctrl-C during flk deploy) leaves these behind. They pin                                           │
-│   health ✔                             │ their image's layers. Nothing runs in them; removing one is safe.                                                   │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ id        f9dfcd225ce9                                                                                              │
+│ ▾ vintagestory-flk  1/1 ●              │ size      868M                                                                                                      │
+│   ● frosty-river-2714                  │ created   2026-10-10T22:25:04Z                                                                                      │
+│   ▢ vsdata 40GB (external)             │ names     docker.io/itzg/minecraft-server:latest                                                                    │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ used      no container uses it                                                                                      │
 │                                        │                                                                                                                     │
-│ Storage                                │ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc   │
+│ Host                                   │ Not one of flk's (flk.local/*). A Dockerfile's FROM image stays here as                                             │
+│   health ✔                             │ the build cache, so later deploys don't download it again.                                                          │
+│                                        │                                                                                                                     │
+│ Storage                                │                                                                                                                     │
 │   / 20%                                │                                                                                                                     │
 │   /data/minecraft 66%                  │                                                                                                                     │
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
-│   ▢ ruby-working-container (build)     │                                                                                                                     │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                                      │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

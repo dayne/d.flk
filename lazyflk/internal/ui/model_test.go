@@ -209,8 +209,9 @@ func TestNavigation(t *testing.T) {
 	if sel() != "ports/vintagestory-flk" {
 		t.Errorf("above host is %s", sel())
 	}
-	press(m, "left") // collapse from a child selects the app
-	if sel() != "app/vintagestory-flk" || len(m.nodes) != 32 {
+	before := len(m.nodes)
+	press(m, "left") // collapse from a child selects the app: its machine, volume and ports go
+	if sel() != "app/vintagestory-flk" || len(m.nodes) != before-3 {
 		t.Errorf("collapsed: on %s, %d nodes", sel(), len(m.nodes))
 	}
 	if !strings.Contains(m.Render(), "▸ vintagestory-flk") {

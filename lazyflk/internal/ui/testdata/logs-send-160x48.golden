@@ -1,8 +1,5 @@
 ┌ Logs ─ minecraft-flk / mellow-aurora-7882 ──────────────────────────────────────────────────────────────────────────────────────────────────────── following ┐
 │ $ flk -a minecraft-flk logs -i 225d58f615e7e6 -n 1000 -f                                                                                                     │
-│ [22:13:48] [Server thread/INFO]: Loading Geyser version 2.11.3-b1251 (git-master-50a464d)                                                                    │
-│ [22:13:48] [Server thread/INFO]:                                                                                                                             │
-│ [22:13:48] [Server thread/INFO]: ******************************************                                                                                  │
 │ [22:13:49] [Server thread/INFO]: Registered 199 custom block overrides.                                                                                      │
 │ [22:13:49] [Server thread/INFO]: Registered 2 custom block item overrides.                                                                                   │
 │ [22:13:49] [Server thread/INFO]: Registered 7 custom blocks.                                                                                                 │
@@ -40,6 +37,9 @@
 │ [22:28:22] [Server thread/INFO]: Automatic saving is now enabled                                                                                             │
 │ [22:28:23] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started                                                                                   │
 │ [22:28:23] [RCON Client /172.30.0.1 #5/INFO]: Thread RCON Client /172.30.0.1 shutting down                                                                   │
+│ [23:30:19] [Server thread/INFO]: FishNet (/176.65.149.198:61000) lost connection: Disconnected                                                               │
+│ [23:58:39] [RCON Listener #1/INFO]: Thread RCON Client /172.30.0.1 started                                                                                   │
+│ [23:58:39] [RCON Client /172.30.0.1 #6/INFO]: Thread RCON Client /172.30.0.1 shutting down                                                                   │
 │                                                                                                                                                              │
 │                                                                                                                                                              │
 │                                                                                                                                                              │

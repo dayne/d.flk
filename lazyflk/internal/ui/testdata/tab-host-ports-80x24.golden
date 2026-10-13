@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk ports list --json                         │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ helper    installed (forwards on every address… │
-│ ▾ vintagestory-flk  1/1 ●  │ host      10.47.11.116 · ports from 1024        │
+│   ⇄ 10.47.11.3: tcp/25565… │ helper    installed                             │
+│ ▾ vintagestory-flk  1/1 ●  │ host      10.47.11.3 · ports from 1024          │
 │   ● frosty-river-2714      │                                                 │
-│   ▢ vsdata 40GB (external) │ tcp/25565 → 10.47.11.116:25565                  │
-│   ⇄ tcp/42420 udp/42420    │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
-│                            │ udp/19132 → 10.47.11.116:19132                  │
+│   ▢ vsdata 40GB (external) │ 10.47.11.3:tcp/25565 → 10.47.11.3:25565         │
+│   ⇄ 10.47.11.3: tcp/42420… │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
+│                            │ 10.47.11.3:udp/19132 → 10.47.11.3:19132         │
 │ Host                       │   minecraft-flk / mellow-aurora-7882 172.30.0.… │
-│   health ✔                 │ tcp/42420 → 10.47.11.116:42420                  │
+│   health ✔                 │ 10.47.11.3:tcp/42420 → 10.47.11.3:42420         │
 │                            │   vintagestory-flk / frosty-river-2714 172.30.… │
-│ Storage                    │ udp/42420 → 10.47.11.116:42420                  │
+│ Storage                    │ 10.47.11.3:udp/42420 → 10.47.11.3:42420         │
 │   / 20%                    │   vintagestory-flk / frosty-river-2714 172.30.… │
+│   /data/minecraft 66%      │                                                 │
+│   /data/vintagestory 56%   │                                                 │
+│                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an         │
-│   interrupted build?): buildah rm f7cd17e4bfbc                               │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
+│ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : co… │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H gui… │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -1,7 +1,4 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
-│ Apps                       │ minecraft-flk                                   │
-│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
-│ ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────┐ │
+┌ ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────┐ ┐
 │ │ d  deploy         build the image and roll machines to a new release     │ │
 │ │ c  scale          set the number of machines                             │ │
 │ │ u  resume         nothing to resume                                      │ │
@@ -13,12 +10,15 @@
 │ │ b  back up        copy all of minecraft-flk's volumes to the backup dir… │ │
 │ │ l  logs           follow all its machines' console output                │ │
 │ │ D  destroy app    delete the app, its machines, releases and volumes     │ │
+│ │ 1  who            who's online (RCON)                                    │ │
+│ │ 2  say            broadcast a message to the players (RCON)              │ │
+│ │ 3  save           write the world to disk now and wait until it's saved  │ │
+│ │ 4  backup         the nightly backup, now: live (no restart, ~50s), che… │ │
+│ │ 5  backup-check   preflight only: mounts, flk, lock, status; makes no b… │ │
+│ │ 6  whitelist      let a player in: type their name (RCON)                │ │
 │ │                                                                          │ │
 ├ │ build the image and roll machines to a new release                       │─┤
 │ │ $ flk -a minecraft-flk deploy                                            │ │
-│ ├──────────────────────────────────────────────────────────────────────────┤ │
+├─├──────────────────────────────────────────────────────────────────────────┤─┤
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
-│ └──────────────────────────────────────────────────────────────────────────┘ │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q … │
-└──────────────────────────────────────────────────────────────────────────────┘
+└─└──────────────────────────────────────────────────────────────────────────┘─┘

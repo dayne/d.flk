@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk / mellow-aurora-7882 ─  Overview  Logs  Record                                                        │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk machine status 225d58f615e7e6                                                                │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ {                                                                                                                   │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ {                                                                                                                   │
 │ ▾ vintagestory-flk  1/1 ●              │   "id": "225d58f615e7e6",                                                                                           │
 │   ● frosty-river-2714                  │   "name": "mellow-aurora-7882",                                                                                     │
 │   ▢ vsdata 40GB (external)             │   "app": "minecraft-flk",                                                                                           │
-│   ⇄ tcp/42420 udp/42420                │   "tap_index": 0,                                                                                                   │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │   "tap_index": 0,                                                                                                   │
 │                                        │   "ip": "172.30.0.10",                                                                                              │
 │ Host                                   │   "mac": "06:00:ac:1e:00:0a",                                                                                       │
 │   health ✔                             │   "release": 8,                                                                                                     │
@@ -18,31 +18,31 @@
 │   /data/vintagestory 56%               │       "TZ": "America/Anchorage",                                                                                    │
 │                                        │       "MC_HEAP": "8G",                                                                                              │
 │ Podman                                 │       "RESTART_DELAY": "10",                                                                                        │
-│   ▢ ruby-working-container (build)     │       "MAX_RESTARTS": "5",                                                                                          │
-│   ▢ 4b61b6598784-working-container (b… │       "RESTART_WINDOW": "600",                                                                                      │
-│   ◇ 4b61b6598784 (untagged) 69M        │       "STOP_TIMEOUT": "100",                                                                                        │
-│   ◇ itzg/minecraft-server:latest 868M  │       "DISCORD_NAME": "Minecraft",                                                                                  │
-│   ◇ dotnet/runtime:10.0 197M           │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
-│   ◇ eclipse-temurin:25-jre 341M        │     },                                                                                                              │
-│   ◇ ruby:3.3-alpine 69M                │     "mount_specs": [                                                                                                │
-│   ◇ alpine:3.20 7.7M                   │       {                                                                                                             │
-│   3 flk images: host Images tab        │         "source": "world",                                                                                          │
-│                                        │         "destination": "/server"                                                                                    │
-│ Services                               │       }                                                                                                             │
-│   ● flk-net                            │     ],                                                                                                              │
-│   ● flk-machines                       │     "internal_port": 25565,                                                                                         │
-│   ● ssh                                │     "ports": [                                                                                                      │
-│   ● snap.mosquitto.mosquitto           │       {                                                                                                             │
-│   ● chrony                             │         "proto": "tcp",                                                                                             │
+│   ◇ itzg/minecraft-server:latest 868M  │       "MAX_RESTARTS": "5",                                                                                          │
+│   ◇ dotnet/runtime:10.0 197M           │       "RESTART_WINDOW": "600",                                                                                      │
+│   ◇ eclipse-temurin:25-jre 341M        │       "STOP_TIMEOUT": "100",                                                                                        │
+│   ◇ ruby:3.3-alpine 69M                │       "DISCORD_NAME": "Minecraft",                                                                                  │
+│   ◇ alpine:3.20 7.7M                   │       "DISCORD_PLAYER_EVENTS": "1"                                                                                  │
+│   3 flk images: host Images tab        │     },                                                                                                              │
+│                                        │     "mount_specs": [                                                                                                │
+│ Services                               │       {                                                                                                             │
+│   ● flk-net                            │         "source": "world",                                                                                          │
+│   ● flk-machines                       │         "destination": "/server"                                                                                    │
+│   ● ssh                                │       }                                                                                                             │
+│   ● snap.mosquitto.mosquitto           │     ],                                                                                                              │
+│   ● chrony                             │     "internal_port": 25565,                                                                                         │
+│                                        │     "ports": [                                                                                                      │
+│                                        │       {                                                                                                             │
+│                                        │         "proto": "tcp",                                                                                             │
 │                                        │         "port": 25565,                                                                                              │
 │                                        │         "internal_port": 25565                                                                                      │
 │                                        │       },                                                                                                            │
 │                                        │       {                                                                                                             │
 │                                        │         "proto": "udp",                                                                                             │
-│                                        │ … 25 more (pgdn)                                                                                                    │
+│                                        │         "port": 19132,                                                                                              │
+│                                        │ … 24 more (pgdn)                                                                                                    │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                 │
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

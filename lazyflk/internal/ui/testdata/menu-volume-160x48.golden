@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk / volume world ─  Overview  Backups                                                                   │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ name      world                                                                                                     │
 │   ▢ world 40GB (external)              │ id        vol_28392490d0d4d4c7                                                                                      │
-│   ⇄ tcp/25565 udp/19132                │ size      40GB                                                                                                      │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ size      40GB                                                                                                      │
 │ ▾ vintagestory-flk  1/1 ●              │ path      /data/minecraft/flk/world.ext4                                                                            │
 │   ● frosty-river-2714                  │           external: outside flk's state dir                                                                         │
 │   ▢ vsdata 40GB (external)             │ attached  mellow-aurora-7882 (225d58f615e7e6)                                                                       │
-│   ⇄ tcp/42420 udp/42420                │ created   2026-10-12 05:01Z                                                                                         │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ created   2026-10-12 05:01Z                                                                                         │
 │                                        │                                                                                                                     │
 │ Host                                   │                                                                                                                     │
 │   health ✔                             │                                                                                                                     │
@@ -18,19 +18,16 @@
 │   /data/vintagestory 56%            ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────────────┐                                     │
 │                                     │ b  back up            copy world to the backup dir, then prune old copies        │                                     │
 │ Podman                              │ t  restore            machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
-│   ▢ ruby-working-container (build)  │ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
-│   ▢ 4b61b6598784-working-container (│ D  unregister         attached to machine 225d58f615e7e6: destroy that machine … │                                     │
-│   ◇ 4b61b6598784 (untagged) 69M     │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that machine … │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ n  new volume         create a volume for [[mounts]] source = NAME               │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │                                                                                  │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ copy world to the backup dir, then prune old copies                              │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ $ flk -a minecraft-flk volumes backup world                                      │                                     │
-│   ◇ alpine:3.20 7.7M                ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│   3 flk images: host Images tab     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
-│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│ Services                               │                                                                                                                     │
-│   ● flk-net                            │                                                                                                                     │
-│   ● flk-machines                       │                                                                                                                     │
+│   ◇ itzg/minecraft-server:latest 868│ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is using it: … │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ D  unregister         attached to machine 225d58f615e7e6: destroy that machine … │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that machine … │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ n  new volume         create a volume for [[mounts]] source = NAME               │                                     │
+│   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
+│   3 flk images: host Images tab     │ copy world to the backup dir, then prune old copies                              │                                     │
+│                                     │ $ flk -a minecraft-flk volumes backup world                                      │                                     │
+│ Services                            ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● flk-net                         │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│   ● flk-machines                    └──────────────────────────────────────────────────────────────────────────────────┘                                     │
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                              │
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

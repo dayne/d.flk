@@ -53,7 +53,7 @@
                      "size": 107374182400,
                      "fstype": "ext4",
                      "fssize": 105089261568,
-                     "fsavail": 80183078912,
+                     "fsavail": 80150679552,
                      "mountpoints": [
                          "/"
                      ],

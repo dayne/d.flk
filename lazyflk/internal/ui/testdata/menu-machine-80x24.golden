@@ -1,24 +1,24 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ minecraft-flk / mellow-aurora-7882              │
-│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
-│   ● mellow-aurora-7882     │                                                 │
-│   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
 │ ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────┐ │
-│ │ s  start        already running                                          │ │
-│ │ S  stop         stop gracefully; it stays stopped, also after reboots    │ │
-│ │ r  restart      stop, then boot                                          │ │
-│ │ l  logs         follow its console output                                │ │
-│ │ c  console      attach to its serial console (detach: Ctrl-b d)          │ │
-│ │ >  send a line  type one line into the app's stdin and watch the log an… │ │
-│ │ R  record       flk machine status: its record and state                 │ │
+│ │ s  start         already running                                         │ │
+│ │ S  stop          stop gracefully; it stays stopped, also after reboots   │ │
+│ │ r  restart       stop, then boot                                         │ │
+│ │ l  logs          follow its console output                               │ │
+│ │ c  console       attach to its serial console (detach: Ctrl-b d)         │ │
+│ │ >  send a line   type one line into the app's stdin and watch the log a… │ │
+│ │ R  record        flk machine status: its record and state                │ │
+│ │ 1  who           who's online (RCON)                                     │ │
+│ │ 2  say           broadcast a message to the players (RCON)               │ │
+│ │ 3  save          write the world to disk now and wait until it's saved   │ │
+│ │ 4  backup        the nightly backup, now: live (no restart, ~50s), chec… │ │
+│ │ 5  backup-check  preflight only: mounts, flk, lock, status; makes no ba… │ │
+│ │ 6  whitelist     let a player in: type their name (RCON)                 │ │
 │ │                                                                          │ │
 │ │ boot it                                                                  │ │
 │ │ not now: already running                                                 │ │
 ├ ├──────────────────────────────────────────────────────────────────────────┤─┤
 │ │ ↑↓ enter choose (or press its key)  esc close                            │ │
-│ └──────────────────────────────────────────────────────────────────────────┘ │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
-├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  s stop  l logs  a attention  ? help  q qu… │
+├─└──────────────────────────────────────────────────────────────────────────┘─┤
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  : command… │
 └──────────────────────────────────────────────────────────────────────────────┘

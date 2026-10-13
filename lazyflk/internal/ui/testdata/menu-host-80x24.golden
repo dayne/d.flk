@@ -1,9 +1,9 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot s…  demo ┐
 │ Apps                       │ Host ─  Health  Services  Ports  Disk  Images   │
 │ ▾ minecraft-flk  1/1 ●     │                                                 │
 │   ● mellow-aurora-7882     │ $ flk doctor --json                             │
 │   ▢ world 40GB (external)  │                                                 │
-│   ⇄ tcp/25565 udp/19132    │ flk       0.1.0                                 │
+│   ⇄ 10.47.11.3: tcp/25565… │ flk       0.1.0                                 │
 │ ┌ host ─ actions ──────────────────────────────────────────────────────────┐ │
 │ │ u  resume all    nothing to resume                                       │ │
 │ │ S  stop all      stop every running machine, remembering to resume them  │ │
@@ -14,11 +14,11 @@
 │ │ start every machine that should be running                               │ │
 │ │ not now: nothing to resume                                               │ │
 │ ├──────────────────────────────────────────────────────────────────────────┤ │
-├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
+│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
 │ └──────────────────────────────────────────────────────────────────────────┘ │
-│   interrupted build?): buildah rm f7cd17e4bfbc                               │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an │
-│   interrupted build?): buildah rm 58883446ce9b                               │
+│                            │ … 14 more (pgdn)                                │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  L cmd log  ? help  q… │
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : comm… │
 └──────────────────────────────────────────────────────────────────────────────┘

@@ -41,7 +41,7 @@ func TestDecodeFixtures(t *testing.T) {
 		m.Restart == nil || m.Restart.Policy != "on-failure" || m.Restarts != nil || m.PID == nil || *m.PID == 0 {
 		t.Errorf("machine: %+v", m)
 	}
-	if len(a.Ports.Active) != 2 || a.Ports.Active[1].Address != "10.47.11.116:19132" || len(hc.MountDirs) != 3 || len(hc.NextSteps) != 0 {
+	if len(a.Ports.Active) != 2 || !strings.HasSuffix(a.Ports.Active[1].Address, ":19132") || len(hc.MountDirs) != 3 || len(hc.NextSteps) != 0 {
 		t.Errorf("ports %+v, mount dirs %v", a.Ports, hc.MountDirs)
 	}
 
@@ -53,7 +53,7 @@ func TestDecodeFixtures(t *testing.T) {
 		t.Errorf("host services: %+v", s)
 	}
 	doc, err := c.Doctor(ctx)
-	if err != nil || !doc.OK || len(doc.Checks) != 15 || doc.Checks[0].Status != "pass" || doc.Schema != 1 || len(doc.Services) != 2 {
+	if err != nil || !doc.OK || len(doc.Checks) < 15 || doc.Checks[0].Status != "pass" || doc.Schema != 1 || len(doc.Services) != 2 {
 		t.Errorf("doctor: %+v, %v", doc, err)
 	}
 

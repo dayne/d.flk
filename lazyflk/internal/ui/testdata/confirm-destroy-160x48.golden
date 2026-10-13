@@ -1,14 +1,14 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
-│   ● frosty-river-2714                  │   cpu 4% · 2983MB used · up 59m                                                                                     │
+│   ● frosty-river-2714                  │   cpu 2% · 3007MB used · up 1h 49m                                                                                  │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
-│   ⇄ tcp/42420 udp/42420                │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
-│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                      │
+│                                        │        10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                      │
 │ Host                                   │ volume world 40GB (external)                                                                                        │
 │   health ✔                             │   /data/minecraft/flk/world.ext4                                                                                    │
 │                                        │                                                                                                                     │
@@ -18,18 +18,15 @@
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                              ┌ destroy app ─ minecraft-flk ─────────────────────────────────────────────────────┐                                     │
-│   ▢ ruby-working-container (build)  │ $ flk apps destroy minecraft-flk --yes                                           │                                     │
-│   ▢ 4b61b6598784-working-container (│                                                                                  │                                     │
-│   ◇ 4b61b6598784 (untagged) 69M     │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External volume     │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ files are kept. This can't be undone.                                            │                                     │
+│   ◇ itzg/minecraft-server:latest 868│ $ flk apps destroy minecraft-flk --yes                                           │                                     │
 │   ◇ dotnet/runtime:10.0 197M        │                                                                                  │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ Type minecraft-flk to confirm: min▏                                              │                                     │
-│   ◇ ruby:3.3-alpine 69M             ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│   ◇ alpine:3.20 7.7M                │ enter run (once it matches)  esc cancel                                          │                                     │
-│   3 flk images: host Images tab     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│                                        │                                                                                                                     │
-│ Services                               │                                                                                                                     │
-│   ● flk-net                            │                                                                                                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External volume     │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ files are kept. This can't be undone.                                            │                                     │
+│   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
+│   3 flk images: host Images tab     │ Type minecraft-flk to confirm: min▏                                              │                                     │
+│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│ Services                            │ enter run (once it matches)  esc cancel                                          │                                     │
+│   ● flk-net                         └──────────────────────────────────────────────────────────────────────────────────┘                                     │
 │   ● flk-machines                       │                                                                                                                     │
 │   ● ssh                                │                                                                                                                     │
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                    │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                 │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

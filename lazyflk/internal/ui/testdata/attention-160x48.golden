@@ -1,14 +1,14 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  0/1 ○ !               │                                                                                                                     │
 │   ! mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ! stopped, should be started 172.30.0.10                                                     │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ machine 225d58f615e7e6 ! stopped, should be started 172.30.0.10                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
-│   ● frosty-river-2714                  │   cpu 4% · 2983MB used · up 59m                                                                                     │
+│   ● frosty-river-2714                  │   cpu 2% · 3007MB used · up 1h 49m                                                                                  │
 │   ▢ vsdata 40GB (external)             │                                                                                                                     │
-│   ⇄ tcp/42420 udp/42420                │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
-│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ ports  10.47.11.3:tcp/25565 → 10.47.11.3:25565                                                                      │
+│                                        │        10.47.11.3:udp/19132 → 10.47.11.3:19132                                                                      │
 │ Host                                   │ volume world 40GB (external)                                                                                        │
 │   health ✔                             │   /data/minecraft/flk/world.ext4                                                                                    │
 │                                        │                                                                                                                     │
@@ -18,9 +18,6 @@
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
-│   ▢ ruby-working-container (build)     │                                                                                                                     │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
@@ -35,14 +32,17 @@
 │   ● snap.mosquitto.mosquitto           │                                                                                                                     │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ … 1 above                                                                                                                                                    │
 │ › minecraft-flk: machine 225d58f615e7e6 [mellow-aurora-7882] should be running but isn't (it exited, or the host restarted); see why: flk logs -i            │
 │   225d58f615e7e6 --no-tail; bring it back: flk resume                                                                                                        │
 │   → enter: fix: flk -a minecraft-flk resume                                                                                                                  │
 │ ! minecraft-flk: host port tcp/25565 is held by another machine; this one gets it when that stops                                                            │
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │ ↑↓ move  enter fix  esc back                                                                                                                                 │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

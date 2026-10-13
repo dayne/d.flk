@@ -113,7 +113,7 @@ func TestBoundPorts(t *testing.T) {
 	})
 	goTo(m, kindMachine)
 	s := screen(m)
-	for _, want := range []string{"10.47.11.3:tcp/25565", "tcp/25565 → 10.47.11.3:25565, 10.47.11.4:25565", "address 10.47.11.3 (LAN 10.47.11.116)"} {
+	for _, want := range []string{"10.47.11.3: tcp/25565 udp/19132", "tcp/25565 → 10.47.11.3:25565, 10.47.11.4:25565", "address 10.47.11.3 (LAN 10.47.11.116)"} {
 		if !strings.Contains(s, want) {
 			t.Errorf("missing %q:\n%s", want, s)
 		}

@@ -52,10 +52,27 @@ func TestPodman(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := items[0]
-	if b.Label != "▢ ruby-working-container (build)" || b.State != Warn || len(b.Problems) != 1 || b.Fix == nil ||
-		b.Fix.Command(nil).Line() != "buildah rm f7cd17e4bfbc" || b.Fix.Confirm != actions.Type {
-		t.Errorf("build container: %+v", b)
+	// the fixture's leftover build container (podman-ps.json, State storage)
+	var cs []podmanContainer
+	raw, _ := fixtures.FS.ReadFile("podman-ps.json")
+	json.Unmarshal(raw, &cs)
+	var bc *podmanContainer
+	for i := range cs {
+		if cs[i].State == "storage" {
+			bc = &cs[i]
+		}
+	}
+	if bc != nil && time.Since(time.Unix(bc.Created, 0)) > time.Hour { // an old one is flagged
+		var b Item
+		for _, it := range items {
+			if it.Key == "podman/c/"+bc.ID {
+				b = it
+			}
+		}
+		if b.Label != "▢ "+bc.Names[0]+" (build)" || b.State != Warn || len(b.Problems) != 1 || b.Fix == nil ||
+			b.Fix.Command(nil).Line() != "buildah rm "+bc.ID[:12] || b.Fix.Confirm != actions.Type || b.Fix.TypeName != bc.Names[0] {
+			t.Errorf("build container: %+v", b)
+		}
 	}
 	var names []string
 	for _, it := range items {
@@ -80,9 +97,16 @@ func TestPodmanTestContainer(t *testing.T) {
 	}
 	it = containerItem(podmanContainer{ID: "0123456789abcdef", Names: []string{"web"}, State: "exited"}, now, false)
 	// with buildah, a build container goes the owner's way
-	b := containerItem(podmanContainer{ID: "f7cd17e4bfbcde38", Names: []string{"ruby-working-container"}, State: "storage"}, now, true)
+	b := containerItem(podmanContainer{ID: "f7cd17e4bfbcde38", Names: []string{"ruby-working-container"}, State: "storage",
+		Created: now.Add(-2 * time.Hour).Unix()}, now, true)
 	if b.Fix == nil || b.Fix.Command(nil).Line() != "buildah rm f7cd17e4bfbc" {
 		t.Errorf("buildah: %+v", b.Fix)
+	}
+	// a build that's running now has one too: not a problem
+	b = containerItem(podmanContainer{ID: "f7cd17e4bfbcde38", Names: []string{"ruby-working-container"}, State: "storage",
+		Created: now.Add(-5 * time.Minute).Unix()}, now, true)
+	if b.State != Off || len(b.Problems) != 0 || b.Fix != nil || b.Label != "▢ ruby-working-container (building)" {
+		t.Errorf("fresh build container: %+v", b)
 	}
 	if it.State != Off || it.Actions[0].Label != "remove" || it.Actions[0].TypeName != "web" {
 		t.Errorf("exited: %+v", it)

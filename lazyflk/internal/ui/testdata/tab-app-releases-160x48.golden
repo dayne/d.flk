@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk -a minecraft-flk releases --json                                                                              │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ v8   2026-10-12 07:08Z  Dockerfile  current                                                                         │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ v8   2026-10-12 07:08Z  Dockerfile  current                                                                         │
 │ ▾ vintagestory-flk  1/1 ●              │      running on mellow-aurora-7882                                                                                  │
 │   ● frosty-river-2714                  │ v7   2026-10-12 06:58Z  Dockerfile                                                                                  │
 │   ▢ vsdata 40GB (external)             │ v6   2026-10-12 06:41Z  Dockerfile                                                                                  │
-│   ⇄ tcp/42420 udp/42420                │ v5   2026-10-12 06:34Z  Dockerfile                                                                                  │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ v5   2026-10-12 06:34Z  Dockerfile                                                                                  │
 │                                        │ v4   2026-10-12 05:35Z  Dockerfile                                                                                  │
 │ Host                                   │ v3   2026-10-12 05:30Z  Dockerfile                                                                                  │
 │   health ✔                             │ v2   2026-10-12 05:20Z  Dockerfile                                                                                  │
@@ -18,9 +18,6 @@
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │                                                                                                                     │
 │ Podman                                 │                                                                                                                     │
-│   ▢ ruby-working-container (build)     │                                                                                                                     │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │                                                                                                                     │
 │   ◇ itzg/minecraft-server:latest 868M  │                                                                                                                     │
 │   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
 │   ◇ eclipse-temurin:25-jre 341M        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                               │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                            │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ Host ─  Health  Services  Ports  Disk  Images                                                                       │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ df -k --output=target,size,used,avail,pcent /home/dayne/.local/share/flk /data/minecraft/flk                      │
 │   ▢ world 40GB (external)              │   /data/vintagestory/flk                                                                                            │
-│   ⇄ tcp/25565 udp/19132                │                                                                                                                     │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │                                                                                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │  20% ██░░░░░░░░ /                                                                                                   │
 │   ● frosty-river-2714                  │      75G free of 98G                                                                                                │
 │   ▢ vsdata 40GB (external)             │      holds /home/dayne/.local/share/flk                                                                             │
-│   ⇄ tcp/42420 udp/42420                │                                                                                                                     │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │                                                                                                                     │
 │                                        │  66% ██████░░░░ /data/minecraft                                                                                     │
 │ Host                                   │      32G free of 98G                                                                                                │
 │   health ✔                             │      holds /data/minecraft/flk                                                                                      │
@@ -18,21 +18,18 @@
 │   /data/vintagestory 56%               │                                                                                                                     │
 │                                        │ $ flk disk --json                                                                                                   │
 │ Podman                                 │ What flk uses  (allocated; sparse files count what's written)                                                       │
-│   ▢ ruby-working-container (build)     │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
-│   ▢ 4b61b6598784-working-container (b… │                                                                                                                     │
-│   ◇ 4b61b6598784 (untagged) 69M        │ app                images   rootfs  volumes     logs external                                                       │
-│   ◇ itzg/minecraft-server:latest 868M  │ minecraft-flk        736M     373M        -     572K      21G                                                       │
-│   ◇ dotnet/runtime:10.0 197M           │ vintagestory-flk     1.1G     544M        -     636K     8.1G                                                       │
-│   ◇ eclipse-temurin:25-jre 341M        │ all                  1.8G     917M        -     1.2M      29G                                                       │
-│   ◇ ruby:3.3-alpine 69M                │                                                                                                                     │
-│   ◇ alpine:3.20 7.7M                   │ backups   76G in /data/flk-backups                                                                                  │
-│   3 flk images: host Images tab        │           minecraft-flk    61G                                                                                      │
-│                                        │           vintagestory-flk 15G                                                                                      │
-│ Services                               │                                                                                                                     │
-│   ● flk-net                            │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
-│   ● flk-machines                       │                                                                                                                     │
+│   ◇ itzg/minecraft-server:latest 868M  │ state     2.8G in /home/dayne/.local/share/flk                                                                      │
+│   ◇ dotnet/runtime:10.0 197M           │                                                                                                                     │
+│   ◇ eclipse-temurin:25-jre 341M        │ app                images   rootfs  volumes     logs external                                                       │
+│   ◇ ruby:3.3-alpine 69M                │ minecraft-flk        736M     373M        -     572K      21G                                                       │
+│   ◇ alpine:3.20 7.7M                   │ vintagestory-flk     1.1G     544M        -     644K     8.1G                                                       │
+│   3 flk images: host Images tab        │ all                  1.8G     917M        -     1.2M      29G                                                       │
+│                                        │                                                                                                                     │
+│ Services                               │ backups   76G in /data/flk-backups                                                                                  │
+│   ● flk-net                            │           minecraft-flk    61G                                                                                      │
+│   ● flk-machines                       │           vintagestory-flk 15G                                                                                      │
 │   ● ssh                                │                                                                                                                     │
-│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ● snap.mosquitto.mosquitto           │ images: release rootfs · rootfs: each machine's copy · external: volumes outside the state dir                      │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                         │
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                                      │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

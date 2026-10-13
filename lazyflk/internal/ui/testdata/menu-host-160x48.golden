@@ -1,13 +1,13 @@
-┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+┌ lazyflk ─ host ready · address 10.47.11.3 (LAN 10.47.11.116) · boot service ok ──────────────────────────────────────────────────────────────────────── demo ┐
 │ Apps                                   │ Host ─  Health  Services  Ports  Disk  Images                                                                       │
 │ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
 │   ● mellow-aurora-7882                 │ $ flk doctor --json                                                                                                 │
 │   ▢ world 40GB (external)              │                                                                                                                     │
-│   ⇄ tcp/25565 udp/19132                │ flk       0.1.0                                                                                                     │
+│   ⇄ 10.47.11.3: tcp/25565 udp/19132    │ flk       0.1.0                                                                                                     │
 │ ▾ vintagestory-flk  1/1 ●              │ state     /home/dayne/.local/share/flk                                                                              │
 │   ● frosty-river-2714                  │ source    /home/dayne/flk                                                                                           │
 │   ▢ vsdata 40GB (external)             │ LAN IP    10.47.11.116                                                                                              │
-│   ⇄ tcp/42420 udp/42420                │ address   10.47.11.116 (advertised; host.toml address)                                                              │
+│   ⇄ 10.47.11.3: tcp/42420 udp/42420    │ address   10.47.11.3 (advertised; host.toml address)                                                                │
 │                                        │ boot      installed                                                                                                 │
 │ Host                                   │ health    ✔ ready                                                                                                   │
 │   health ✔                             │ data dirs /home/dayne/.local/share/flk                                                                              │
@@ -18,21 +18,18 @@
 │   /data/vintagestory 56%               │ ✔ firecracker /home/dayne/.local/share/flk/bin/firecracker                                                          │
 │                                     ┌ host ─ actions ──────────────────────────────────────────────────────────────────┐                                     │
 │ Podman                              │ u  resume all    nothing to resume                                               │                                     │
-│   ▢ ruby-working-container (build)  │ S  stop all      stop every running machine, remembering to resume them          │                                     │
-│   ▢ 4b61b6598784-working-container (│ p  sync ports    rewrite the host's port map from the running machines           │                                     │
-│   ◇ 4b61b6598784 (untagged) 69M     │ P  prune images  remove container images of apps that no longer exist            │                                     │
-│   ◇ itzg/minecraft-server:latest 868│ h  health        flk doctor: every host check                                    │                                     │
-│   ◇ dotnet/runtime:10.0 197M        │                                                                                  │                                     │
-│   ◇ eclipse-temurin:25-jre 341M     │ start every machine that should be running                                       │                                     │
-│   ◇ ruby:3.3-alpine 69M             │ not now: nothing to resume                                                       │                                     │
-│   ◇ alpine:3.20 7.7M                ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
-│   3 flk images: host Images tab     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
-│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
-│ Services                               │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
-│   ● flk-net                            │                                                                                                                     │
-│   ● flk-machines                       │                                                                                                                     │
-│   ● ssh                                │                                                                                                                     │
-│   ● snap.mosquitto.mosquitto           │                                                                                                                     │
+│   ◇ itzg/minecraft-server:latest 868│ S  stop all      stop every running machine, remembering to resume them          │                                     │
+│   ◇ dotnet/runtime:10.0 197M        │ p  sync ports    rewrite the host's port map from the running machines           │                                     │
+│   ◇ eclipse-temurin:25-jre 341M     │ P  prune images  remove container images of apps that no longer exist            │                                     │
+│   ◇ ruby:3.3-alpine 69M             │ h  health        flk doctor: every host check                                    │                                     │
+│   ◇ alpine:3.20 7.7M                │                                                                                  │                                     │
+│   3 flk images: host Images tab     │ start every machine that should be running                                       │                                     │
+│                                     │ not now: nothing to resume                                                       │                                     │
+│ Services                            ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│   ● flk-net                         │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│   ● flk-machines                    └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│   ● ssh                                │ ✔ backups go to /data/flk-backups (296.1GB free)                                                                    │
+│   ● snap.mosquitto.mosquitto           │ ✔ 10.47.11.3 (address in /home/dayne/.config/flk/host.toml) is on this host                                         │
 │   ● chrony                             │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
@@ -40,9 +37,12 @@
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
 │                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
 ├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ! podman: build container ruby-working-container was left behind (an interrupted build?): buildah rm f7cd17e4bfbc                                            │
-│ ! podman: build container 4b61b6598784-working-container was left behind (an interrupted build?): buildah rm 58883446ce9b                                    │
+│ ✔ nothing needs attention                                                                                                                                    │
 ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  tab tabs  enter actions  l logs  a attention  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                              │
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  : commands  H guides  ←→ fold  pgup/dn scroll                                           │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
