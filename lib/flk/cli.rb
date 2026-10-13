@@ -2221,8 +2221,12 @@ module Flk
     end
 
     def fs_type(path)
-      out, st = Open3.capture2("stat", "-f", "-c", "%T", File.directory?(path) ? path : File.dirname(path))
+      dir = File.directory?(path) ? path : File.dirname(path)
+      out, st = Open3.capture2("findmnt", "-n", "-o", "FSTYPE", "--target", dir)
+      out, st = Open3.capture2("stat", "-f", "-c", "%T", dir) unless st.success? && !out.strip.empty?
       st.success? ? out.strip : nil
+    rescue SystemCallError
+      nil
     end
 
     def volumes_extend(args, o)
