@@ -14,9 +14,13 @@ import (
 // command with no fixture fails the way flk does, with an "Error:" message.
 type Fake struct {
 	FS fs.FS
+	// Fail, if set, decides whether an action (a streamed command with no
+	// fixture) fails, and how.
+	Fail func(args []string) error
 
-	mu    sync.Mutex
-	calls [][]string
+	mu     sync.Mutex
+	calls  [][]string
+	stdins []string
 }
 
 func NewFake(fsys fs.FS) *Fake { return &Fake{FS: fsys} }
@@ -26,6 +30,13 @@ func (f *Fake) Calls() [][]string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return append([][]string(nil), f.calls...)
+}
+
+// Stdins returns the stdin given to each streamed command so far.
+func (f *Fake) Stdins() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.stdins...)
 }
 
 func (f *Fake) record(args []string) {
@@ -83,6 +94,8 @@ func fixtureFor(args []string) (string, bool) {
 		return "volumes-" + app + ".json", true
 	case cmd == "secrets list --json":
 		return "secrets-" + app + ".json", true
+	case cmd == "volumes backups --json":
+		return "backups-" + app + ".json", true
 	case cmd == "config show":
 		return "config-" + app + ".json", true
 	case len(args) == 3 && args[0] == "machine" && args[1] == "status":

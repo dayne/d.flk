@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk / mellow-aurora-7882              │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
+│   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │
+│                            │ state     ● started                             │
+│ ┌ stop ─ minecraft-flk / mellow-aurora-7882 ───────────────────────────────┐ │
+│ │ $ flk -a minecraft-flk machine stop 225d58f615e7e6                       │ │
+│ │                                                                          │ │
+│ │ 225d58f615e7e6 [mellow-aurora-7882] stops (SIGTERM to the app, killed    │ │
+│ │ after its kill_timeout).                                                 │ │
+│ │                                                                          │ │
+│ │ Run it?                                                                  │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+│ │ y run  n esc cancel                                                      │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                            │                                                 │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  ←→ fold  … │
+└──────────────────────────────────────────────────────────────────────────────┘

@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
+│ ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────┐ │
+│ │ d  deploy         build the image and roll machines to a new release     │ │
+│ │ c  scale          set the number of machines                             │ │
+│ │ u  resume         nothing to resume                                      │ │
+│ │ S  stop all       stop its running machines; resume brings them back     │ │
+│ │ e  set secret     set a secret; the value goes to flk on stdin, never o… │ │
+│ │ U  unset secret   no secrets                                             │ │
+│ │ n  new volume     create a volume for [[mounts]] source = NAME           │ │
+│ │ i  import volume  register an existing ext4 image; flk never deletes it  │ │
+│ │ b  back up        copy all of minecraft-flk's volumes to the backup dir… │ │
+│ │ l  logs           follow all its machines' console output                │ │
+│ │ D  destroy app    delete the app, its machines, releases and volumes     │ │
+│ │                                                                          │ │
+│ │ build the image and roll machines to a new release                       │ │
+│ │ $ flk -a minecraft-flk deploy                                            │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+├ │ ↑↓ enter choose (or press its key)  esc close                            │─┤
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  ←→ fold… │
+└──────────────────────────────────────────────────────────────────────────────┘

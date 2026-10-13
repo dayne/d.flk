@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk                                   │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Ports  Volumes  Releases ›     │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ release v8 (8 kept) · 2026-10-12 07:08Z         │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ machine 225d58f615e7e6 ● started 172.30.0.10    │
+│ ┌ destroy app ─ minecraft-flk ─────────────────────────────────────────────┐ │
+│ │ $ flk apps destroy minecraft-flk --yes                                   │ │
+│ │                                                                          │ │
+│ │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External    │ │
+│ │ volume files are kept. This can't be undone.                             │ │
+│ │                                                                          │ │
+│ │ Type minecraft-flk to confirm: min▏                                      │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+│ │ enter run (once it matches)  esc cancel                                  │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                            │                                                 │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  L cmd log  ? help  q qu… │
+└──────────────────────────────────────────────────────────────────────────────┘

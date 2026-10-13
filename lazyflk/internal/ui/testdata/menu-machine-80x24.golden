@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk / mellow-aurora-7882              │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Logs  Record                         │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ id        225d58f615e7e6                        │
+│   ⇄ tcp/25565 udp/19132    │ name      mellow-aurora-7882                    │
+│ ┌ minecraft-flk / mellow-aurora-7882 ─ actions ────────────────────────────┐ │
+│ │ s  start    already running                                              │ │
+│ │ S  stop     stop gracefully; it stays stopped, also after reboots        │ │
+│ │ r  restart  stop, then boot                                              │ │
+│ │ l  logs     follow its console output                                    │ │
+│ │ R  record   flk machine status: its record and state                     │ │
+│ │                                                                          │ │
+│ │ boot it                                                                  │ │
+│ │ not now: already running                                                 │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  s stop  l logs  ? help  q quit  ←→ fold  … │
+└──────────────────────────────────────────────────────────────────────────────┘

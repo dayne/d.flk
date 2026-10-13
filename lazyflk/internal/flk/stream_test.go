@@ -107,3 +107,66 @@ exit 0
 		t.Errorf("stop: %v after %v", s.Err(), time.Since(start))
 	}
 }
+
+// Actions get stdin; Interrupt is Ctrl-C for the whole process group, and
+// what the command prints while it cleans up still arrives.
+func TestExecInterrupt(t *testing.T) {
+	dir := t.TempDir()
+	script := filepath.Join(dir, "flk")
+	os.WriteFile(script, []byte(`#!/bin/sh
+read secret
+echo "got $secret"
+trap 'echo "cleaning up"; exit 130' INT
+sh -c 'trap "echo child stopped; exit 0" INT; echo ready; while :; do sleep 0.05; done'
+`), 0o755)
+	c := New(Exec{Path: script})
+	s, err := c.StreamInput(context.Background(), "hunter2\n", "deploy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for l := range s.Lines {
+		got = append(got, l.Text)
+		if l.Text == "ready" {
+			s.Interrupt()
+		}
+	}
+	want := []string{"got hunter2", "ready", "child stopped", "cleaning up"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %q", got)
+	}
+	if s.Err() == nil || !strings.Contains(s.Err().Error(), "exit status 130") {
+		t.Errorf("err %v", s.Err())
+	}
+}
+
+func TestExecRunTimeout(t *testing.T) {
+	script := filepath.Join(t.TempDir(), "flk")
+	os.WriteFile(script, []byte("#!/bin/sh\nexec sleep 10\n"), 0o755)
+	c := New(Exec{Path: script})
+	c.Timeout = 100 * time.Millisecond
+	start := time.Now()
+	_, err := c.Run(context.Background(), "context")
+	if err == nil || !strings.Contains(err.Error(), "timed out") || time.Since(start) > 3*time.Second {
+		t.Errorf("%v after %v", err, time.Since(start))
+	}
+}
+
+// In demo mode an action prints a note and runs nothing.
+func TestFakeAction(t *testing.T) {
+	c, f := fakeClient()
+	s, err := c.StreamInput(context.Background(), "v", "-a", "flkt-x", "secrets", "set", "K=-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if l := collect(t, s, 10); len(l) != 1 || !strings.Contains(l[0].Text, "demo mode") {
+		t.Errorf("got %v", l)
+	}
+	if st := f.Stdins(); len(st) != 1 || st[0] != "v" {
+		t.Errorf("stdins %q", st)
+	}
+	f.Fail = func(args []string) error { return &Error{Args: args, Stderr: "Error: nope"} }
+	if _, err := c.Stream(context.Background(), "ports", "sync"); err == nil {
+		t.Error("Fail should fail it")
+	}
+}

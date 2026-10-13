@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
+│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│ Host                                   │                                                                                                                     │
+│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│                                        │ volume world 40GB (external)                                                                                        │
+│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                     ┌ minecraft-flk ─ actions ─────────────────────────────────────────────────────────┐                                     │
+│                                     │ d  deploy         build the image and roll machines to a new release             │                                     │
+│                                     │ c  scale          set the number of machines                                     │                                     │
+│                                     │ u  resume         nothing to resume                                              │                                     │
+│                                     │ S  stop all       stop its running machines; resume brings them back             │                                     │
+│                                     │ e  set secret     set a secret; the value goes to flk on stdin, never on the co… │                                     │
+│                                     │ U  unset secret   no secrets                                                     │                                     │
+│                                     │ n  new volume     create a volume for [[mounts]] source = NAME                   │                                     │
+│                                     │ i  import volume  register an existing ext4 image; flk never deletes it          │                                     │
+│                                     │ b  back up        copy all of minecraft-flk's volumes to the backup dir, then p… │                                     │
+│                                     │ l  logs           follow all its machines' console output                        │                                     │
+│                                     │ D  destroy app    delete the app, its machines, releases and volumes             │                                     │
+│                                     │                                                                                  │                                     │
+│                                     │ build the image and roll machines to a new release                               │                                     │
+│                                     │ $ flk -a minecraft-flk deploy                                                    │                                     │
+│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│                                     │ ↑↓ enter choose (or press its key)  esc close                                    │                                     │
+│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  ←→ fold  pgup/dn scroll                                                                  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

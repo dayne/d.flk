@@ -2,23 +2,23 @@
 │ Apps                       │ minecraft-flk                                   │
 │ ▾ minecraft-flk  1/1 ●     │ ‹ Logs  Ports  Volumes  Releases  Secrets ›     │
 │   ● mellow-aurora-7882     │                                                 │
-│   ▢ world 40GB (external)  │ world 40GB (external)                           │
-│   ⇄ tcp/25565 udp/19132    │   id        vol_28392490d0d4d4c7                │
-│                            │   size      40GB                                │
-│ Host                       │   path      /data/minecraft/flk/world.ext4      │
-│   health ✔                 │             external: outside flk's state dir   │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ world 40GB (external)                           │
+│ Host                       │   id        vol_28392490d0d4d4c7                │
+│   health ✔                 │   size      40GB                                │
+│                            │   path      /data/minecraft/flk/world.ext4      │
+│                            │             external: outside flk's state dir   │
 │                            │   attached  mellow-aurora-7882 (225d58f615e7e6) │
 │                            │   created   2026-10-12 05:01Z                   │
+│                            │   backup    none yet                            │
 │                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
-│                            │                                                 │
+│                            │ enter on a volume: back up, restore, extend     │
 │                            │                                                 │
 │                            │                                                 │
 │                            │                                                 │
 ├ Needs attention ───────────┴─────────────────────────────────────────────────┤
 │ ✔ nothing needs attention                                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ ↑↓ move  ←→ fold  tab tabs  pgup/dn scroll  l logs  ? help  q quit           │
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  ? help  q quit  ←→ fold… │
 └──────────────────────────────────────────────────────────────────────────────┘

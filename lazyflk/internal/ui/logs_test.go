@@ -19,6 +19,7 @@ func TestClassifyLog(t *testing.T) {
 		kind logKind
 	}{
 		{flk.Line{Text: "[23:08] Done!\r\r"}, "[23:08] Done!", logText},
+		{flk.Line{Text: "Copying blob 10%\rCopying blob 55%\r"}, "Copying blob 55%", logText},
 		{flk.Line{Text: "\x1b[32;1mnew Geyser\x1b[0m\tok"}, "new Geyser    ok", logText},
 		{flk.Line{Text: "--- flk: booting 225d (release v8) at 2026-10-12T07:08:00Z ---"},
 			"--- flk: booting 225d (release v8) at 2026-10-12T07:08:00Z ---", logBanner},

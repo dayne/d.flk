@@ -245,3 +245,21 @@ type Option struct {
 	Switches    []string `json:"switches"`
 	Description string   `json:"description"`
 }
+
+// Backup is a row of `flk -a APP volumes backups --json`, newest first.
+type Backup struct {
+	File      string  `json:"file"`
+	Path      string  `json:"path"`
+	CreatedAt string  `json:"created_at"`
+	BytesUsed int64   `json:"bytes_used"`
+	Volume    string  `json:"volume"` // the volume's name
+	App       string  `json:"app"`
+	VolumeID  string  `json:"volume_id"`
+	SizeGB    int     `json:"size_gb"`
+	Source    string  `json:"source"`
+	Machine   string  `json:"machine"`
+	Release   int     `json:"release"`
+	Mode      string  `json:"mode"`  // stop, live, pause, offline
+	Check     string  `json:"check"` // clean, repaired, errors, unchecked
+	Seconds   float64 `json:"seconds"`
+}

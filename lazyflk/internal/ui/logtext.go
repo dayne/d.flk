@@ -28,9 +28,18 @@ type logLine struct {
 var tailHeader = regexp.MustCompile(`^==> (.*) <==$`)
 
 // cleanLog makes console output safe to draw: the serial console ends
-// lines with \r\r\n and apps print their own colors and control codes.
+// lines with \r\r\n, progress bars redraw with \r, and apps print their
+// own colors and control codes. After a \r the last text written wins,
+// as on a terminal.
 func cleanLog(s string) string {
 	s = ansi.Strip(s)
+	if strings.Contains(s, "\r") {
+		parts := strings.Split(s, "\r")
+		s = ""
+		for i := len(parts) - 1; i >= 0 && s == ""; i-- {
+			s = parts[i]
+		}
+	}
 	s = strings.ReplaceAll(s, "\t", "    ")
 	return strings.Map(func(r rune) rune {
 		if r < 0x20 || r == 0x7f {

@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  1/1 ●                 │                                                                                                                     │
+│   ● mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ● started 172.30.0.10                                                                        │
+│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│ Host                                   │                                                                                                                     │
+│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│                                        │ volume world 40GB (external)                                                                                        │
+│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                     ┌ destroy app ─ minecraft-flk ─────────────────────────────────────────────────────┐                                     │
+│                                     │ $ flk apps destroy minecraft-flk --yes                                           │                                     │
+│                                     │                                                                                  │                                     │
+│                                     │ Deletes minecraft-flk: 1 machine, 1 volume and its releases. External volume     │                                     │
+│                                     │ files are kept. This can't be undone.                                            │                                     │
+│                                     │                                                                                  │                                     │
+│                                     │ Type minecraft-flk to confirm: min▏                                              │                                     │
+│                                     ├──────────────────────────────────────────────────────────────────────────────────┤                                     │
+│                                     │ enter run (once it matches)  esc cancel                                          │                                     │
+│                                     └──────────────────────────────────────────────────────────────────────────────────┘                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                                                                                                    │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  d deploy  l logs  L cmd log  ? help  q quit  ←→ fold  pgup/dn scroll                                                       │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

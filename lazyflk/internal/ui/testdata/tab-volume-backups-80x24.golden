@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk / volume world                    │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ $ flk -a minecraft-flk volumes backups --json   │
+│   ⇄ tcp/25565 udp/19132    │                                                 │
+│                            │ no backups of world yet (enter: back up)        │
+│ Host                       │                                                 │
+│   health ✔                 │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  l logs  ? help  q quit  ←→ fold  pgup/dn … │
+└──────────────────────────────────────────────────────────────────────────────┘

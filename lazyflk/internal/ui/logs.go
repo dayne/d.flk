@@ -109,24 +109,30 @@ func (v *logsView) stop() {
 // readChunk waits for the next output and returns everything already
 // waiting with it, so a burst renders once.
 func readChunk(v *logsView, gen int, s *flk.Stream) tea.Cmd {
+	return readLines(s, func(lines []flk.Line, done bool) tea.Msg { return logChunkMsg{v, gen, lines, done} })
+}
+
+// readLines waits for a stream's next lines, taking what's buffered in one
+// go, and wraps them in a message; done means the stream has ended.
+func readLines(s *flk.Stream, msg func(lines []flk.Line, done bool) tea.Msg) tea.Cmd {
 	return func() tea.Msg {
 		l, ok := <-s.Lines
 		if !ok {
-			return logChunkMsg{v: v, gen: gen, done: true}
+			return msg(nil, true)
 		}
 		lines := []flk.Line{l}
 		for len(lines) < 2000 {
 			select {
 			case l, ok := <-s.Lines:
 				if !ok {
-					return logChunkMsg{v, gen, lines, true}
+					return msg(lines, true)
 				}
 				lines = append(lines, l)
 			default:
-				return logChunkMsg{v, gen, lines, false}
+				return msg(lines, false)
 			}
 		}
-		return logChunkMsg{v, gen, lines, false}
+		return msg(lines, false)
 	}
 }
 

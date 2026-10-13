@@ -11,7 +11,8 @@ var mainHelp = struct {
 	about: "Everything flk runs on this host. Left: apps, with their machines (● running, " +
 		"○ stopped, ! should run but doesn't), volumes (▢) and forwarded ports (⇄), " +
 		"then the host. Right: tabs for the selection. Bottom: what needs attention, " +
-		"from flk context --all. Each tab shows the flk command that fills it.",
+		"from flk context --all. Each tab shows the flk command that fills it, and every " +
+		"action shows the command it runs before running it (L lists them all).",
 	keys: []helpKey{
 		{"↑ ↓  k j", "move in the tree"},
 		{"← →", "fold or unfold an app"},
@@ -19,8 +20,13 @@ var mainHelp = struct {
 		{"1 … 9", "jump to a tab"},
 		{"pgup pgdn", "scroll the tab (also ctrl+u ctrl+d)"},
 		{"l", "follow logs: the machine, or all of the app's machines"},
+		{"enter  x", "actions for the selection (start, stop, deploy, secrets, volumes…)"},
+		{"s", "start or stop the selected machine"},
+		{"d", "deploy the selected app"},
+		{"a", "go through Needs attention; enter runs the fix flk suggests"},
+		{"L", "command log: what lazyflk ran, with its output"},
 		{"?", "this help"},
-		{"q  ctrl+c", "quit"},
+		{"q  ctrl+c", "quit (asks first while a command runs)"},
 	},
 }
 

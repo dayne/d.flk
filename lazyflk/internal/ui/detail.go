@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"lazyflk/internal/actions"
 	"strings"
 	"time"
 
@@ -147,7 +148,7 @@ func (m *Model) volumeOverview(a flk.App, v flk.Volume) []string {
 		field("size", fmt.Sprintf("%dGB", v.SizeGB)),
 		field("path", v.Path),
 	}
-	if isExternal(v, m.hc.Flk.StateDir) {
+	if actions.External(v, m.hc.Flk.StateDir) {
 		out = append(out, field("", styleDim.Render("external: outside flk's state dir")))
 	}
 	return append(out, field("attached", attached), field("created", when(v.CreatedAt)))
@@ -244,7 +245,7 @@ func portSuffix(p int) string {
 }
 
 func externalNote(v flk.Volume, stateDir string) string {
-	if isExternal(v, stateDir) {
+	if actions.External(v, stateDir) {
 		return styleDim.Render(" (external)")
 	}
 	return ""

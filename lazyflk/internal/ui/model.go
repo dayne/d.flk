@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"lazyflk/internal/actions"
 	"lazyflk/internal/flk"
 	"lazyflk/internal/host"
 )
@@ -46,9 +47,27 @@ type Model struct {
 
 	logs *logsView // full-screen logs, when open
 	help bool      // help screen, when open
+
+	// actions (M2): at most one of menu, form, confirm is open
+	menu    *menuView
+	form    *formView
+	confirm *confirmView
+	jobs    []*job // the command log, oldest first
+	jobSeq  int
+	shown   *job // the job modal, when open
+	cmdlog  *cmdlogView
+	note    string // a one-off message in the footer, cleared by the next key
+
+	attn       bool // the Needs attention panel has focus
+	attnCursor int
+
+	loadGen   int  // the newest context load; older answers are dropped
+	quitting  bool // quit once the running job ends
+	quitArmed bool // q pressed once while a job runs
 }
 
 type contextMsg struct {
+	gen int
 	hc  flk.HostContext
 	err error
 }
@@ -65,12 +84,18 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func (m *Model) load() tea.Cmd {
-	c := m.opt.Client
+	m.loadGen++
+	m.loading = true
+	c, gen := m.opt.Client, m.loadGen
 	return func() tea.Msg {
 		hc, err := c.HostContext(context.Background())
-		return contextMsg{hc, err}
+		return contextMsg{gen, hc, err}
 	}
 }
+
+// reload refreshes the main view now, e.g. after an action, even if a
+// load is under way (its older answer is then dropped).
+func (m *Model) reload() tea.Cmd { return m.load() }
 
 func (m *Model) tick() tea.Cmd {
 	if m.opt.Refresh <= 0 {
@@ -102,6 +127,9 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 	case contextMsg:
+		if msg.gen != m.loadGen {
+			return nil
+		}
 		m.loading = false
 		m.err = msg.err
 		if msg.err == nil {
@@ -111,7 +139,6 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		if m.loading {
 			return m.tick()
 		}
-		m.loading = true
 		return tea.Batch(m.load(), m.tick())
 	case fetchedMsg:
 		m.gotFetched(msg)
@@ -126,6 +153,12 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 		if msg.v == m.logs {
 			return m.logs.handleChunk(msg)
 		}
+	case jobStartMsg:
+		return m.jobStarted(msg)
+	case jobChunkMsg:
+		return m.jobChunk(msg)
+	case tea.PasteMsg:
+		m.paste(msg.Content)
 	case tea.KeyPressMsg:
 		return m.key(msg)
 	}
@@ -134,28 +167,55 @@ func (m *Model) update(msg tea.Msg) tea.Cmd {
 
 func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 	k := msg.String()
+	m.note = ""
+	if k != "q" && k != "ctrl+c" {
+		m.quitArmed = false
+	}
+	typing := m.form != nil || m.confirm != nil || (m.logs != nil && m.logs.editing)
 	switch {
+	case k == "ctrl+c" && m.shown != nil && m.shown.running():
+		m.shown.interrupt()
+		return nil
 	case k == "ctrl+c":
-		if m.logs != nil {
-			m.logs.stop()
-		}
-		return tea.Quit
+		return m.quit()
 	case m.help:
 		m.help = false
 		return nil
-	case k == "?" && !(m.logs != nil && m.logs.editing):
+	case k == "?" && !typing:
 		m.help = true
 		return nil
+	case m.confirm != nil:
+		return m.confirmKey(msg)
+	case m.form != nil:
+		return m.formKey(msg)
+	case m.menu != nil:
+		return m.menuKey(msg)
+	case m.shown != nil:
+		return m.jobKey(k)
+	case m.cmdlog != nil:
+		return m.cmdlogKey(k)
 	case m.logs != nil:
 		cmd, open := m.logs.key(msg, m.width-4, m.height-5)
 		if !open {
 			m.logs = nil
 		}
 		return cmd
+	case m.attn:
+		return m.attnKey(k)
 	}
 	switch k {
 	case "q":
-		return tea.Quit
+		return m.quit()
+	case "L":
+		m.cmdlog = &cmdlogView{}
+	case "enter", "x":
+		return m.openMenu()
+	case "a":
+		if len(m.attnItems()) > 0 && m.hc != nil {
+			m.attn, m.attnCursor = true, 0
+		}
+	case "s", "d":
+		return m.shortcut(k)
 	case "up", "k":
 		m.move(-1)
 	case "down", "j":
@@ -174,6 +234,63 @@ func (m *Model) key(msg tea.KeyPressMsg) tea.Cmd {
 		m.detailTop = max(m.detailTop-max(m.treeHeight()-4, 1), 0)
 	case "l":
 		return m.openLogs()
+	}
+	return nil
+}
+
+// quit leaves, unless a job is running: then the first q warns, and the
+// second interrupts it and quits once it has ended.
+func (m *Model) quit() tea.Cmd {
+	j := m.runningJob()
+	if j == nil {
+		if m.logs != nil {
+			m.logs.stop()
+		}
+		return tea.Quit
+	}
+	if !m.quitArmed {
+		m.quitArmed = true
+		m.note = j.line + " is still running: press q again to interrupt it and quit"
+		return nil
+	}
+	m.quitting = true
+	if m.logs != nil {
+		m.logs.stop()
+	}
+	j.interrupt()
+	m.shown = j
+	return nil
+}
+
+// shortcut runs a main-view action key: s starts or stops the selected
+// machine, d deploys the selected app (or the app of a selected child).
+func (m *Model) shortcut(k string) tea.Cmd {
+	if m.opt.ReadOnly {
+		m.note = "read-only: actions are off (started with --read-only)"
+		return nil
+	}
+	n, ok := m.selected()
+	if !ok {
+		return nil
+	}
+	label := ""
+	switch {
+	case k == "s" && n.kind == kindMachine:
+		label = "start"
+		if mc := m.apps[n.app].Machines[n.machine]; mc.Started() {
+			label = "stop"
+		}
+	case k == "d" && n.kind >= kindApp && n.kind <= kindPorts:
+		n = node{kind: kindApp, app: n.app}
+		label = "deploy"
+	default:
+		return nil
+	}
+	t, title, _ := m.target(n)
+	for _, a := range actions.For(t) {
+		if a.Label == label {
+			return m.choose(title, a)
+		}
 	}
 	return nil
 }
@@ -299,52 +416,127 @@ func (m *Model) layout() (left, right int) {
 	return left, m.width - 3 - left
 }
 
+// attnItem is one entry of Needs attention, with its fix when flk names one.
+type attnItem struct {
+	icon, text string
+	fix        *actions.Action
+}
+
+func (m *Model) attnItems() []attnItem {
+	if m.hc == nil {
+		return nil
+	}
+	var items []attnItem
+	if m.err != nil {
+		items = append(items, attnItem{icon: styleBad.Render("✘"), text: "refresh failed: " + firstLine(m.err.Error())})
+	}
+	for _, s := range m.hc.NextSteps {
+		it := attnItem{icon: styleWarn.Render("!"), text: s}
+		if fix, ok := actions.Fix(s, m.apps); ok && !m.opt.ReadOnly {
+			it.fix = &fix
+		}
+		items = append(items, it)
+	}
+	for _, s := range m.diskWarnings() {
+		items = append(items, attnItem{icon: styleWarn.Render("!"), text: s})
+	}
+	return items
+}
+
 // attention is the Needs attention panel: one entry per problem, wrapped,
-// capped at a few rows with a pointer to the rest.
+// capped at a few rows with a pointer to the rest. With focus it grows,
+// starts at the selected entry and shows that entry's fix.
 func (m *Model) attention() []string {
 	if m.hc == nil {
 		return nil
 	}
-	type item struct{ icon, text string }
-	var items []item
-	if m.err != nil {
-		items = append(items, item{styleBad.Render("✘"), "refresh failed: " + firstLine(m.err.Error())})
-	}
-	for _, s := range m.hc.NextSteps {
-		items = append(items, item{styleWarn.Render("!"), s})
-	}
-	for _, s := range m.diskWarnings() {
-		items = append(items, item{styleWarn.Render("!"), s})
-	}
+	items := m.attnItems()
 	if len(items) == 0 {
 		return []string{styleOK.Render("✔") + " nothing needs attention"}
 	}
-	limit := max(4, m.height/6)
+	m.attnCursor = min(m.attnCursor, len(items)-1)
+	limit, first := max(4, m.height/6), 0
+	if m.attn {
+		limit, first = max(6, m.height/4), m.attnCursor
+	}
 	var out []string
-	for i, it := range items {
+	if first > 0 {
+		out = append(out, styleDim.Render(fmt.Sprintf("… %d above", first)))
+	}
+	for i := first; i < len(items); i++ {
+		it := items[i]
 		lines := wrap(it.text, m.width-6)
+		var hint string
+		if m.attn && i == m.attnCursor {
+			hint = "no fix lazyflk can run: see the step"
+			if it.fix != nil {
+				hint = "enter: " + it.fix.Label
+				if it.fix.Disabled != "" {
+					hint = it.fix.Label + " (" + it.fix.Disabled + ")"
+				}
+			}
+			hint = styleKey.Render(ansi.Truncate("→ "+hint, m.width-6, "…"))
+		}
 		left := len(items) - i
 		room := limit - len(out)
 		if left > 1 {
 			room-- // keep a row for "… more"
 		}
+		if hint != "" {
+			room--
+		}
 		if len(lines) > room {
-			if room > 0 && left == 1 {
+			if room > 0 && (left == 1 || hint != "") {
 				lines = append(lines[:room-1], ansi.Truncate(lines[room-1], m.width-7, "")+"…")
 			} else {
-				out = append(out, styleDim.Render(fmt.Sprintf("… %d more: flk context --all", left)))
+				more := fmt.Sprintf("… %d more: flk context --all", left)
+				if !m.attn {
+					more += " (a: go through them)"
+				}
+				out = append(out, styleDim.Render(more))
 				break
 			}
 		}
 		for j, l := range lines {
-			if j == 0 {
+			switch {
+			case j == 0 && hint != "":
+				out = append(out, styleSelected.Render("›")+" "+l)
+			case j == 0:
 				out = append(out, it.icon+" "+l)
-			} else {
+			default:
 				out = append(out, "  "+l)
 			}
 		}
+		if hint != "" {
+			out = append(out, "  "+hint)
+		}
 	}
 	return out
+}
+
+func (m *Model) attnKey(k string) tea.Cmd {
+	items := m.attnItems()
+	if len(items) == 0 {
+		m.attn = false
+		return nil
+	}
+	switch k {
+	case "esc", "a", "q":
+		m.attn = false
+	case "up", "k":
+		m.attnCursor = max(m.attnCursor-1, 0)
+	case "down", "j":
+		m.attnCursor = min(m.attnCursor+1, len(items)-1)
+	case "enter", "f":
+		it := items[min(m.attnCursor, len(items)-1)]
+		if it.fix == nil {
+			m.note = "no fix lazyflk can run for this one"
+			return nil
+		}
+		m.attn = false
+		return m.choose("needs attention", *it.fix)
+	}
+	return nil
 }
 
 func (m *Model) treeHeight() int {
@@ -356,12 +548,33 @@ func (m *Model) Render() string {
 	if m.width < minWidth || m.height < minHeight {
 		return fmt.Sprintf("lazyflk needs a %dx%d terminal (this one is %dx%d)", minWidth, minHeight, m.width, m.height)
 	}
-	switch {
-	case m.help:
+	if m.help {
 		return m.helpScreen()
-	case m.logs != nil:
-		return m.logs.render(m.width, m.height)
 	}
+	var base string
+	switch {
+	case m.shown != nil:
+		base = m.jobScreen(m.shown)
+	case m.cmdlog != nil:
+		base = m.cmdlogScreen()
+	case m.logs != nil:
+		base = m.logs.render(m.width, m.height)
+	default:
+		base = m.mainScreen()
+	}
+	var top []string
+	switch {
+	case m.confirm != nil:
+		top = m.confirmBox()
+	case m.form != nil:
+		top = m.formBox()
+	case m.menu != nil:
+		top = m.menuBox()
+	}
+	return overlay(base, top, m.width, m.height)
+}
+
+func (m *Model) mainScreen() string {
 	lw, rw := m.layout()
 	attn := m.attention()
 	if len(attn) == 0 {
@@ -410,6 +623,9 @@ func (m *Model) topRule(w int) string {
 		title += "loading…"
 	}
 	var status []string
+	if j := m.runningJob(); j != nil {
+		status = append(status, "⟳ "+strings.Join(j.args, " "))
+	}
 	if m.loading && m.hc != nil {
 		status = append(status, "refreshing…")
 	}
@@ -435,7 +651,34 @@ func keyHints(pairs ...string) string {
 }
 
 func (m *Model) footer() string {
-	return keyHints("↑↓", "move", "←→", "fold", "tab", "tabs", "pgup/dn", "scroll", "l", "logs", "?", "help", "q", "quit")
+	switch {
+	case m.note != "":
+		return styleWarn.Render(m.note)
+	case m.attn:
+		return keyHints("↑↓", "move", "enter", "fix", "esc", "back")
+	}
+	keys := []string{"↑↓", "move", "tab", "tabs"}
+	if !m.opt.ReadOnly {
+		keys = append(keys, "enter", "actions")
+		if n, ok := m.selected(); ok {
+			switch {
+			case n.kind == kindMachine && m.apps[n.app].Machines[n.machine].Started():
+				keys = append(keys, "s", "stop")
+			case n.kind == kindMachine:
+				keys = append(keys, "s", "start")
+			case n.kind == kindApp:
+				keys = append(keys, "d", "deploy")
+			}
+		}
+	}
+	keys = append(keys, "l", "logs")
+	if len(m.attnItems()) > 0 && m.hc != nil {
+		keys = append(keys, "a", "attention")
+	}
+	if len(m.jobs) > 0 {
+		keys = append(keys, "L", "cmd log")
+	}
+	return keyHints(append(keys, "?", "help", "q", "quit", "←→", "fold", "pgup/dn", "scroll")...)
 }
 
 // treeLines renders exactly h lines of tree, scrolled to keep the cursor in view.

@@ -4,7 +4,6 @@
 package flk
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,10 +15,10 @@ import (
 )
 
 // Runner runs `flk ARGS...`: Run waits and returns stdout, Stream returns
-// output as it comes.
+// output as it comes (stdin, if not empty, is the command's input).
 type Runner interface {
 	Run(ctx context.Context, args ...string) ([]byte, error)
-	Stream(ctx context.Context, args ...string) (*Stream, error)
+	Stream(ctx context.Context, stdin string, args ...string) (*Stream, error)
 }
 
 // Error is a failed flk command. Stderr starts with "Error:" and usually
@@ -57,21 +56,6 @@ func FindFlk(path string) (string, error) {
 		return "", fmt.Errorf("can't find flk (%s): pass --flk PATH or set LAZYFLK_FLK", path)
 	}
 	return p, nil
-}
-
-func (x Exec) Run(ctx context.Context, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, x.Path, args...)
-	cmd.Env = append(os.Environ(), "NO_COLOR=1")
-	cmd.WaitDelay = time.Second // don't wait on children that keep stdout open
-	var out, errb bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &out, &errb
-	if err := cmd.Run(); err != nil {
-		if ctx.Err() != nil {
-			err = fmt.Errorf("timed out: %w", ctx.Err())
-		}
-		return out.Bytes(), &Error{Args: args, Stderr: errb.String(), Err: err}
-	}
-	return out.Bytes(), nil
 }
 
 // Client runs flk commands with a timeout and decodes their output.
@@ -150,6 +134,10 @@ func (c *Client) Releases(ctx context.Context, app string) ([]Release, error) {
 
 func (c *Client) Volumes(ctx context.Context, app string) ([]Volume, error) {
 	return decode[[]Volume](c, ctx, "-a", app, "volumes", "list", "--json")
+}
+
+func (c *Client) Backups(ctx context.Context, app string) ([]Backup, error) {
+	return decode[[]Backup](c, ctx, "-a", app, "volumes", "backups", "--json")
 }
 
 func (c *Client) Secrets(ctx context.Context, app string) ([]Secret, error) {

@@ -1,0 +1,24 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────── demo ┐
+│ Apps                       │ minecraft-flk / volume world                    │
+│ ▾ minecraft-flk  1/1 ●     │  Overview  Backups                              │
+│   ● mellow-aurora-7882     │                                                 │
+│   ▢ world 40GB (external)  │ name      world                                 │
+│ ┌ minecraft-flk / volume world ─ actions ──────────────────────────────────┐ │
+│ │ b  back up            copy world to the backup dir, then prune old copi… │ │
+│ │ t  restore            machine 225d58f615e7e6 [mellow-aurora-7882] is us… │ │
+│ │ g  extend             machine 225d58f615e7e6 [mellow-aurora-7882] is us… │ │
+│ │ D  unregister         attached to machine 225d58f615e7e6: destroy that … │ │
+│ │ X  destroy with data  attached to machine 225d58f615e7e6: destroy that … │ │
+│ │ n  new volume         create a volume for [[mounts]] source = NAME       │ │
+│ │                                                                          │ │
+│ │ copy world to the backup dir, then prune old copies                      │ │
+│ │ $ flk -a minecraft-flk volumes backup world                              │ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+│ │ ↑↓ enter choose (or press its key)  esc close                            │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                            │                                                 │
+├ Needs attention ───────────┴─────────────────────────────────────────────────┤
+│ ✔ nothing needs attention                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  tab tabs  enter actions  l logs  L cmd log  ? help  q quit  ←→ fol… │
+└──────────────────────────────────────────────────────────────────────────────┘

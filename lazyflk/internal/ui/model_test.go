@@ -207,7 +207,7 @@ func TestNavigation(t *testing.T) {
 	}
 	// a refresh keeps the selection
 	hc, _ := m.opt.Client.HostContext(context.Background())
-	send(m, contextMsg{hc: hc})
+	send(m, contextMsg{gen: m.loadGen, hc: hc})
 	if sel() != "machine/minecraft-flk/225d58f615e7e6" {
 		t.Errorf("after refresh: on %s", sel())
 	}
@@ -301,7 +301,7 @@ func TestFlkErrors(t *testing.T) {
 	}
 
 	m = demoModel(t, 80, 24)
-	send(m, contextMsg{err: fmt.Errorf("Error: timed out\nsecond line")})
+	send(m, contextMsg{gen: m.loadGen, err: fmt.Errorf("Error: timed out\nsecond line")})
 	s = ansi.Strip(m.Render())
 	if !strings.Contains(s, "✘ refresh failed: Error: timed out") || !strings.Contains(s, "mellow-aurora-7882") {
 		t.Errorf("stale data with error:\n%s", s)
@@ -359,7 +359,7 @@ func TestProblemsFirst(t *testing.T) {
 	}
 	m := New(Options{Client: flk.New(flk.NewFake(fixtures.FS))})
 	send(m, tea.WindowSizeMsg{Width: 80, Height: 24})
-	send(m, contextMsg{hc: hc})
+	send(m, contextMsg{gen: m.loadGen, hc: hc})
 	if m.apps[0].Name != "zeta" {
 		t.Errorf("order: %s first", m.apps[0].Name)
 	}

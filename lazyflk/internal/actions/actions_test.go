@@ -1,0 +1,208 @@
+package actions
+
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+
+	"lazyflk/fixtures"
+	"lazyflk/internal/flk"
+)
+
+func hostContext(t *testing.T) flk.HostContext {
+	t.Helper()
+	b, err := fixtures.FS.ReadFile("context-all.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var hc flk.HostContext
+	if err := json.Unmarshal(b, &hc); err != nil {
+		t.Fatal(err)
+	}
+	return hc
+}
+
+func find(t *testing.T, acts []Action, label string) Action {
+	t.Helper()
+	for _, a := range acts {
+		if a.Label == label {
+			return a
+		}
+	}
+	t.Fatalf("no action %q", label)
+	return Action{}
+}
+
+func TestMachineActions(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	m := a.Machines[0] // running
+	acts := For(Target{Kind: Machine, App: a, Machine: m})
+	if d := find(t, acts, "start").Disabled; d != "already running" {
+		t.Errorf("start: %q", d)
+	}
+	stop := find(t, acts, "stop")
+	if got := stop.Command(nil).Line(); got != "flk -a minecraft-flk machine stop "+m.ID || stop.Confirm != Ask {
+		t.Errorf("stop: %s", got)
+	}
+
+	m.State = "stopped" // should run but doesn't
+	acts = For(Target{Kind: Machine, App: a, Machine: m})
+	if find(t, acts, "start").Disabled != "" || find(t, acts, "restart").Disabled == "" ||
+		!strings.Contains(find(t, acts, "stop").Help, "records it as stopped") {
+		t.Error("stopped machine that should run")
+	}
+	m.DesiredState = "stopped"
+	if find(t, For(Target{Kind: Machine, App: a, Machine: m}), "stop").Disabled != "already stopped" {
+		t.Error("stopped machine")
+	}
+}
+
+func TestAppActions(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	acts := For(Target{Kind: App, App: a, StateDir: "/home/u/.local/share/flk"})
+	keys := map[string]bool{}
+	for _, x := range acts {
+		if keys[x.Key] {
+			t.Errorf("key %s used twice", x.Key)
+		}
+		keys[x.Key] = true
+	}
+	d := find(t, acts, "deploy")
+	if d.Disabled != "" || d.Command(nil).Line() != "flk -a minecraft-flk deploy" ||
+		d.Command(map[string]string{"image": "ghcr.io/x/y:1"}).Line() != "flk -a minecraft-flk deploy --image ghcr.io/x/y:1" {
+		t.Errorf("deploy: %q %s", d.Disabled, d.Command(nil).Line())
+	}
+	a.ConfigPath = ""
+	if find(t, For(Target{Kind: App, App: a}), "deploy").Disabled == "" {
+		t.Error("deploy needs config_path")
+	}
+
+	// secret values travel on stdin only
+	set := find(t, acts, "set secret")
+	c := set.Command(map[string]string{"name": "RCON_PASSWORD", "value": "hunter2"})
+	if c.Line() != "flk -a minecraft-flk secrets set RCON_PASSWORD=-" || c.Stdin != "hunter2\n" ||
+		strings.Contains(c.Line()+c.Warn, "hunter2") {
+		t.Errorf("set: %s stdin %q warn %q", c.Line(), c.Stdin, c.Warn)
+	}
+	c = set.Command(map[string]string{"name": "X", "value": "v", "stage": "later"})
+	if c.Line() != "flk -a minecraft-flk secrets set X=- --stage" {
+		t.Errorf("staged: %s", c.Line())
+	}
+	if set.Check(map[string]string{"value": "v"}) != "name is required" {
+		t.Error("name is required")
+	}
+
+	if got := find(t, acts, "scale").Command(map[string]string{"count": "0"}); got.Line() != "flk -a minecraft-flk scale count 0" ||
+		!strings.Contains(got.Warn, "destroyed") {
+		t.Errorf("scale: %s %q", got.Line(), got.Warn)
+	}
+	if find(t, acts, "scale").Check(map[string]string{"count": "two"}) == "" {
+		t.Error("scale wants a number")
+	}
+	if find(t, acts, "resume").Disabled != "nothing to resume" {
+		t.Error("resume with everything running")
+	}
+	des := find(t, acts, "destroy app")
+	if des.Confirm != Type || des.TypeName != "minecraft-flk" ||
+		des.Command(nil).Line() != "flk apps destroy minecraft-flk --yes" ||
+		!strings.Contains(des.Command(nil).Warn, "External volume files are kept") {
+		t.Errorf("destroy: %+v %s", des, des.Command(nil).Warn)
+	}
+	nv := find(t, acts, "new volume").Command(map[string]string{"name": "data", "size": "5", "path": "/big/data.ext4", "from": "/srv/old data"})
+	if nv.Line() != "flk -a minecraft-flk volumes create data --size 5 --path /big/data.ext4 --from-dir '/srv/old data'" {
+		t.Errorf("create: %s", nv.Line())
+	}
+}
+
+func TestVolumeActions(t *testing.T) {
+	a := hostContext(t).Apps[0]
+	v := a.Volumes[0] // external, attached to the running machine
+	acts := For(Target{Kind: Volume, App: a, Volume: v, StateDir: "/home/u/.local/share/flk"})
+	if b := find(t, acts, "back up").Command(nil).Line(); b != "flk -a minecraft-flk volumes backup world" {
+		t.Errorf("backup: %s", b)
+	}
+	if d := find(t, acts, "extend").Disabled; !strings.HasPrefix(d, "machine "+a.Machines[0].ID) {
+		t.Errorf("extend while running: %q", d)
+	}
+	if find(t, acts, "unregister").Disabled == "" || find(t, acts, "destroy with data").Disabled == "" {
+		t.Error("attached volumes can't be destroyed")
+	}
+
+	a.Machines[0].State = "stopped"
+	backups := []flk.Backup{{File: "world-2.ext4", VolumeID: v.ID}, {File: "other.ext4", VolumeID: "vol_x"}, {File: "world-1.ext4", VolumeID: v.ID}}
+	acts = For(Target{Kind: Volume, App: a, Volume: v, Backups: backups, StateDir: "/home/u/.local/share/flk"})
+	r := find(t, acts, "restore")
+	if r.Disabled != "" || strings.Join(r.Fields[0].Choices, " ") != "world-2.ext4 world-1.ext4" || r.Confirm != Type {
+		t.Errorf("restore: %+v", r)
+	}
+	if got := r.Command(nil).Line(); got != "flk -a minecraft-flk volumes restore world world-2.ext4" {
+		t.Errorf("restore defaults to the newest: %s", got)
+	}
+	if got := find(t, acts, "extend").Command(map[string]string{"size": "50"}).Line(); got != "flk -a minecraft-flk volumes extend world --size 50" {
+		t.Errorf("extend: %s", got)
+	}
+	if find(t, For(Target{Kind: Volume, App: a, Volume: v}), "restore").Disabled == "" {
+		t.Error("restore before backups load")
+	}
+
+	a.Volumes[0].AttachedMachine = ""
+	a.Volumes[0].Path = "/home/u/.local/share/flk/apps/minecraft-flk/volumes/world.ext4"
+	acts = For(Target{Kind: Volume, App: a, Volume: a.Volumes[0], StateDir: "/home/u/.local/share/flk"})
+	if d := find(t, acts, "destroy"); d.Disabled != "" || d.Command(nil).Line() != "flk -a minecraft-flk volumes destroy "+v.ID {
+		t.Errorf("destroy: %+v", d)
+	}
+}
+
+func TestHostActions(t *testing.T) {
+	hc := hostContext(t)
+	probs := []flk.DoctorCheck{{Label: "port helper", Status: "warn", Hint: "sudo /home/u/flk/setup-host.sh"}}
+	acts := For(Target{Kind: Host, Apps: hc.Apps, Problems: probs})
+	if find(t, acts, "stop all").Command(nil).Line() != "flk stop-all" || find(t, acts, "resume all").Disabled == "" {
+		t.Error("host lifecycle")
+	}
+	c := find(t, acts, "copy: sudo /home/u/flk/setup-host.sh")
+	if c.View != ViewCopy || c.Copy != "sudo /home/u/flk/setup-host.sh" {
+		t.Errorf("root step: %+v", c)
+	}
+}
+
+func TestFix(t *testing.T) {
+	hc := hostContext(t)
+	id := hc.Apps[0].Machines[0].ID
+	for _, c := range []struct{ step, label, line string }{
+		{"minecraft-flk: machine " + id + " [mellow] should be running but isn't (it exited, or the host restarted); " +
+			"see why: flk logs -i " + id + " --no-tail; bring it back: flk resume",
+			"fix: flk -a minecraft-flk resume", "flk -a minecraft-flk resume"},
+		{"minecraft-flk: machine " + id + " [m] kept failing; its restart policy gave up after 5 restarts: flk logs -i " +
+			id + " --no-tail, fix, then flk machine start " + id,
+			"fix: flk -a minecraft-flk machine start " + id, "flk -a minecraft-flk machine start " + id},
+		{"minecraft-flk: [[mounts]] source 'world' needs 2 more volumes: flk volumes create world --size 1 (run 2 times)",
+			"fix: flk -a minecraft-flk volumes create world --size 1", "flk -a minecraft-flk volumes create world --size 1"},
+		{"minecraft-flk: deploy the first release: flk deploy", "fix: flk -a minecraft-flk deploy", "flk -a minecraft-flk deploy"},
+		{"minecraft-flk: no machines; flk deploy (or flk scale count 1)", "fix: flk -a minecraft-flk deploy", "flk -a minecraft-flk deploy"},
+		{"minecraft-flk: flk doesn't know where minecraft-flk's flk.toml is: run flk launch --no-deploy (or flk deploy) once in its directory",
+			"copy: flk launch --no-deploy", ""},
+		{"optional: 1 destroyed app still have container images -> flk apps prune", "fix: flk apps prune", "flk apps prune"},
+		{"optional: port helper (forwarding [[services.ports]]) -> sudo /home/u/flk/setup-host.sh",
+			"copy: sudo /home/u/flk/setup-host.sh", ""},
+	} {
+		act, ok := Fix(c.step, hc.Apps)
+		if !ok || act.Label != c.label {
+			t.Errorf("%s\n  got %q %v", c.step, act.Label, ok)
+			continue
+		}
+		if c.line != "" && act.Command(nil).Line() != c.line {
+			t.Errorf("%s\n  runs %s", c.step, act.Command(nil).Line())
+		}
+		if c.line == "" && act.View != ViewCopy {
+			t.Errorf("%s: should be copy only", c.step)
+		}
+	}
+	if _, ok := Fix("minecraft-flk: host port tcp/25565 is held by another machine; this one gets it when that stops", hc.Apps); ok {
+		t.Error("no command, no fix")
+	}
+	// a hostile-looking command is never run
+	if act, _ := Fix("x: flk machine start $(reboot)", hc.Apps); act.View != ViewCopy {
+		t.Errorf("ran %+v", act)
+	}
+}

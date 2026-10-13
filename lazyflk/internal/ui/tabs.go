@@ -23,6 +23,8 @@ func tabNames(k nodeKind) []string {
 		return []string{"Overview", "Logs", "Record"}
 	case kindHost:
 		return []string{"Health", "Ports", "Disk"}
+	case kindVolume:
+		return []string{"Overview", "Backups"}
 	}
 	return []string{"Overview"}
 }
@@ -89,6 +91,14 @@ func (m *Model) tabSource(n node, tab string) *source {
 				func(ctx context.Context) ([]flk.Secret, error) { return c.Secrets(ctx, app) })
 		case "Config":
 			return m.textSource([]string{"-a", app, "config", "show"}, 15*time.Second)
+		case "Volumes":
+			if len(m.apps[n.app].Volumes) > 0 {
+				return m.backupSource(app)
+			}
+		}
+	case kindVolume:
+		if tab == "Backups" {
+			return m.backupSource(m.apps[n.app].Name)
 		}
 	case kindMachine:
 		a := m.apps[n.app]
@@ -110,6 +120,28 @@ func (m *Model) tabSource(n node, tab string) *source {
 		}
 	}
 	return nil
+}
+
+// backupSource lists an app's volume backups (flk volumes backups).
+func (m *Model) backupSource(app string) *source {
+	c := m.opt.Client
+	return flkSource([]string{"-a", app, "volumes", "backups", "--json"}, 30*time.Second,
+		func(ctx context.Context) ([]flk.Backup, error) { return c.Backups(ctx, app) })
+}
+
+// backups is an app's backups if loaded (nil if not), or why they can't be.
+func (m *Model) backups(app string) ([]flk.Backup, string) {
+	f := m.cache[m.backupSource(app).cmd]
+	if f == nil {
+		return nil, ""
+	}
+	if b, ok := f.val.([]flk.Backup); ok && b != nil {
+		return b, ""
+	}
+	if f.err != nil {
+		return nil, "can't list backups: " + firstLine(f.err.Error())
+	}
+	return nil, ""
 }
 
 // diskSource is df over flk's state dir and every volume's directory.
@@ -191,6 +223,9 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 			out = append(out, styleBad.Render(l))
 		}
 		if f.val == nil {
+			if tab == "Volumes" { // the volumes still show, without backups
+				return append(append(out, ""), m.appVolumeLines(m.apps[n.app], nil)...)
+			}
 			return out
 		}
 		out = append(out, styleDim.Render("(showing the last good result)"))
@@ -206,6 +241,12 @@ func (m *Model) tabBody(n node, tab string, w, h int) []string {
 		return append(out, m.releaseLines(m.apps[n.app], v)...)
 	case []flk.Secret:
 		return append(out, secretLines(v)...)
+	case []flk.Backup:
+		a := m.apps[n.app]
+		if n.kind == kindVolume {
+			return append(out, backupLines(a.Volumes[n.volume], v)...)
+		}
+		return append(out, m.appVolumeLines(a, v)...)
 	case flk.Doctor:
 		return append(append(append(out, m.hostOverview()...), ""), doctorLines(v, w)...)
 	case flk.PortsList:
@@ -242,7 +283,7 @@ func (m *Model) contextTab(n node, tab string) []string {
 	case n.kind == kindApp && tab == "Ports":
 		return m.appPortLines(m.apps[n.app])
 	case n.kind == kindApp && tab == "Volumes":
-		return m.appVolumeLines(m.apps[n.app])
+		return m.appVolumeLines(m.apps[n.app], nil)
 	}
 	_, lines := m.detail(n)
 	return lines
@@ -271,7 +312,9 @@ func (m *Model) appPortLines(a flk.App) []string {
 	return out
 }
 
-func (m *Model) appVolumeLines(a flk.App) []string {
+// appVolumeLines lists an app's volumes, each with its latest backup
+// when the backups are known.
+func (m *Model) appVolumeLines(a flk.App, backups []flk.Backup) []string {
 	if len(a.Volumes) == 0 {
 		return []string{styleDim.Render("no volumes")}
 	}
@@ -284,7 +327,63 @@ func (m *Model) appVolumeLines(a flk.App) []string {
 		for _, l := range m.volumeOverview(a, v)[1:] {
 			out = append(out, "  "+l)
 		}
+		if backups != nil {
+			mine := volumeBackups(v, backups)
+			if len(mine) == 0 {
+				out = append(out, "  "+field("backup", styleWarn.Render("none yet")))
+			} else {
+				out = append(out, "  "+field("backup", fmt.Sprintf("%s (%s, %d kept)", when(mine[0].CreatedAt), checkText(mine[0]), len(mine))))
+			}
+		}
 	}
+	if backups != nil {
+		out = append(out, "", styleDim.Render("enter on a volume: back up, restore, extend"))
+	}
+	return out
+}
+
+func volumeBackups(v flk.Volume, all []flk.Backup) []flk.Backup {
+	var out []flk.Backup
+	for _, b := range all {
+		if b.VolumeID == v.ID || (b.VolumeID == "" && b.Volume == v.Name) {
+			out = append(out, b)
+		}
+	}
+	return out
+}
+
+func checkText(b flk.Backup) string {
+	switch b.Check {
+	case "clean":
+		return styleOK.Render("checked clean")
+	case "repaired":
+		return styleWarn.Render("repaired")
+	case "errors":
+		return styleBad.Render("has errors")
+	}
+	return or(b.Check, "unchecked")
+}
+
+// backupLines lists one volume's backups, newest first.
+func backupLines(v flk.Volume, all []flk.Backup) []string {
+	mine := volumeBackups(v, all)
+	if len(mine) == 0 {
+		return []string{styleDim.Render("no backups of " + v.Name + " yet (enter: back up)")}
+	}
+	var out []string
+	for i, b := range mine {
+		if i > 0 {
+			out = append(out, "")
+		}
+		how := "mode " + or(b.Mode, "?")
+		if b.Release > 0 {
+			how += fmt.Sprintf(" · release v%d", b.Release)
+		}
+		out = append(out, styleTitle.Render(b.File),
+			fmt.Sprintf("  %s · %s used · %s", when(b.CreatedAt), host.Human(b.BytesUsed/1024), checkText(b)),
+			styleDim.Render(fmt.Sprintf("  %s · took %.0fs", how, b.Seconds)))
+	}
+	out = append(out, "", styleDim.Render("restore: stop the machine first"))
 	return out
 }
 

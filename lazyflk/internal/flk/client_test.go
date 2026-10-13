@@ -2,6 +2,7 @@ package flk
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
@@ -118,6 +119,9 @@ func TestEveryFixtureServed(t *testing.T) {
 	c.Help(ctx)
 	c.Logs(ctx, "minecraft-flk", "", 40)
 	c.Run(ctx, "-a", "minecraft-flk", "config", "show")
+	if b, err := c.Backups(ctx, "minecraft-flk"); err != nil || b == nil || len(b) != 0 {
+		t.Errorf("backups: %v %v", b, err)
+	}
 
 	served := map[string]bool{}
 	for _, args := range f.Calls() {
@@ -129,7 +133,8 @@ func TestEveryFixtureServed(t *testing.T) {
 	}
 	files, _ := fs.Glob(fixtures.FS, "*.*")
 	for _, name := range files {
-		if !served[name] && name != "df.txt" { // df.txt is host.DF's, not flk's
+		// df.txt is host.DF's, not flk's; backups-sample.json is decoded below
+		if !served[name] && name != "df.txt" && name != "backups-sample.json" {
 			t.Errorf("fixture %s is never served", name)
 		}
 	}
@@ -216,5 +221,22 @@ func TestFindFlk(t *testing.T) {
 	}
 	if p, err := FindFlk(script); err != nil || p != script {
 		t.Errorf("--flk: %s, %v", p, err)
+	}
+}
+
+// Real backups (from a test app): newest first, every field decoded.
+func TestBackupsSample(t *testing.T) {
+	b, _ := fixtures.FS.ReadFile("backups-sample.json")
+	var got []Backup
+	if err := json.Unmarshal(b, &got); err != nil || len(got) != 2 {
+		t.Fatalf("%v %d", err, len(got))
+	}
+	s, o := got[0], got[1]
+	if s.Mode != "stop" || s.Check != "clean" || s.Release != 1 || s.Machine == "" || s.BytesUsed == 0 ||
+		s.Seconds == 0 || s.VolumeID == "" || s.Volume != "world" || s.File == "" || s.CreatedAt <= o.CreatedAt {
+		t.Errorf("stop-mode backup: %+v", s)
+	}
+	if o.Mode != "offline" {
+		t.Errorf("offline backup: %+v", o)
 	}
 }

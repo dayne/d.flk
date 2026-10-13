@@ -1,0 +1,48 @@
+┌ lazyflk ─ host ready · LAN 10.47.11.116 · boot service ok ───────────────────────────────────────────────────────────────────────────────────────────── demo ┐
+│ Apps                                   │ minecraft-flk ─  Overview  Logs  Ports  Volumes  Releases  Secrets  Config                                          │
+│ ▾ minecraft-flk  0/1 ○ !               │                                                                                                                     │
+│   ! mellow-aurora-7882                 │ release v8 (8 kept) · 2026-10-12 07:08Z                                                                             │
+│   ▢ world 40GB (external)              │                                                                                                                     │
+│   ⇄ tcp/25565 udp/19132                │ machine 225d58f615e7e6 ! stopped, should be started 172.30.0.10                                                     │
+│                                        │   mellow-aurora-7882 · 4 cpus · 11264MB · v8                                                                        │
+│ Host                                   │                                                                                                                     │
+│   health ✔                             │ ports  tcp/25565 → 10.47.11.116:25565                                                                               │
+│                                        │        udp/19132 → 10.47.11.116:19132                                                                               │
+│                                        │ volume world 40GB (external)                                                                                        │
+│                                        │   /data/minecraft/flk/world.ext4                                                                                    │
+│                                        │                                                                                                                     │
+│                                        │ ! machine 225d58f615e7e6 should be running but is stopped                                                           │
+│                                        │ ! machine 225d58f615e7e6 [mellow-aurora-7882] should be running but isn't (it exited, or the host restarted); see … │
+│                                        │ ! host port tcp/25565 is held by another machine; this one gets it when that stops                                  │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+│                                        │                                                                                                                     │
+├ Needs attention ───────────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ … 1 above                                                                                                                                                    │
+│ › minecraft-flk: machine 225d58f615e7e6 [mellow-aurora-7882] should be running but isn't (it exited, or the host restarted); see why: flk logs -i            │
+│   225d58f615e7e6 --no-tail; bring it back: flk resume                                                                                                        │
+│   → enter: fix: flk -a minecraft-flk resume                                                                                                                  │
+│ ! minecraft-flk: host port tcp/25565 is held by another machine; this one gets it when that stops                                                            │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ ↑↓ move  enter fix  esc back                                                                                                                                 │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

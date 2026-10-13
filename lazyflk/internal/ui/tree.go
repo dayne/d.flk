@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"lazyflk/internal/actions"
 	"sort"
 	"strings"
 
@@ -80,10 +81,6 @@ func sortApps(apps []flk.App, steps []string) []flk.App {
 		return out[i].Name < out[j].Name
 	})
 	return out
-}
-
-func isExternal(v flk.Volume, stateDir string) bool {
-	return v.External || (stateDir != "" && !strings.HasPrefix(v.Path, strings.TrimRight(stateDir, "/")+"/"))
 }
 
 func portKeys(t flk.PortTable) []string {
@@ -171,7 +168,7 @@ func (m *Model) treeLine(n node) string {
 	case kindVolume:
 		v := a.Volumes[n.volume]
 		s := fmt.Sprintf("  ▢ %s %dGB", v.Name, v.SizeGB)
-		if isExternal(v, m.hc.Flk.StateDir) {
+		if actions.External(v, m.hc.Flk.StateDir) {
 			s += styleDim.Render(" (external)")
 		}
 		return s
