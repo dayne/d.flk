@@ -11,6 +11,11 @@ Dayne, 2026-10-13: `minecraft-flk` and `vintagestory-flk` keep running.
 Anything that stops, restarts or redeploys them waits for a maintenance
 window that Dayne picks. Players are on both.
 
+Exception (from the minecraft session, quoting Dayne): minecraft-flk may
+be stopped when no players are online, after a verified backup ("if there
+are no players, we can do any restarts and changes best done with server
+offline"). The game sessions run their own windows.
+
 ## Current host
 
 - **Disks:** one 2TB NVMe (WD SN770), VG `ubuntu-vg`, with about 1TB
@@ -77,14 +82,18 @@ window that Dayne picks. Players are on both.
   `flk deploy` (after the reservation above). Then mark BUGS #8 resolved.
 - **XFS:** move `world` and `vsdata` onto the XFS LV, if decision 2 is yes.
 - **Back up before deploy:** turn on `[flk.backup] before_deploy` for
-  each game, once flk has it (PLAN.md M1).
-- **Vintage Story's root-owned volume root:** fix `/` in `vsdata.ext4`
+  each game. Done for VS (2026-10-13, with a verify hook); set for
+  minecraft's next deploy.
+- **Vintage Story's root-owned volume root:** done 2026-10-13
+  (`flk files chown 1000:1000 vsdata:/`). Was: fix `/` in `vsdata.ext4`
   (from `mkfs.ext4 -d`) with the VM stopped. Use
   `debugfs -w -R "sif / uid 1000"` plus gid, then fsck, or
   `flk volumes chown` once it exists (PLAN.md M2).
 - **Guest changes:** redeploy both games to pick up whatever has landed
   by then, such as a vsock agent (PLAN.md M3).
-- **Restore test:** test a real in-place restore once. Before then, a
+- **Restore test:** VS did `restore --as` into a staging app and drilled
+  deploy rollback with volumes (2026-10-13); minecraft did `restore --as`.
+  Still to do once: a real in-place restore. Before then, a
   restore into a new volume (PLAN.md M1) tests backups without a stop.
 
 ## Other hosts (testing flk's portability)
@@ -102,4 +111,7 @@ Docker's firewall rules. The full test steps are in `TODO.md` under
 - After a week of the cache-friendly backups, decide whether `swappiness`
   10 still matters (minecraft TODO).
 - Old snapshots and images left on the game disks (VS `orig/` 59G,
-  `dotnet*`; see each game's TODO).
+  `dotnet*`, not deleted yet; see each game's TODO).
+- Releases deployed before flk 25b23ad have no flk-agent: `flk exec` on
+  the games works after their next deploy (VS is on v4 since then: check
+  with `flk -a vintagestory-flk exec -- true`).
