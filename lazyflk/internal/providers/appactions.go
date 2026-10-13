@@ -144,6 +144,7 @@ func tomlString(s string) (string, error) {
 }
 
 var (
+	sudoRE        = regexp.MustCompile(`(^|[\s;&|(])sudo\s`)
 	placeholderRE = regexp.MustCompile(`\{([a-z]+(?:\.[A-Za-z0-9_-]+)?)\}`)
 	safeValue     = regexp.MustCompile(`^[A-Za-z0-9._/:@+=-]*$`)
 	// typed input may also have spaces and plain punctuation, but nothing
@@ -166,6 +167,20 @@ func AppActionItems(list []AppAction, a flk.App, machine *flk.Machine, dir strin
 		}
 		needsInput := strings.Contains(act.Run, "{input}")
 		act := act
+		if sudoRE.MatchString(act.Run) && !needsInput {
+			// lazyflk never runs anything as root: offer it to copy
+			line, why := Expand(act.Run, a, machine, dir, "")
+			if why == "" {
+				cmd := "cd " + dir + " && " + line
+				out = append(out, actions.CopyOnly(key, act.Name, "needs root, so lazyflk copies it: "+help, cmd))
+				continue
+			}
+		}
+		if sudoRE.MatchString(act.Run) {
+			out = append(out, actions.Action{Key: key, Label: act.Name, Help: help,
+				Disabled: "needs root (sudo): lazyflk doesn't run it; run it in a shell"})
+			continue
+		}
 		out = append(out, actions.Custom(key, act.Name, help, needsInput,
 			func(input string) (actions.Command, string) {
 				line, err := Expand(act.Run, a, machine, dir, input)

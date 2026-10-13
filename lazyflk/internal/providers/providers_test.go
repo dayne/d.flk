@@ -164,6 +164,12 @@ help = "broadcast a message"
 	if _, why := Expand("x {app}", flk.App{Name: "a b"}, nil, "/d", ""); why == "" {
 		t.Error("unsafe names are refused")
 	}
+	// root steps are copied, never run
+	root := AppActionItems([]AppAction{{Name: "snap", Run: "sudo bin/mc-snap status"}, {Name: "x", Run: "true && sudo rm {input}"}},
+		a, nil, "/home/u/mc")
+	if root[0].View != actions.ViewCopy || root[0].Copy != "cd /home/u/mc && sudo bin/mc-snap status" || root[1].Disabled == "" {
+		t.Errorf("sudo: %+v", root)
+	}
 	if _, err := ParseAppActions("[actions]\nbad\n"); err == nil {
 		t.Error("bad line")
 	}
