@@ -30,13 +30,17 @@ a failed release, the last good one), as a new release with the same checks.
 The last two images are kept; `[flk] keep_releases = N` keeps more.
 Deploys and rollbacks boot the machines they update, stopped ones too.
 
-Volumes are never rolled back, by a failed deploy or by `releases
+By default volumes aren't rolled back, by a failed deploy or by `releases
 rollback`: only the image and config are. That matters when data on the
 volume must match the image (game mods or server jars kept on the
 volume): an automatic rollback would boot the old image on the new data.
 For such upgrades take `flk volumes backup` first and deploy with
 `--no-rollback`; to undo, stop the machine, `flk volumes restore NAME`,
-then `flk releases rollback`.
+then `flk releases rollback`. Or let flk do it: with `[flk.backup]
+before_deploy = true` each deploy backs up the volumes while the machine
+is stopped for the update, a failed health check puts them back with the
+old release, and `flk releases rollback --with-volumes [vN]` restores
+them later (after backing up what's there now).
 
 **Logs.** `flk logs` shows the last 50 lines of every machine (`-n 500`
 for more, `-i ID` for one, `-f` to follow). Logs rotate at 10MB

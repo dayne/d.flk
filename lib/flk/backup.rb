@@ -125,6 +125,22 @@ module Flk
       FileUtils.rm_f(part) if part && File.exist?(part)
     end
 
+    # Puts a backup's data back into dst in place (dst's machine stopped):
+    # no second copy of a big volume needs room beside it. The backup
+    # stays, so a cut-off restore can simply be run again.
+    def restore_over(src, dst)
+      return if system("cp", "--reflink=always", src, dst, out: File::NULL, err: File::NULL)
+      pid = fork do
+        stream_copy(src, dst)
+        exit!(0)
+      rescue Exception => e # rubocop:disable Lint/RescueException -- report anything, then leave
+        warn "flk: restoring #{dst}: #{e.message}"
+        exit!(1)
+      end
+      Process.wait(pid)
+      raise Error, "restoring #{dst} from #{src} failed (run it again: the backup is still there)" unless $?.success?
+    end
+
     CHUNK = 1 << 20     # all-zero chunks stay holes, like cp --sparse=always
     DROP_EVERY = 64 << 20
 

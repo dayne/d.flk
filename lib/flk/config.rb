@@ -240,7 +240,7 @@ module Flk
       "check" => %w[type port path method grace_period interval timeout headers protocol tls_skip_verify
                     tls_server_name match processes],
       "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases],
-      "flk.backup" => %w[mode pre post settle keep verify]
+      "flk.backup" => %w[mode pre post settle keep verify before_deploy]
     }.freeze
 
     # ["kill_timout (did you mean kill_timeout?)", ...]
@@ -344,8 +344,10 @@ module Flk
       hooks = %w[pre post].to_h { |k| [k, Array(b[k]).map { backup_hook(_1, k) }] }
       verify = b["verify"]
       raise Error, "[flk.backup] verify is a host command (a string)" unless verify.nil? || verify.is_a?(String)
+      bd = b["before_deploy"]
+      raise Error, "[flk.backup] before_deploy is true or false" unless [nil, true, false].include?(bd)
       { "mode" => mode, "settle" => Integer(b["settle"] || 5),
-        "keep" => b["keep"] && Integer(b["keep"]), "verify" => verify }.merge(hooks)
+        "keep" => b["keep"] && Integer(b["keep"]), "verify" => verify, "before_deploy" => bd == true }.merge(hooks)
     rescue ArgumentError, TypeError
       raise Error, "[flk.backup] settle and keep must be numbers"
     end

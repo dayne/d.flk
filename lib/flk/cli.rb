@@ -787,6 +787,7 @@ module Flk
       mconfig = cfg.machine_config
 
       deploy_capacity!(a, mconfig) # before the slow build
+      pre = pre_deploy_backup(a, cfg)
       version = (a.meta["releases"].last&.dig("version") || 0) + 1
       puts "==> Release v#{version} of #{a.name}"
       recorded = false
@@ -801,7 +802,7 @@ module Flk
           meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)
           recorded = true
-          roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback])
+          roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback], pre_backup: pre)
         end
       ensure
         unless recorded
@@ -838,7 +839,43 @@ module Flk
     # machine that fails them stops the roll: it goes back to the release
     # and config it had (unless no_rollback), the release is marked failed,
     # and machines not reached yet are left as they were.
-    def roll!(a, rel, mconfig, machines, no_rollback: false)
+    # [flk.backup] before_deploy: where and how a deploy backs up each
+    # machine's volumes while it's stopped for the update (nil: off).
+    def pre_deploy_backup(a, cfg, force: false)
+      plan = cfg ? cfg.backup : DEFAULT_BACKUP
+      return nil unless plan["before_deploy"] || force
+      return nil if a.volumes.none? { _1["attached_machine"] }
+      { root: Backup.root!(nil), plan: plan, keep: Backup.keep(plan["keep"]), hook_dir: cfg&.dir || Dir.pwd }
+    end
+
+    # Backs up the volumes attached to m (stopped) for a roll to rel;
+    # returns [{ machine, volume, volume_id, file, path }].
+    def backup_before_deploy(m, rel, pre)
+      m.app.volumes.select { _1["attached_machine"] == m.id }.map do |v|
+        dst = backup_one(m.app, v, pre[:root], pre[:plan], pre[:keep], pre[:hook_dir], check: true, fast: true,
+                         extra: { "reason" => "before_deploy", "release" => m.release, "for_release" => rel["version"] })
+        { "machine" => m.id, "volume" => v["name"], "volume_id" => v["id"], "file" => File.basename(dst), "path" => dst }
+      end
+    end
+
+    # Puts each of m's volumes (machine stopped) back from a backup:
+    # { volume_id => backup path }.
+    def restore_volumes(m, from)
+      from.each do |vid, path|
+        v = m.app.volumes.find { _1["id"] == vid } or next
+        puts "  #{m.id} [#{m.name}] volume #{v['name']} <- #{File.basename(path)}"
+        Backup.restore_over(path, v["path"])
+      end
+    end
+
+    def record_release_backups(a, rel, taken)
+      meta = a.meta
+      r = meta["releases"].find { _1["version"] == rel["version"] } or return
+      r["backups"] = Array(r["backups"]) + taken.map { _1.except("path") }
+      a.save_meta(meta)
+    end
+
+    def roll!(a, rel, mconfig, machines, no_rollback: false, pre_backup: nil, restore: {})
       checks = Array(mconfig["checks"])
       if machines.empty?
         count = [a.meta["scale"] || 1, 1].max
@@ -856,15 +893,22 @@ module Flk
       done = []
       machines.each do |m|
         before = { "release" => m.release, "config" => m.h["config"] }
-        update_machine(m, rel, mconfig)
+        taken = []
+        update_machine(m, rel, mconfig) do
+          if pre_backup
+            taken = backup_before_deploy(m, rel, pre_backup)
+            record_release_backups(a, rel, taken)
+          end
+          restore_volumes(m, restore[m.id] || {})
+        end
         if (why = health_failure(m, checks)).nil?
           done << m
           next
         end
         fail_release!(a, rel, why)
-        back = rollback_machine(m, before) unless no_rollback
+        back = rollback_machine(m, before, volumes: taken.to_h { [_1["volume_id"], _1["path"]] }) unless no_rollback
         msg = "v#{rel['version']} failed its health checks on #{m.id} [#{m.name}]: #{why}. " +
-              (back ? "#{m.id} is back on v#{before['release']}" : "#{m.id} was left on v#{rel['version']} (logs: flk logs -i #{m.id} --no-tail)")
+              (back ? "#{m.id} is back on v#{before['release']}#{' with its volumes as they were' if taken.any?}" : "#{m.id} was left on v#{rel['version']} (logs: flk logs -i #{m.id} --no-tail)")
         msg += "; #{done.map(&:id).join(', ')} already moved to v#{rel['version']} (back: flk releases rollback)" if done.any?
         rest = machines.size - done.size - 1
         msg += "; #{rest} machine#{'s' if rest > 1} not touched" if rest.positive?
@@ -880,7 +924,9 @@ module Flk
     end
 
     # Back to the release and config a machine had before an update.
-    def rollback_machine(m, before)
+    # With volumes ({ volume_id => backup path }, from before_deploy), the
+    # volumes go back too.
+    def rollback_machine(m, before, volumes: {})
       old = m.app.release(before["release"])
       unless old && File.exist?(old["path"].to_s)
         warn Util.yellow("  can't put #{m.id} back: v#{before['release']}'s image is gone")
@@ -888,6 +934,7 @@ module Flk
       end
       puts "  #{m.id} [#{m.name}] going back to v#{old['version']}"
       VM.stop(m)
+      restore_volumes(m, volumes)
       m.h["release"] = old["version"]
       m.h["config"] = before["config"]
       m.save!
@@ -1050,11 +1097,14 @@ module Flk
         mconfig = cfg.machine_config
         warn Util.yellow("⚠ v#{target['version']} predates recorded configs: using #{cfg.path} as it is now")
       end
+      cfg = config_for(a.name)
+      restore = o[:with_volumes] ? volumes_of_release!(a, target) : {}
+      pre = pre_deploy_backup(a, cfg, force: o[:with_volumes])
       Util.with_lock do
         machines = deploy_capacity!(a, mconfig)
         meta = a.meta
         version = meta["releases"].last["version"] + 1
-        puts "==> Release v#{version} of #{a.name}: rollback to v#{target['version']}"
+        puts "==> Release v#{version} of #{a.name}: rollback to v#{target['version']}#{' with volumes' if o[:with_volumes]}"
         path = File.join(a.dir, "images", "v#{version}.ext4")
         Util.run!("cp", "--reflink=auto", "--sparse=always", target["path"], path)
         tag = "#{Image.repo(a.name)}:v#{version}"
@@ -1063,11 +1113,34 @@ module Flk
                 "rollback_of" => target["version"], "created_at" => Util.now, "config" => mconfig }
         meta["releases"] << rel
         a.save_meta(meta)
-        roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback])
+        roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback], pre_backup: pre, restore: restore)
       end
       Image.prune(a, keep: (config_for(a.name)&.keep_releases || 2))
       puts Util.green("\n✔ #{a.name} is on v#{a.current_release['version']} (the image and config of v#{target['version']})")
       next_step("flk status", "flk releases")
+    end
+
+    # For rollback --with-volumes: { machine id => { volume id => backup
+    # path } }, the newest before_deploy backup of each attached volume
+    # taken while leaving target (its machine was on target then).
+    def volumes_of_release!(a, target)
+      root = Backup.root!(nil)
+      missing = []
+      out = a.machines.to_h do |m|
+        vols = a.volumes.select { _1["attached_machine"] == m.id }
+        [m.id, vols.to_h do |v|
+          b = Backup.list(root, a.name, v).find do
+            _1["reason"] == "before_deploy" && _1["release"] == target["version"] && _1["volume_id"] == v["id"]
+          end
+          missing << "#{v['name']} (machine #{m.id})" unless b
+          [v["id"], b&.dig("path")]
+        end]
+      end
+      if missing.any?
+        raise Error, "no before-deploy backup from v#{target['version']} of: #{missing.join(', ')} " \
+                     "(they're taken by deploys with [flk.backup] before_deploy = true, and pruned by keep; see flk volumes backups)"
+      end
+      out
     end
 
     # Is m on a failed release newer than cur (left there by deploy --no-rollback)?
@@ -1347,9 +1420,11 @@ module Flk
       boot(m, "Machine #{m.id} [#{m.name}] created")
     end
 
+    # The block runs while the machine is stopped (before_deploy backups).
     def update_machine(m, rel, mconfig)
       puts "  #{m.id} [#{m.name}] stopping" if m.running?
       VM.stop(m)
+      yield if block_given?
       m.h["release"] = rel["version"]
       m.h["config"] = mconfig.merge("mounts" => attach_volumes(m.app, m.id, mconfig["mount_specs"]))
       m.save!
@@ -1846,7 +1921,9 @@ module Flk
       next_step("flk volumes backups#{" --to #{o[:to]}" if o[:to]}")
     end
 
-    def backup_one(a, v, root, plan, keep, hook_dir, check:)
+    # Returns the backup's path. fast: the machine is stopped for us (a
+    # deploy), so copy at normal I/O priority.
+    def backup_one(a, v, root, plan, keep, hook_dir, check:, fast: false, extra: {})
       src = v["path"]
       raise Error, "#{src} is missing (is its disk mounted?)" unless File.exist?(src)
       dir = Backup.dir_for(root, a.name, v)
@@ -1867,13 +1944,13 @@ module Flk
       puts "==> #{a.name}/#{v['name']}: #{Backup.gb(Backup.used_bytes(src))} used, " \
            "#{m ? "machine #{m.id} running, mode #{mode}" : 'no machine running'} -> #{dst}"
       t0 = Time.now
-      window = backup_copy(m, src, dst, mode, plan, hook_dir)
+      window = backup_copy(m, src, dst, mode, plan, hook_dir, fast: fast)
       took = Time.now - t0
       state, replayed = check ? Backup.check(dst) : ["unchecked", false]
       Backup.write_meta(dst, { "app" => a.name, "volume_id" => v["id"], "volume" => v["name"], "size_gb" => v["size_gb"],
                                "source" => src, "machine" => m&.id, "release" => m&.release, "mode" => mode,
                                "check" => state, "journal_replayed" => replayed,
-                               "created_at" => Util.now, "seconds" => took.round(1) })
+                               "created_at" => Util.now, "seconds" => took.round(1) }.merge(extra))
       what = { "stop" => "machine down", "pause" => "machine paused", "live" => "copied live" }[mode]
       puts "  #{Util.green('✔')} #{File.basename(dst)} in #{took.round(1)}s" \
            "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}#{' (journal replayed)' if replayed}"
@@ -1894,14 +1971,15 @@ module Flk
       end
       pruned = Backup.prune(root, a.name, v, keep)
       puts "  pruned #{pruned.size} old backup#{'s' if pruned.size > 1} (keeping #{keep})" if pruned.any?
+      dst
     end
 
     # The copy itself; returns how long the machine was down, paused or
     # (live) being copied. Post hooks run even when something failed, so a
     # save-off is always undone.
-    def backup_copy(m, src, dst, mode, plan, hook_dir)
+    def backup_copy(m, src, dst, mode, plan, hook_dir, fast: false)
       unless m
-        Backup.copy(src, dst)
+        Backup.copy(src, dst, idle: !fast)
         return 0
       end
       begin

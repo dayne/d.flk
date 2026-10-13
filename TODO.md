@@ -187,15 +187,15 @@ To consider:
   is stopped or paused for it), synced and `IO#advise(:dontneed)` every
   64MB on both files, and the copy again after e2fsck. Restore too.
   Measured: a 600MB-used image left 1.2G cached with cp, 0 with this.
-- [ ] **Roll volumes back with the release (opt-in).** Automatic rollback
-  restores the image but not the volume, so an upgrade that changed data
-  on the volume (VS mods, Minecraft jars) would boot the old image on the
-  new data (the vintagestory session's point). Idea: `[flk.backup]
-  before_deploy = true` takes a backup before the roll, and a failed
-  health check restores it (machine stopped) before booting the old
-  release; `releases rollback --with-volumes` could do the same from a
-  release's recorded backup. Needs instant snapshots to be cheap for big
-  volumes.
+- [x] **Roll volumes back with the release (opt-in, PLAN.md M1.4).**
+  `[flk.backup] before_deploy = true`: deploys and rollbacks back up each
+  machine's volumes while it's stopped for the update (reason
+  `before_deploy`, `release` = the one it left, `for_release`); the
+  release records `backups: [{ machine, volume, volume_id, file }]`. A
+  failed health check restores them (in place: no second copy needs room)
+  before the old release boots. `flk releases rollback --with-volumes [vN]`
+  backs up the current data, then restores vN's before-deploy backups.
+  Full copies on ext4 add to deploy downtime; instant on XFS/btrfs.
 - [ ] **Volume snapshots.** Backups and extend are done; instant
   snapshots need volumes on a reflink filesystem (an XFS LV for flk's
   volumes: `cp --reflink` is instant, so `pause` mode freezes the VM for

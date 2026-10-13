@@ -102,12 +102,16 @@ module Flk
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
             summary: "Releases, newest first: current, failed (and why), kept for rollback, or pruned" },
           { name: "rollback", args: "[VERSION]",
-            opts: [["--no-rollback", "If the old release fails its health checks, leave the machine on it"]],
+            opts: [["--no-rollback", "If the old release fails its health checks, leave the machine on it"],
+                   ["--with-volumes", "Also put the volumes back as they were on that release (from the backups " \
+                                      "[flk.backup] before_deploy took when leaving it)"]],
             summary: "Roll machines back to an older release's image and config (default: the one before the current)",
             notes: ["Makes a new release (vN+1) from the old one, without building, and rolls it out like a deploy, health checks included.",
                     "If deploy --no-rollback left machines on a failed release, the default is the current (last good) release instead.",
+                    "--with-volumes needs a before-deploy backup of every volume, taken when the machines left that release " \
+                    "(see [flk.backup] before_deploy). The volumes' current data is backed up first, then replaced.",
                     "Only releases whose image is still kept can be used: the last two by default ([flk] keep_releases = N keeps more).",
-                    "Volumes aren't touched: restore data with flk volumes restore."] }
+                    "Volumes aren't touched unless --with-volumes; otherwise restore data with flk volumes restore."] }
         ] },
       { name: "disk", group: "Host", opts: [JSON_OPT], json: true,
         summary: "Disk space flk uses, per app: release images, machine disks, volumes, logs; and backups",
