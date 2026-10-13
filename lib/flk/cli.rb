@@ -563,6 +563,7 @@ module Flk
         steps << (cfg ? "register the app: flk launch --no-deploy (then flk deploy)" : "app '#{a.name}' doesn't exist; see: flk apps list")
         return h
       end
+      h["config_warnings"].each { steps << "optional: #{File.basename(cfg.path)}: #{_1}" }
       ms = a.machines
       rel = a.current_release
       h.merge!("home" => a.dir, "config_path" => a.meta["config_path"],
@@ -602,8 +603,14 @@ module Flk
       end
       h["ports"]["blocked"].each { steps << "host port #{_1['key']} not forwarded: #{_1['blocked']}" }
       h["ports"]["waiting"].each { steps << "host port #{_1['key']} is held by another machine; this one gets it when that stops" }
-      if rel && cfg && rel["version"] && ms.any? { _1.release != rel["version"] }
-        steps << "some machines run an older release; flk deploy rolls them"
+      if rel && rel["version"]
+        # newer than current = a failed release that deploy --no-rollback left running
+        failed, other = ms.partition { _1.release.to_i > rel["version"] && a.release(_1.release)&.dig("status") == "failed" }
+        failed.each do |m|
+          steps << "machine #{m.id} [#{m.name}] is on v#{m.release}, which failed its health checks (left by --no-rollback): " \
+                   "see flk logs -i #{m.id} --no-tail; then flk releases rollback, or fix and flk deploy"
+        end
+        steps << "some machines run an older release; flk deploy rolls them" if cfg && other.any? { _1.release != rel["version"] }
       end
       up = ms.select(&:running?)
       if up.any? && steps.none? { !_1.start_with?("optional:") }

@@ -235,6 +235,9 @@ test_context_has_config_warnings() {
   assert_contains "$(flk context --json --no-host | json_get app.config_warnings)" "kill_timout (did you mean kill_timeout?)"
   assert_contains "$("$FLK_BIN" context --all --json --no-host | ruby -rjson -e \
     'puts JSON.parse($stdin.read)["apps"].find { _1["name"] == ARGV[0] }["config_warnings"]' "$APP")" "kill_timout" "context --all"
+  assert_contains "$(flk context --json --no-host | json_get next_steps)" \
+    "optional: flk.toml: unknown key kill_timout (did you mean kill_timeout?); flk ignores it" "next step"
+  assert_contains "$("$FLK_BIN" context --all --json --no-host | json_get next_steps)" "$APP: optional: flk.toml: unknown key" "--all step"
   assert_contains "$(flk context --no-host)" "⚠ flk.toml: unknown key kill_timout" "text context"
   assert_contains "$("$FLK_BIN" context --all --no-host)" "⚠ flk.toml: unknown key kill_timout" "text overview"
   sed -i '1d' "$APP_DIR/flk.toml"

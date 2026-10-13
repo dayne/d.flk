@@ -107,7 +107,13 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
 - [x] **G11: config warnings in context.** lazyflk polls context, so each
   app there (`context` and `context --all`) has `"config_warnings"`: the
   `config show` warnings for its recorded flk.toml, `[]` when clean or
-  unreadable. Text context prints them as `⚠ flk.toml: …` lines.
+  unreadable. Text context prints them as `⚠ flk.toml: …` lines,
+  and each is a next step: `optional: flk.toml: unknown key K (did you mean
+  K2?); flk ignores it` (`APP: ` in front with `--all`). Also: a machine
+  left on a failed release by `deploy --no-rollback` gets `machine ID [NAME]
+  is on vN, which failed its health checks (left by --no-rollback): see flk
+  logs -i ID --no-tail; then flk releases rollback, or fix and flk deploy`
+  instead of "older release".
 - [ ] **G7: no events.** Later, after the above: `flk events --json`, one
   line per state change (fed by the tmux exit hook and lifecycle
   commands), so lazyflk can stop polling.

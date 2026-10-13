@@ -46,6 +46,11 @@ test_no_rollback_leaves_the_machine_for_debugging() {
   assert_contains "$out" "was left on v3"
   assert_eq 3 "$(release_of_machine)" "machine stays on the failed release"
   assert_eq 1 "$(current_release)" "current release is still v1"
+  out=$(flk context --json --no-host | json_get next_steps)
+  assert_contains "$out" "is on v3, which failed its health checks (left by --no-rollback)"
+  assert_contains "$out" "flk releases rollback"
+  [[ $out == *"older release"* ]] && fail "context calls the failed release older: $out"
+  true
 }
 
 test_passing_checks_deploy() {
