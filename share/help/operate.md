@@ -25,7 +25,8 @@ marked failed (`flk releases` says why), and the deploy stops; `--no-rollback`
 leaves it there to debug. fly's `[[services.tcp_checks]]`,
 `[[services.http_checks]]` and `[[http_service.checks]]` work too.
 `flk releases rollback [vN]` goes back to an older release's image and
-config (default: the one before), as a new release with the same checks.
+config (default: the one before; or, when `--no-rollback` left machines on
+a failed release, the last good one), as a new release with the same checks.
 The last two images are kept; `[flk] keep_releases = N` keeps more.
 Deploys and rollbacks boot the machines they update, stopped ones too.
 

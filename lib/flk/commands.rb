@@ -105,6 +105,7 @@ module Flk
             opts: [["--no-rollback", "If the old release fails its health checks, leave the machine on it"]],
             summary: "Roll machines back to an older release's image and config (default: the one before the current)",
             notes: ["Makes a new release (vN+1) from the old one, without building, and rolls it out like a deploy, health checks included.",
+                    "If deploy --no-rollback left machines on a failed release, the default is the current (last good) release instead.",
                     "Only releases whose image is still kept can be used: the last two by default ([flk] keep_releases = N keeps more).",
                     "Volumes aren't touched: restore data with flk volumes restore."] }
         ] },

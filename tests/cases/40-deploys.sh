@@ -48,7 +48,7 @@ test_no_rollback_leaves_the_machine_for_debugging() {
   assert_eq 1 "$(current_release)" "current release is still v1"
   out=$(flk context --json --no-host | json_get next_steps)
   assert_contains "$out" "is on v3, which failed its health checks (left by --no-rollback)"
-  assert_contains "$out" "flk releases rollback"
+  assert_contains "$out" "flk releases rollback v1"
   [[ $out == *"older release"* ]] && fail "context calls the failed release older: $out"
   true
 }
@@ -87,4 +87,18 @@ test_rollback_refuses_pruned_and_failed_releases() {
   assert_contains "$out" "failed its health checks"
   out=$(flk releases rollback v6 2>&1) && fail "rolled back to the current release"
   assert_contains "$out" "already the current release"
+}
+
+# after deploy --no-rollback, plain rollback goes back to the last good
+# release (the current one), not the one before it
+test_rollback_after_no_rollback_returns_to_current() {
+  set_checks '' '[checks.never]' '  type = "tcp"' '  port = 9' '  grace_period = "4s"'
+  flk deploy --no-rollback >/dev/null 2>&1 && fail "deploy passed a check nothing answers"
+  assert_eq 7 "$(release_of_machine)" "left on the failed release"
+  local out
+  out=$(flk releases rollback 2>&1) || fail "rollback failed: $out"
+  assert_contains "$out" "rollback to v6"
+  assert_eq 8 "$(release_of_machine)" "rollback release"
+  assert_eq 6 "$(release_field 8 rollback_of)" "rollback_of the last good release"
+  wait_mc 60
 }

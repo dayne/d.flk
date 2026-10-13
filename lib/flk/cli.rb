@@ -605,10 +605,10 @@ module Flk
       h["ports"]["waiting"].each { steps << "host port #{_1['key']} is held by another machine; this one gets it when that stops" }
       if rel && rel["version"]
         # newer than current = a failed release that deploy --no-rollback left running
-        failed, other = ms.partition { _1.release.to_i > rel["version"] && a.release(_1.release)&.dig("status") == "failed" }
+        failed, other = ms.partition { stranded_on_failed?(a, _1, rel) }
         failed.each do |m|
           steps << "machine #{m.id} [#{m.name}] is on v#{m.release}, which failed its health checks (left by --no-rollback): " \
-                   "see flk logs -i #{m.id} --no-tail; then flk releases rollback, or fix and flk deploy"
+                   "see flk logs -i #{m.id} --no-tail; then flk releases rollback v#{rel['version']}, or fix and flk deploy"
         end
         steps << "some machines run an older release; flk deploy rolls them" if cfg && other.any? { _1.release != rel["version"] }
       end
@@ -782,7 +782,7 @@ module Flk
     # Warnings about the config that don't stop anything: unknown keys.
     def config_warnings(cfg)
       cfg.unknown_keys.each do |k|
-        warn Util.yellow("⚠ #{File.basename(cfg.path)}: flk doesn't know #{k}; it's ignored")
+        warn Util.yellow("⚠ #{File.basename(cfg.path)}: unknown key #{k}; flk ignores it")
       end
     end
 
@@ -978,15 +978,19 @@ module Flk
       raise Error, "rollback takes at most one release (e.g. v3)" if args.size > 1
       a = app
       cur = a.current_release or raise Error, "#{a.name} has no release yet"
+      # machines a deploy --no-rollback left on a failed release: back to current
+      stranded = a.machines.select { stranded_on_failed?(a, _1, cur) }
       target = if args[0]
                  v = args[0].delete_prefix("v")
                  raise Error, "'#{args[0]}' isn't a release (e.g. v3)" unless v.match?(/\A\d+\z/)
                  a.release(v.to_i) or raise Error, "#{a.name} has no release v#{v} (see: flk releases)"
+               elsif stranded.any?
+                 cur
                else
                  a.meta["releases"].reverse.find { _1["version"] < cur["version"] && _1["status"] != "failed" } or
                    raise Error, "no release before v#{cur['version']} to go back to"
                end
-      raise Error, "v#{target['version']} is already the current release" if target["version"] == cur["version"]
+      raise Error, "v#{target['version']} is already the current release" if target["version"] == cur["version"] && stranded.empty?
       raise Error, "v#{target['version']} failed its health checks; pick another (flk releases)" if target["status"] == "failed"
       unless File.exist?(target["path"].to_s)
         kept = a.meta["releases"].select { File.exist?(_1["path"].to_s) }.map { "v#{_1['version']}" }
@@ -1017,6 +1021,11 @@ module Flk
       Image.prune(a, keep: (config_for(a.name)&.keep_releases || 2))
       puts Util.green("\n✔ #{a.name} is on v#{a.current_release['version']} (the image and config of v#{target['version']})")
       next_step("flk status", "flk releases")
+    end
+
+    # Is m on a failed release newer than cur (left there by deploy --no-rollback)?
+    def stranded_on_failed?(a, m, cur)
+      m.release.to_i > cur["version"] && a.release(m.release)&.dig("status") == "failed"
     end
 
     def apps_summary
