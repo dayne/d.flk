@@ -2,6 +2,7 @@
 
 Known rough edges, found while getting flk running on real hardware.
 Each entry says where the issue is caught today, and where a fix could go.
+The order of work (milestones) is in `PLAN.md`.
 
 ## Setup and host checks
 
