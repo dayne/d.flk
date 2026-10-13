@@ -176,11 +176,13 @@ To consider:
   `flk ssh console` and `flk ssh console -C "cmd"` (like Fly's hallpass).
 - [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
   from machine records).
-- [ ] **Files in a stopped volume without sudo.** `flk volumes ls/cp/rm
-  VOL` on top of `debugfs -w` (`write`, `rm`, `rdump`), refusing while a
-  machine uses it. Gotcha (from the vintagestory session): `write` creates
-  files as uid 0; follow with `sif PATH uid N` / `gid N`. Minecraft's
-  `bin/mc-edit` and VS's tooling each do a version of this today.
+- [x] **Files in a volume without sudo** (PLAN.md M2): `flk files
+  ls|cat|cp|rm|mkdir|chown`, `VOL:PATH`, on debugfs. Reads any time (a
+  note when the machine runs; `--backup B` reads a backup); writes need the
+  machine stopped, take flk's lock, and end with e2fsck -fy. Copied-in files
+  get the target dir's owner or `--owner`, local modes; trees and symlinks
+  too. `ls --json`: `{ name, type, size, uid, gid, mode, mtime }` (mtime to
+  the minute, from debugfs `ls -l`).
 - [x] **Backups keep out of the page cache** (minecraft.flk BUGS #9): a
   reflink when the filesystem can; else a sparse Ruby copy (SEEK_DATA/HOLE,
   zero chunks stay holes) at idle I/O priority (normal while the machine

@@ -68,7 +68,7 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
    are on a filesystem with reflinks (XFS, btrfs), since copies are then
    instant.
 
-### M2: Volume files without root
+### M2: Volume files without root (done 2026-10-13: `flk files`)
 
 - `flk volumes ls|cat|cp|rm|mkdir|chown VOL PATH`, built on `debugfs -w`
   (no mount, no sudo). Each also works on a backup (`--backup ID`, read

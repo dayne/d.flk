@@ -150,3 +150,14 @@ test_extend_grows_a_stopped_volume() {
   assert_eq $((2 * 1024 ** 3)) "$(stat -c %s "$f")" "image size"
   flk machine start "$m" >/dev/null; wait_mc 60
 }
+
+# flk files on a running machine's volume: reads work (with a note),
+# writes are refused
+test_files_reads_but_wont_write_a_running_volume() {
+  local out
+  out=$(flk files ls world:/world 2>&1) || fail "ls failed: $out"
+  assert_contains "$out" "level.json"
+  assert_contains "$out" "in use by a running machine"
+  out=$(flk files mkdir world:/x 2>&1) && fail "wrote to a running machine's volume"
+  assert_contains "$out" "stop it first"
+}

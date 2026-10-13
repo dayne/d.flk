@@ -205,6 +205,36 @@ module Flk
           { name: "import", opts: [["--stage", "Don't restart machines; applies on next start/deploy"]],
             summary: "Set secrets from KEY=VALUE lines on stdin" }
         ] },
+      { name: "files", group: "Config & data",
+        summary: "Files inside a volume (or a backup of one): list, read, copy in and out; no mount, no root",
+        notes: ["VOL:PATH names a path in volume VOL (its name or ID); PATH is absolute inside it, default /. " \
+                "Built on debugfs (e2fsprogs).",
+                "Reading works any time: on a running machine's volume it shows what's on disk, which can lag a little; " \
+                "--backup reads a backup instead. Writing (cp into a volume, rm, mkdir, chown) needs its machine stopped, " \
+                "and ends with an e2fsck of the volume."],
+        subs: [
+          { name: "ls", args: "VOL[:PATH]", opts: [BACKUP_TO_OPT, ["--backup BACKUP", "Read a backup of VOL instead (latest, or part of its name)"], JSON_OPT],
+            json: true, summary: "List a directory in a volume",
+            notes: ["--json: [{ name, type (file, dir, symlink, other), size, uid, gid, mode (\"0644\"), mtime (to the minute) }]."] },
+          { name: "cat", args: "VOL:PATH", opts: [BACKUP_TO_OPT, ["--backup BACKUP", "Read a backup of VOL instead"]],
+            summary: "Print a file from a volume" },
+          { name: "cp", args: "SRC DST",
+            opts: [BACKUP_TO_OPT, ["--backup BACKUP", "When copying out: read a backup of VOL instead"],
+                   ["--owner UID[:GID]", "When copying in: owner of the new files (default: the target directory's owner)"]],
+            summary: "Copy a file or directory into or out of a volume (one side is VOL:PATH)",
+            notes: ["Like cp -r: into an existing directory it goes inside it; a file in the volume is replaced. " \
+                    "File modes are kept; owners come from --owner or the directory copied into, not the host's user IDs.",
+                    "Examples: flk files cp ./server.properties world:/ ; flk files cp world:/logs ./logs"] },
+          { name: "rm", args: "VOL:PATH", opts: [["-r", "--recursive", "Delete a directory and everything in it"]],
+            summary: "Delete a file (or with -r, a directory) in a volume; its machine must be stopped" },
+          { name: "mkdir", args: "VOL:PATH",
+            opts: [["-p", "--parents", "Make missing parents too; no error if it exists"],
+                   ["--owner UID[:GID]", "Owner (default: the parent directory's)"]],
+            summary: "Make a directory in a volume; its machine must be stopped" },
+          { name: "chown", args: "UID[:GID] VOL:PATH", opts: [["-r", "--recursive", "Everything under a directory too"]],
+            summary: "Change the owner of files in a volume (numeric IDs); its machine must be stopped",
+            notes: ["E.g. a volume made with --from-dir has a root-owned /: flk files chown 1000:1000 data:/"] }
+        ] },
       { name: "volumes", aliases: %w[volume vol], group: "Config & data", default_sub: "list",
         summary: "Persistent disks (sparse ext4), one machine each",
         subs: [
