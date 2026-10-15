@@ -63,11 +63,11 @@ test_stop_when_already_stopped() {
 
 # G10, G8: the app's release image is listed, and counted by flk disk.
 test_images_and_disk_see_the_release() {
-  local img; img=$(flk images --json | ruby -rjson -e 'i = JSON.parse($stdin.read).find { _1["app"] == ARGV[0] }
+  # The redeploys above leave more than one release image; check the current one.
+  local img; img=$(flk images --json | ruby -rjson -e 'i = JSON.parse($stdin.read).find { _1["app"] == ARGV[0] && _1["current"] }
     puts JSON.generate(i)' "$APP")
-  [[ $img != null ]] || fail "flk images doesn't list $APP"
+  [[ $img != null ]] || fail "flk images lists no current image for $APP: $(flk images --json)"
   assert_eq false "$(json_get orphan <<<"$img")" "orphan"
-  assert_eq true "$(json_get current <<<"$img")" "current"
   [[ $(json_get size_bytes <<<"$img") -gt 0 ]] || fail "no size: $img"
   local d; d=$(flk disk --json | ruby -rjson -e 'puts JSON.generate(JSON.parse($stdin.read)["apps"].find { _1["app"] == ARGV[0] })' "$APP")
   [[ $(json_get images.bytes <<<"$d") -gt 0 ]] || fail "release image not counted: $d"
