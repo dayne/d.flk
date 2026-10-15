@@ -28,12 +28,57 @@ module Flk
       machine_table(app)
     end
 
-    def machine_start(args, _o) = each_ref(args) { |m| boot(m, "Machine #{m.id} [#{m.name}] started") }
+    def machine_start(args, _o) = each_ref(pick_ids!("start", args)) { |m| boot(m, "Machine #{m.id} [#{m.name}] started") }
     def machine_stop(args, _o)
-      each_ref(args) { |m| VM.stop(m); puts "Machine #{m.id} [#{m.name}] stopped (stays stopped, also after reboots)" }
+      each_ref(pick_ids!("stop", args)) { |m| stop_machine(m) }
       next_step("flk machine start #{args.join(' ')}")
     end
-    def machine_restart(args, _o) = each_ref(args) { |m| VM.stop(m); boot(m, "Machine #{m.id} [#{m.name}] restarted") }
+    def machine_restart(args, _o) = each_ref(pick_ids!("restart", args)) { |m| restart_machine(m) }
+
+    def stop_machine(m)
+      VM.stop(m)
+      puts "Machine #{m.id} [#{m.name}] stopped (stays stopped, also after reboots)"
+    end
+
+    def restart_machine(m)
+      VM.stop(m)
+      boot(m, "Machine #{m.id} [#{m.name}] restarted")
+    end
+
+    # `machine stop` with no ID never guesses: it names the machines and
+    # the app-wide command instead.
+    def pick_ids!(verb, args)
+      return args if args.any?
+      ms = app.machines
+      raise Error.new("#{app.name} has no machines", next_steps: ["flk deploy"]) if ms.empty?
+      list = ms.map { "#{_1.id} [#{_1.name}] #{_1.state}" }.join(", ")
+      raise Error.new("which machine? #{app.name}'s machines: #{list}",
+                      next_steps: ["flk machine #{verb} #{ms.first.id}", "flk #{verb} (all of #{app.name}'s machines)"])
+    end
+
+    # flk start | stop | restart: every machine of the app.
+    def cmd_start(_args, _o)
+      ms = app.machines
+      raise Error.new("#{app.name} has no machines", next_steps: ["flk deploy"]) if ms.empty?
+      todo = ms.reject(&:running?)
+      return puts("Every machine of #{app.name} is already running") if todo.empty?
+      todo.each { |m| boot(m, "Machine #{m.id} [#{m.name}] started") }
+      next_step("flk status", "flk logs")
+    end
+
+    def cmd_stop(_args, _o)
+      todo = app.machines.select(&:running?)
+      return puts("Nothing of #{app.name} is running") if todo.empty?
+      todo.each { stop_machine(_1) }
+      next_step("flk start")
+    end
+
+    def cmd_restart(_args, _o)
+      ms = app.machines
+      raise Error.new("#{app.name} has no machines", next_steps: ["flk deploy"]) if ms.empty?
+      ms.each { restart_machine(_1) }
+      next_step("flk status", "flk logs")
+    end
     def machine_destroy(args, o) = Util.with_lock { each_ref(args) { |m| destroy_machine(m, force: o[:force]) } }
     # Run by flk itself (VM.spawn_revive) when a machine exited on its own
     # and its restart policy wants it back: back off 1, 2, 4... up to 60s,
@@ -141,6 +186,7 @@ module Flk
       FileUtils.mkdir_p(m.dir)
       m.save!
       install_rootfs(m, rel)
+      own_new_volumes(m, rel)
       boot(m, "Machine #{m.id} [#{m.name}] created", event: "machine.created")
     end
 
@@ -153,6 +199,7 @@ module Flk
       m.h["config"] = mconfig.merge("mounts" => attach_volumes(m.app, m.id, mconfig["mount_specs"]))
       m.save!
       install_rootfs(m, rel)
+      own_new_volumes(m, rel)
       boot(m, "Machine #{m.id} [#{m.name}] updated to v#{rel['version']}", event: "machine.updated")
     end
 
@@ -161,6 +208,30 @@ module Flk
     def install_rootfs(m, rel)
       raise Error, "release image missing: #{rel['path']} (redeploy)" unless File.exist?(rel["path"])
       Util.run!("cp", "--reflink=auto", "--sparse=always", rel["path"], m.path("rootfs.ext4"))
+    end
+
+    # A volume from `volumes create` without --owner or --from-dir is an
+    # empty ext4 owned by root. The first time a machine uses it, its root
+    # takes the owner of the mount point in the release image, so a
+    # Dockerfile's `chown app /data` still holds with the volume over /data.
+    # Once per volume (the flag goes), and only for volumes created so.
+    def own_new_volumes(m, rel)
+      vols = m.app.volumes
+      todo = Array(m.config["mounts"]).filter_map do |mt|
+        v = vols.find { _1["id"] == mt["volume"] }
+        [v, mt["destination"]] if v&.dig("owner_from_image")
+      end
+      return if todo.empty?
+      todo.each do |v, dest|
+        e = VolFS.stat(rel["path"], dest)
+        if e&.dir? && [e.uid, e.gid] != [0, 0]
+          VolFS.batch!(v["path"], VolFS.owner_cmds("/", e.uid, e.gid))
+          VolFS.fsck!(v["path"])
+          puts "  volume #{v['name']}: root now owned by #{e.uid}:#{e.gid}, like #{dest} in the image"
+        end
+        v.delete("owner_from_image")
+      end
+      m.app.save_volumes(vols)
     end
 
     # A volume attaches to exactly one machine. Prefer the one this machine

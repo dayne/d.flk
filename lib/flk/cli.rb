@@ -32,6 +32,7 @@ module Flk
       msg = e.message.sub(/\n\s*Did you mean\?\s*(\S+).*/m) { "; did you mean --#{$1}?" }
       ref = @help_ref && e.is_a?(OptionParser::ParseError) ? " (see: #{@help_ref})" : ""
       warn "#{Util.red('Error:')} #{msg}#{ref}"
+      warn "Next: #{e.next_steps.join('   or: ')}" if e.is_a?(Error) && e.next_steps
       exit 1
     rescue Interrupt
       exit 130

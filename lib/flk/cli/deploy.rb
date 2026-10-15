@@ -81,9 +81,11 @@ module Flk
       pre = pre_deploy_backup(a, cfg)
       version = (a.meta["releases"].last&.dig("version") || 0) + 1
       puts "==> Release v#{version} of #{a.name}"
-      recorded = false
+      recorded = rolling = false
+      stage = "build"
       begin
         rel = Image.build(a, cfg, version, image_override: o[:image])
+        stage = "deploy"
         Util.with_lock do
           machines = deploy_capacity!(a, mconfig) # again: things may have changed during the build
           # Record the release only once its machines can be rolled, so a
@@ -92,9 +94,15 @@ module Flk
           meta["releases"] << rel
           meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)
-          recorded = true
+          recorded = rolling = true
           roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback], pre_backup: pre)
         end
+      rescue Error => e
+        raise if rolling
+        stopped_before_machines!(a, stage, e)
+      rescue Interrupt
+        warn "\nInterrupted: #{stage} stopped; machines unchanged (#{unchanged_note(a)})" unless rolling
+        raise
       ensure
         unless recorded
           FileUtils.rm_f(File.join(a.dir, "images", "v#{version}.ext4"))
@@ -111,6 +119,23 @@ module Flk
     end
 
     # The same warnings as strings, for JSON ([] without a readable config).
+    # A deploy that failed before it touched any machine (the build, or a
+    # check before the roll): the cause, then a last line that says nothing
+    # changed, for people who'd otherwise stop the machine to be safe.
+    def stopped_before_machines!(a, stage, cause)
+      warn cause.message
+      note = unchanged_note(a)
+      Events.emit("deploy.failed", app: a.name, release: a.current_release&.dig("version"),
+                                   detail: "#{stage} failed; machines unchanged (#{note}): #{cause.message.lines.first.to_s.chomp}")
+      fix = stage == "build" ? "flk deploy (after fixing the build)" : "flk deploy (after fixing that)"
+      raise Error.new("#{stage} failed; machines unchanged (#{note})", next_steps: [fix, "flk status"])
+    end
+
+    def unchanged_note(a)
+      vs = a.machines.map(&:release).uniq.sort
+      vs.empty? ? "no machines yet" : "still on #{vs.map { "v#{_1}" }.join(' and ')}"
+    end
+
     def warning_strings(cfg)
       return [] unless cfg
       cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" }
@@ -187,8 +212,9 @@ module Flk
           m = create_machine(a, rel, mconfig)
           next if (why = health_failure(m, checks)).nil?
           fail_release!(a, rel, why)
-          raise Error, "v#{rel['version']} failed its health checks on new machine #{m.id}: #{why}. " \
-                       "Nothing older to go back to; fix it and deploy again (logs: flk logs -i #{m.id} --no-tail)"
+          raise Error.new("v#{rel['version']} failed its health checks on new machine #{m.id}: #{why}. " \
+                          "Nothing older to go back to; fix it and deploy again (logs: flk logs -i #{m.id} --no-tail)",
+                          next_steps: ["flk logs -i #{m.id} --no-tail", "flk deploy (after fixing it)"])
         end
         return
       end
@@ -215,7 +241,9 @@ module Flk
         msg += "; #{done.map(&:id).join(', ')} already moved to v#{rel['version']} (back: flk releases rollback)" if done.any?
         rest = machines.size - done.size - 1
         msg += "; #{rest} machine#{'s' if rest > 1} not touched" if rest.positive?
-        raise Error, msg
+        steps = ["flk logs -i #{m.id} --no-tail", "flk status"]
+        steps << "flk releases rollback" if done.any?
+        raise Error.new(msg, next_steps: steps)
       end
     end
 

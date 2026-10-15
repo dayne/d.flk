@@ -51,11 +51,18 @@ module Flk
         raise Error, "#{File.dirname(path)} doesn't exist" unless File.directory?(File.dirname(path))
       end
       from = o[:from_dir] && from_dir!(o[:from_dir], size)
+      raise Error, "--owner and --from-dir don't go together (the copy keeps its owners)" if from && o[:owner]
+      uid, gid = owner_opt(o[:owner]) if o[:owner]
       FileUtils.mkdir_p(File.dirname(path))
       puts "==> Copying #{from} into the volume (this can take a while)" if from
       Util.mkfs_ext4(path, size * 1024, label: name, from_dir: from)
-      register_volume(a, { "id" => id, "name" => name, "size_gb" => size, "path" => path }.merge(o[:path] ? { "external" => true } : {}))
-      puts "Created #{id} (#{name}, #{size}GB sparse#{", at #{path}" if o[:path]}#{", from #{from}" if from})"
+      VolFS.batch!(path, VolFS.owner_cmds("/", uid, gid || uid)) if uid
+      h = { "id" => id, "name" => name, "size_gb" => size, "path" => path }
+      h["external"] = true if o[:path]
+      h["owner_from_image"] = true unless from || uid # see own_new_volumes
+      register_volume(a, h)
+      puts "Created #{id} (#{name}, #{size}GB sparse#{", at #{path}" if o[:path]}#{", from #{from}" if from}" \
+           "#{", root owned by #{uid}:#{gid || uid}" if uid})"
       puts "Note: files keep their owner/group IDs from #{from}; the app may need to run as that user (or chown inside)." if from
       boot_unit_note(path) if o[:path]
       next_step("[[mounts]] source = \"#{name}\" in flk.toml, then flk deploy")

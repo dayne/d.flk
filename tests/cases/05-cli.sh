@@ -55,7 +55,7 @@ test_unknown_arguments_rejected() {
   assert_contains "$out" "did you mean 'start'"
   out=$(flk status extra 2>&1) && fail "accepted an extra argument"
   assert_contains "$out" "unexpected argument 'extra'"
-  out=$(flk machine stop 2>&1) && fail "accepted machine stop without an ID"
+  out=$(flk volumes create 2>&1) && fail "accepted volumes create without a name"
   assert_contains "$out" "missing arguments"
 }
 
@@ -349,4 +349,56 @@ test_stats_disk_images_json() {
     %w[images rootfs volumes logs external_volumes].each { |k| abort "no totals.#{k}" unless d["totals"][k]["apparent"] }
     abort "no app #{ARGV[0]}" unless d["apps"].any? { _1["app"] == ARGV[0] }' "$APP" || fail "disk --json"
   flk images --json | ruby -rjson -e 'abort "not an array" unless JSON.parse($stdin.read).is_a?(Array)' || fail "images --json"
+}
+
+# G13: a build that fails says, last, that no machine changed, and logs it.
+test_failed_build_says_machines_unchanged() {
+  stage_app hello build
+  trap destroy_app EXIT
+  printf 'FROM scratch\nRUN false\n' >"$APP_DIR/Dockerfile" # no shell: fails at once, no pull
+  flk launch --no-deploy >/dev/null
+  local out
+  out=$(flk deploy 2>&1) && fail "a broken Dockerfile deployed"
+  assert_contains "$(tail -n 2 <<<"$out" | head -n 1)" "Error: build failed; machines unchanged (no machines yet)" "error is the last thing said"
+  assert_contains "$(tail -n 1 <<<"$out")" "Next: flk deploy (after fixing the build)" "then the next step"
+  assert_contains "$out" "command failed:" "the cause is still shown"
+  flk events --json | grep -F '"deploy.failed"' | grep -qF "build failed; machines unchanged (no machines yet)" ||
+    fail "no deploy.failed event: $(flk events --json)"
+  assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from the failed build"
+}
+
+test_build_hint_for_taken_ids() {
+  local h; h=$(ruby -I"$FLK_SRC/lib" -rflk -e 'puts Flk::Image.build_hint(ARGV[0])' "groupadd: GID '1000' already exists")
+  assert_contains "$h" "ubuntu:23.04 and later ship user \`ubuntu\` as 1000:1000"
+  assert_eq "" "$(ruby -I"$FLK_SRC/lib" -rflk -e 'print Flk::Image.build_hint("all good")')" "no hint otherwise"
+}
+
+# G14: volumes create --owner sets the root's owner; without it the root
+# waits for the image's mount point (owner_from_image).
+test_volume_create_owner() {
+  local d; d=$(mktemp -d "$WORK/owner.XXXX")
+  flk volumes create owned --size 1 --path "$d/owned.ext4" --owner 1234:2345 >/dev/null
+  assert_contains "$(debugfs -R "stat /" "$d/owned.ext4" 2>/dev/null)" "User:  1234   Group:  2345" "root owner"
+  local v; v=$(flk volumes list --json | ruby -rjson -e 'puts JSON.generate(JSON.parse($stdin.read).find { _1["name"] == "owned" })')
+  assert_eq null "$(json_get owner_from_image <<<"$v")" "--owner: nothing left to do"
+  flk volumes destroy owned --delete-data >/dev/null
+  flk volumes create plain --size 1 --path "$d/plain.ext4" --owner 77 >/dev/null
+  assert_contains "$(debugfs -R "stat /" "$d/plain.ext4" 2>/dev/null)" "User:    77   Group:    77" "GID defaults to UID"
+  flk volumes destroy plain --delete-data >/dev/null
+  flk volumes create fresh --size 1 --path "$d/fresh.ext4" >/dev/null
+  v=$(flk volumes list --json | ruby -rjson -e 'puts JSON.generate(JSON.parse($stdin.read).find { _1["name"] == "fresh" })')
+  assert_eq true "$(json_get owner_from_image <<<"$v")" "no --owner: owner from the image later"
+  flk volumes destroy fresh --delete-data >/dev/null
+  assert_fails flk volumes create bad --owner developer
+}
+
+# App-level start/stop/restart, and machine verbs without an ID.
+test_app_verbs_without_machines() {
+  assert_contains "$(flk stop)" "Nothing of $APP is running"
+  local out
+  out=$(flk start 2>&1) && fail "start with no machines succeeded"
+  assert_contains "$out" "$APP has no machines"
+  assert_contains "$out" "Next: flk deploy"
+  out=$(flk machine stop 2>&1) && fail "machine stop with no ID succeeded"
+  assert_contains "$out" "$APP has no machines"
 }

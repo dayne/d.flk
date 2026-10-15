@@ -33,6 +33,7 @@ test_failing_check_rolls_the_machine_back() {
   out=$(flk deploy 2>&1) && fail "deploy passed a check nothing answers"
   assert_contains "$out" "v2 failed its health checks"
   assert_contains "$out" "is back on v1"
+  assert_contains "$(tail -n 1 <<<"$out")" "Next: flk logs -i $(machine_id) --no-tail" "next step after a failed check"
   assert_eq 1 "$(release_of_machine)" "machine release after the failed deploy"
   assert_eq failed "$(release_field 2 status)" "v2 status"
   assert_eq 1 "$(current_release)" "current release"

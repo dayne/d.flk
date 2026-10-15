@@ -35,7 +35,15 @@ module Flk
                      "Fix it once for your user (no root):\n  #{REGISTRIES_FIX}\n" \
                      "or use the full name, e.g. FROM #{full}"
       end
-      raise Error, "command failed: #{cmd.shelljoin}"
+      raise Error, "command failed: #{cmd.shelljoin}#{build_hint(out)}"
+    end
+
+    # Known Dockerfile mistakes in the build output, and their fix.
+    def build_hint(out)
+      return "" unless (id = out[/groupadd: GID '?(\d+)'? already exists/, 1] || out[/useradd: UID (\d+) is not unique/, 1])
+      "\nHint: the base image already has a user or group with ID #{id}; ubuntu:23.04 and later ship " \
+        "user `ubuntu` as 1000:1000. Rename it instead (usermod -l NEW -d /home/NEW -m ubuntu && " \
+        "groupmod -n NEW ubuntu), or remove it first (userdel -r ubuntu)."
     end
 
     def build(app, cfg, version, image_override: nil)

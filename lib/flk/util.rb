@@ -19,7 +19,15 @@ module Flk
   # adding fields keeps it; renaming, removing or retyping one bumps it.
   JSON_SCHEMA = 1
 
-  class Error < StandardError; end
+  # next_steps: commands printed as a Next: line after the error message.
+  class Error < StandardError
+    attr_reader :next_steps
+
+    def initialize(msg = nil, next_steps: nil)
+      super(msg)
+      @next_steps = next_steps
+    end
+  end
 
   ROOT    = File.expand_path(ENV["FLK_HOME"] ||
               File.join(ENV["XDG_DATA_HOME"] || File.join(Dir.home, ".local/share"), "flk"))

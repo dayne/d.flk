@@ -178,6 +178,13 @@ their meaning):
 
 {{EVENT_TYPES}}
 
+A deploy that fails before it touches a machine (the build, or a check
+before the roll) is a `deploy.failed` whose `release` is the unchanged
+current one and whose `detail` starts with `build failed; machines
+unchanged` (or `deploy failed; ...`). A health-check failure during the
+roll is a `deploy.failed` for the new release, its `detail` starting with
+`vN failed its health checks`.
+
 ## Commands
 
 Global option for every command: `-a, --app APP`. `flk COMMAND --help` works

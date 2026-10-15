@@ -137,7 +137,7 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   - `volumes ls --json`: `{ name, type, size, uid, gid, mode, mtime }`,
     on a volume and on a backup (lazyflk's read-only file browser).
 
-- [ ] **G13: a failed build or deploy says nothing changed** (lazyflk
+- [x] **G13: a failed build or deploy says nothing changed** (lazyflk
   d-lazyflk-a9, 2026-10-14; the opencode.flk entry "A failed build doesn't
   say nothing changed" below). lazyflk shows flk's output in its job view
   and wants the last lines stable enough to show as the result. Additive:
@@ -147,7 +147,14 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
     `detail` = `"build"` or `"checks"`.
   lazyflk shows the `Next:` line under a failed deploy, and the event in
   its Events tabs.
-- [ ] **G14: `flk volumes create --owner UID:GID`** (lazyflk d-lazyflk-a9,
+  Done: stderr ends `Error: build failed; machines unchanged (still on vN)`
+  (`deploy failed; ...` for a check after the build, `no machines yet`
+  before the first deploy), then `Next:`. Health-check failures end with a
+  `Next:` too. The event is the existing type `deploy.failed` (types use
+  dots), `release` = the current one, `detail` starting with the same
+  "build failed; machines unchanged" text; a check failure during the roll
+  keeps `release` = the new one and `detail` "vN failed its health checks".
+- [x] **G14: `flk volumes create --owner UID:GID`** (lazyflk d-lazyflk-a9,
   2026-10-14; the opencode.flk entry "A new volume's root is owned by root"
   below). lazyflk's create form adds an owner field when
   `help --all --json` lists the option, so no schema bump. If flk instead
@@ -155,33 +162,43 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   `volumes list --json` so lazyflk can show it.
   Also from lazyflk: its exec form is adding a "user" field
   (`flk exec --user`), so changing exec's default user later is fine.
+  Done: `--owner UID[:GID]` (in help --all --json), and both: a volume
+  created without --owner/--from-dir has `owner_from_image: true` in
+  `volumes list --json` until its first use, when its root takes the owner
+  of the mount point in the image (then the field goes). No root uid/gid in
+  `volumes list` (it'd need a debugfs per volume per poll).
 
 ## From opencode.flk (first app by hand, 2026-10-13)
 
-- [ ] **A new volume's root is owned by root**, so an image with a non-root
+- [x] **A new volume's root is owned by root** (done: G14), so an image with a non-root
   `USER` can't write to its mount point: the Dockerfile's
   `chown developer /workspace` is hidden by the mount. (vintagestory.flk hit
   the same and fixed it with `flk files chown`.) Idea: `flk volumes create
   --owner UID:GID`, and/or default a new, empty volume's root to the image's
   USER the first time it's mounted (init, or at deploy from the image config).
-- [ ] **No app-level stop/start.** `flk stop` is an unknown command and
+- [x] **No app-level stop/start** (done: `flk stop|start|restart`; `machine
+  stop` without an ID lists the machines and does nothing). `flk stop` was an unknown command and
   `flk machine stop` needs IDs. Ideas: `flk stop|start|restart` for all of
   the app's machines (fly has `fly machine stop` but people type `stop`), or
   at least did-you-mean `machine stop` for `stop`/`start`/`restart`, and
   `machine stop` with no ID listing the app's machines (or acting on the
   only one).
-- [ ] **A failed build doesn't say nothing changed.** It ends with podman's
+- [x] **A failed build doesn't say nothing changed** (done: G13). It ended with podman's
   error; the person stopped the running machine thinking the deploy had
   touched it. End a build failure with "machines unchanged (still on vN)"
   and a Next: line.
-- [ ] **Gotcha for the troubleshoot guide:** `ubuntu:24.04` (and 23.04+)
+- [x] **Gotcha for the troubleshoot guide** (done: in the guide, and a
+  build hint on "GID already exists" / "UID is not unique"): `ubuntu:24.04` (and 23.04+)
   ships user `ubuntu` with UID/GID 1000, so `groupadd -g 1000` fails. Use
   `usermod -l NEW ubuntu && groupmod -n NEW ubuntu` (and move its home), or
   `userdel -r ubuntu` first. flk could recognize "GID '1000' already exists"
   in build output and print that hint.
-- [ ] `flk exec`/`ssh console` default to root; an image with a `USER` might
-  expect that user (`--user developer` works). Consider defaulting to the
-  image's USER, like `docker exec`.
+- [x] `flk exec`/`ssh console` default to root; an image with a `USER` might
+  expect that user (`--user developer` works). Considered defaulting to the
+  image's USER, like `docker exec`; decided (2026-10-14) to keep root, as
+  `fly ssh console` does: exec is an admin and agent tool, and agents run
+  admin commands through it. Scripts that want the app's user pass
+  `--user` (opencode.flk's ssh-dev does).
 
 ## LAN addresses and failover
 

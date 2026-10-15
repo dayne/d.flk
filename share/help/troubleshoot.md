@@ -39,7 +39,20 @@ problems show up there with the fix. Then find the symptom below.
   `buildah rm ...` it prints (doctor reports ones older than an hour).
 - `tap pool exhausted` / `flktapN missing`: `sudo {{SRC}}/setup-host.sh`
   (with `FLK_TAPS=32` for more machines).
-- The build itself fails: the same Dockerfile should fail under `podman build`.
+- `build failed; machines unchanged (still on vN)`: the build (or a check
+  before the roll) failed, and no machine was stopped or changed: they
+  still run vN. Fix the cause shown above it and deploy again. The same
+  Dockerfile should fail under `podman build`.
+- `groupadd: GID '1000' already exists` (or `useradd: UID 1000 is not
+  unique`): ubuntu:23.04 and later ship user `ubuntu` as 1000:1000. Rename
+  it (`usermod -l NEW -d /home/NEW -m ubuntu && groupmod -n NEW ubuntu`) or
+  remove it first (`userdel -r ubuntu`).
+- The app can't write to its volume (`Permission denied` under the mount
+  point): the volume's root is owned by root. A volume made with
+  `flk volumes create` takes the owner of the mount point in the image on
+  its first use; for an older one, or another owner:
+  `flk machine stop ID`, `flk files chown UID:GID VOL:/`, start again
+  (or create volumes with `--owner UID:GID`).
 - `nothing listening on IP:PORT after 30s`: the app is up but not on
   `internal_port`. Check `flk logs`, and that it listens on 0.0.0.0, not
   127.0.0.1.

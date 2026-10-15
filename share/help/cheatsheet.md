@@ -19,7 +19,8 @@ Look inside
   flk machine status ID              everything flk knows about a machine
 
 Start and stop
-  flk machine stop|start|restart ID  stop stays stopped, also across reboots
+  flk stop|start|restart             every machine of the app; stop stays stopped, also across reboots
+  flk machine stop|start|restart ID  one machine
   flk resume                         start everything that should be running
   flk stop-all                       stop everything gracefully; resume brings it back
 

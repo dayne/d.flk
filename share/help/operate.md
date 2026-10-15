@@ -52,8 +52,10 @@ Ctrl-b d (Ctrl-b Ctrl-b d inside tmux). Ctrl-C there doesn't stop the app.
 For one command without attaching: `flk console ID --send "say hi"`; add
 `--wait-log "REGEX"` to print the app's answer (scripts and agents too).
 
-**Stop and start.** `flk machine stop ID` stops a machine and keeps it
-stopped, across reboots too. `flk machine start ID` brings it back.
+**Stop and start.** `flk stop` stops every machine of the app and keeps
+them stopped, across reboots too; `flk start` brings them back and
+`flk restart` restarts them one at a time. For one machine:
+`flk machine stop|start|restart ID` (without an ID it lists the machines).
 
 **Crashes.** When an app crashes or exits non-zero, flk restarts it (1s, 2s,
 4s... apart, 10 times in a row at most; `[[restart]]` in flk.toml changes
