@@ -91,11 +91,16 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
   - Live backups can use it to sync/fsfreeze in the guest.
 - **Static init** (same toolchain): distroless/scratch images boot.
 
-### M4: Networking between apps
+### M4: Networking between apps (done 2026-10-14)
 
-- **`APP.internal` DNS**: dnsmasq on `flkbr0`, fed from machine records.
-- **Ports on 127.0.0.1**: an opt-in `route_localnet` mode with a doctor
-  warning, and UDP for `flk proxy`.
+- **`APP.internal` names**: `[flk] internal_hosts = true` puts
+  `APP.internal` / `ID.vm.APP.internal` in the guest's `/etc/hosts`, at
+  boot and kept current through flk-agent. Decided (Dayne, 2026-10-14):
+  a hosts file, not a DNS server (dnsmasq or flk's own): no daemon, no
+  root step, and opt-in so apps that don't ask are untouched.
+- **Ports on 127.0.0.1**: not doing (Dayne, 2026-10-14). `route_localnet`
+  is a host-wide security trade-off; `flk proxy` covers TCP, and the
+  host's LAN IP works for everything.
 
 ### M5: More than one host (design first)
 
@@ -109,6 +114,6 @@ Start with a written design.
 
 ### Alongside (small, any time)
 
-- A friendlier tmux prefix for `flk console` inside tmux, and tmux
+- (Decided 2026-10-14: keep tmux's Ctrl-b prefix for flk's server.) A friendlier tmux prefix for `flk console` inside tmux, and tmux
   server groups.
 - Machine snapshots (Firecracker snapshot/restore), after M3.

@@ -31,7 +31,8 @@ The order of work (milestones) is in `PLAN.md`; host and game-server work is in 
 
 ## Reliability
 
-- [ ] **Forwarded ports on 127.0.0.1** (from the bug report, optional part):
+- [x] **Forwarded ports on 127.0.0.1** (decided 2026-10-14: won't do; use
+  the LAN IP or `flk proxy`) (from the bug report, optional part):
   loopback is skipped on purpose; making it work needs `route_localnet`
   on the bridge path, a host-wide security trade-off. `flk proxy` covers
   TCP; nothing covers UDP yet.
@@ -246,8 +247,14 @@ To consider:
   [ID] [-C CMD]` (a shell with a pty; `--send` still types on the serial
   console). Releases built before need a redeploy; no Go means no agent
   (doctor says so).
-- [ ] **`APP.internal` DNS** between machines (dnsmasq on the bridge, fed
-  from machine records).
+- [x] **`APP.internal` names** between machines (PLAN.md M4):
+  `[flk] internal_hosts = true` writes `IP APP.internal ID.vm.APP.internal
+  NAME.vm.APP.internal` lines for every machine on the host into the
+  guest's `/etc/hosts` (APP.internal only for running ones): on the config
+  drive at boot, then rewritten in running guests by a detached
+  `flk machine hosts-sync` (flk-agent `hosts`) on every machine event.
+  Chosen over dnsmasq: no daemon, no root. Limits: only names (no SRV/TXT,
+  no `top1.nearest.of`); live updates need the agent (Go at deploy).
 - [x] **Files in a volume without sudo** (PLAN.md M2): `flk files
   ls|cat|cp|rm|mkdir|chown`, `VOL:PATH`, on debugfs. Reads any time (a
   note when the machine runs; `--backup B` reads a backup); writes need the
@@ -297,7 +304,8 @@ To consider:
   (VMA not advised), so it isn't offered. Not yet seen booting on a real
   pool (needs root to reserve one): tests/cases/45-hugepages.sh runs it
   when a pool exists.
-- [ ] **`flk console` from inside tmux** is now a nested tmux (flk has its own
+- [x] **`flk console` from inside tmux** (decided 2026-10-14: keep Ctrl-b;
+  the hint stays) is now a nested tmux (flk has its own
   tmux server), so detach is `Ctrl-b Ctrl-b d`. flk prints that hint, but a
   different prefix for flk's server would be friendlier.
 - [ ] **flk's tmux server keeps its groups.** The server now stays up when idle

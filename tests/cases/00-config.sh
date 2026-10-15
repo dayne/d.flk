@@ -35,6 +35,17 @@ test_examples_parse_without_warnings() {
   done
 }
 
+test_internal_hosts_option() {
+  stage_app hello
+  assert_eq false "$(config | json_get machine_config.internal_hosts)" "off by default"
+  toml_append '[flk]' '  internal_hosts = true'
+  assert_eq true "$(config | json_get machine_config.internal_hosts)" "on"
+  toml_set 'internal_hosts' 'internal_hosts = "yes"'
+  local out
+  out=$(config 2>&1) && fail "accepted internal_hosts = \"yes\""
+  assert_contains "$out" "[flk] internal_hosts must be true or false"
+}
+
 test_vm_size_presets() {
   stage_app hello
   sed -i '/^\[\[vm\]\]/,$d' "$APP_DIR/flk.toml"

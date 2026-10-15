@@ -68,6 +68,9 @@ module Flk
           "/dev/vd#{('c'.ord + i).chr} #{mt['destination']}\n"
         }.join)
         File.chmod(0o600, File.join(d, "env"))
+        if (hosts = Hosts.for_boot(m))
+          File.write(File.join(d, "hosts"), hosts)
+        end
         Util.mkfs_ext4(m.path("config.ext4"), 8, label: "flk-config", from_dir: d)
         File.chmod(0o600, m.path("config.ext4"))
       end

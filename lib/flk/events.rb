@@ -48,6 +48,7 @@ module Flk
       # one write of one short line with O_APPEND: whole lines, even from
       # several flk processes at once
       File.open(path, File::WRONLY | File::APPEND | File::CREAT, 0o644) { _1.write("#{JSON.generate(ev)}\n") }
+      Hosts.changed! if type.start_with?("machine.")
       ev
     rescue ArgumentError
       raise

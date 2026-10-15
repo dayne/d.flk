@@ -69,7 +69,11 @@ func runInit() {
 	if !strings.Contains(h, "localhost") {
 		h += "127.0.0.1 localhost\n"
 	}
-	write("/etc/hosts", h+env["FLK_IP"]+" "+env["FLK_HOSTNAME"]+"\n")
+	h += env["FLK_IP"] + " " + env["FLK_HOSTNAME"] + "\n"
+	if b, err := os.ReadFile("/flk/config/hosts"); err == nil { // [flk] internal_hosts
+		h += string(b)
+	}
+	write("/etc/hosts", h)
 
 	mounts := readMounts()
 	for _, m := range mounts {

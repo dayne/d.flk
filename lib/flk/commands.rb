@@ -152,6 +152,8 @@ module Flk
           { name: "restart", args: "[ID...]", summary: "Stop, then boot" },
           { name: "destroy", aliases: %w[rm], args: "ID...", opts: [["-f", "--force", "Stop it first if running"]],
             summary: "Delete machines (their volumes are kept, unattached)" },
+          { name: "hosts-sync", hidden: true,
+            summary: "Rewrite the internal hosts block in running machines that want it (run by flk itself)" },
           { name: "revive", args: "ID", hidden: true,
             summary: "Restart a machine that exited on its own, per its restart policy (run by flk itself)" },
           { name: "stats", args: "[ID...]", opts: [["--all", "Every app's machines (no -a needed)"], JSON_OPT], json: true,

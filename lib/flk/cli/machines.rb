@@ -56,6 +56,8 @@ module Flk
                       next_steps: ["flk machine #{verb} #{ms.first.id}", "flk #{verb} (all of #{app.name}'s machines)"])
     end
 
+    def machine_hosts_sync(_args, _o) = Hosts.sync!
+
     # flk start | stop | restart: every machine of the app.
     def cmd_start(_args, _o)
       ms = app.machines

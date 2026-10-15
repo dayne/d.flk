@@ -56,6 +56,8 @@ rm -f /etc/resolv.conf
 for ns in $FLK_DNS; do echo "nameserver $ns"; done > /etc/resolv.conf
 grep -q localhost /etc/hosts 2>/dev/null || echo "127.0.0.1 localhost" >> /etc/hosts
 echo "$FLK_IP $FLK_HOSTNAME" >> /etc/hosts
+# [flk] internal_hosts: APP.internal names (flk-agent rewrites the block later)
+[ -f /flk/config/hosts ] && cat /flk/config/hosts >> /etc/hosts
 
 if [ -f /flk/config/mounts ]; then
   while read -r dev path; do

@@ -168,11 +168,14 @@ Still worth checking on a new host:
   host** to build the guest agent (see above). `flk console` is the serial console: app output,
   and your typing goes to the app's stdin (`[flk] stdin = "null"` for
   `/dev/null`).
-- **No `.internal` DNS between machines yet.** Use the 172.30.0.x IPs (`flk status`).
+- **`.internal` names are opt-in and come from `/etc/hosts`**, not DNS:
+  `[flk] internal_hosts = true` gives `APP.internal` and
+  `ID.vm.APP.internal` (no SRV/TXT records). Without it, use the
+  172.30.0.x IPs (`flk status`).
 - **x86_64 is the tested path.** On aarch64, Ctrl-Alt-Del isn't supported, so stop falls back to SIGTERM after 10s.
 
 ## What's next
 
 The order of work is in [PLAN.md](PLAN.md); known rough edges and bigger
-features (`.internal` DNS, machine snapshots, volume snapshots) are in
+features (machine snapshots, volume snapshots, more than one host) are in
 [TODO.md](TODO.md).

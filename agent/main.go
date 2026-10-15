@@ -43,7 +43,14 @@ type request struct {
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		fmt.Println("flk-agent 2")
+		fmt.Println("flk-agent 3")
+		return
+	}
+	if len(os.Args) > 1 && os.Args[1] == "hosts" { // flk machine hosts-sync, through flk exec
+		if err := rewriteHosts(os.Stdin); err != nil {
+			fmt.Fprintf(os.Stderr, "flk-agent hosts: %v\n", err)
+			os.Exit(1)
+		}
 		return
 	}
 	if os.Getpid() == 1 { // installed as /flk/init (an image without /bin/sh)
@@ -371,4 +378,35 @@ func openPTY() (*os.File, *os.File, error) {
 func setSize(f *os.File, rows, cols uint16) {
 	ws := [4]uint16{rows, cols, 0, 0}
 	ioctl(f.Fd(), syscall.TIOCSWINSZ, uintptr(unsafe.Pointer(&ws)))
+}
+
+// rewriteHosts replaces flk's block in /etc/hosts (from its begin to its
+// end marker, as flk wrote it) with the one on r, or appends it.
+func rewriteHosts(r io.Reader) error {
+	const begin, end = "# flk internal hosts (flk rewrites this block)", "# end of flk internal hosts"
+	block, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	if !strings.HasPrefix(string(block), begin+"\n") || !strings.HasSuffix(string(block), end+"\n") {
+		return fmt.Errorf("not a flk hosts block")
+	}
+	old, _ := os.ReadFile("/etc/hosts")
+	var keep []string
+	in := false
+	for _, l := range strings.SplitAfter(string(old), "\n") {
+		switch {
+		case strings.TrimRight(l, "\n") == begin:
+			in = true
+		case in && strings.TrimRight(l, "\n") == end:
+			in = false
+		case !in && l != "":
+			keep = append(keep, l)
+		}
+	}
+	out := strings.Join(keep, "")
+	if out != "" && !strings.HasSuffix(out, "\n") {
+		out += "\n"
+	}
+	return os.WriteFile("/etc/hosts", []byte(out+string(block)), 0o644)
 }

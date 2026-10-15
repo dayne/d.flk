@@ -114,6 +114,14 @@ module Flk
       v
     end
 
+    # [flk] internal_hosts = true: APP.internal names in /etc/hosts (Hosts).
+    def internal_hosts
+      v = data.dig("flk", "internal_hosts")
+      return false if v.nil?
+      raise Error, "[flk] internal_hosts must be true or false (got '#{v}')" unless [true, false].include?(v)
+      v
+    end
+
     # 30, "30s" or "2m" as seconds, like fly's durations; default when nil.
     def self.seconds(v, default, label)
       return default if v.nil?
@@ -239,7 +247,7 @@ module Flk
                            processes concurrency checks http_options tls_options],
       "check" => %w[type port path method grace_period interval timeout headers protocol tls_skip_verify
                     tls_server_name match processes],
-      "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases],
+      "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases internal_hosts],
       "flk.backup" => %w[mode pre post settle keep verify before_deploy]
     }.freeze
 
@@ -318,7 +326,8 @@ module Flk
         "restart" => restart,
         "bind" => bind,
         "checks" => checks,
-        "huge_pages" => huge_pages
+        "huge_pages" => huge_pages,
+        "internal_hosts" => internal_hosts
       }
     end
 

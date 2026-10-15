@@ -71,6 +71,7 @@ kill_timeout = "30s"        # 30, "30s" or "2m": stop request to kill (default 1
   rootfs_extra_mb = 512     # free space on the rootfs (the default)
   stdin = "console"         # the default: flk console reaches the app; or "null"
   keep_releases = 2         # release images kept for rollback (the default)
+  internal_hosts = true     # APP.internal / ID.vm.APP.internal in /etc/hosts (default false)
 
 # How `flk volumes backup` keeps the app from writing during the copy.
 [flk.backup]

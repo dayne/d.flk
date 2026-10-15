@@ -127,6 +127,15 @@ also its own help page: {{TOPICS}}.
   `grace_period` (default 60s) or the machine goes back to its previous
   release and the deploy stops. Also read: `[[services.tcp_checks]]`,
   `[[services.http_checks]]` (on that service's port), `[[http_service.checks]]`.
+- `[flk] internal_hosts = true` (flk only): fly's `.internal` names, from
+  `/etc/hosts` rather than DNS. The app's machines get a line per machine
+  on this host: `IP APP.internal ID.vm.APP.internal NAME.vm.APP.internal`
+  (`APP.internal` only for running machines, so it names the app's live
+  ones; most resolvers return every address). flk writes it at boot and
+  rewrites it in running machines whenever a machine starts or stops
+  (that needs flk-agent in the release, which needs Go). Only names: no
+  SRV/TXT records, no `top1.nearest.of`. Default false: other apps'
+  `/etc/hosts` are left alone.
 - `[flk] keep_releases`: release images kept for `flk releases rollback`
   (default 2).
 - `[flk] bind` (flk only): forward this app's host ports only on these host
