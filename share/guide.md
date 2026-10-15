@@ -188,7 +188,8 @@ a key flk doesn't know at all gets a warning. Every key, annotated:
 by every flk command and the tmux exit hook. `--json` prints one object
 per line: `{ "at", "app", "machine", "type", "release"?, "detail"? }`.
 `type` is one of a fixed set (new ones may be added; existing ones keep
-their meaning):
+their meaning). `detail` is free text on one line: a cause that had
+several lines (rsync's, podman's) has them joined with " · ".
 
 {{EVENT_TYPES}}
 

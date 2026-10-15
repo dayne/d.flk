@@ -42,7 +42,7 @@ module Flk
       raise ArgumentError, "unknown event type #{type}" unless TYPES.key?(type)
       ev = { "at" => Time.now.utc.iso8601(3), "app" => app, "machine" => machine, "type" => type }
       ev["release"] = release if release
-      ev["detail"] = detail.to_s if detail
+      ev["detail"] = one_line(detail) if detail
       FileUtils.mkdir_p(ROOT)
       rotate if (File.size?(path) || 0) > MAX_BYTES
       # one write of one short line with O_APPEND: whole lines, even from
@@ -55,6 +55,10 @@ module Flk
     rescue StandardError
       nil
     end
+
+    # Details are one line, whatever a cause brought (rsync, podman): its
+    # lines joined with " · ".
+    def one_line(s) = s.to_s.lines.map(&:strip).reject(&:empty?).join(" · ")
 
     def machine(type, m, detail = nil) = emit(type, app: m.app.name, machine: m.id, release: m.release, detail: detail)
 

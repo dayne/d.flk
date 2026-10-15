@@ -59,3 +59,11 @@ test_follow_sees_new_events_and_rotations() {
   kill $pid; wait $pid 2>/dev/null || true
   assert_contains "$(cat "$out")" '"first"'
 }
+
+# last: it adds to the log the tests above count
+test_detail_is_one_line() {
+  mkdir -p "$EH"
+  emit backup.copy_failed app3 $'copy to host:/x failed: No route to host\nrsync: connection unexpectedly closed\n\n'
+  assert_eq "copy to host:/x failed: No route to host · rsync: connection unexpectedly closed" \
+    "$(ev -a app3 events --json | json_get detail)"
+}
