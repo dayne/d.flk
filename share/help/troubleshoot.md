@@ -80,7 +80,9 @@ problems show up there with the fix. Then find the symptom below.
 - Process substitution, `/dev/stdout`, `/dev/fd`: supported.
 - The app reads stdin: it's the serial console (`flk console`). If it acts
   oddly because stdin is a terminal, set `[flk] stdin = "null"`.
-- Distroless/scratch images don't boot: flk needs `/bin/sh` in the image.
+- Distroless/scratch images don't boot: images without `/bin/sh` boot with
+  flk-agent as init, which flk builds with Go. Without Go the deploy says
+  "no flk-agent to boot it with"; install Go (see `flk help install`).
 
 **Can't start machines: /dev/kvm, groups**
 - `flk doctor` says `/dev/kvm` isn't accessible: `sudo {{SRC}}/setup-host.sh`,

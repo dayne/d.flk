@@ -74,7 +74,10 @@ and secrets.
   an extra argument is an error that names the problem and points at
   `flk help COMMAND`. Nothing is silently ignored.
 - **Errors** go to stderr as `Error: ...`, usually ending with the command
-  that fixes them. The exit code is 1.
+  that fixes them, or followed by a `Next:` line. The exit code is 1. A
+  deploy that fails before touching any machine ends with
+  `Error: build failed; machines unchanged (still on vN)` (or `deploy
+  failed; ...`): nothing needs stopping or rolling back.
 - **Where the config is.** `launch` uses the current directory. After an
   app's first `launch` or `deploy` there, flk remembers its config file
   (`config_path` in `status --json`), so `flk -a APP deploy` and

@@ -118,7 +118,6 @@ module Flk
       next_step("flk status", "flk logs", "flk context")
     end
 
-    # The same warnings as strings, for JSON ([] without a readable config).
     # A deploy that failed before it touched any machine (the build, or a
     # check before the roll): the cause, then a last line that says nothing
     # changed, for people who'd otherwise stop the machine to be safe.
@@ -138,6 +137,7 @@ module Flk
       vs.empty? ? "no machines yet" : "still on #{vs.map { "v#{_1}" }.join(' and ')}"
     end
 
+    # The same warnings as strings, for JSON ([] without a readable config).
     def warning_strings(cfg)
       return [] unless cfg
       cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" }

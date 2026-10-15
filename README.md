@@ -17,12 +17,13 @@ the agent itself when Go is installed; without Go, everything else works.
 | `fly.toml`                     | `flk.toml`, or `fly.toml` as-is                            |
 | Fly builder / registry         | local `podman` (or `docker`) build, then ext4 rootfs       |
 | Machine (Firecracker VM)       | Firecracker VM in a detached session on flk's own tmux server (`tmux -L flk`) |
-| Fly init (PID 1)               | `/flk/init`, a POSIX sh script injected into the rootfs    |
+| Fly init (PID 1)               | `/flk/init`: a POSIX sh script, or the static flk-agent for images without a shell |
 | 6PN private network            | bridge `flkbr0`, 172.30.0.0/24, NAT out                    |
 | Volume                         | sparse ext4 file attached as a virtio-blk drive            |
 | Secrets                        | `secrets.json` (0600), delivered on a per-boot config drive|
 | `fly proxy`                    | `flk proxy` (pure Ruby TCP forwarder)                      |
-| `fly ssh console`              | `flk console` (serial console attach)                      |
+| `fly ssh console`              | `flk ssh console` / `flk exec` (vsock agent); `flk console` attaches the serial console |
+| `APP.internal` DNS             | `APP.internal` in `/etc/hosts`, opt-in (`[flk] internal_hosts`) |
 | `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`, `FLY_REGION=local` | set in every VM, plus `FLK_*` equivalents |
 
 ## Quick start
@@ -72,6 +73,7 @@ flk help [COMMAND|TOPIC]      # one command, or a guide: cheatsheet install firs
 flk help --all [--json]       # full reference: concepts, config, every command, the guides
 
 flk launch | deploy | status | releases [rollback [vN]] | config show
+flk start | stop | restart     # every machine of the app
 flk machine list|start|stop|restart|destroy|stats|status|config ID...
 flk scale count N
 flk logs [-i ID] [-n N] [-f] | events [-f]
@@ -79,7 +81,7 @@ flk console [ID] [--send TEXT --wait-log REGEX]
 flk exec [-i ID] CMD... | ssh console [ID] [-C CMD]
 flk proxy 8080[:80] [ID] | ports [list|sync]
 flk secrets list|set|unset|import
-flk volumes list|create|import|destroy|extend|move
+flk volumes list|create [--owner UID:GID]|import|destroy|extend|move
 flk volumes backup|backups|verify|restore|copy
 flk files ls|cat|cp|rm|mkdir|chown VOL:PATH        # no mount, no root
 flk apps list|destroy|prune | disk | images
@@ -95,6 +97,7 @@ A terminal UI, [lazyflk](https://github.com/dayne/d.lazyflk), runs on top of flk
 Help is generated from one command table (`lib/flk/commands.rb`); the
 long-form reference is `share/guide.md` and the guides are `share/help/*.md`.
 Hints and errors name the fix, with absolute paths for the root-side tools. AI agents: see [AGENTS.md](AGENTS.md).
+An overview talk: [docs/flk-slides.md](docs/flk-slides.md) (`presenterm docs/flk-slides.md`).
 
 ## Config: the fly.toml subset
 
