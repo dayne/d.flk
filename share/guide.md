@@ -139,6 +139,8 @@ also its own help page: {{TOPICS}}.
   (that needs flk-agent in the release, which needs Go). Only names: no
   SRV/TXT records, no `top1.nearest.of`. Default false: other apps'
   `/etc/hosts` are left alone.
+  Machine JSON (`status`, `context`, `machine list --json`) carries each
+  machine's names as `internal_names` (`[]` when the key is off).
 - `[flk] keep_releases`: release images kept for `flk releases rollback`
   (default 2).
 - `[flk] bind` (flk only): forward this app's host ports only on these host

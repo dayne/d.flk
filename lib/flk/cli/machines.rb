@@ -19,7 +19,10 @@ module Flk
         "release" => m.release, "ip" => m.ip,
         "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"], "huge_pages" => m.config["huge_pages"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
-        "volumes" => Array(m.config["mounts"]), "created_at" => m.created_at, "updated_at" => m.updated_at }
+        "volumes" => Array(m.config["mounts"]),
+        # [flk] internal_hosts: the names on its /etc/hosts line ([] when off)
+        "internal_names" => Hosts.wants?(m) ? Hosts.names(m) : [],
+        "created_at" => m.created_at, "updated_at" => m.updated_at }
     end
 
     def machine_list(_args, o)

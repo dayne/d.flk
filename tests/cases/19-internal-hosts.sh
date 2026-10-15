@@ -25,6 +25,8 @@ test_block_at_boot() {
     "$(line_for "$id" "$ip")" "own line"
   assert_eq 1 "$(hosts_of "$id" | grep -c '^# flk internal hosts')" "one block"
   assert_contains "$(flk exec -- getent hosts "$APP.internal")" "$ip" "resolves"
+  assert_eq "[\"$APP.internal\",\"$id.vm.$APP.internal\",\"$(machines name | head -n 1).vm.$APP.internal\"]" \
+    "$(flk status --json | json_get machines.0.internal_names)" "internal_names in status JSON"
 }
 
 test_kept_current_as_machines_change() {
@@ -38,5 +40,8 @@ test_kept_current_as_machines_change() {
   wait_until 30 eval '[[ $(line_for "$id1" "$ip2") == "$ip2 $id2.vm.$APP.internal "* ]]' ||
     fail "a stopped machine is still under $APP.internal: $(hosts_of "$id1")"
   assert_eq 1 "$(hosts_of "$id1" | grep -c '^# flk internal hosts')" "still one block"
+  flk context --json | ruby -rjson -e 'm = JSON.parse($stdin.read)["app"]["machines"].find { _1["id"] == ARGV[0] }
+    exit(m["internal_names"].none? { _1 == "#{ARGV[1]}.internal" } ? 0 : 1)' "$id2" "$APP" ||
+    fail "a stopped machine's internal_names still has $APP.internal"
   assert_contains "$(hosts_of "$id1")" "127.0.0.1" "the rest of /etc/hosts kept"
 }

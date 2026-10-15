@@ -16,13 +16,17 @@ module Flk
 
     def wants?(m) = m.config["internal_hosts"] == true
 
+    # A machine's names, as on its line: APP.internal first while it runs.
+    def names(m, running: m.running?)
+      a = m.app.name
+      [*("#{a}.internal" if running), "#{m.id}.vm.#{a}.internal", "#{m.name}.vm.#{a}.internal"]
+    end
+
     # booting: a machine about to start (counted as running).
     def block(booting: nil)
       lines = App.all.flat_map do |a|
         a.machines.sort_by { _1.h["tap_index"].to_i }.map do |m|
-          names = ["#{m.id}.vm.#{a.name}.internal", "#{m.name}.vm.#{a.name}.internal"]
-          names.unshift("#{a.name}.internal") if m.id == booting&.id || m.running?
-          "#{m.ip} #{names.join(' ')}"
+          "#{m.ip} #{names(m, running: m.id == booting&.id || m.running?).join(' ')}"
         end
       end
       [BEGIN_MARK, *lines, END_MARK].join("\n") + "\n"
