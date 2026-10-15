@@ -31,10 +31,12 @@ Working on flk itself:
 
 - Commands are defined in `lib/flk/commands.rb`. The CLI parses arguments
   and generates all help from that table, so add new commands and options
-  there first, then write the handler in `lib/flk/cli.rb`. The long-form
-  reference text is `share/guide.md`; guides by stage are `share/help/*.md`
-  (add new ones to `Commands::TOPICS`). Commands that change things end with
-  a `Next:` line (`next_step`).
+  there first, then write the handler in `lib/flk/cli/GROUP.rb`, one file
+  per command group (`machines.rb`, `volumes.rb`, `backups.rb`...).
+  Dispatch, option parsing and app lookup are in `lib/flk/cli.rb`. The
+  long-form reference text is `share/guide.md`; guides by stage are
+  `share/help/*.md` (add new ones to `Commands::TOPICS`). Commands that
+  change things end with a `Next:` line (`next_step`).
 - lazyflk, the terminal UI, is its own repo (github.com/dayne/d.lazyflk;
   `~/d.lazyflk` on the reference host). It uses only flk's CLI, so CLI and
   JSON changes are its API: keep them additive, and record what it needs
