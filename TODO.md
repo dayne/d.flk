@@ -2,7 +2,7 @@
 
 Known rough edges, found while getting flk running on real hardware.
 Each entry says where the issue is caught today, and where a fix could go.
-The order of work (milestones) is in `PLAN.md`; host and game-server work is in `SYSTEM-NOTES.md`.
+The order of work (milestones) is in `PLAN.md`; host and game-server work is in `~/mud`.
 
 ## Setup and host checks
 

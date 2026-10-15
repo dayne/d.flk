@@ -2,7 +2,7 @@
 
 This is the roadmap for flk, the tool: its commands and capabilities.
 Host work (disks, backup targets, kernel settings, the game servers'
-maintenance) is in `SYSTEM-NOTES.md`, for a separate session. The details
+maintenance) is in `~/mud` (`docs/flk-system-notes.md`), for a separate session. The details
 of each item are in `TODO.md`. This file sets the order.
 
 Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
