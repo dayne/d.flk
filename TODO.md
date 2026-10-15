@@ -44,7 +44,7 @@ The order of work (milestones) is in `PLAN.md`; host and game-server work is in 
   did-you-mean, against flk's keys and the fly.toml keys it knows.
 - [x] **`flk releases rollback [vN]`**: a new release from an old one's image
   and recorded machine config; `[flk] keep_releases` (default 2).
-## For lazyflk (TUI, spec in lazyflk/SPEC.md section 9)
+## For lazyflk (TUI, github.com/dayne/d.lazyflk; spec in its SPEC.md section 9)
 
 lazyflk only uses flk's CLI, so these are flk changes. M1–M3 are done
 (G1–G3 landed); these unblock M4. In order of need. Every new JSON field

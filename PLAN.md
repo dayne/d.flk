@@ -6,7 +6,7 @@ maintenance) is in `SYSTEM-NOTES.md`, for a separate session. The details
 of each item are in `TODO.md`. This file sets the order.
 
 Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
-`~/vintagestory.flk` (TODO.md, BUGS.flk.md), and `lazyflk/TODO.md`.
+`~/vintagestory.flk` (TODO.md, BUGS.flk.md), and lazyflk's `TODO.md` (github.com/dayne/d.lazyflk).
 
 ## Rules while building
 
