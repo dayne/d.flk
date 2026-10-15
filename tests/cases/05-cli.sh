@@ -362,8 +362,9 @@ test_failed_build_says_machines_unchanged() {
   assert_contains "$(tail -n 2 <<<"$out" | head -n 1)" "Error: build failed; machines unchanged (no machines yet)" "error is the last thing said"
   assert_contains "$(tail -n 1 <<<"$out")" "Next: flk deploy (after fixing the build)" "then the next step"
   assert_contains "$out" "command failed:" "the cause is still shown"
-  flk events --json | grep -F '"deploy.failed"' | grep -qF "build failed; machines unchanged (no machines yet)" ||
-    fail "no deploy.failed event: $(flk events --json)"
+  local ev; ev=$(flk events --json | grep -F '"deploy.failed"' | tail -n 1)
+  assert_contains "$(json_get detail <<<"$ev")" "build failed; machines unchanged (no machines yet): " "deploy.failed event"
+  [[ $(json_get detail <<<"$ev") == *": "*" build failed" ]] || fail "detail isn't short: $ev"
   assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from the failed build"
 }
 

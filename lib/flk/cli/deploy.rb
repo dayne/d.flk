@@ -125,8 +125,10 @@ module Flk
     def stopped_before_machines!(a, stage, cause)
       warn cause.message
       note = unchanged_note(a)
+      # the event's detail stays one short line: "podman build failed", not its whole command line
+      why = cause.message.lines.first.to_s.chomp.sub(/\Acommand failed: (\S+) (\S+).*/) { "#{File.basename($1)} #{$2} failed" }
       Events.emit("deploy.failed", app: a.name, release: a.current_release&.dig("version"),
-                                   detail: "#{stage} failed; machines unchanged (#{note}): #{cause.message.lines.first.to_s.chomp}")
+                                   detail: "#{stage} failed; machines unchanged (#{note}): #{why}")
       fix = stage == "build" ? "flk deploy (after fixing the build)" : "flk deploy (after fixing that)"
       raise Error.new("#{stage} failed; machines unchanged (#{note})", next_steps: [fix, "flk status"])
     end
