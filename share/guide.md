@@ -163,7 +163,9 @@ also its own help page: {{TOPICS}}.
   `mode = "live"`, `pre = [{ console = "save-off" }, { console = "save-all flush", wait = "Saved the game" }]`,
   `post = [{ console = "save-on" }]`.
 
-Everything else in a fly.toml (regions, checks, concurrency, statics) is ignored.
+Everything else in a fly.toml (regions, concurrency, statics) is ignored;
+a key flk doesn't know at all gets a warning. Every key, annotated:
+`{{SRC}}/examples/reference/flk.toml`.
 `flk config show` prints what flk understood.
 
 ## Events

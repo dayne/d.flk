@@ -39,7 +39,7 @@ offline"). The game sessions run their own windows.
   own). They copy without flooding the page cache since flk 553b1a3.
 - **Services:** `flk-net` and `flk-machines` are enabled. The boot
   service, the exit hook and the cron jobs all run
-  `/home/dayne/flk/bin/flk` from master.
+  `/home/dayne/flk/bin/flk` from main.
 
 ## Risks
 

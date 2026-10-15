@@ -22,18 +22,24 @@ says which step you're at.
        ln -s {{SRC}}/bin/flk ~/.local/bin/flk
        flk setup        # firecracker + guest kernel into {{ROOT}}, then flk doctor
 
-4. **Podman short image names** (Ubuntu/Debian): if `flk doctor` warns that
+4. **Optional: Go, for `flk exec`, `flk ssh console` and images without `/bin/sh`.** flk builds a
+   small guest agent from `{{SRC}}/agent` with Go (on PATH, in
+   `~/.local/go`, or `FLK_GO`) and puts it in each release. Without Go,
+   everything else works; `flk doctor` says when it's missing.
+   Install Go, then run `flk setup` again.
+
+5. **Podman short image names** (Ubuntu/Debian): if `flk doctor` warns that
    podman can't resolve `FROM ruby:3.3`, run the one-liner it shows. It adds
    a user-level drop-in, no root.
 
-5. **Optional: shell completion** (commands, options, app names, machine IDs).
+6. **Optional: shell completion** (commands, options, app names, machine IDs).
 
        echo 'source <(flk completion bash)' >> ~/.bashrc
 
    Or, where the bash-completion package is loaded, drop it in its folder:
    `flk completion bash > ~/.local/share/bash-completion/completions/flk`.
 
-6. **Check.** `flk doctor` should end with "Ready to fly, locally."
+7. **Check.** `flk doctor` should end with "Ready to fly, locally."
    `{{SRC}}/tests/run.sh` runs the end-to-end tests (a few minutes).
 
 Next: flk help first-app

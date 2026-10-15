@@ -1,0 +1,83 @@
+# Every key flk reads, with its default or a typical value. Not an app to
+# deploy as is: copy the parts you need. The full reference is the Config
+# section of `flk help --all` (share/guide.md); `flk config show` prints
+# what flk understood and warns about keys it doesn't know.
+#
+# A fly.toml works unchanged: keys flk doesn't use (regions, concurrency,
+# statics...) are ignored. Keys under [flk] are flk's own; Fly ignores them.
+# tests/cases/00-config.sh checks that every example here parses with no
+# warnings.
+
+app = "reference"           # lowercase letters, digits, dashes
+
+kill_timeout = "30s"        # 30, "30s" or "2m": stop request to kill (default 10s, at most 300s)
+
+[build]
+  dockerfile = "Dockerfile" # the default
+  # image = "docker.io/library/nginx:1.27"   # prebuilt instead of a build
+  [build.args]
+    RUBY_VERSION = "3.3"
+
+[env]
+  LOG_LEVEL = "info"        # plain env vars; secrets go in `flk secrets set`
+
+[experimental]
+  # Override the image's ENTRYPOINT / CMD.
+  entrypoint = ["/usr/local/bin/app"]
+  cmd = ["serve", "--port", "8080"]
+
+[[mounts]]
+  source = "data"           # volume name: flk volumes create data --size 1
+  destination = "/data"
+
+# The port flk waits for after boot and prints as the app URL. Reachable on
+# the machine IP; set [flk] http_port to also serve it on a host port.
+[http_service]
+  internal_port = 8080
+  [[http_service.checks]]
+    path = "/healthz"         # http check on internal_port
+    grace_period = "30s"
+
+# Forwarded from every host address (or [flk] bind) to the machine.
+# Host ports below 1024, or already in use on the host, are refused.
+[[services]]
+  internal_port = 25565
+  protocol = "tcp"          # or "udp"
+  [[services.ports]]
+    port = 25565
+  [[services.tcp_checks]]
+    grace_period = "60s"
+
+[[restart]]
+  policy = "on-failure"     # the default; or "always", "never"
+  retries = 10              # restarts in a row, with backoff, before giving up
+
+[[vm]]
+  cpus = 2
+  memory = "1gb"            # or memory_mb = 1024, or size = "shared-cpu-2x"
+  # huge_pages = "2M"       # flk: memory from a hugetlbfs pool (needs vm.nr_hugepages)
+
+# Health checks a deploy waits for; a machine that fails them goes back to
+# its previous release.
+[checks.ready]
+  type = "log"              # flk's own: a console line since boot; or "tcp", "http"
+  match = "Server started"
+  grace_period = "60s"
+
+[flk]
+  http_port = 18080         # host port for [http_service]
+  bind = "all"              # host addresses for this app's ports; "all" overrides host.toml
+  kernel_args = ""          # appended to the guest kernel command line
+  rootfs_extra_mb = 512     # free space on the rootfs (the default)
+  stdin = "console"         # the default: flk console reaches the app; or "null"
+  keep_releases = 2         # release images kept for rollback (the default)
+
+# How `flk volumes backup` keeps the app from writing during the copy.
+[flk.backup]
+  mode = "live"             # "stop" (default), "live" (after the pre hooks) or "pause"
+  pre = [{ console = "save-off" }, { console = "save-all flush", wait = "Saved the game", timeout = 60 }]
+  post = [{ console = "save-on" }]   # run even if the backup failed
+  settle = 5                # seconds between pre and the copy (the default)
+  keep = 7                  # backups per volume
+  verify = "debugfs -R 'stat /level.dat' \"$FLK_BACKUP\""   # after e2fsck; exit 0 = good
+  before_deploy = false     # true: back up volumes during each deploy's stop

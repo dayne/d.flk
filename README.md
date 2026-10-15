@@ -5,7 +5,10 @@
 your existing `fly.toml` unchanged, so the same app directory can deploy to
 Fly or to your laptop.
 
-Written in Ruby (stdlib only, no gems) for the logic, and bash for system plumbing.
+Written in Ruby (stdlib only, no gems) for the logic and bash for system
+plumbing, plus a small Go guest agent (`agent/`) for `flk exec`,
+`flk ssh console`, and booting images that have no `/bin/sh`. flk builds
+the agent itself when Go is installed; without Go, everything else works.
 
 ## Concept map
 
@@ -28,6 +31,7 @@ Written in Ruby (stdlib only, no gems) for the logic, and bash for system plumbi
 # 1. Host deps (Ubuntu / CachyOS-Arch)
 sudo apt install -y ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
 sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
+# Optional, for flk exec, flk ssh console and images without /bin/sh: Go (golang-go / go), or set FLK_GO
 
 # 2. One-time root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding
 sudo ./setup-host.sh
@@ -63,29 +67,28 @@ again after each fix. `tests/run.sh` checks flk itself end to end.
 ## Commands
 
 ```
-flk context [--all]          # what flk sees now: host, app(s), machines, ports, next steps
-flk help [COMMAND]           # short help, or one command (same as: flk COMMAND --help)
-flk help cheatsheet          # one screen, by task; also: install, first-app, operate, troubleshoot, uninstall
-flk help --all [--json]      # full reference: concepts, every command, config, all the guides
-flk completion bash          # tab completion (commands, options, app names, machine IDs)
-flk resume | stop-all        # bring back / gracefully stop every machine (boot and shutdown)
-flk launch | deploy [--no-rollback] | status | releases [rollback [vN]]
-flk machine list|start|stop|restart|destroy|status|config ID...
+flk context [--all]           # what flk sees now: host, app(s), machines, ports, next steps
+flk help [COMMAND|TOPIC]      # one command, or a guide: cheatsheet install first-app operate troubleshoot uninstall
+flk help --all [--json]       # full reference: concepts, config, every command, the guides
+
+flk launch | deploy | status | releases [rollback [vN]] | config show
+flk machine list|start|stop|restart|destroy|stats|status|config ID...
 flk scale count N
-flk logs [-i ID] [-n N] [-f]                # follows only in a terminal
-flk console [ID]                            # Ctrl-b d to detach (Ctrl-b Ctrl-b d inside tmux)
-flk proxy 8080[:80] [ID] [--bind 0.0.0.0]
-flk secrets list | set K=V (V='-' reads stdin) | unset K | import  [--stage]
-flk volumes list | create NAME [-s GB] [--path FILE] [--from-dir DIR] | import NAME --path FILE | destroy ID|NAME
-flk volumes backup [NAME...] [--to DIR] [--keep N] | backups | restore NAME [BACKUP] | extend NAME --size GB
-flk apps list | destroy NAME [--yes] | prune
-flk ports [list|sync]                       # host ports forwarded to machines
-flk config show
-flk doctor | setup
+flk logs [-i ID] [-n N] [-f] | events [-f]
+flk console [ID] [--send TEXT --wait-log REGEX]
+flk exec [-i ID] CMD... | ssh console [ID] [-C CMD]
+flk proxy 8080[:80] [ID] | ports [list|sync]
+flk secrets list|set|unset|import
+flk volumes list|create|import|destroy|extend|move
+flk volumes backup|backups|verify|restore|copy
+flk files ls|cat|cp|rm|mkdir|chown VOL:PATH        # no mount, no root
+flk apps list|destroy|prune | disk | images
+flk resume | stop-all | doctor | setup | completion bash | version
 ```
 
 `-a APP` works anywhere, as with fly. Machine IDs accept prefixes or names.
 Listing commands take `--json`. Unknown options and extra arguments are errors.
+`flk help COMMAND` has every option.
 
 A terminal UI, [lazyflk](https://github.com/dayne/d.lazyflk), runs on top of flk's CLI.
 
@@ -93,27 +96,28 @@ Help is generated from one command table (`lib/flk/commands.rb`); the
 long-form reference is `share/guide.md` and the guides are `share/help/*.md`.
 Hints and errors name the fix, with absolute paths for the root-side tools. AI agents: see [AGENTS.md](AGENTS.md).
 
-## Supported fly.toml subset
+## Config: the fly.toml subset
 
-- `app`
-- `[build]`: `dockerfile`, `image`, `args`
-- `[env]`
-- `[[mounts]]`: `source`, `destination`
-- `[http_service] internal_port` (or the first `[[services]]` entry). This drives the post-boot "listening" check.
-- `[[services]]` with `protocol` (`tcp`/`udp`) and `[[services.ports]] port`: forwarded from every host address (your LAN IP included) to the machine's `internal_port`. With several machines, the first running one owns the port and the next takes over when it stops. `[http_service]` is *not* forwarded by default, since on Fly it means public 80/443; set `[flk] http_port = 8080` to serve it on a host port. Host ports below 1024 are refused (to allow one: `sudo FLK_MIN_PORT=80 ./setup-host.sh`), and so is any port a host process already listens on outside loopback, so a flk.toml can't take over sshd or a database. `flk ports` shows blocked ports and why. If a machine exits on its own, flk's tmux server notices (a `session-closed` hook runs `flk ports reap`) and gives its port to the next machine or drops it, with no daemon.
-- `[[restart]]`: `policy` (`on-failure` by default, `always`, `never`) and `retries` (10). Crashes come back with backoff; flk's own stops never count.
-- `kill_timeout`: seconds (`30`, `"30s"`, `"2m"`) between asking the app to stop and killing the VM. Default 10, at most 300 (5 minutes). Raise it for apps that save on shutdown, like game servers.
-- `[[vm]]`: `cpus`, `memory` (`'1gb'`/`'512mb'`), `memory_mb`, and `size` presets (`shared-cpu-Nx`, `performance-Nx`)
-- `[experimental]`: `cmd`, `entrypoint`
+flk reads `flk.toml`, or a `fly.toml` unchanged: `app`, `[build]`, `[env]`,
+`[[mounts]]`, `[http_service]`, `[[services]]` with their ports and checks,
+`[checks]`, `[[restart]]`, `[[vm]]`, `kill_timeout` and `[experimental]`.
+flk's own keys go under `[flk]` (host ports, bind addresses, releases kept,
+kernel args) and `[flk.backup]` (how volume backups quiesce the app). Fly
+keys flk doesn't use (regions, concurrency, statics) are ignored, and a key
+nobody knows gets a "did you mean" warning.
 
-flk-only keys go under `[flk]`:
+- **Every key, annotated:** [examples/reference/flk.toml](examples/reference/flk.toml).
+- **The rules** (defaults, limits, what's refused): the Config section of
+  `flk help --all` ([share/guide.md](share/guide.md)).
+- **Working apps:** [examples/hello](examples/hello) and
+  [examples/minecraft](examples/minecraft).
+- `flk config show` prints what flk understood, with warnings.
 
-- `http_port`: host port forwarded to `[http_service] internal_port`
-- `kernel_args`: appended to the boot cmdline
-- `rootfs_extra_mb`: free space added to the rootfs (default 512)
-- `stdin`: `"console"` (default; `flk console` input reaches the app) or `"null"`
-
-Everything else (regions, concurrency, checks, statics) is ignored.
+Host ports: `[[services.ports]]` are forwarded from every host address (or
+`[flk] bind`) to the machine. `[http_service]` is *not* forwarded unless
+you set `[flk] http_port`, since on Fly it means public 80/443. Ports below
+1024 and ports a host process already listens on are refused, so a
+flk.toml can't take over sshd. `flk ports` shows blocked ports and why.
 
 ## How a deploy works
 
@@ -156,19 +160,19 @@ Still worth checking on a new host:
 
 ## Known limits
 
-- **Images need `/bin/sh`**, because init and the cmd wrapper are shell scripts. Distroless/scratch images won't boot yet.
-- **Zombie reaping is minimal.** Apps that spawn and orphan many processes should run under `tini` inside the image.
-- **`flk console` is the serial console**, not a separate shell. You see app output and type to the app's stdin (set `[flk] stdin = "null"` for `/dev/null`).
+- **Zombie reaping in images with a shell is minimal.** Images without
+  `/bin/sh` (scratch, distroless) boot with flk-agent as PID 1, which reaps
+  every orphan; images with a shell use the shell init. Apps that spawn and
+  orphan many processes should run under `tini` there.
+- **`flk exec`, `flk ssh console` and shell-less images need Go on the
+  host** to build the guest agent (see above). `flk console` is the serial console: app output,
+  and your typing goes to the app's stdin (`[flk] stdin = "null"` for
+  `/dev/null`).
 - **No `.internal` DNS between machines yet.** Use the 172.30.0.x IPs (`flk status`).
 - **x86_64 is the tested path.** On aarch64, Ctrl-Alt-Del isn't supported, so stop falls back to SIGTERM after 10s.
 
-## Natural next steps
+## What's next
 
-Known rough edges and follow-ups are tracked in [TODO.md](TODO.md).
-
-
-- **vsock exec agent.** A tiny guest agent on vsock would give a real `flk ssh console` and `flk ssh console -C "cmd"`, the way Fly's hallpass does.
-- **`APP.internal` DNS.** A small dnsmasq on the bridge, fed from machine records.
-- **Snapshots.** Firecracker snapshot/restore would give `flk machine suspend` and sub-second resume.
-- **Rolling health gate.** Abort the deploy if a machine never starts listening, rather than just warning.
-- **Static Go/Rust init.** Removing the `/bin/sh` requirement would let distroless images boot.
+The order of work is in [PLAN.md](PLAN.md); known rough edges and bigger
+features (`.internal` DNS, machine snapshots, volume snapshots) are in
+[TODO.md](TODO.md).

@@ -10,7 +10,7 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
 
 ## Rules while building
 
-- Real apps run on master's `bin/flk`: the boot service, the exit hook
+- Real apps run on main's `bin/flk`: the boot service, the exit hook
   and the games' cron backups all use it. New behaviour in those paths
   must be opt-in, or a no-op for an app that doesn't ask for it.
 - Changes to the guest (`/flk/init`, agents) reach a machine only when it
