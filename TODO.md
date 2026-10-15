@@ -122,7 +122,10 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   "detail"? }`. `type` is a fixed set, documented in the guide. `--since`
   lets lazyflk reconnect after a gap. Fed by the exit hook and lifecycle
   commands. lazyflk keeps polling slowly while the stream is alive.
-- [ ] **G12: JSON for PLAN.md M1/M2** (lazyflk-3a, 2026-10-13). Message it
+- [x] **G12: JSON for PLAN.md M1/M2** (lazyflk-3a, 2026-10-13). Done in
+  lazyflk 2026-10-14: verified_at/verify/copies (529c1df), release backups
+  and rollback --with-volumes (d4cb33b), disk backups per volume (9e8b68c),
+  volumes move (d4cb33b), files ls --json (545a1b5). Was: message it
   for each feature as it lands, with the commit and the JSON shape:
   - `volumes backups --json`: per backup `verified_at`, `verify`
     ("clean" / "errors" / the hook result), and `copies: [{ "to", "at",
@@ -133,6 +136,25 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   - `volumes move`: an ordinary command (lazyflk makes a form for it).
   - `volumes ls --json`: `{ name, type, size, uid, gid, mode, mtime }`,
     on a volume and on a backup (lazyflk's read-only file browser).
+
+- [ ] **G13: a failed build or deploy says nothing changed** (lazyflk
+  d-lazyflk-a9, 2026-10-14; the opencode.flk entry "A failed build doesn't
+  say nothing changed" below). lazyflk shows flk's output in its job view
+  and wants the last lines stable enough to show as the result. Additive:
+  - stderr ends `Error: build failed; machines unchanged (still on vN)`
+    (or the checks equivalent), then a `Next:` line.
+  - An event: type `deploy_failed`, `release` = the unchanged current one,
+    `detail` = `"build"` or `"checks"`.
+  lazyflk shows the `Next:` line under a failed deploy, and the event in
+  its Events tabs.
+- [ ] **G14: `flk volumes create --owner UID:GID`** (lazyflk d-lazyflk-a9,
+  2026-10-14; the opencode.flk entry "A new volume's root is owned by root"
+  below). lazyflk's create form adds an owner field when
+  `help --all --json` lists the option, so no schema bump. If flk instead
+  defaults the root to the image's USER, put the root's `uid`/`gid` in
+  `volumes list --json` so lazyflk can show it.
+  Also from lazyflk: its exec form is adding a "user" field
+  (`flk exec --user`), so changing exec's default user later is fine.
 
 ## From opencode.flk (first app by hand, 2026-10-13)
 
