@@ -43,6 +43,7 @@ sudo ./setup-host.sh --install-service   # recommended: at boot, recreate networ
 
 # 3. Firecracker + guest kernel, PATH symlink, podman fix — all at once (no root)
 ./bin/flk setup --fix   # downloads assets, creates ~/.local/bin/flk, fixes short image names
+# flk is on PATH once ~/.local/bin is (Ubuntu: log in again; else add it to your shell rc)
 
 # 4. Deploy the example
 cd examples/hello

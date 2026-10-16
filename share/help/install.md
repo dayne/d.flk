@@ -35,14 +35,17 @@ Get the code first if you haven't already:
        {{SRC}}/bin/flk setup --fix
 
    `flk setup` downloads firecracker and the guest kernel into `{{ROOT}}`,
-   then runs `flk doctor`. The `--fix` flag also auto-applies two common
-   podman fixes (no root, safe to re-run on any distro):
+   then runs `flk doctor`. It stops first if a package is missing (step 1
+   names them). The `--fix` flag also applies two one-offs where needed
+   (no root, safe to re-run on any distro):
 
    - **Podman short image names** — lets `FROM ruby:3.3` resolve without
      the full `docker.io/library/ruby:3.3` prefix.
-   - **`~/.local/bin/flk` symlink** — so `flk` is on your PATH. On Ubuntu
-     and Arch `~/.local/bin` is already in PATH; open a new terminal after
-     setup (or: `export PATH="$HOME/.local/bin:$PATH"`).
+   - **`~/.local/bin/flk` symlink** — so `flk` is on your PATH. Ubuntu's
+     `~/.profile` adds `~/.local/bin` at login once it exists, so log in
+     again; elsewhere (Arch's default bash) add
+     `export PATH="$HOME/.local/bin:$PATH"` to your shell rc. Setup says
+     when this shell can't find it yet.
 
    Without `--fix`, `flk setup` lists them and asks before applying them
    when run in a terminal; otherwise it suggests `flk setup --fix`.
@@ -60,7 +63,8 @@ Get the code first if you haven't already:
    Or, where the bash-completion package is loaded, drop it in its folder:
    `flk completion bash > ~/.local/share/bash-completion/completions/flk`.
 
-6. **Check.** `flk doctor` should end with "Ready to fly, locally."
+6. **Check.** `flk doctor` should say "Ready to fly, locally." (any `!`
+   lines under "Optional" after it are features you can add later).
    `{{SRC}}/tests/run.sh` runs the end-to-end tests (a few minutes).
 
 Next: flk help first-app
