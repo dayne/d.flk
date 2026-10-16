@@ -39,7 +39,7 @@ CHECKS=(
   kvm:check_cpu_virt
   kvm:check_kvm_module
   kvm:check_dev_kvm
-  "packages:check_cmd sudo"
+  packages:check_sudo
   packages:check_ruby
   "packages:check_cmd tmux"
   packages:check_mkfs_ext4
@@ -201,6 +201,12 @@ check_dev_kvm() {
 # ---------- checks: packages ----------
 check_cmd() { # CMD
   have "$1" && pass "$1" || fail_pkg "$1 not found" "$1"
+}
+
+check_sudo() {
+  if [[ $EUID -eq 0 ]]; then pass "sudo (running as root)"
+  else have sudo && pass "sudo" || fail_pkg "sudo not found" "sudo"
+  fi
 }
 
 check_ruby() {
