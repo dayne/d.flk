@@ -117,8 +117,13 @@ module Flk
                                          "services" => services_status))
       end
       icons = { "pass" => Util.green("✔"), "fail" => Util.red("✘"), "warn" => Util.yellow("!") }
-      results.each { |c| puts "#{icons[c['status']]} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
+      warns, main = results.partition { _1["status"] == "warn" }
+      main.each { |c| puts "#{icons[c['status']]} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
       puts(ok ? "\nReady to fly, locally." : "\nFix the ✘ items above.")
+      if warns.any?
+        puts ok ? "\nOptional (won't stop VMs running):" : ""
+        warns.each { |c| puts "#{icons['warn']} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
+      end
     end
 
     def doctor_checks
