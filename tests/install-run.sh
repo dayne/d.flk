@@ -53,16 +53,8 @@ case "$PKG_MGR" in
     pacman -Sy --noconfirm --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl sudo procps-ng \
       2>&1 | tail -3
     # Arch's podman requires cgroup v2; the Firecracker init doesn't mount it.
-    # Mount cgroupv2 manually (real Arch servers use systemd which does this).
-    echo "=== cgroup mounts before fix ==="
-    grep cgroup /proc/mounts 2>/dev/null || echo "(none)"
-    mkdir -p /sys/fs/cgroup
-    if ! grep -q cgroup2 /proc/mounts 2>/dev/null; then
-      mount -t cgroup2 none /sys/fs/cgroup && echo "cgroup2 mounted at /sys/fs/cgroup" || \
-        echo "WARNING: cgroup2 mount failed (podman info may not work)"
-    else
-      echo "cgroup2 already mounted"
-    fi
+    # Real Arch servers run systemd which mounts cgroupv2 at boot.
+    grep -q cgroup2 /proc/mounts 2>/dev/null || mount -t cgroup2 none /sys/fs/cgroup
     ;;
 esac
 p "packages installed ($PKG_MGR)"
@@ -75,8 +67,6 @@ if grep -qF "0 failed" /tmp/sanity-pkgs.out && grep -qF "0 warnings" /tmp/sanity
 else
   f "package checks still failing after install — see above"
   grep -E '^\s+[✘!]' /tmp/sanity-pkgs.out || true
-  echo "--- podman info (for debugging):"
-  podman info 2>&1 | head -20 || true
 fi
 
 # ---------- 4. flk setup --fix --------------------------------------------
