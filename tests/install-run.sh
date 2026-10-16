@@ -52,19 +52,19 @@ case "$PKG_MGR" in
   pacman)
     pacman -Sy --noconfirm --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl sudo procps-ng \
       2>&1 | tail -3
-    # Arch's podman requires cgroup v2. The Firecracker guest init doesn't
-    # mount cgroups; mount the unified hierarchy so podman info works.
-    # Real Arch servers always run systemd which mounts cgroupv2 at boot.
-    mkdir -p /sys/fs/cgroup
-    mount -t cgroup2 cgroup2 /sys/fs/cgroup 2>&1 && echo "cgroupv2 mounted" || true
+    # Arch's podman (crun) requires cgroup v2. Real Arch servers run systemd
+    # which mounts cgroupv2 at boot; the Firecracker init doesn't.
+    # Use runc (supports cgroup v1) instead of crun as the OCI runtime.
+    pacman -S --noconfirm --needed runc 2>&1 | tail -2
+    mkdir -p /etc/containers
+    echo -e '[engine]\nruntime = "runc"' > /etc/containers/containers.conf
+    echo "OCI runtime set to runc (cgroup v1 support)"
     ;;
 esac
 p "packages installed ($PKG_MGR)"
 
 # ---------- 3. sanity after install: packages should all pass -------------
 hdr "Step 3: sanity after install (packages only)"
-# Run podman info once to warm up storage (Arch may need a moment on first run)
-podman info >/dev/null 2>&1 || true
 $FLK_SRC/flk-sanity.sh --no-doctor --only packages 2>&1 | tee /tmp/sanity-pkgs.out || true
 if grep -qF "0 failed" /tmp/sanity-pkgs.out && grep -qF "0 warnings" /tmp/sanity-pkgs.out; then
   p "all package checks pass after install"
