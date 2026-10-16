@@ -15,7 +15,9 @@ The order of work (milestones) is in `PLAN.md`; host and game-server work is in 
   - **firewalld** (Fedora default): `setup-host.sh` puts the bridge in the
     `trusted` zone; `flk-sanity.sh` checks it (`check_firewalld`).
   - **dnf / pacman package names**: the install commands `flk-sanity.sh`
-    suggests on Fedora and Arch (the `PKG` table) have never been run.
+    suggests on Fedora (the `PKG` table) have never been run. Arch and
+    Ubuntu packages, sanity and `flk setup --fix` are covered by tests 60/61
+    (in a microVM: no KVM, bridge or firewall there, so not the rest).
   - *How to test:* on each host, start from a clean install, run
     `./flk-sanity.sh` and run the install command it suggests, then
     `sudo ./setup-host.sh`, `flk setup`, and `tests/run.sh`.
@@ -168,6 +170,13 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   `volumes list --json` until its first use, when its root takes the owner
   of the mount point in the image (then the field goes). No root uid/gid in
   `volumes list` (it'd need a debugfs per volume per poll).
+- [ ] **Host settings from the CLI** (flk, 2026-10-15; nothing asked yet).
+  New and additive: `flk config set KEY=VALUE...` writes
+  `~/.config/flk/host.toml` (keys checked; bind/address validated before
+  the file is replaced), and `flk config show --host` prints
+  `{"file", "settings"}`. lazyflk could offer a host settings form (e.g.
+  backup_dir from doctor's "no backup_dir set" warning, whose hint is now
+  `flk config set backup_dir=...`). `flk setup --fix` also exists.
 
 ## From opencode.flk (first app by hand, 2026-10-13)
 

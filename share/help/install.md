@@ -40,8 +40,8 @@ says which step you're at.
      the full `docker.io/library/ruby:3.3` prefix.
    - **`~/.local/bin/flk` symlink** — creates it if it's not there yet.
 
-   Without `--fix`, `flk setup` will offer to apply these interactively if
-   you're on a TTY, or print the commands to run manually.
+   Without `--fix`, `flk setup` lists them and asks before applying them
+   when run in a terminal; otherwise it suggests `flk setup --fix`.
 
 4. **Optional: Go, for `flk exec`, `flk ssh console`, and images without
    `/bin/sh`.** flk builds a small guest agent from `{{SRC}}/agent` with

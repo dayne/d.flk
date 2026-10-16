@@ -226,21 +226,30 @@ module Flk
         key, _, raw = arg.partition("=")
         raise Error, "expected KEY=VALUE, got: #{arg}" unless arg.include?("=")
         raise Error, "unknown config key '#{key}' (known: #{Host::KEYS.join(', ')})" unless Host::KEYS.include?(key)
-        val = Integer(raw) rescue raw
-        [key, val]
+        next [key, raw] unless key.end_with?("_keep", "_days")
+        [key, Integer(raw, 10)] rescue raise(Error, "#{key} must be a whole number, got: #{raw}")
       end.to_h
 
       path = Host::PATH
       lines = File.exist?(path) ? File.readlines(path) : []
       updates.each do |key, val|
-        toml_val = val.is_a?(Integer) ? val.to_s : "\"#{val.gsub("\\", "\\\\").gsub('"', '\\"')}\""
+        toml_val = val.is_a?(Integer) ? val.to_s : "\"#{val.gsub(/["\\]/) { "\\#{_1}" }}\""
         new_line = "#{key} = #{toml_val}\n"
         idx = lines.index { |l| l.match?(/\A\s*#{Regexp.escape(key)}\s*=/) }
         idx ? lines[idx] = new_line : lines << new_line
       end
 
+      # Check the result (bind, address...) before it replaces the file
       FileUtils.mkdir_p(File.dirname(path))
-      File.write(path, lines.join)
+      tmp = "#{path}.new"
+      File.write(tmp, lines.join)
+      begin
+        Host.settings(tmp)
+      rescue Error => e
+        File.delete(tmp)
+        raise Error, e.message.gsub(tmp, path)
+      end
+      File.rename(tmp, path)
       updates.each { |k, v| puts "#{k} = #{v.inspect}  (#{path})" }
       next_step("flk doctor")
     end

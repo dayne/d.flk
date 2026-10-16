@@ -27,9 +27,9 @@ test_mcshadow_services_and_mounts() {
   assert_eq 25565 "$(json_get machine_config.ports.0.internal_port <<<"$cfg")" "port target"
 }
 
-test_examples_parse_without_warnings() {
+test_examples_parse_without_warnings() { # and the test apps
   local d cfg
-  for d in "$FLK_SRC"/examples/*/; do
+  for d in "$FLK_SRC"/examples/*/ "$TESTS"/apps/*/; do
     cfg=$(APP_DIR=$d flk config show) || fail "config show failed in $d"
     assert_eq "[]" "$(json_get warnings <<<"$cfg")" "warnings in ${d#"$FLK_SRC"/}flk.toml"
   done

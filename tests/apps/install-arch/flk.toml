@@ -6,6 +6,8 @@ app = "install-arch"
 [[vm]]
   cpus = 1
   memory_mb = 1024
+
+[flk]
   rootfs_extra_mb = 8192
 
 [[mounts]]

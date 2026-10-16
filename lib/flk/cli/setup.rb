@@ -67,7 +67,7 @@ module Flk
 
       if o[:fix]
         fixes.each_key { |k| setup_apply_fix!(k) }
-      elsif $stdout.tty?
+      elsif $stdin.tty? && $stdout.tty?
         puts "\n#{fixes.size} auto-fixable item#{'s' if fixes.size > 1} (no root needed):"
         fixes.each_value { |v| puts "  - #{v}" }
         print "Apply now? [Y/n] "

@@ -113,6 +113,9 @@ if a disk isn't covered, e.g. a `nofail` or network mount: then re-run
     backup_dir  = "/data/flk-backups"   # ideally another disk than the volumes
     backup_keep = 7                     # per volume
 
+(or: `flk config set backup_dir=/data/flk-backups backup_keep=7`, which
+checks the values; `flk config show --host` prints the file.)
+
 Then `flk volumes backup` copies all of the app's volumes there (sparse:
 only used space), checks each copy with e2fsck, and deletes the oldest past
 `keep`. By default the machine is stopped for the copy and started again
