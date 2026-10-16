@@ -50,7 +50,12 @@ These items build on M1's copies and M3's events:
 - `flk volumes sync --to HOST`
 - fencing so an app never runs on two hosts
 
-Start with a written design.
+A draft design is in `docs/m5-design.md` (2026-10-16): one holder per app
+with an epoch, checked on every start path, and the order of work (P0
+peers, P1 planned moves, P2 addresses, P3 takeover). It waits on
+Tailscale and the other larger pieces, which decide its open questions
+(transport, service address, witness). Settle those before building
+past P0.
 
 ### Alongside (any time)
 
