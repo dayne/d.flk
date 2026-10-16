@@ -52,11 +52,28 @@ module Flk
     # "Next: ..." after commands that change things, so nobody has to
     # remember the order. One line, plain, after the result.
     def cmd_setup(_args, o)
+      setup_preflight_packages!
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
       puts "==> flk-agent (flk exec): #{Agent.ensure! || 'not built'}"
+      setup_post_fixes(o) # before doctor, so its report shows them done
       puts
       cmd_doctor([], {})
-      setup_post_fixes(o)
+    end
+
+    # Fail before the download, not halfway through (curl) or at the first
+    # deploy (the rest).
+    def setup_preflight_packages!
+      missing = { "curl" => "curl", "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }
+                 .reject { |bin, _| Util.which(bin) }
+                 .values
+      eng = begin; Image.engine; rescue Error; nil; end
+      missing << "podman (or docker)" unless eng
+      return if missing.empty?
+
+      sanity = File.join(File.dirname(SHARE), "flk-sanity.sh")
+      raise Error,
+            "missing packages: #{missing.join(', ')}. " \
+            "Run #{sanity} --only packages for the exact install command, then re-run flk setup"
     end
 
     def setup_post_fixes(o)
@@ -102,7 +119,10 @@ module Flk
         target = File.join(dir, "flk")
         File.symlink(SETUP_BIN, target)
         puts "==> Linked #{target} -> #{SETUP_BIN}"
-        puts "    (ensure ~/.local/bin is on your PATH — it is on Ubuntu by default)"
+        unless ENV["PATH"].split(File::PATH_SEPARATOR).include?(dir)
+          puts "    #{dir} isn't on PATH in this shell: log in again (Ubuntu's ~/.profile adds it once it exists),"
+          puts "    or add to your shell rc: export PATH=\"$HOME/.local/bin:$PATH\""
+        end
       end
     end
 
@@ -117,8 +137,13 @@ module Flk
                                          "services" => services_status))
       end
       icons = { "pass" => Util.green("✔"), "fail" => Util.red("✘"), "warn" => Util.yellow("!") }
-      results.each { |c| puts "#{icons[c['status']]} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
+      warns, main = results.partition { _1["status"] == "warn" }
+      main.each { |c| puts "#{icons[c['status']]} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
       puts(ok ? "\nReady to fly, locally." : "\nFix the ✘ items above.")
+      if warns.any?
+        puts "\nOptional (flk works without these):"
+        warns.each { |c| puts "#{icons['warn']} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
+      end
     end
 
     def doctor_checks

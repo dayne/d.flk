@@ -191,8 +191,9 @@ esac
 
 # KVM access
 [[ -e /dev/kvm ]] || { echo "/dev/kvm missing: enable VT-x/AMD-V and load kvm_intel or kvm_amd" >&2; exit 1; }
+added_kvm=0
 if getent group kvm >/dev/null && ! id -nG "$user" | grep -qw kvm; then
-  usermod -aG kvm "$user"
+  usermod -aG kvm "$user"; added_kvm=1
   echo "added $user to group kvm (log out/in, or: newgrp kvm)"
 fi
 
@@ -256,4 +257,15 @@ install_port_helper
 # Recreating the table emptied the port map; refill it for running machines.
 sudo -u "$user" -H "$src/bin/flk" ports sync >/dev/null 2>&1 || true
 
-echo "flk networking ready: ${bridge} ${subnet}.1/24, ${taps} taps for ${user}, NAT via ${uplink}, port helper ${helper}"
+echo "✔ bridge ${bridge} (${subnet}.1/24)"
+echo "✔ tap pool: ${taps} taps owned by ${user}"
+echo "✔ NAT via ${uplink}"
+echo "✔ port helper: ${helper} (sudo no-password for ${user})"
+echo ""
+if ((added_kvm)); then
+  echo "Next: log out and back in (kvm group), then: ${src}/bin/flk setup --fix"
+else
+  echo "Next: ${src}/bin/flk setup --fix"
+fi
+[[ -f /etc/systemd/system/flk-machines.service ]] ||
+  echo "Also, so machines come back after a reboot: sudo $0 --install-service"

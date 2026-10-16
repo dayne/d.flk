@@ -42,4 +42,5 @@ Working on flk itself:
   JSON changes are its API: keep them additive, and record what it needs
   in `TODO.md` ("For lazyflk").
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
-  full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`.
+  full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`,
+  the order in `PLAN.md`, what's done and decided in `docs/history.md`.
