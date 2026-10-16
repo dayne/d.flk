@@ -19,6 +19,7 @@
 # Exit: 0 all passed, 1 any failure, 2 warnings only.
 set -uo pipefail
 export PATH="$PATH:/usr/sbin:/sbin" # mkfs.ext4 lives here on Debian/Ubuntu
+: "${USER:=$(id -un)}"              # Arch and minimal systems may not set $USER
 
 FLK_SRC=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 FLK_BIN="$FLK_SRC/bin/flk"

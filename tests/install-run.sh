@@ -58,12 +58,16 @@ p "packages installed ($PKG_MGR)"
 
 # ---------- 3. sanity after install: packages should all pass -------------
 hdr "Step 3: sanity after install (packages only)"
+# Run podman info once to warm up storage (Arch may need a moment on first run)
+podman info >/dev/null 2>&1 || true
 $FLK_SRC/flk-sanity.sh --no-doctor --only packages 2>&1 | tee /tmp/sanity-pkgs.out || true
 if grep -qF "0 failed" /tmp/sanity-pkgs.out && grep -qF "0 warnings" /tmp/sanity-pkgs.out; then
   p "all package checks pass after install"
 else
   f "package checks still failing after install — see above"
   grep -E '^\s+[✘!]' /tmp/sanity-pkgs.out || true
+  echo "--- podman info (for debugging):"
+  podman info 2>&1 | head -20 || true
 fi
 
 # ---------- 4. flk setup --fix --------------------------------------------
@@ -80,10 +84,11 @@ if grep -qE 'Configured podman|flk-docker-io' /tmp/setup.out; then
 else
   f "flk setup --fix did not apply registries fix"
 fi
-if grep -qF "~/.local/bin/flk" /tmp/setup.out || grep -qF "Linked" /tmp/setup.out; then
-  p "flk setup --fix created PATH symlink"
+SYM_EXPECTED="$HOME/.local/bin/flk"
+if grep -qF "Linked" /tmp/setup.out || [[ -L $SYM_EXPECTED ]]; then
+  p "flk setup --fix: PATH symlink in place ($SYM_EXPECTED)"
 else
-  f "flk setup --fix did not create PATH symlink"
+  f "flk setup --fix did not create PATH symlink ($SYM_EXPECTED)"
 fi
 
 # ---------- 5. verify fix artifacts on disk --------------------------------
