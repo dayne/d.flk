@@ -52,6 +52,11 @@ case "$PKG_MGR" in
   pacman)
     pacman -Sy --noconfirm --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl sudo procps-ng \
       2>&1 | tail -3
+    # Arch's podman requires cgroup v2. The Firecracker guest init doesn't
+    # mount cgroups; mount the unified hierarchy so podman info works.
+    # Real Arch servers always run systemd which mounts cgroupv2 at boot.
+    mkdir -p /sys/fs/cgroup
+    mount -t cgroup2 cgroup2 /sys/fs/cgroup 2>&1 && echo "cgroupv2 mounted" || true
     ;;
 esac
 p "packages installed ($PKG_MGR)"
