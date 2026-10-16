@@ -52,13 +52,17 @@ case "$PKG_MGR" in
   pacman)
     pacman -Sy --noconfirm --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl sudo procps-ng \
       2>&1 | tail -3
-    # Arch's podman (crun) requires cgroup v2. Real Arch servers run systemd
-    # which mounts cgroupv2 at boot; the Firecracker init doesn't.
-    # Use runc (supports cgroup v1) instead of crun as the OCI runtime.
-    pacman -S --noconfirm --needed runc 2>&1 | tail -2
-    mkdir -p /etc/containers
-    echo -e '[engine]\nruntime = "runc"' > /etc/containers/containers.conf
-    echo "OCI runtime set to runc (cgroup v1 support)"
+    # Arch's podman requires cgroup v2; the Firecracker init doesn't mount it.
+    # Mount cgroupv2 manually (real Arch servers use systemd which does this).
+    echo "=== cgroup mounts before fix ==="
+    grep cgroup /proc/mounts 2>/dev/null || echo "(none)"
+    mkdir -p /sys/fs/cgroup
+    if ! grep -q cgroup2 /proc/mounts 2>/dev/null; then
+      mount -t cgroup2 none /sys/fs/cgroup && echo "cgroup2 mounted at /sys/fs/cgroup" || \
+        echo "WARNING: cgroup2 mount failed (podman info may not work)"
+    else
+      echo "cgroup2 already mounted"
+    fi
     ;;
 esac
 p "packages installed ($PKG_MGR)"
