@@ -79,14 +79,14 @@ module Flk
       check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
       check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
             "sudo #{SETUP_HOST} (adds you to kvm group; log out/in)"]
-      fc = begin; VM.firecracker_bin; rescue Error; nil; end
-      check["firecracker #{fc}", !fc.nil?, "flk setup"]
-      check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
       check["bridge #{Net::BRIDGE}", Net.bridge_up?, "sudo #{SETUP_HOST}"]
       taps = (0...Net::POOL).count { Net.tap_exists?(_1) }
       check["tap pool #{taps}/#{Net::POOL}", taps.positive?, "sudo #{SETUP_HOST}"]
       fwd = (File.read("/proc/sys/net/ipv4/ip_forward").strip == "1" rescue false)
       check["ipv4 forwarding", fwd, "sudo #{SETUP_HOST}"]
+      fc = begin; VM.firecracker_bin; rescue Error; nil; end
+      check["firecracker #{fc}", !fc.nil?, "flk setup"]
+      check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
       { "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }.each do |bin, pkg|
         check[bin, !Util.which(bin).nil?, "install #{pkg}"]
       end
