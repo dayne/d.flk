@@ -421,10 +421,29 @@ summary() {
     echo; echo "Install missing packages:"; echo "  $(install_cmd "${MISSING_PKGS[@]}")"
   fi
   if ((N_FAIL + N_WARN)); then
-    local next=${NEXT:-${HINTS[0]:-see above}}
-    ((${#MISSING_PKGS[@]})) && next=$(install_cmd "${MISSING_PKGS[@]}")
-    echo; echo "Next step: $(c 1 "$next")"
-    ((N_FAIL)) && echo "Then re-run $0"
+    # Build deduplicated ordered step list from HINTS (already deduplicated by add_hint).
+    # Package install command goes first if packages are missing.
+    local -a steps=()
+    local pkg_cmd="" h i found
+    ((${#MISSING_PKGS[@]})) && pkg_cmd=$(install_cmd "${MISSING_PKGS[@]}")
+    [[ -n $pkg_cmd ]] && steps+=("$pkg_cmd")
+    for h in "${HINTS[@]+"${HINTS[@]}"}"; do
+      found=0
+      for ((i=0; i<${#steps[@]}; i++)); do [[ "${steps[$i]}" == "$h" ]] && found=1 && break; done
+      ((found)) || steps+=("$h")
+    done
+    ((${#steps[@]})) || steps=("${NEXT:-see above}")
+    echo
+    if ((${#steps[@]} == 1)); then
+      echo "Next step: $(c 1 "${steps[0]}")"
+      ((N_FAIL)) && echo "Then re-run $0"
+    else
+      echo "Steps needed:"
+      for ((i=0; i<${#steps[@]}; i++)); do
+        printf '  %d. %s\n' "$((i+1))" "$(c 1 "${steps[$i]}")"
+      done
+      ((N_FAIL)) && echo "Re-run $0 after each step."
+    fi
   else
     echo; echo "Host is ready for flk."
   fi

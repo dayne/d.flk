@@ -55,8 +55,10 @@ module Flk
                 "zsh: autoload -U bashcompinit && bashcompinit && source <(flk completion bash)"] },
 
       { name: "setup", group: "Setup",
+        opts: [["--fix", "Apply auto-fixable issues after setup: PATH symlink and podman short-name registries"]],
         summary: "Download firecracker + guest kernel (no root), then run doctor",
-        notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo #{SETUP_HOST}"] },
+        notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo #{SETUP_HOST}",
+                "--fix also creates ~/.local/bin/flk and configures podman short image names (FROM ruby:3.3) if either is missing. Safe to re-run."] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
         notes: ['--json prints {"schema", "ok", "checks": [{"label", "status", "hint"}], "services": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
