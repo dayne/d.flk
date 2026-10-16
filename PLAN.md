@@ -1,4 +1,4 @@
-# Plan (2026-10-13)
+# Plan (2026-10-15)
 
 This is the roadmap for flk, the tool: its commands and capabilities.
 Host work (disks, backup targets, kernel settings, the game servers'
@@ -24,22 +24,20 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
 
 - Done:
   - deploys with health checks, rollback and releases
-  - volume backups (modes, hooks, fsck, page-cache-friendly), restore and
-    extend
-  - LAN addresses
-  - huge pages
-  - agent-friendly help and context
-  - lazyflk gaps G1–G11
-- Gaps that real use has shown:
-  - A restore only works in place and needs the machine stopped, so a
-    backup can't be tested without downtime.
-  - flk can't copy backups anywhere but `backup_dir`.
-  - Nothing warns that a backup won't fit before it starts.
-  - Rolling back a release restores the image but not the volume.
-  - Getting at files in a volume needs root and hand-made scripts (both
-    game repos carry one).
-  - There's no event history, so lazyflk polls. There's no exec, so
-    scripting goes through the console.
+  - backups you can trust (M1): restore as new, verify, copies off the
+    disk, space checks, volume rollback with a release, volume moves
+  - files in volumes without root (M2), events, exec and static init (M3)
+  - `APP.internal` names between apps (M4)
+  - LAN addresses, huge pages, agent-friendly help and context
+  - a first install that leads the way (2026-10-15, below)
+  - lazyflk gaps G1–G16
+- Gaps that remain:
+  - One host only: no failover, no volume sync to another host (M5).
+  - Firewalls (ufw, firewalld) and Fedora have never run on a real host
+    (host work in `~/mud`); Fedora has no install test either.
+  - The install tests run as root, so a new user's path (sudo, kvm group,
+    PATH) is only checked by hand.
+  - No instant snapshots: backups are full copies on ext4.
 
 ## Milestones
 
@@ -102,6 +100,17 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
   is a host-wide security trade-off; `flk proxy` covers TCP, and the
   host's LAN IP works for everything.
 
+### First install (done 2026-10-15: PR #1, PR #2)
+
+- `flk-sanity.sh` lists every step in order; `flk setup` checks packages
+  before downloading, and `--fix` adds the PATH link and podman's short
+  names; doctor puts optional warnings after "Ready to fly";
+  `setup-host.sh` says what it set up and what's next.
+- `flk config set` / `config show --host` for host settings.
+- Tests 60/61 install on fresh Ubuntu and Arch VMs.
+- Next, small: a Fedora install test, and the install steps as a
+  non-root user (TODO.md, Setup).
+
 ### M5: More than one host (design first)
 
 These items depend on M1's copies and M3's events:
@@ -114,6 +123,9 @@ Start with a written design.
 
 ### Alongside (small, any time)
 
-- (Decided 2026-10-14: keep tmux's Ctrl-b prefix for flk's server.) A friendlier tmux prefix for `flk console` inside tmux, and tmux
-  server groups.
-- Machine snapshots (Firecracker snapshot/restore), after M3.
+- flk's tmux server keeps its groups (TODO.md, Machines). The prefix
+  stays Ctrl-b (decided 2026-10-14).
+- Machine snapshots (Firecracker snapshot/restore): M3 is done, so
+  nothing blocks it now.
+- Volume snapshots: need volumes on a reflink filesystem or LVM thin
+  (a host decision first, `~/mud`).

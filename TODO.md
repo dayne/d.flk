@@ -30,6 +30,27 @@ The order of work (milestones) is in `PLAN.md`; host and game-server work is in 
   - *Symptom if broken:* machines boot but have no network (another
     firewall's FORWARD drop wins over flk's nft accept), or forwarded host
     ports time out.
+  - Real-host runs are host work, tracked in `~/mud`
+    (`docs/flk-system-notes.md`). flk's part is below.
+- [ ] **A Fedora install test** (`tests/cases/62-install-fedora.sh`,
+  `tests/apps/install-fedora`): `tests/install-run.sh` already takes a
+  distro; add `fedora` → dnf there. That runs the dnf package names from
+  sanity's `PKG` table, the one distro path no test touches yet.
+- [ ] **Install tests run as root.** In the 60/61 VMs everything runs as
+  root, so the steps a new user actually hits aren't covered: sudo with a
+  password, joining `kvm`, `~/.local/bin` not on PATH yet (setup's PATH
+  hint), a user-level podman. Run steps 3–7 of `install-run.sh` as a
+  created user (`useradd -m`, `runuser -l`).
+- [x] **First install, end to end** (PR #1 21ffec9, PR #2, 2026-10-15).
+  `flk-sanity.sh` lists every step in order; `flk setup` stops before the
+  download when a package is missing, and `--fix` (or a prompt, in a
+  terminal) adds the `~/.local/bin/flk` link and podman's short names,
+  before doctor runs; doctor prints optional warnings after "Ready to
+  fly"; `setup-host.sh` ends with what it set up and the next step (the
+  kvm log-out only when it added the user, `--install-service` when the
+  boot service is missing); `flk config set` for host settings; the guide
+  and README start at `git clone`. Tests 60/61 install on fresh Ubuntu and
+  Arch VMs.
 
 ## Reliability
 
@@ -177,6 +198,9 @@ is additive: lazyflk ignores unknown fields and treats missing ones as
   `{"file", "settings"}`. lazyflk could offer a host settings form (e.g.
   backup_dir from doctor's "no backup_dir set" warning, whose hint is now
   `flk config set backup_dir=...`). `flk setup --fix` also exists.
+  Handed over: a note is in lazyflk's `TODO.md` ("From flk 21ffec9 and
+  7cb3ddb"). PR #2 changed only text output (doctor's order, setup's,
+  setup-host.sh's), none of the JSON, so lazyflk needs nothing for it.
 
 ## From opencode.flk (first app by hand, 2026-10-13)
 
