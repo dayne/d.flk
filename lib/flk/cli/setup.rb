@@ -52,11 +52,26 @@ module Flk
     # "Next: ..." after commands that change things, so nobody has to
     # remember the order. One line, plain, after the result.
     def cmd_setup(_args, o)
+      setup_preflight_packages!
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
       puts "==> flk-agent (flk exec): #{Agent.ensure! || 'not built'}"
       puts
       cmd_doctor([], {})
       setup_post_fixes(o)
+    end
+
+    def setup_preflight_packages!
+      missing = { "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }
+                 .reject { |bin, _| Util.which(bin) }
+                 .values
+      eng = begin; Image.engine; rescue Error; nil; end
+      missing << "podman (or docker)" unless eng
+      return if missing.empty?
+
+      sanity = File.join(File.dirname(SHARE), "flk-sanity.sh")
+      raise Error,
+            "missing packages: #{missing.join(', ')}. " \
+            "Run #{sanity} --only packages for the exact install command, then re-run flk setup"
     end
 
     def setup_post_fixes(o)
