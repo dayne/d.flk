@@ -2,11 +2,15 @@
 
 This is the roadmap for flk, the tool: its commands and capabilities.
 Host work (disks, backup targets, kernel settings, the game servers'
-maintenance) is in `~/mud` (`docs/flk-system-notes.md`), for a separate session. The details
-of each item are in `TODO.md`. This file sets the order.
+maintenance, other-distro test hosts) is in `~/mud`
+(`docs/flk-system-notes.md`), for a separate session. The details of each
+item are in `TODO.md`; this file sets the order. Finished milestones
+(M1–M4, first install) and the decisions behind them are in
+`docs/history.md`.
 
 Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
-`~/vintagestory.flk` (TODO.md, BUGS.flk.md), and lazyflk's `TODO.md` (github.com/dayne/d.lazyflk).
+`~/vintagestory.flk` (TODO.md, BUGS.flk.md), and lazyflk's `TODO.md`
+(github.com/dayne/d.lazyflk).
 
 ## Rules while building
 
@@ -15,105 +19,37 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
   must be opt-in, or a no-op for an app that doesn't ask for it.
 - Changes to the guest (`/flk/init`, agents) reach a machine only when it
   boots again. Keep flk working with guests that don't have them.
-- Tests use `flkt-*` apps only. Never start, stop, deploy or back up
-  `minecraft-flk` or `vintagestory-flk`.
+- Tests use `flkt-*` apps only. Never start, stop, deploy or back up any
+  other app (`minecraft-flk`, `vintagestory-flk`, `mqtt-flk`,
+  `opencode-sandbox`...).
 - CLI and JSON are lazyflk's API, so changes are additive. Record what
-  lazyflk needs in `TODO.md`.
+  lazyflk needs in `TODO.md` ("For lazyflk").
 
 ## Where flk stands
 
-- Done:
-  - deploys with health checks, rollback and releases
-  - backups you can trust (M1): restore as new, verify, copies off the
-    disk, space checks, volume rollback with a release, volume moves
-  - files in volumes without root (M2), events, exec and static init (M3)
-  - `APP.internal` names between apps (M4)
-  - LAN addresses, huge pages, agent-friendly help and context
-  - a first install that leads the way (2026-10-15, below)
-  - lazyflk gaps G1–G16
-- Gaps that remain:
-  - One host only: no failover, no volume sync to another host (M5).
-  - Firewalls (ufw, firewalld) and Fedora have never run on a real host
-    (host work in `~/mud`); Fedora has no install test either.
-  - The install tests run as root, so a new user's path (sudo, kvm group,
-    PATH) is only checked by hand.
-  - No instant snapshots: backups are full copies on ext4.
+One host runs fly.io-style apps end to end: deploys with health checks,
+releases and rollback; volumes with verified backups, copies off the disk
+and rollback with a release; files in volumes without root; events, exec
+and `APP.internal` names; a first install that leads the way. lazyflk's
+gaps G1–G16 are closed.
 
-## Milestones
+What's missing:
+- More than one host: no failover, no volume sync (M5).
+- Distro coverage: ufw and firewalld have never run on a real host (host
+  work, `~/mud`); Fedora has no install test; the install tests run as
+  root.
+- Instant snapshots: backups are full copies on ext4.
 
-### M1: Backups you can trust (done 2026-10-13: 4ff9e9b, a04fcc6, 4b26b65, 1bdb910, 3f618a4, 63db57f)
+## Next
 
-1. **`flk volumes restore --as NAME`** restores a backup into a new
-   volume (or `--path`) next to the live one. Nothing stops and nothing
-   is replaced. `flk volumes backup --verify ID` runs e2fsck and an
-   optional `[flk.backup] verify` hook against a copy.
-2. **Copies elsewhere**: host `backup_copy_to = "/mnt/disk" |
-   "user@host:/path"` and `copy_keep`.
-   - After a backup, flk copies the newest one with rsync (`--sparse`,
-     with resume).
-   - `flk volumes backups` shows where each copy is.
-   - Doctor warns when the last copy is old.
-   - It's opt-in: nothing happens without the setting.
-3. **Space checks**: before a backup, estimate whether it fits in
-   `backup_dir` (`keep` × the size used) and refuse early. Doctor warns
-   when space is tight. `flk disk` shows the backups per volume.
-4. **Volume rollback (opt-in)**: `[flk.backup] before_deploy = true`
-   backs up before a deploy's roll. A failed health check restores that
-   backup before the old release boots. Releases record the backup ID,
-   so `releases rollback --with-volumes` can do the same later.
-5. **Reflink-aware moves**: `flk volumes move VOL --to DIR` (machine
-   stopped, sparse copy). Doctor gives a hint when volumes and backups
-   are on a filesystem with reflinks (XFS, btrfs), since copies are then
-   instant.
+### Small, first
 
-### M2: Volume files without root (done 2026-10-13: `flk files`)
-
-- `flk volumes ls|cat|cp|rm|mkdir|chown VOL PATH`, built on `debugfs -w`
-  (no mount, no sudo). Each also works on a backup (`--backup ID`, read
-  only).
-- flk refuses writes while a machine has the volume attached.
-- `cp` sets uid/gid (`--owner`, defaulting to the parent's owner).
-- Every write ends with an e2fsck.
-
-### M3: Talk to running machines (done 2026-10-13: events c0a98f4, exec 25b23ad, static init)
-
-- **G7 events**: `flk events [--json] [--follow] [-a APP]`. An
-  append-only, rotated `events.jsonl`, fed by lifecycle commands and the
-  exit hook. It covers start, stop, exit, restart, give-up, deploy,
-  rollback, check results, backups and port changes. lazyflk can then
-  stop polling.
-- **Exec over vsock**: a small static agent in the guest, started by
-  `/flk/init`.
-  - `flk exec ID -- CMD` keeps the exit code, stdout and stderr apart.
-  - `flk ssh console` gives a real shell.
-  - Live backups can use it to sync/fsfreeze in the guest.
-- **Static init** (same toolchain): distroless/scratch images boot.
-
-### M4: Networking between apps (done 2026-10-14)
-
-- **`APP.internal` names**: `[flk] internal_hosts = true` puts
-  `APP.internal` / `ID.vm.APP.internal` in the guest's `/etc/hosts`, at
-  boot and kept current through flk-agent. Decided (Dayne, 2026-10-14):
-  a hosts file, not a DNS server (dnsmasq or flk's own): no daemon, no
-  root step, and opt-in so apps that don't ask are untouched.
-- **Ports on 127.0.0.1**: not doing (Dayne, 2026-10-14). `route_localnet`
-  is a host-wide security trade-off; `flk proxy` covers TCP, and the
-  host's LAN IP works for everything.
-
-### First install (done 2026-10-15: PR #1, PR #2)
-
-- `flk-sanity.sh` lists every step in order; `flk setup` checks packages
-  before downloading, and `--fix` adds the PATH link and podman's short
-  names; doctor puts optional warnings after "Ready to fly";
-  `setup-host.sh` says what it set up and what's next.
-- `flk config set` / `config show --host` for host settings.
-- Tests 60/61 install on fresh Ubuntu and Arch VMs.
-- Next, small: a Fedora install test, and the install steps as a
-  non-root user (TODO.md, Setup).
+- A Fedora install test, and the install steps as a non-root user
+  (TODO.md, Setup).
 
 ### M5: More than one host (design first)
 
-These items depend on M1's copies and M3's events:
+These items build on M1's copies and M3's events:
 - managed extra addresses
 - keepalived hooks (`flk host activate|deactivate|check`)
 - `flk volumes sync --to HOST`
@@ -121,11 +57,9 @@ These items depend on M1's copies and M3's events:
 
 Start with a written design.
 
-### Alongside (small, any time)
+### Alongside (any time)
 
-- flk's tmux server keeps its groups (TODO.md, Machines). The prefix
-  stays Ctrl-b (decided 2026-10-14).
-- Machine snapshots (Firecracker snapshot/restore): M3 is done, so
-  nothing blocks it now.
-- Volume snapshots: need volumes on a reflink filesystem or LVM thin
-  (a host decision first, `~/mud`).
+- flk's tmux server keeps its groups (TODO.md, Machines).
+- Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
+- Volume snapshots: need volumes on a reflink filesystem or LVM thin (a
+  host decision first, `~/mud`).

@@ -176,4 +176,5 @@ Still worth checking on a new host:
 
 The order of work is in [PLAN.md](PLAN.md); known rough edges and bigger
 features (machine snapshots, volume snapshots, more than one host) are in
-[TODO.md](TODO.md).
+[TODO.md](TODO.md). What's done, and why things are the way they are, is
+in [docs/history.md](docs/history.md).
