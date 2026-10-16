@@ -29,26 +29,20 @@ the agent itself when Go is installed; without Go, everything else works.
 ## Quick start
 
 ```bash
+# 0. Get the code
+git clone https://github.com/dayne/d.flk && cd d.flk
+
 # 1. Host deps (Ubuntu / CachyOS-Arch)
 sudo apt install -y ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
-sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
+sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl procps-ng
 # Optional, for flk exec, flk ssh console and images without /bin/sh: Go (golang-go / go), or set FLK_GO
 
 # 2. One-time root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding
 sudo ./setup-host.sh
 sudo ./setup-host.sh --install-service   # recommended: at boot, recreate networking and resume machines
 
-# 3. Firecracker + guest kernel into ~/.local/share/flk (no root)
-ln -s "$PWD/bin/flk" ~/.local/bin/flk
-flk setup          # runs `flk doctor` at the end
-
-# Optional: let podman resolve short image names like `FROM ruby:3.3`.
-# Without this only fully qualified names (docker.io/library/ruby:3.3) work
-# on Ubuntu/Debian podman. `flk doctor` warns when it's missing, and a deploy
-# that hits it prints this fix. A drop-in adds to the system config; a
-# user-level registries.conf would replace it.
-mkdir -p ~/.config/containers/registries.conf.d
-echo 'unqualified-search-registries = ["docker.io"]' > ~/.config/containers/registries.conf.d/50-flk-docker-io.conf
+# 3. Firecracker + guest kernel, PATH symlink, podman fix — all at once (no root)
+./bin/flk setup --fix   # downloads assets, creates ~/.local/bin/flk, fixes short image names
 
 # 4. Deploy the example
 cd examples/hello

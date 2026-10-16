@@ -3,6 +3,10 @@
 flk lives in `{{SRC}}`. Each step can be re-run safely; `./flk-sanity.sh`
 says which step you're at.
 
+Get the code first if you haven't already:
+
+    git clone https://github.com/dayne/d.flk
+
 > **Note:** Steps that use `sudo` must be run directly in a terminal.
 > `sudo` requires a TTY to prompt for your password and will fail if
 > invoked from a script runner or pipe that has no terminal.
@@ -28,17 +32,17 @@ says which step you're at.
 
 3. **flk on your PATH, downloads, and quick fixes (no root).**
 
-       mkdir -p ~/.local/bin
-       ln -s {{SRC}}/bin/flk ~/.local/bin/flk
-       flk setup --fix
+       {{SRC}}/bin/flk setup --fix
 
    `flk setup` downloads firecracker and the guest kernel into `{{ROOT}}`,
    then runs `flk doctor`. The `--fix` flag also auto-applies two common
-   Ubuntu/Debian one-offs (no root, safe to re-run):
+   podman fixes (no root, safe to re-run on any distro):
 
    - **Podman short image names** — lets `FROM ruby:3.3` resolve without
      the full `docker.io/library/ruby:3.3` prefix.
-   - **`~/.local/bin/flk` symlink** — creates it if it's not there yet.
+   - **`~/.local/bin/flk` symlink** — so `flk` is on your PATH. On Ubuntu
+     and Arch `~/.local/bin` is already in PATH; open a new terminal after
+     setup (or: `export PATH="$HOME/.local/bin:$PATH"`).
 
    Without `--fix`, `flk setup` lists them and asks before applying them
    when run in a terminal; otherwise it suggests `flk setup --fix`.
