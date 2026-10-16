@@ -256,4 +256,9 @@ install_port_helper
 # Recreating the table emptied the port map; refill it for running machines.
 sudo -u "$user" -H "$src/bin/flk" ports sync >/dev/null 2>&1 || true
 
-echo "flk networking ready: ${bridge} ${subnet}.1/24, ${taps} taps for ${user}, NAT via ${uplink}, port helper ${helper}"
+echo "✔ bridge ${bridge} (${subnet}.1/24)"
+echo "✔ tap pool: ${taps} taps owned by ${user}"
+echo "✔ NAT via ${uplink}"
+echo "✔ port helper: ${helper} (sudo no-password for ${user})"
+echo ""
+echo "Next: log out/in if you were just added to kvm, then: ${src}/bin/flk setup --fix"
