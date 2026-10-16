@@ -90,8 +90,7 @@ Setting up a host
 sudo ./setup-host.sh    # once: bridge, taps, NAT
 sudo ./setup-host.sh --install-service   # at boot
 
-ln -s "$PWD/bin/flk" ~/.local/bin/flk
-flk setup               # firecracker + kernel, no root
+./bin/flk setup --fix   # firecracker + kernel, ~/.local/bin/flk; no root
 flk doctor              # "Ready to fly, locally."
 ```
 

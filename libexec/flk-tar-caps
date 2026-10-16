@@ -1,0 +1,56 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# flk-tar-caps ROOTFS.tar
+#
+# Prints "HEX<TAB>/path" for every file in the tar with a
+# security.capability xattr (PAX SCHILY.xattr.*, as podman/docker export
+# write it). flk-build-rootfs puts them back with debugfs: tar can't
+# restore them without root, and mkfs.ext4 -d only copies what's on disk.
+# Only file capabilities: other xattrs (SELinux labels...) belong to the
+# build host, not the guest.
+
+KEY = "SCHILY.xattr.security.capability"
+
+def pax(data)
+  out = {}
+  pos = 0
+  while pos < data.bytesize
+    len = data[pos..][/\A\d+/] or break
+    rec = data.byteslice(pos, len.to_i)
+    key, value = rec.byteslice(len.size + 1..-2).split("=", 2)
+    out[key] = value if key && value
+    pos += len.to_i
+  end
+  out
+end
+
+File.open(ARGV.fetch(0), "rb") do |f|
+  ext = {}
+  long = nil
+  while (hdr = f.read(512)) && hdr.bytesize == 512 && hdr != "\0" * 512
+    size = hdr[124, 12].delete("\0 ").to_i(8)
+    type = hdr[156]
+    pad = (512 - (size % 512)) % 512
+    unless %w[x g L].include?(type) # file data: skip it, don't read it
+      f.seek(size + pad, IO::SEEK_CUR)
+    else
+      data = f.read(size).to_s.b
+      f.read(pad)
+      ext = pax(data) if type == "x"
+      long = data.delete("\0") if type == "L"
+      next
+    end
+    name = ext["path"] || long || begin
+      prefix = hdr[345, 155].delete("\0")
+      base = hdr[0, 100].delete("\0")
+      prefix.empty? ? base : "#{prefix}/#{base}"
+    end
+    if (cap = ext[KEY])
+      path = "/" + name.b.sub(%r{\A(\./)+}, "").sub(%r{\A/+}, "")
+      puts "#{cap.unpack1('H*')}\t#{path}" unless path.match?(/["\n\t]/)
+    end
+    ext = {}
+    long = nil
+  end
+end

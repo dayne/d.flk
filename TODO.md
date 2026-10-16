@@ -16,8 +16,9 @@ game-server work is in `~/mud`.
   - **firewalld** (Fedora default): `setup-host.sh` puts the bridge in the
     `trusted` zone; `flk-sanity.sh` checks it (`check_firewalld`).
   - Packages, sanity and `flk setup --fix` are covered on Ubuntu, Arch and
-    Fedora by tests 60–62, which run the install command sanity suggests
-    (in a microVM: no KVM, bridge or firewall there, so not the rest).
+    Fedora by tests 60–62, as a normal user, with the install command
+    sanity suggests (in a microVM: no KVM, bridge or firewall there, so not
+    the rest).
   - *How to test:* on each host, start from a clean install, run
     `./flk-sanity.sh` and run the install command it suggests, then
     `sudo ./setup-host.sh`, `flk setup`, and `tests/run.sh`.
@@ -32,11 +33,6 @@ game-server work is in `~/mud`.
     ports time out.
   - Real-host runs are host work, tracked in `~/mud`
     (`docs/flk-system-notes.md`). flk's part is below.
-- [ ] **Install tests run as root.** In the 60–62 VMs everything runs as
-  root, so the steps a new user actually hits aren't covered: sudo with a
-  password, joining `kvm`, `~/.local/bin` not on PATH yet (setup's PATH
-  hint), a user-level podman. Run steps 3–7 of `install-run.sh` as a
-  created user (`useradd -m`, `runuser -l`).
 
 ## For lazyflk (TUI, github.com/dayne/d.lazyflk; spec in its SPEC.md section 9)
 

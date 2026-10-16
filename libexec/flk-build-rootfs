@@ -60,3 +60,21 @@ ${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
   mkfs.ext4 -F -q -L flk-root -d "$root" "$out"
   echo "    rootfs: ${used}MB used, ${size}MB image -> $out"
 ' _ "$work/root" "$work/rootfs.tar" "$overlay" "$out" "$extra_mb"
+
+# File capabilities (setcap; newuidmap on Arch and Fedora) are xattrs that
+# tar can't restore without root, so mkfs.ext4 -d never sees them: write
+# them into the image from the export's PAX headers.
+n=0
+while IFS=$'\t' read -r hex path; do
+  printf "$(sed 's/../\\x&/g' <<<"$hex")" > "$work/cap.$n"
+  echo "ea_set -f $work/cap.$n \"$path\" security.capability" >> "$work/caps.debugfs"
+  n=$((n + 1))
+done < <("$(dirname "$0")/flk-tar-caps" "$work/rootfs.tar")
+if ((n)); then
+  # debugfs exits 0 when a command fails: anything past its banner is one
+  debugfs -w -f "$work/caps.debugfs" "$out" >/dev/null 2>"$work/caps.err" || true
+  if grep -qv '^debugfs [0-9]' "$work/caps.err"; then
+    echo "flk: couldn't keep file capabilities:" >&2; cat "$work/caps.err" >&2; exit 1
+  fi
+  echo "    file capabilities kept on $n file$( ((n == 1)) || echo s)"
+fi

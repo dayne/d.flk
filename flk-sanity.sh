@@ -227,7 +227,9 @@ check_mkfs_ext4() {
 }
 
 check_gnu_cp() {
-  cp --help 2>&1 | grep -q -- '--reflink' && pass "GNU cp (--reflink)" ||
+  # Not `cp --help | grep -q`: under pipefail, grep quitting early kills
+  # cp with SIGPIPE and the check fails now and then.
+  grep -q -- '--reflink' <<<"$(cp --help 2>&1)" && pass "GNU cp (--reflink)" ||
     fail_pkg "cp lacks --reflink (not GNU coreutils?)" cp
 }
 
@@ -244,12 +246,15 @@ check_engine() {
   fi
   [[ -n $eng ]] || { fail_pkg "no container engine (podman or docker)" podman; return; }
   have "$eng" || { fail "FLK_ENGINE=$eng not found"; return; }
-  if "$eng" info >/dev/null 2>&1; then
+  local err
+  if err=$("$eng" info 2>&1 >/dev/null); then
     pass "container engine: $eng"
   elif [[ $eng == docker ]]; then
     fail "docker installed but not usable by $USER" "sudo usermod -aG docker $USER (then log out/in), or install podman"
   else
-    fail "$eng installed but '$eng info' fails" "run '$eng info' to see why"
+    # The cause is usually one line (e.g. newuidmap without setuid/caps).
+    err=$(grep -E '^Error|level=error' <<<"$err" | tail -1 | sed 's/^time="[^"]*" //')
+    fail "$eng installed but '$eng info' fails${err:+: $err}" "run '$eng info' to see why"
   fi
 }
 
@@ -348,8 +353,11 @@ check_flk_runs() {
 
 check_flk_on_path() {
   local p; p=$(command -v flk 2>/dev/null)
-  if [[ -z $p ]]; then
-    warn "flk not on PATH" "mkdir -p ~/.local/bin && ln -s $FLK_BIN ~/.local/bin/flk"
+  if [[ -z $p && -e $HOME/.local/bin/flk ]]; then
+    warn "flk is in ~/.local/bin, which isn't on PATH" \
+      "log in again (Ubuntu adds it at login), or add to your shell rc: export PATH=\"\$HOME/.local/bin:\$PATH\""
+  elif [[ -z $p ]]; then
+    warn "flk not on PATH" "$FLK_BIN setup --fix (links ~/.local/bin/flk)"
   elif [[ $(readlink -f "$p") != "$(readlink -f "$FLK_BIN")" ]]; then
     warn "flk on PATH ($p) is a different checkout than $FLK_SRC"
   else

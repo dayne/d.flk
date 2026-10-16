@@ -36,14 +36,11 @@ gaps G1–G16 are closed.
 What's missing:
 - More than one host: no failover, no volume sync (M5).
 - Distro coverage: ufw and firewalld have never run on a real host (host
-  work, `~/mud`); the install tests (Ubuntu, Arch, Fedora) run as root.
+  work, `~/mud`). The install tests cover Ubuntu, Arch and Fedora up to
+  setup-host.sh, as a normal user.
 - Instant snapshots: backups are full copies on ext4.
 
 ## Next
-
-### Small, first
-
-- The install steps as a non-root user (TODO.md, Setup).
 
 ### M5: More than one host (design first)
 

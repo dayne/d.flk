@@ -97,6 +97,23 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Setup and host checks
 
+- [x] **Install tests run as a user** (2026-10-15). Tests 60–62 create
+  `flkuser` (a password, no NOPASSWD) and run sanity, `flk setup --fix`,
+  the PATH and final checks as that user; only package installs and the
+  kvm group (what setup-host.sh does) run as root. The kvm step checks all
+  three states sanity reports (not in it, added but this login lacks it,
+  in it), and nothing may wait for a sudo password. Seen: Ubuntu and
+  Fedora put `~/.local/bin` on PATH at login, Arch doesn't (setup's PATH
+  line covers it). Found on the way: flk's rootfs dropped file
+  capabilities (`setcap`, xattrs tar can't restore without root);
+  `flk-build-rootfs` now writes them back with debugfs (`libexec/flk-tar-caps`,
+  test `08-rootfs`; checked in a VM: a cap_net_bind_service busybox binds
+  :80 as nobody). Sanity's engine check shows podman's error line; its GNU cp check no
+  longer fails now and then (`cp --help | grep -q` under pipefail: ~4% on
+  one CPU); "flk not on PATH" says to fix PATH when the link is there.
+  (`archlinux:latest` and `fedora:latest` themselves lack the caps on
+  newuidmap/newgidmap that their shadow packages set, in the registry
+  layers too; the test reinstalls the package.)
 - [x] **A Fedora install test** (2026-10-15): `tests/cases/62-install-fedora.sh`.
   `tests/install-run.sh` now installs with the command `flk-sanity.sh`
   suggests on every distro, so the apt, pacman and dnf columns of its

@@ -121,7 +121,7 @@ flk.toml can't take over sshd. `flk ports` shows blocked ports and why.
 ## How a deploy works
 
 1. `podman build` (or pull `[build] image`), tagged `flk.local/APP:vN`.
-2. `libexec/flk-build-rootfs` exports the container and injects `/flk/{init,cmd,image.env,workdir,user}`. It then runs `mkfs.ext4 -d` under `fakeroot`, so file ownership and setuid bits are correct without root.
+2. `libexec/flk-build-rootfs` exports the container and injects `/flk/{init,cmd,image.env,workdir,user}`. It then runs `mkfs.ext4 -d` under `fakeroot`, so file ownership, modes and setuid bits are correct without root, and writes file capabilities (`setcap`) into the image with `debugfs`.
 3. Each machine is rolled one at a time: stop, copy in a fresh rootfs (reflink when the filesystem supports it), and rebuild the config drive.
 4. Firecracker starts in tmux and waits on its API socket. flk attaches the log pipe, configures the VM over the API, then sends `InstanceStart`.
 5. `/flk/init` mounts filesystems, applies network, env, and secrets, mounts volumes, drops to the image's `USER`, and runs the app. When the app exits, the VM powers off, as on Fly.
