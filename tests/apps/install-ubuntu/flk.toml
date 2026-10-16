@@ -13,3 +13,7 @@ app = "install-ubuntu"
 [[mounts]]
   source = "src"
   destination = "/flk-src"
+
+# One run: a failed install must not re-run (and look different) 10 times
+[[restart]]
+  policy = "never"

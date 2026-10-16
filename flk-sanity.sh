@@ -178,6 +178,9 @@ check_distro() {
 check_cpu_virt() {
   local vm=""
   have systemd-detect-virt && vm=$(systemd-detect-virt --vm 2>/dev/null) && [[ $vm != none ]] || vm=""
+  # No systemd-detect-virt (containers, minimal installs): the CPU's
+  # hypervisor flag still says we're in a VM.
+  [[ -z $vm ]] && grep -qw hypervisor /proc/cpuinfo 2>/dev/null && vm="a VM"
   if grep -Eqw 'vmx|svm' /proc/cpuinfo 2>/dev/null; then
     pass "CPU virtualization (vmx/svm)${vm:+, nested inside $vm}"
   elif [[ -n $vm ]]; then

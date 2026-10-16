@@ -32,6 +32,12 @@ ${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
   root=$1 tar=$2 overlay=$3 out=$4 extra=$5
   mkdir -p "$root"
   tar -xpf "$tar" -C "$root" --numeric-owner 2>/dev/null || tar -xpf "$tar" -C "$root" --numeric-owner
+  # tar creates files with their final mode, so mode 0000 ones (Fedora'"'"'s
+  # /etc/shadow, /etc/gshadow) are unreadable for mkfs.ext4 -d. chmod under
+  # fakeroot keeps the mode in the image but the real file readable, so
+  # re-apply each one'"'"'s own mode (dirs before their contents: \;).
+  find "$root" ! -type l \( ! -perm -u=r -o -type d ! -perm -u=x \) \
+    -exec sh -c '"'"'chmod "$(stat -c %a "$1")" "$1"'"'"' _ {} \;
   cp -a "$overlay"/. "$root"/
   # No /bin/sh (scratch, distroless): the static flk-agent is PID 1 instead
   # of init.sh. (-L: an absolute symlink would point at the host here.)

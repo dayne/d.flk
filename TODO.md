@@ -15,10 +15,9 @@ game-server work is in `~/mud`.
     `flk-sanity.sh` checks them (`check_ufw`).
   - **firewalld** (Fedora default): `setup-host.sh` puts the bridge in the
     `trusted` zone; `flk-sanity.sh` checks it (`check_firewalld`).
-  - **dnf package names**: the install command `flk-sanity.sh` suggests on
-    Fedora (the `PKG` table) has never been run. Arch and Ubuntu packages,
-    sanity and `flk setup --fix` are covered by tests 60/61 (in a microVM:
-    no KVM, bridge or firewall there, so not the rest).
+  - Packages, sanity and `flk setup --fix` are covered on Ubuntu, Arch and
+    Fedora by tests 60–62, which run the install command sanity suggests
+    (in a microVM: no KVM, bridge or firewall there, so not the rest).
   - *How to test:* on each host, start from a clean install, run
     `./flk-sanity.sh` and run the install command it suggests, then
     `sudo ./setup-host.sh`, `flk setup`, and `tests/run.sh`.
@@ -33,11 +32,7 @@ game-server work is in `~/mud`.
     ports time out.
   - Real-host runs are host work, tracked in `~/mud`
     (`docs/flk-system-notes.md`). flk's part is below.
-- [ ] **A Fedora install test** (`tests/cases/62-install-fedora.sh`,
-  `tests/apps/install-fedora`): `tests/install-run.sh` already takes a
-  distro; add `fedora` → dnf there. That runs the dnf package names from
-  sanity's `PKG` table, the one distro path no test touches yet.
-- [ ] **Install tests run as root.** In the 60/61 VMs everything runs as
+- [ ] **Install tests run as root.** In the 60–62 VMs everything runs as
   root, so the steps a new user actually hits aren't covered: sudo with a
   password, joining `kvm`, `~/.local/bin` not on PATH yet (setup's PATH
   hint), a user-level podman. Run steps 3–7 of `install-run.sh` as a

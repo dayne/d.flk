@@ -32,9 +32,10 @@ the agent itself when Go is installed; without Go, everything else works.
 # 0. Get the code
 git clone https://github.com/dayne/d.flk && cd d.flk
 
-# 1. Host deps (Ubuntu / CachyOS-Arch)
+# 1. Host deps (Ubuntu / CachyOS-Arch / Fedora; ./flk-sanity.sh prints yours)
 sudo apt install -y ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
 sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl procps-ng
+sudo dnf install -y ruby tmux e2fsprogs fakeroot podman iproute nftables procps-ng
 # Optional, for flk exec, flk ssh console and images without /bin/sh: Go (golang-go / go), or set FLK_GO
 
 # 2. One-time root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding

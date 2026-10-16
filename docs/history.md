@@ -97,6 +97,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Setup and host checks
 
+- [x] **A Fedora install test** (2026-10-15): `tests/cases/62-install-fedora.sh`.
+  `tests/install-run.sh` now installs with the command `flk-sanity.sh`
+  suggests on every distro, so the apt, pacman and dnf columns of its
+  `PKG` table are all run. Found on the way: Fedora's mode-0000
+  `/etc/shadow` and `/etc/gshadow` broke every Fedora/RHEL-based image's
+  rootfs build (`mkfs.ext4 -d`: Permission denied); `flk-build-rootfs`
+  re-applies such modes under fakeroot (test `08-rootfs`). Sanity also
+  says "inside a VM" from the CPU's hypervisor flag when there's no
+  `systemd-detect-virt`.
 - [x] **First install, end to end** (PR #1 21ffec9, PR #2, 2026-10-15).
   `flk-sanity.sh` lists every step in order; `flk setup` stops before the
   download when a package is missing, and `--fix` (or a prompt, in a

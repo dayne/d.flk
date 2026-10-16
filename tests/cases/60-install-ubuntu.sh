@@ -2,8 +2,8 @@
 # Verifies package detection, flk-sanity.sh output, flk setup, and --fix.
 #
 # TIER=vm because it boots a full microVM (Ubuntu 24.04, ~1GB RAM).
-# Expect ~5 minutes: apt-get update + install + firecracker/kernel download.
-# Run alone: FLK_CASES=60 tests/run.sh
+# Expect a minute or two after the image build: apt-get update + install + firecracker/kernel download.
+# Run alone: tests/run.sh 60
 TIER=vm
 
 setup_file() {

@@ -1,0 +1,19 @@
+app = "install-fedora"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpus = 1
+  memory_mb = 1024
+
+[flk]
+  rootfs_extra_mb = 8192
+
+[[mounts]]
+  source = "src"
+  destination = "/flk-src"
+
+# One run: a failed install must not re-run (and look different) 10 times
+[[restart]]
+  policy = "never"

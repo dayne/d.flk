@@ -2,8 +2,8 @@
 # Verifies package detection, flk-sanity.sh output, flk setup, and --fix.
 #
 # TIER=vm because it boots a full microVM (Arch Linux, ~1GB RAM).
-# Expect ~5 minutes: pacman -Sy + install + firecracker/kernel download.
-# Run alone: FLK_CASES=61 tests/run.sh
+# Expect a minute or two after the image build: pacman -Sy + install + firecracker/kernel download.
+# Run alone: tests/run.sh 61
 TIER=vm
 
 setup_file() {
