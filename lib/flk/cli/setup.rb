@@ -47,13 +47,63 @@ module Flk
       puts Commands.bash_completion
     end
 
+    SETUP_BIN = File.expand_path("../../../bin/flk", __dir__).freeze
+
     # "Next: ..." after commands that change things, so nobody has to
     # remember the order. One line, plain, after the result.
-    def cmd_setup(_args, _o)
+    def cmd_setup(_args, o)
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
       puts "==> flk-agent (flk exec): #{Agent.ensure! || 'not built'}"
       puts
       cmd_doctor([], {})
+      setup_post_fixes(o)
+    end
+
+    def setup_post_fixes(o)
+      fixes = {}
+      fixes[:registries] = "podman short image names (FROM ruby:3.3 and friends)" if setup_needs_registries?
+      fixes[:symlink]    = "flk PATH symlink (~/.local/bin/flk -> #{SETUP_BIN})"  if setup_needs_symlink?
+      return if fixes.empty?
+
+      if o[:fix]
+        fixes.each_key { |k| setup_apply_fix!(k) }
+      elsif $stdout.tty?
+        puts "\n#{fixes.size} auto-fixable item#{'s' if fixes.size > 1} (no root needed):"
+        fixes.each_value { |v| puts "  - #{v}" }
+        print "Apply now? [Y/n] "
+        input = $stdin.gets.to_s.strip.downcase
+        fixes.each_key { |k| setup_apply_fix!(k) } if input.empty? || input == "y"
+      else
+        puts "\nTip: re-run with `flk setup --fix` to apply the above automatically"
+      end
+    end
+
+    def setup_needs_registries?
+      eng = begin; Image.engine; rescue Error; nil; end
+      eng && Image.podman?(eng) && !Image.short_names_resolve?
+    end
+
+    def setup_needs_symlink?
+      target = File.expand_path("~/.local/bin/flk")
+      return false if File.exist?(target) || File.symlink?(target)
+      Util.which("flk").nil?
+    end
+
+    def setup_apply_fix!(key)
+      case key
+      when :registries
+        path = File.expand_path(Image::REGISTRIES_DROPIN)
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, "unqualified-search-registries = [\"docker.io\"]\n")
+        puts "==> Configured podman short image names (#{path})"
+      when :symlink
+        dir = File.expand_path("~/.local/bin")
+        FileUtils.mkdir_p(dir)
+        target = File.join(dir, "flk")
+        File.symlink(SETUP_BIN, target)
+        puts "==> Linked #{target} -> #{SETUP_BIN}"
+        puts "    (ensure ~/.local/bin is on your PATH — it is on Ubuntu by default)"
+      end
     end
 
     # --json prints {"ok", "checks": [{"label", "status", "hint"}]} for
@@ -79,14 +129,14 @@ module Flk
       check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
       check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
             "sudo #{SETUP_HOST} (adds you to kvm group; log out/in)"]
-      fc = begin; VM.firecracker_bin; rescue Error; nil; end
-      check["firecracker #{fc}", !fc.nil?, "flk setup"]
-      check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
       check["bridge #{Net::BRIDGE}", Net.bridge_up?, "sudo #{SETUP_HOST}"]
       taps = (0...Net::POOL).count { Net.tap_exists?(_1) }
       check["tap pool #{taps}/#{Net::POOL}", taps.positive?, "sudo #{SETUP_HOST}"]
       fwd = (File.read("/proc/sys/net/ipv4/ip_forward").strip == "1" rescue false)
       check["ipv4 forwarding", fwd, "sudo #{SETUP_HOST}"]
+      fc = begin; VM.firecracker_bin; rescue Error; nil; end
+      check["firecracker #{fc}", !fc.nil?, "flk setup"]
+      check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
       { "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }.each do |bin, pkg|
         check[bin, !Util.which(bin).nil?, "install #{pkg}"]
       end
@@ -261,9 +311,10 @@ module Flk
       if dir.nil?
         return unless App.all.any? { _1.volumes.any? }
         record["no backup_dir set: flk volumes backup needs --to DIR", "warn",
-               "add backup_dir = \"/path\" to #{Host::PATH}"]
+               "flk config set backup_dir=/path/to/backups"]
       elsif !File.directory?(dir) || !File.writable?(dir)
-        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn", "mount it, or fix #{Host::PATH}"]
+        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn",
+               "mount it, or: flk config set backup_dir=/new/path"]
       else
         backup_space_check(record, dir)
         backup_copy_check(record, dir)

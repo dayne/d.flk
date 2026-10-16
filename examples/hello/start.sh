@@ -12,4 +12,4 @@ cat > /www/index.html <<HTML
 <p>boots recorded on /data volume: $n</p>
 HTML
 echo "serving on :8080 (boot #$n)"
-exec busybox httpd -f -v -p 8080 -h /www
+exec httpd -f -v -p 8080 -h /www

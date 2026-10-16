@@ -212,9 +212,37 @@ module Flk
       FileUtils.rm_rf(dir)
     end
 
-    def config_show(_args, _o)
-      puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config,
-                                "warnings" => warning_strings(config))
+    def config_show(_args, o)
+      if o[:host]
+        puts JSON.pretty_generate("file" => Host::PATH, "settings" => Host.settings)
+      else
+        puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config,
+                                  "warnings" => warning_strings(config))
+      end
+    end
+
+    def config_set(args, _o)
+      updates = args.map do |arg|
+        key, _, raw = arg.partition("=")
+        raise Error, "expected KEY=VALUE, got: #{arg}" unless arg.include?("=")
+        raise Error, "unknown config key '#{key}' (known: #{Host::KEYS.join(', ')})" unless Host::KEYS.include?(key)
+        val = Integer(raw) rescue raw
+        [key, val]
+      end.to_h
+
+      path = Host::PATH
+      lines = File.exist?(path) ? File.readlines(path) : []
+      updates.each do |key, val|
+        toml_val = val.is_a?(Integer) ? val.to_s : "\"#{val.gsub("\\", "\\\\").gsub('"', '\\"')}\""
+        new_line = "#{key} = #{toml_val}\n"
+        idx = lines.index { |l| l.match?(/\A\s*#{Regexp.escape(key)}\s*=/) }
+        idx ? lines[idx] = new_line : lines << new_line
+      end
+
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, lines.join)
+      updates.each { |k, v| puts "#{k} = #{v.inspect}  (#{path})" }
+      next_step("flk doctor")
     end
   end
 end

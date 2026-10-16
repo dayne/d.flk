@@ -30,6 +30,7 @@ module Flk
       send(Commands.handler(cmd, sub), argv, opts)
     rescue Error, OptionParser::ParseError => e
       msg = e.message.sub(/\n\s*Did you mean\?\s*(\S+).*/m) { "; did you mean --#{$1}?" }
+      msg += "; did you mean #{@option_hint}?" if e.is_a?(OptionParser::InvalidOption) && @option_hint
       ref = @help_ref && e.is_a?(OptionParser::ParseError) ? " (see: #{@help_ref})" : ""
       warn "#{Util.red('Error:')} #{msg}#{ref}"
       warn "Next: #{e.next_steps.join('   or: ')}" if e.is_a?(Error) && e.next_steps
@@ -70,6 +71,10 @@ module Flk
       opts = {}
       help = false
       tail = (i = argv.index("--")) ? argv.slice!(i..)[1..] : []
+      long_switches = Array(entry[:opts]).flat_map { Commands.switches(_1) }
+                                         .select { _1.start_with?("--") }
+                                         .map { _1[/\A(--[\w-]+)/, 1] }
+                                         .compact
       parser = OptionParser.new do |p|
         p.require_exact = true # no --jso for --json: typos are errors, not guesses
         Array(entry[:opts]).each do |o|
@@ -79,7 +84,14 @@ module Flk
         end
         p.on("-h", "--help") { help = true }
       end
-      entry[:passthrough] ? parser.order!(argv) : parser.parse!(argv)
+      begin
+        entry[:passthrough] ? parser.order!(argv) : parser.parse!(argv)
+      rescue OptionParser::InvalidOption => e
+        # require_exact suppresses DidYouMean; carry the hint to the top-level rescue
+        bad = e.args.first.to_s
+        @option_hint = DidYouMean::SpellChecker.new(dictionary: long_switches).correct(bad).first
+        raise
+      end
       argv.concat(tail)
       help ? nil : opts
     end
