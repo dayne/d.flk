@@ -141,9 +141,15 @@ module Flk
           { name: "prune", opts: [["--backups", "Also delete backups (in backup_dir, or --to) of apps that no longer exist"], BACKUP_TO_OPT],
             summary: "Remove container images (and with --backups, backups) left behind by apps that no longer exist" }
         ] },
-      { name: "config", group: "Apps", default_sub: "show", summary: "Inspect the app config",
-        subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"]], json: true,
-                 summary: "Print the parsed flk.toml / fly.toml and the machine config flk derives from it" }] },
+      { name: "config", group: "Apps", default_sub: "show", summary: "Inspect or set flk config",
+        subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"],
+                                      ["--host", "Show host settings (#{Host::PATH}) instead of app config"]], json: true,
+                 summary: "Print the parsed flk.toml / fly.toml (or host config with --host)" },
+               { name: "set", args: "KEY=VALUE...",
+                 summary: "Set host-level config values in #{Host::PATH}",
+                 notes: ["Known keys: #{Host::KEYS.join(', ')}",
+                         "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5",
+                         "Values are written to #{Host::PATH} (created if missing). Run `flk doctor` to verify."] }] },
 
       { name: "machine", aliases: %w[machines m], group: "Machines", default_sub: "list",
         summary: "Manage machines (IDs accept a prefix or the machine name)",

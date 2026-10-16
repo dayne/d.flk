@@ -311,9 +311,10 @@ module Flk
       if dir.nil?
         return unless App.all.any? { _1.volumes.any? }
         record["no backup_dir set: flk volumes backup needs --to DIR", "warn",
-               "add backup_dir = \"/path\" to #{Host::PATH}"]
+               "flk config set backup_dir=/path/to/backups"]
       elsif !File.directory?(dir) || !File.writable?(dir)
-        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn", "mount it, or fix #{Host::PATH}"]
+        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn",
+               "mount it, or: flk config set backup_dir=/new/path"]
       else
         backup_space_check(record, dir)
         backup_copy_check(record, dir)
