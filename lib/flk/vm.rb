@@ -77,7 +77,7 @@ module Flk
     end
 
     def preflight!(m)
-      raise Error, "machine #{m.id} is already running" if m.running?
+      raise AlreadyRunning, "machine #{m.id} is already running" if m.running?
       raise Error, "/dev/kvm not accessible; run: sudo #{SETUP_HOST}, then log out/in" unless File.writable?("/dev/kvm")
       raise Error, "guest kernel not found at #{kernel}; run: flk setup" unless File.exist?(kernel)
       raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo #{SETUP_HOST}" unless Net.tap_exists?(m.tap_index)
@@ -108,18 +108,46 @@ module Flk
 
     # True when flk's tmux server is already running without /dev/kvm's group.
     def tmux_server_lacks_kvm?
-      out, ok = Open3.capture2e(*TMUX, "display-message", "-p", '#{pid}')
-      return false unless ok.success?
+      pid = tmux_server_pid or return false
       kvm = File.stat("/dev/kvm")
       return false if kvm.mode & 0o006 == 0o006 # world read/write
-      groups = File.read("/proc/#{out.strip.to_i}/status")[/^Groups:(.*)$/, 1].to_s.split.map(&:to_i)
+      groups = File.read("/proc/#{pid}/status")[/^Groups:(.*)$/, 1].to_s.split.map(&:to_i)
       !groups.include?(kvm.gid)
     rescue SystemCallError
       false
     end
 
+    def tmux_server_pid
+      out, ok = Open3.capture2e(*TMUX, "display-message", "-p", '#{pid}')
+      ok.success? ? out.strip.to_i : nil
+    end
+
+    # The systemd unit or scope a process lives in, e.g.
+    # flk-machines.service, session-68.scope; nil without cgroup v2.
+    def cgroup_unit(pid)
+      File.read("/proc/#{pid}/cgroup")[%r{^0::.*/([^/\n]+)$}, 1]
+    rescue SystemCallError
+      nil
+    end
+
+    # Under flk's lock, so two flks starting the same machine (flk resume
+    # and a restart policy's revive at boot) can't both pass the running
+    # check. The cleanup undoes only what launch created: a failed
+    # preflight ("already running") must leave the machine that won alone.
     def start(m)
-      preflight!(m)
+      Util.with_lock do
+        preflight!(m)
+        begin
+          launch(m)
+        rescue StandardError
+          tmux_quiet("kill-session", "-t", m.session)
+          FileUtils.rm_f(m.path("pid"))
+          raise
+        end
+      end
+    end
+
+    def launch(m)
       FileUtils.rm_f(m.path("pid")) # stale, from a machine that exited on its own; see reap
       bin = firecracker_bin
       build_config_drive(m)
@@ -155,10 +183,6 @@ module Flk
       m.h["desired_state"] = "started"
       m.save!
       Ports.sync! if Array(m.config["ports"]).any?
-    rescue StandardError
-      tmux_quiet("kill-session", "-t", m.session)
-      FileUtils.rm_f(m.path("pid"))
-      raise
     end
 
     # The guest's vsock, for flk exec (Agent). Optional: a machine boots
@@ -209,7 +233,8 @@ module Flk
     # Tidy machines that exited on their own (see Machine#exited?) and hand
     # their host ports to the next machine, or drop them, so the port map
     # never points at a dead IP. machine.json is left alone: another flk
-    # process may be mid-update on it.
+    # process may be mid-update on it. A machine the host went down with
+    # (pid file from before the boot) isn't revived: flk resume owns it.
     #
     # wait: false (read commands): if another flk holds the lock, e.g. a
     # deploy mid-roll, skip the whole reap rather than hang, and leave the
@@ -218,16 +243,22 @@ module Flk
     def reap(machines, wait: true)
       dead = machines.select(&:exited?)
       return if dead.empty?
+      rebooted = []
       Util.with_lock(wait: wait) do
         dead.each do |m|
           next unless m.exited? # re-check: another flk may have just restarted it
-          st = m.last_exit_status
-          Events.machine("machine.exited", m, st ? "the app exited with status #{st}" : "no exit status (crashed or killed)")
+          if m.exited_before_boot?
+            rebooted << m
+            Events.machine("machine.exited", m, "the host went down with it running (flk resume brings it back)")
+          else
+            st = m.last_exit_status
+            Events.machine("machine.exited", m, st ? "the app exited with status #{st}" : "no exit status (crashed or killed)")
+          end
           tmux_quiet("kill-session", "-t", m.session)
           FileUtils.rm_f([m.path("pid"), m.path("fc.sock")])
         end
         Ports.sync! if dead.any? { Array(_1.config["ports"]).any? }
-        dead.select { restart_wanted?(_1) }.each { spawn_revive(_1) }
+        (dead - rebooted).select { restart_wanted?(_1) }.each { spawn_revive(_1) }
       end
     end
 

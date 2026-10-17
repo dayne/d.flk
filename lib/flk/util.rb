@@ -29,6 +29,10 @@ module Flk
     end
   end
 
+  # VM.start found the machine running: someone else started it first.
+  # flk resume and restart-policy revives treat it as done.
+  class AlreadyRunning < Error; end
+
   ROOT    = File.expand_path(ENV["FLK_HOME"] ||
               File.join(ENV["XDG_DATA_HOME"] || File.join(Dir.home, ".local/share"), "flk"))
   SHARE   = File.expand_path("../../share", __dir__)
@@ -69,6 +73,13 @@ module Flk
       ensure
         @locked = false
       end
+    end
+
+    # When the host booted (btime in /proc/stat); the epoch if unknown.
+    def boot_time
+      @boot_time ||= Time.at(File.read("/proc/stat")[/^btime (\d+)/, 1].to_i)
+    rescue SystemCallError
+      Time.at(0)
     end
 
     def which(cmd)

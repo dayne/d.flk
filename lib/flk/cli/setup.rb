@@ -187,6 +187,7 @@ module Flk
       port_helper_check(record)
       boot_service_check(record)
       exit_hook_check(record)
+      tmux_server_check(record)
       backup_check(record)
       services_check(record)
       address_check(record)
@@ -253,6 +254,28 @@ module Flk
                "#{VM.hook_bin} resume (re-installs it)"]
       else
         record["exit hook (#{bin})", "pass", nil]
+      end
+    end
+
+    # flk's tmux server and its machines must live in flk-machines.service.
+    # A server a login shell started lives in that session's scope (and
+    # tmux may give each pane a tmux-spawn scope of the user's), which
+    # shutdown kills alongside the boot service: the machines die before
+    # stop-all can stop them.
+    def tmux_server_check(record)
+      return unless VM::SOCKET == "flk" && File.exist?("/etc/systemd/system/flk-machines.service")
+      server = VM.tmux_server_pid or return
+      pids = [server] + App.all.flat_map(&:machines).select(&:running?).map(&:pid)
+      units = pids.filter_map { VM.cgroup_unit(_1) }.uniq
+      return if units.empty?
+      stray = units - ["flk-machines.service"]
+      if stray.empty?
+        record["machines run under flk-machines.service (stopped gracefully at shutdown)", "pass", nil]
+      else
+        record["flk's tmux server or machines run in #{stray.first(3).join(', ')}, not flk-machines.service: " \
+               "at shutdown they're killed, not stopped", "warn",
+               "when they can stop: flk stop-all && #{VM::TMUX.join(' ')} kill-server && " \
+               "sudo systemctl restart flk-machines.service"]
       end
     end
 

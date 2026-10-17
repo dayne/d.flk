@@ -403,3 +403,13 @@ test_app_verbs_without_machines() {
   out=$(flk machine stop 2>&1) && fail "machine stop with no ID succeeded"
   assert_contains "$out" "$APP has no machines"
 }
+
+# flk doctor's "machines run under flk-machines.service" and the reboot
+# check in reap rest on these two readers of /proc.
+test_cgroup_unit_and_boot_time() {
+  grep -q '^0::' /proc/self/cgroup || skip_test "no cgroup v2"
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e 'puts Flk::VM.cgroup_unit(Process.ppid)')
+  assert_eq "$(sed -n 's|^0::.*/||p' /proc/$$/cgroup)" "$got" "cgroup unit of this shell"
+  local bt; bt=$(ruby -I"$FLK_SRC/lib" -rflk -e 'puts Flk::Util.boot_time.to_i')
+  assert_eq "$(awk '/^btime/ {print $2}' /proc/stat)" "$bt" "boot time"
+}

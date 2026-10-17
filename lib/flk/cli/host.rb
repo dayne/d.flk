@@ -13,6 +13,9 @@ module Flk
       failed = todo.reject do |m|
         boot(m, "#{m.app.name}: #{m.id} [#{m.name}] resumed")
         true
+      rescue AlreadyRunning # a restart policy's revive got there first (at boot)
+        puts "  #{Util.green('✔')} #{m.app.name}: #{m.id} [#{m.name}] already running"
+        true
       rescue Error => e
         warn Util.red("  ✘ #{m.app.name}: #{m.id} [#{m.name}]: #{e.message}")
         false

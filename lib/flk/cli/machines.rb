@@ -110,6 +110,8 @@ module Flk
       note["restart policy #{policy['policy']}: exit status #{status || 'none'}, restart #{count + 1} of #{policy['retries']}"]
       m.h["restarts"] = { "count" => count + 1, "last_at" => Util.now }
       boot(m, "Machine #{m.id} [#{m.name}] restarted by its restart policy", revive: true)
+    rescue AlreadyRunning
+      nil # flk resume (or a user) started it after the check above
     end
 
     def machine_stats(args, o)

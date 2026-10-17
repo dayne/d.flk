@@ -137,9 +137,14 @@ module Flk
 
     def pid = File.exist?(path("pid")) ? File.read(path("pid")).to_i : nil
 
+    # Its pid must be *its* firecracker: a pid file left by a reboot can name
+    # another machine's new one (or a tmux server, whose command line can
+    # hold the one that started it). Matched on the API socket's tail, not
+    # its full path, so a differently spelled FLK_HOME still matches.
     def running?
       p = pid or return false
-      File.read("/proc/#{p}/cmdline").include?("firecracker")
+      argv = File.read("/proc/#{p}/cmdline").split("\0")
+      argv[0].to_s.end_with?("firecracker") && argv.any? { _1.end_with?("/machines/#{id}/fc.sock") }
     rescue SystemCallError
       false
     end
@@ -147,6 +152,15 @@ module Flk
     # Firecracker went away without flk stopping it: the app exited, the
     # guest powered off, or it crashed. Its pid file (and host ports) linger.
     def exited? = !pid.nil? && !running? && !stopping?
+
+    # Its pid file is from before the host booted: the host went down with
+    # it running (a crash, power loss, or shutdown that didn't stop it). Not
+    # the app's exit: flk resume brings it back, not its restart policy.
+    def exited_before_boot?
+      File.mtime(path("pid")) < Util.boot_time
+    rescue SystemCallError
+      false
+    end
 
     # flk is stopping it (VM.stop): its exit is expected, so the exit hook
     # must neither reap nor restart it. A marker left by a crashed flk

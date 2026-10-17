@@ -7,6 +7,19 @@ game-server work is in `~/mud`.
 
 ## Setup and host checks
 
+- [ ] **flk's tmux server can start outside `flk-machines.service`**
+  (mud BUGS.flk.md #3). Whichever flk command starts the server first sets
+  the cgroup every machine lives in; from a login shell that's the
+  session's scope (and tmux may put each pane in a `tmux-spawn` scope of
+  the user's), which shutdown kills alongside the boot service, so
+  `stop-all` finds nothing to stop. Caught today: `flk doctor` / `flk
+  context` warn ("not flk-machines.service", `tmux_server_check`).
+  *Fix:* a `flk-tmux.service` (as the user) that owns the server;
+  `flk-machines` `Requires=` and orders after it, so stop-all runs before
+  the server stops; `VM.ensure_server` starts it through the sudo helper
+  instead of in the caller's shell when the unit is installed. Needs
+  `setup-host.sh --install-service` re-run.
+
 - [ ] **Firewall and distro paths are untested on real hosts.** Only Ubuntu
   with Docker's firewall rules has been run end to end. These were written
   blind and need one pass each on a real host:
