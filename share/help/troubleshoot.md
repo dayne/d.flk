@@ -94,8 +94,9 @@ problems show up there with the fix. Then find the symptom below.
 - `flk doctor` "boot service": `sudo {{SRC}}/setup-host.sh --install-service`.
 - Now: `sudo {{SRC}}/setup-host.sh`, then `flk resume`.
 - Machines were killed at shutdown, not stopped (`flk events`: "the host
-  went down with it running"): doctor's "not flk-machines.service" warning
-  says how to move them under the service.
+  went down with it running"): doctor's "not a flk service" warning says
+  how to move them; "predates flk-tmux.service":
+  `sudo {{SRC}}/setup-host.sh --install-service`.
 
 **Where things are**
 - Machine files: `{{ROOT}}/apps/APP/machines/ID/` (console.log,

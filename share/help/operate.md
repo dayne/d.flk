@@ -66,9 +66,10 @@ stopped but counts as "should be running": `flk resume` starts it again.
 
 **Reboots.** With `flk-machines.service` installed (`flk doctor` checks),
 machines stop gracefully at shutdown and come back at boot. Without it:
-`sudo {{SRC}}/setup-host.sh`, then `flk resume`. That holds for machines
-running under the service; doctor warns when some don't (flk's tmux server
-was started from a login shell, which shutdown kills first).
+`sudo {{SRC}}/setup-host.sh`, then `flk resume`. Machines run in flk's
+tmux server, which `flk-tmux.service` owns (flk starts it when needed), so
+none lives in a login session that shutdown kills first; doctor warns if
+one does.
 
 **Secrets and config.** `flk secrets set K=V` restarts running machines;
 `--stage` waits for the next deploy or restart. `flk config show` prints the

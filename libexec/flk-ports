@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
-# flk-ports: the one root operation flk needs at runtime: replacing the
-# host-port -> machine DNAT maps in nft table `ip flk`.
+# flk-ports: the root operations flk needs at runtime: replacing the
+# host-port -> machine DNAT maps in nft table `ip flk`, and starting
+# flk-tmux.service (flk's tmux server, so machines never live in a login
+# session; see VM.ensure_server).
 #
 #   flk-ports replace < lines of "PROTO HOST_PORT MACHINE_IP MACHINE_PORT [HOST_ADDRESS]"
 #     (with HOST_ADDRESS: only traffic to that address, map addr_ports;
 #     without: traffic to any host address, map ports)
 #   flk-ports list
+#   flk-ports start-tmux
 #
 # setup-host.sh installs a root-owned copy at /usr/local/libexec/flk-ports
 # (with the subnet and port floor baked in, since sudo drops the environment)
@@ -122,7 +125,10 @@ list() {
 }
 
 case ${1:-} in
-  replace) replace ;;
-  list)    list ;;
-  *)       die "usage: flk-ports replace|list" ;;
+  replace)    replace ;;
+  list)       list ;;
+  # --no-block: flk waits for the server itself, so a start from inside
+  # another unit's start job (flk-net at boot) can't deadlock on ordering
+  start-tmux) systemctl start --no-block flk-tmux.service ;;
+  *)          die "usage: flk-ports replace|list|start-tmux" ;;
 esac

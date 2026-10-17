@@ -413,3 +413,45 @@ test_cgroup_unit_and_boot_time() {
   local bt; bt=$(ruby -I"$FLK_SRC/lib" -rflk -e 'puts Flk::Util.boot_time.to_i')
   assert_eq "$(awk '/^btime/ {print $2}' /proc/stat)" "$bt" "boot time"
 }
+
+# setup-host.sh --install-service's units, rendered into a scratch dir (no
+# root, nothing enabled), must pass systemd-analyze verify, with flk-tmux
+# ordered before flk-machines so stop-all runs before the server stops.
+test_install_service_units_verify() {
+  command -v systemd-analyze >/dev/null || skip_test "no systemd-analyze"
+  local d; d=$(mktemp -d)
+  awk '/^install_service\(\) \{/,/^}/' "$FLK_SRC/setup-host.sh" |
+    sed -e "s|/etc/systemd/system|$d|g" -e '/systemctl /d' >"$d/fn.sh"
+  (user=$USER bridge=flkbr0 subnet=172.30.0 taps=16 min_port=1024 src=$FLK_SRC self=$FLK_SRC/setup-host.sh
+   sudo() { shift 3; "$@"; } # sudo -u USER -H CMD...
+   source "$d/fn.sh"; install_service >/dev/null) || fail "install_service failed"
+  local out; out=$(cd "$d" && systemd-analyze verify ./flk-tmux.service ./flk-machines.service 2>&1 |
+    grep -v -e CPUAccounting -e 'flk-net.service' || true)
+  [[ -z $out ]] || fail "systemd-analyze verify: $out"
+  grep -q '^After=.*flk-tmux.service' "$d/flk-machines.service" || fail "flk-machines isn't ordered after flk-tmux"
+  grep -qF ' start-server \; set-option -g exit-empty off' "$d/flk-tmux.service" ||
+    fail "flk-tmux ExecStart: $(grep ExecStart "$d/flk-tmux.service")"
+  grep -qF 'test -n "${MAINPID}" || exit 0' "$d/flk-tmux.service" ||
+    fail "flk-tmux ExecStop isn't guarded: installing it next to a running server would stop every machine"
+  rm -rf "$d"
+}
+
+# Why flk-tmux.service unsets XDG_RUNTIME_DIR: tmux puts each pane in a
+# tmux-spawn scope of the user's systemd when its *server* can reach it,
+# whatever the client's environment. Without those, panes (machines) stay
+# in the server's unit. A transient user unit stands in for flk-tmux.
+test_tmux_panes_stay_in_the_server_unit() {
+  systemctl --user show-environment >/dev/null 2>&1 || skip_test "no systemd --user"
+  local unit="flkt-tmux-$RUN_ID" sock="flkt-unit-$RUN_ID"
+  systemd-run --user -q --unit "$unit" -p Type=forking \
+    -p UnsetEnvironment=XDG_RUNTIME_DIR -p UnsetEnvironment=DBUS_SESSION_BUS_ADDRESS \
+    "$(command -v tmux)" -L "$sock" start-server \; set-option -g exit-empty off || skip_test "systemd-run --user failed"
+  wait_until 5 tmux -L "$sock" display-message -p '#{pid}' || fail "the unit's tmux server never came up"
+  tmux -L "$sock" new-session -d -s probe "exec sleep 60"
+  local pane; pane=$(tmux -L "$sock" display-message -p -t probe '#{pane_pid}')
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e "puts Flk::VM.cgroup_unit($pane)")
+  tmux -L "$sock" kill-server
+  systemctl --user stop "$unit" 2>/dev/null || true
+  systemctl --user reset-failed "$unit" 2>/dev/null || true
+  assert_eq "$unit.service" "$got" "the pane's unit"
+}

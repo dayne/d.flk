@@ -3,7 +3,7 @@
 #
 #   sudo ./setup-host.sh                    bridge + tap pool + NAT + port forwarding, kvm group
 #   sudo ./setup-host.sh --down             remove taps, bridge, NAT table
-#   sudo ./setup-host.sh --install-service  at boot: re-create networking, then resume machines (systemd)
+#   sudo ./setup-host.sh --install-service  systemd units: networking, flk's tmux server, machines
 #   sudo ./setup-host.sh --uninstall        --down, plus remove the port helper, sudoers rule, service
 #
 # Env: FLK_BRIDGE (flkbr0)  FLK_SUBNET (172.30.0)  FLK_TAPS (16)  FLK_UPLINK (auto)
@@ -107,7 +107,7 @@ install_port_helper() {
 
 uninstall() {
   local unit
-  for unit in flk-machines flk-net; do # machines first: they stop gracefully while the network is still up
+  for unit in flk-machines flk-tmux flk-net; do # machines first: they stop gracefully while the network is still up
     if [[ -f /etc/systemd/system/$unit.service ]]; then
       systemctl disable --now "$unit.service" 2>/dev/null || true
       rm -f "/etc/systemd/system/$unit.service"
@@ -137,12 +137,10 @@ ExecStop=$self --down
 WantedBy=multi-user.target
 EOF
 
-  # Machines: `flk resume` once the network is up, `flk stop-all` (graceful,
-  # remembering them) at shutdown. Runs as the user, with their ruby on PATH;
-  # the tmux server it starts, and so every machine, lives in this unit.
-  local ruby_bin
+  local ruby_bin tmux_bin
   ruby_bin=$(sudo -u "$user" -H bash -lc 'command -v ruby' 2>/dev/null || command -v ruby)
   [[ -n $ruby_bin ]] || { echo "ruby not found for $user" >&2; exit 1; }
+  tmux_bin=$(command -v tmux) || { echo "tmux not found" >&2; exit 1; }
   # Disks the machines need mounted: flk's state dir and every external
   # volume's dir (flk knows them). Start after those mounts, stop before them.
   # Plain /etc/fstab mounts are ordered that way already (local-fs.target);
@@ -152,18 +150,59 @@ EOF
   mount_dirs=$(sudo -u "$user" -H "$ruby_bin" "$src/bin/flk" context --all --json 2>/dev/null |
     "$ruby_bin" -rjson -e 'puts JSON.parse($stdin.read)["mount_dirs"].join(" ")' 2>/dev/null) ||
     mount_dirs=$(getent passwd "$user" | cut -d: -f6)
+  local path_env
+  path_env="PATH=$(dirname "$ruby_bin"):/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+  # flk's tmux server, as the user: every machine is a session in it, so
+  # every firecracker lives in this unit, never in the login session of
+  # whoever ran flk first (shutdown kills those before flk-machines can
+  # stop anything). flk starts it through the port helper when it isn't
+  # running (VM.ensure_server). Stopped on its own, it stops the machines
+  # gracefully first; at shutdown flk-machines has done that already.
+  cat > /etc/systemd/system/flk-tmux.service <<UNIT
+[Unit]
+Description=flk's tmux server: every flk machine runs in it
+Wants=flk-net.service
+After=flk-net.service remote-fs.target
+RequiresMountsFor=$mount_dirs
+
+[Service]
+Type=forking
+User=$user
+Environment=$path_env
+# tmux moves each pane into a tmux-spawn scope of the user's systemd when
+# its server can reach that (these say where): machines must stay here.
+UnsetEnvironment=XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS
+ExecStart=$tmux_bin -L flk start-server \; set-option -g exit-empty off
+# Only when systemd stops a server it owns (MAINPID set). It also runs this
+# when ExecStart found a server already running elsewhere (flk-machines
+# started it, before this unit existed) or after the server died: stopping
+# machines then would take down a working host at install time.
+ExecStop=/bin/sh -c 'test -n "\${MAINPID}" || exit 0; exec $ruby_bin $src/bin/flk stop-all'
+TimeoutStopSec=330
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+  # Machines: `flk resume` once the network and the tmux server are up,
+  # `flk stop-all` (graceful, remembering them) at shutdown, before the
+  # tmux server stops. Runs as the user, with their ruby on PATH. Wants,
+  # not Requires, flk-tmux: a tmux server that died mustn't take this unit
+  # (and its stop-all at shutdown) down with it.
   cat > /etc/systemd/system/flk-machines.service <<UNIT
 [Unit]
 Description=flk machines: resume at boot, stop gracefully at shutdown
 Requires=flk-net.service
-After=flk-net.service remote-fs.target
+Wants=flk-tmux.service
+After=flk-net.service flk-tmux.service remote-fs.target
 RequiresMountsFor=$mount_dirs
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 User=$user
-Environment=PATH=$(dirname "$ruby_bin"):/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=$path_env
 Environment=FLK_BRIDGE=$bridge FLK_SUBNET=$subnet FLK_TAPS=$taps
 # '-': a machine that fails to resume must not fail the unit (which would kill the others)
 ExecStart=-$ruby_bin $src/bin/flk resume
@@ -177,8 +216,9 @@ WantedBy=multi-user.target
 UNIT
   systemctl daemon-reload
   systemctl enable --now flk-net.service
+  systemctl enable --now flk-tmux.service
   systemctl enable --now flk-machines.service
-  echo "installed and started flk-net.service and flk-machines.service"
+  echo "installed and started flk-net.service, flk-tmux.service and flk-machines.service"
 }
 
 case "${1:-}" in

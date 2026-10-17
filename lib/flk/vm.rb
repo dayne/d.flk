@@ -160,12 +160,12 @@ module Flk
       FileUtils.touch(fclog)
       File.open(m.path("console.log"), "a") { _1.puts "\n--- flk: booting #{m.id} (release v#{m.release}) at #{Util.now} ---" }
       tmux_quiet("kill-session", "-t", m.session)
+      ensure_server # before new-session, which would start one in our cgroup
 
       # Boot in two phases: firecracker waits on its API socket, we attach
       # the log pipe, then configure + InstanceStart, so no early boot output is lost.
       Util.run!(*TMUX, "new-session", "-d", "-s", m.session, "-x", "200", "-y", "50",
                 "exec #{[bin, '--api-sock', sock, '--log-path', fclog, '--level', 'Warning'].shelljoin}")
-      install_exit_hook
       Util.run!(*TMUX, "pipe-pane", "-t", m.session, "-o",
                 [File.join(LIBEXEC, "flk-logpipe"), m.path("console.log"), LOG_MAX_BYTES.to_s].shelljoin)
       File.write(m.path("pid"), Util.run!(*TMUX, "display-message", "-p", "-t", m.session, '#{pane_pid}').strip)
@@ -416,13 +416,36 @@ module Flk
     # the machine is tidied and its host ports handed on within a second, with
     # no daemon. exit-empty off keeps the server, and so the hook, alive when
     # the last session closes, the common "my only machine died" case.
-    # Start flk's tmux server now, so it (and every machine started later)
-    # lives in the caller's cgroup: flk-machines.service at boot, which then
-    # stops them gracefully at shutdown instead of the session teardown
-    # killing them.
+    # Start flk's tmux server if it isn't running. The server, and so every
+    # machine, lives in the cgroup of whoever starts it, and shutdown kills a
+    # login session's before flk-machines.service can stop anything
+    # (../mud BUGS.flk.md #3). So with flk-tmux.service installed, systemd
+    # starts it, through the port helper; without (no boot service: a dev
+    # host), the caller does, as before.
     def ensure_server
+      start_server_unit if server_unit? && !tmux_server_pid
       tmux_quiet("start-server", ";", "set-option", "-g", "exit-empty", "off")
       install_exit_hook
+    end
+
+    SERVER_UNIT = "flk-tmux.service"
+
+    # Test servers (FLK_TMUX_SOCKET) are never the unit's.
+    def server_unit? = SOCKET == "flk" && File.exist?("/etc/systemd/system/#{SERVER_UNIT}")
+
+    # The helper queues the start (--no-block) and this waits for the
+    # server, so a start from inside another unit's start job can't deadlock.
+    def start_server_unit
+      out, st = Open3.capture2e("sudo", "-n", Ports::HELPER, "start-tmux")
+      why = if !st.success? then out.strip.lines.last&.strip
+            elsif !Util.wait_for(10, 0.2) { tmux_server_pid } then "it didn't come up in 10s"
+            end
+      return unless why
+      raise Error.new("can't start #{SERVER_UNIT} (#{why}): machines started without it " \
+                      "would be killed, not stopped, at shutdown",
+                      next_steps: ["systemctl status #{SERVER_UNIT}", "sudo #{SETUP_HOST} (updates the port helper)"])
+    rescue SystemCallError => e
+      raise Error, "can't start #{SERVER_UNIT}: #{e.message}"
     end
 
     def install_exit_hook

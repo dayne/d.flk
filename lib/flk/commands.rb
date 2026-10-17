@@ -62,7 +62,7 @@ module Flk
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
         notes: ['--json prints {"schema", "ok", "checks": [{"label", "status", "hint"}], "services": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
-                'services: flk-net.service and flk-machines.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
+                'services: flk-net.service, flk-machines.service and flk-tmux.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
       { name: "version", group: "Setup", summary: "Print the flk version" },
 
       { name: "resume", group: "Host",
