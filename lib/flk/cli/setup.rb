@@ -153,12 +153,12 @@ module Flk
       end
       check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
       check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
-            "sudo #{SETUP_HOST} (adds you to kvm group; log out/in)"]
-      check["bridge #{Net::BRIDGE}", Net.bridge_up?, "sudo #{SETUP_HOST}"]
+            "#{Util.setup_host_cmd} (adds you to kvm group; log out/in)"]
+      check["bridge #{Net::BRIDGE}", Net.bridge_up?, Util.setup_host_cmd]
       taps = (0...Net::POOL).count { Net.tap_exists?(_1) }
-      check["tap pool #{taps}/#{Net::POOL}", taps.positive?, "sudo #{SETUP_HOST}"]
+      check["tap pool #{taps}/#{Net::POOL}", taps.positive?, Util.setup_host_cmd]
       fwd = (File.read("/proc/sys/net/ipv4/ip_forward").strip == "1" rescue false)
-      check["ipv4 forwarding", fwd, "sudo #{SETUP_HOST}"]
+      check["ipv4 forwarding", fwd, Util.setup_host_cmd]
       fc = begin; VM.firecracker_bin; rescue Error; nil; end
       check["firecracker #{fc}", !fc.nil?, "flk setup"]
       check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
@@ -297,7 +297,7 @@ module Flk
               App.all.any? { |a| a.machines.any? { (Array(_1.config["bind"]) - ["all"]).any? } }
       if bound && Ports.available? && !Ports.per_address?
         record["bind is set, but the port helper predates it: ports still answer on every host address", "warn",
-               "sudo #{SETUP_HOST}"]
+               Util.setup_host_cmd]
       end
       wanted.each do |addr, why|
         if local.include?(addr)
@@ -447,12 +447,12 @@ module Flk
         record["boot service (machines come back after a reboot)", "pass", nil]
       end
     rescue SystemCallError
-      record["boot service: systemctl not found", "warn", "after a reboot: sudo #{SETUP_HOST} && flk resume"]
+      record["boot service: systemctl not found", "warn", "after a reboot: #{Util.setup_host_cmd} && flk resume"]
     end
 
     # Optional: without it machines run, but [[services.ports]] isn't forwarded.
     def port_helper_check(record)
-      fix = "sudo #{SETUP_HOST}"
+      fix = Util.setup_host_cmd
       if !Ports.available?
         record["port helper (forwarding [[services.ports]])", "warn", fix]
       elsif !system("sudo", "-n", "-l", Ports::HELPER, out: File::NULL, err: File::NULL)

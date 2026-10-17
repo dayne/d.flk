@@ -51,8 +51,8 @@ module Flk
     def allocate!
       taken = used
       i = (0...POOL).find { !taken.include?(_1) } or
-        raise Error, "tap pool exhausted (#{POOL}); re-run: sudo FLK_TAPS=#{POOL * 2} #{SETUP_HOST}"
-      raise Error, "#{tap(i)} doesn't exist; run: sudo #{SETUP_HOST}" unless tap_exists?(i)
+        raise Error, "tap pool exhausted (#{POOL}); re-run: #{Util.setup_host_cmd("FLK_TAPS=#{POOL * 2}")}"
+      raise Error, "#{tap(i)} doesn't exist; run: #{Util.setup_host_cmd}" unless tap_exists?(i)
       i
     end
   end

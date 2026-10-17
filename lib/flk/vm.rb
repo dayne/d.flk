@@ -78,9 +78,9 @@ module Flk
 
     def preflight!(m)
       raise AlreadyRunning, "machine #{m.id} is already running" if m.running?
-      raise Error, "/dev/kvm not accessible; run: sudo #{SETUP_HOST}, then log out/in" unless File.writable?("/dev/kvm")
+      raise Error, "/dev/kvm not accessible; run: #{Util.setup_host_cmd}, then log out/in" unless File.writable?("/dev/kvm")
       raise Error, "guest kernel not found at #{kernel}; run: flk setup" unless File.exist?(kernel)
-      raise Error, "#{Net.tap(m.tap_index)} missing; run: sudo #{SETUP_HOST}" unless Net.tap_exists?(m.tap_index)
+      raise Error, "#{Net.tap(m.tap_index)} missing; run: #{Util.setup_host_cmd}" unless Net.tap_exists?(m.tap_index)
       raise Error, "tmux is required" unless Util.which("tmux")
       if (pid = backup_pid(m))
         raise Error, "a backup of its volume is running (flk, pid #{pid}); the machine starts again when it's done"
@@ -443,7 +443,7 @@ module Flk
       return unless why
       raise Error.new("can't start #{SERVER_UNIT} (#{why}): machines started without it " \
                       "would be killed, not stopped, at shutdown",
-                      next_steps: ["systemctl status #{SERVER_UNIT}", "sudo #{SETUP_HOST} (updates the port helper)"])
+                      next_steps: ["systemctl status #{SERVER_UNIT}", "#{Util.setup_host_cmd} (updates the port helper)"])
     rescue SystemCallError => e
       raise Error, "can't start #{SERVER_UNIT}: #{e.message}"
     end

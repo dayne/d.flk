@@ -2,8 +2,10 @@
 # setup-host.sh: the only part of flk that needs root.
 #
 #   sudo ./setup-host.sh                    bridge + tap pool + NAT + port forwarding, kvm group
+#                                           (networking only: what flk-net.service runs at boot)
+#   sudo ./setup-host.sh --install-service  all of the above, plus the systemd units (networking,
+#                                           flk's tmux server, machines); also the way to upgrade
 #   sudo ./setup-host.sh --down             remove taps, bridge, NAT table
-#   sudo ./setup-host.sh --install-service  systemd units: networking, flk's tmux server, machines
 #   sudo ./setup-host.sh --uninstall        --down, plus remove the port helper, sudoers rule, service
 #
 # Env: FLK_BRIDGE (flkbr0)  FLK_SUBNET (172.30.0)  FLK_TAPS (16)  FLK_UPLINK (auto)
@@ -221,9 +223,10 @@ UNIT
   echo "installed and started flk-net.service, flk-tmux.service and flk-machines.service"
 }
 
+service=0
 case "${1:-}" in
   --down) down; exit 0 ;;
-  --install-service) install_service; exit 0 ;;
+  --install-service) service=1 ;; # the setup below first: it's idempotent, and units and helper go together
   --uninstall) uninstall; exit 0 ;;
   "") ;;
   *) echo "usage: sudo $0 [--down|--install-service|--uninstall]" >&2; exit 1 ;;
@@ -301,6 +304,13 @@ echo "✔ bridge ${bridge} (${subnet}.1/24)"
 echo "✔ tap pool: ${taps} taps owned by ${user}"
 echo "✔ NAT via ${uplink}"
 echo "✔ port helper: ${helper} (sudo no-password for ${user})"
+if ((service)); then
+  install_service
+elif [[ -f /etc/systemd/system/flk-net.service && -z ${INVOCATION_ID:-} ]]; then
+  # run by hand, not by flk-net at boot: its unit keeps the settings it was
+  # installed with (FLK_TAPS...), so a reboot would undo changes made here
+  echo "! boot units not refreshed; to keep these settings across reboots: sudo $0 --install-service"
+fi
 echo ""
 if ((added_kvm)); then
   echo "Next: log out and back in (kvm group), then: ${src}/bin/flk setup --fix"

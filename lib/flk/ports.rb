@@ -34,7 +34,7 @@ module Flk
     # its inbound traffic (sshd, a database...).
     def blocked_reason(proto, port, listeners = host_listeners, bind: nil)
       if port < min_port
-        "below #{min_port}; to allow: sudo FLK_MIN_PORT=#{port} #{SETUP_HOST}"
+        "below #{min_port}; to allow: #{Util.setup_host_cmd("FLK_MIN_PORT=#{port}")}"
       elsif (l = listeners.find { |pr, po, addr| pr == proto && po == port && (bind.nil? || addr == "*" || addr == bind) })
         "a host process is listening on it#{" (on #{l[2] == '*' ? 'all addresses' : l[2]})" if bind}"
       end
@@ -125,7 +125,7 @@ module Flk
         active, = table
         unless available?
           return true if active.empty?
-          warn_once("port forwarding isn't set up; run: sudo #{SETUP_HOST}")
+          warn_once("port forwarding isn't set up; run: #{Util.setup_host_cmd}")
           return false
         end
         input = active.map { "#{_1['proto']} #{_1['port']} #{_1['ip']} #{_1['internal_port']}#{" #{_1['bind']}" if _1['bind']}\n" }.join

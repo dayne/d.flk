@@ -75,6 +75,15 @@ module Flk
       end
     end
 
+    # The root setup command for a hint. With the boot units installed it's
+    # --install-service (the setup plus the units): the units keep the
+    # settings they were installed with (env: "FLK_TAPS=32"), and a plain
+    # run would leave them, and the helper they go with, behind.
+    def setup_host_cmd(env = nil)
+      units = File.exist?("/etc/systemd/system/flk-net.service")
+      ["sudo", env, SETUP_HOST, ("--install-service" if units)].compact.join(" ")
+    end
+
     # When the host booted (btime in /proc/stat); the epoch if unknown.
     def boot_time
       @boot_time ||= Time.at(File.read("/proc/stat")[/^btime (\d+)/, 1].to_i)

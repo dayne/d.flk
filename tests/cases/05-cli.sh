@@ -431,6 +431,14 @@ test_install_service_units_verify() {
   grep -q '^After=.*flk-tmux.service' "$d/flk-machines.service" || fail "flk-machines isn't ordered after flk-tmux"
   grep -qF ' start-server \; set-option -g exit-empty off' "$d/flk-tmux.service" ||
     fail "flk-tmux ExecStart: $(grep ExecStart "$d/flk-tmux.service")"
+  # one command installs and upgrades: --install-service runs the whole
+  # setup (helper included) before the units, never only the units
+  local helper_at units_at
+  helper_at=$(grep -n '^install_port_helper$' "$FLK_SRC/setup-host.sh" | cut -d: -f1)
+  units_at=$(grep -n '^  install_service$' "$FLK_SRC/setup-host.sh" | cut -d: -f1)
+  [[ -n $helper_at && -n $units_at ]] && ((helper_at < units_at)) ||
+    fail "--install-service doesn't run the setup (port helper at line ${helper_at:-?}) before the units (${units_at:-?})"
+  grep -q -- '--install-service) .*exit' "$FLK_SRC/setup-host.sh" && fail "--install-service exits before the setup"
   grep -qF 'test -n "${MAINPID}" || exit 0' "$d/flk-tmux.service" ||
     fail "flk-tmux ExecStop isn't guarded: installing it next to a running server would stop every machine"
   rm -rf "$d"

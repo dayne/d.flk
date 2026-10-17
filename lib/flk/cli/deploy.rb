@@ -359,7 +359,7 @@ module Flk
       end
       return if creating.zero? || (taps = Net.free_count) >= creating
       raise Error, "need #{creating} free tap#{'s' if creating > 1} for new machines, #{taps} free; " \
-                   "re-run: sudo FLK_TAPS=#{Net::POOL * 2} #{SETUP_HOST}"
+                   "re-run: #{Util.setup_host_cmd("FLK_TAPS=#{Net::POOL * 2}")}"
     end
   end
 end

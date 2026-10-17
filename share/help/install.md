@@ -16,16 +16,18 @@ Get the code first if you haven't already:
    including the exact package install command for your distro.
    When multiple steps are needed it prints a numbered list.
 
-2. **Root setup, once.**
+2. **Root setup.**
 
-       sudo {{SRC}}/setup-host.sh                    # kvm group, bridge, taps, NAT, port helper
-       sudo {{SRC}}/setup-host.sh --install-service  # at boot: recreate network + resume machines
+       sudo {{SRC}}/setup-host.sh --install-service  # kvm group, bridge, taps, NAT, port helper, boot units
 
-   **On a server, run both commands.** Without `--install-service` a reboot
-   leaves all machines down — `flk doctor` will warn when the service is
-   missing.
+   That's the networking plus the systemd units that recreate it at boot,
+   run flk's tmux server, and stop machines gracefully at shutdown and
+   resume them at boot. Re-run it after updating flk, or to change an
+   option (it's safe with machines running). Without `--install-service`
+   you get the networking only, and a reboot leaves all machines down;
+   `flk doctor` warns when the units are missing or out of date.
 
-   If the first command added you to the `kvm` group, log out and back in
+   If it added you to the `kvm` group, log out and back in
    (or: `newgrp kvm`). Options are environment variables: `FLK_TAPS`
    (machines at once, default 16), `FLK_SUBNET` (default 172.30.0),
    `FLK_MIN_PORT` (lowest forwardable host port, default 1024).

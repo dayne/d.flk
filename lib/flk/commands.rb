@@ -57,7 +57,7 @@ module Flk
       { name: "setup", group: "Setup",
         opts: [["--fix", "Apply auto-fixable issues after setup: PATH symlink and podman short-name registries"]],
         summary: "Download firecracker + guest kernel (no root), then run doctor",
-        notes: ["Root setup (bridge, taps, NAT, port helper) is separate: sudo #{SETUP_HOST}",
+        notes: ["Root setup (bridge, taps, NAT, port helper, boot units) is separate: sudo #{SETUP_HOST} --install-service",
                 "--fix also creates ~/.local/bin/flk and configures podman short image names (FROM ruby:3.3) if either is missing. Safe to re-run."] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",

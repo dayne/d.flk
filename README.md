@@ -38,9 +38,10 @@ sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables cu
 sudo dnf install -y ruby tmux e2fsprogs fakeroot podman iproute nftables procps-ng
 # Optional, for flk exec, flk ssh console and images without /bin/sh: Go (golang-go / go), or set FLK_GO
 
-# 2. One-time root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding
-sudo ./setup-host.sh
-sudo ./setup-host.sh --install-service   # recommended: at boot, recreate networking and resume machines
+# 2. Root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding, and the
+#    boot units (networking, flk's tmux server, machines). Re-run after updating flk.
+#    (Without --install-service: networking only, and nothing comes back after a reboot.)
+sudo ./setup-host.sh --install-service
 
 # 3. Firecracker + guest kernel, PATH symlink, podman fix — all at once (no root)
 ./bin/flk setup --fix   # downloads assets, creates ~/.local/bin/flk, fixes short image names
