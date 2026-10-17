@@ -180,7 +180,9 @@ ExecStart=$tmux_bin -L flk start-server \; set-option -g exit-empty off
 # when ExecStart found a server already running elsewhere (flk-machines
 # started it, before this unit existed) or after the server died: stopping
 # machines then would take down a working host at install time.
-ExecStop=/bin/sh -c 'test -n "\${MAINPID}" || exit 0; exec $ruby_bin $src/bin/flk stop-all'
+# (\$\$: the shell reads it from the environment; systemd would log a warning
+# substituting it when unset.)
+ExecStop=/bin/sh -c 'test -n "\$\${MAINPID}" || exit 0; exec $ruby_bin $src/bin/flk stop-all'
 TimeoutStopSec=330
 
 [Install]

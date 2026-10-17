@@ -439,7 +439,7 @@ test_install_service_units_verify() {
   [[ -n $helper_at && -n $units_at ]] && ((helper_at < units_at)) ||
     fail "--install-service doesn't run the setup (port helper at line ${helper_at:-?}) before the units (${units_at:-?})"
   grep -q -- '--install-service) .*exit' "$FLK_SRC/setup-host.sh" && fail "--install-service exits before the setup"
-  grep -qF 'test -n "${MAINPID}" || exit 0' "$d/flk-tmux.service" ||
+  grep -qF 'test -n "$${MAINPID}" || exit 0' "$d/flk-tmux.service" ||
     fail "flk-tmux ExecStop isn't guarded: installing it next to a running server would stop every machine"
   rm -rf "$d"
 }
