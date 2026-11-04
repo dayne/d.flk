@@ -57,8 +57,26 @@ Tailscale and the other larger pieces, which decide its open questions
 (transport, service address, witness). Settle those before building
 past P0.
 
+### M6: Making apps (for flkforge)
+
+flkforge (`~/d.flkforge`) writes new apps from snippets. What it needs
+from flk is in TODO.md ("For flkforge"). Nothing here waits on M5, so it
+can come first. In order:
+- `flk build`: build and inspect an image without deploying. It's the
+  base for the rest and useful on its own to anyone writing a Dockerfile.
+- Image warnings at build/deploy (no user switch, no CMD, a mount over
+  image files, volume ownership).
+- `type = "exec"` health checks, through the agent.
+- `[[mounts]] seed = true`: fill a new volume from the image.
+- flk.toml keys in `help --all --json`; the exact guest env list.
+
+All of it is additive and opt-in, so real apps are unaffected. Tell
+flkforge about each one with the commit and its JSON, as with lazyflk.
+
 ### Alongside (any time)
 
+- A non-root USER silently runs as root on busybox images (TODO.md,
+  Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Volume snapshots: need volumes on a reflink filesystem or LVM thin (a

@@ -51,6 +51,65 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   Handed over: a note is in lazyflk's `TODO.md` ("From flk 21ffec9 and
   7cb3ddb"); close this when lazyflk has it.
 
+## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
+
+flkforge (designed 2026-11-04, nothing built yet) is a CLI and TUI wizard
+that writes a Dockerfile and flk.toml from reusable snippets, explaining
+each choice as it goes. Like lazyflk it uses only flk's CLI, so these are
+flk changes, all additive and opt-in. flkforge records what it needs in
+its own `BUGS.flk.md`. The setpriv entry under Machines came out of the
+same review.
+
+- [ ] **`flk build`: build and inspect without deploying.** Today an image
+  is only built by `deploy`, which needs a registered app and touches
+  machines. flkforge's `check` (and anyone writing a Dockerfile) wants:
+  `flk build [DIR] [--json]` builds the image and rootfs as deploy would,
+  keeps no release, and reports what flk will do with it: `user`, `cmd`,
+  `entrypoint`, `workdir`, `has_sh` (shell init or the static one),
+  `can_switch_user` (setpriv / chroot --userspec / agent), whether the agent
+  went in, image and rootfs sizes, and the problems below as warnings. Exit
+  1 on a build failure, with podman's error as in deploy.
+- [ ] **Image warnings at build and deploy.** Things flk can see but only
+  logs at boot today, or not at all. Each should be a warning with its fix,
+  in `flk build`, `deploy` and `flk config show`:
+  - non-root USER with no way to switch (see Machines);
+  - no CMD/ENTRYPOINT (the machine boots `/bin/sh` and exits);
+  - a `[[mounts]]` destination the image already has files in (the
+    volume hides them);
+  - USER non-root and the volume's root owned by root with no mount point
+    owned by that user in the image (valheim.flk BUGS #4): suggest
+    `flk volumes create ... --owner UID:GID`.
+- [ ] **Check type `exec`.** `[checks.NAME] type = "exec"`,
+  `command = ["sh", "-c", "..."]`, `user`: run a command in the guest
+  through the agent, and pass on exit 0. Deploy checks today see only
+  ports and log lines. This would let a release prove the volume is
+  mounted, the tool runs, or the app's own health command passes, and
+  roll back otherwise. Needs the agent (no Go, no exec check: say so in
+  config show). flkforge snippets would carry these as their smoke tests.
+- [ ] **Seed a new volume from the image.** `[[mounts]] seed = true`
+  (flk only): when the volume is empty on first mount, copy what the image
+  has at `destination` into it first, as Docker does with a named volume.
+  This solves home directories on a volume (dev boxes) and config
+  directories the program ships with. Could be done host-side at
+  `volumes create`/first deploy (`--from-dir` from the rootfs), which
+  needs no guest change.
+- [ ] **flk.toml keys as JSON.** `flk help --all --json` lists commands
+  but not config keys. flkforge's `explain KEY`, its rules and its "does
+  this flk support X" checks need them: a `config_keys` array (key, type,
+  default, flk-only, one-line doc, the flk version it appeared in) built
+  from the same source as the Config section of `share/guide.md`. That
+  would also let `tests/cases/00-config.sh` check that the guide and the
+  parser agree.
+- [ ] **The guest env contract, exactly.** `share/guide.md` says "the
+  `FLK_*` equivalents": list each variable the app sees, with an example,
+  so snippets can rely on them (another agent couldn't tell and read `ip`
+  instead).
+- [ ] **Ideas, not yet asked for:** `flk config show --file PATH` (check a
+  file outside cwd); a `flk ssh config APP` that prints an
+  `~/.ssh/config` entry for editors' remote modes (when the image runs
+  sshd); per-app LAN addresses for dev boxes are M5's managed extra
+  addresses, not a separate feature.
+
 ## LAN addresses and failover (PLAN.md M5)
 
 Forwarded ports answer on every address the host owns (the DNAT rule
@@ -85,6 +144,29 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
   sub-second resume.
 
 ## Machines
+
+- [ ] **A non-root USER silently runs as root on busybox images.**
+  `share/init.sh` (`start_app`) switches to the image's USER with
+  `setpriv`, else `chroot --userspec`, else it logs
+  `WARNING: can't switch to user ...; running as root` and runs the app as
+  root. Alpine and other busybox images have neither, so a Dockerfile
+  with `USER app` runs as root there, and the only sign is one line in
+  the boot log. (Found 2026-11-04 in the flkforge design review.)
+  - *Fix:* the agent already switches users when it's PID 1
+    (`agent/init.go`, `lookupUser`). Give it a mode init.sh can exec,
+    e.g. `/flk/agent run-as USER -- /flk/cmd` (resolves names from the
+    image's /etc/passwd and sets the groups), and try it after setpriv and
+    before chroot. Without the agent (no Go on the host), keep today's
+    order. Also warn at build/deploy (For flkforge: image warnings) so it
+    isn't only in the boot log.
+  - *Real apps:* this changes behaviour on their next deploy only if
+    their image has a non-root USER and no setpriv. From their
+    Dockerfiles: the four games are Ubuntu-based (util-linux, so setpriv)
+    and mqtt-flk (Alpine) sets no USER. Confirm with
+    `flk -a APP exec sh -c 'cat /flk/user; command -v setpriv'` before
+    merging.
+  - *Test:* a `tests/apps/` Alpine image with `USER nobody` whose CMD
+    prints `id -u`; it must print 65534, not 0.
 
 - [ ] **flk's tmux server keeps its groups.** The server now stays up when idle
   (for the exit hook). If it lacks `kvm` and no machines run, flk restarts it
