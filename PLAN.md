@@ -66,6 +66,11 @@ apps", "Reliability"). In order of harm:
 - Docs: help topics `images`, `host`, `bugs`.
 
 Each fix comes with its report's test and updates the report's status.
+Work happens on branch `r1-reliability` (worktree `~/flk-r1`); Dayne
+merges and pushes. When it reaches main: tell the flkforge session
+(d.flkforge `TODO.md` "When flk's r1-reliability reaches main": its http
+check gap, the log `$` rule, the setpriv note), and change the app
+repos' status lines from "not on main yet" to the merge commit.
 New commands and JSON (`images prune`, `build_log`, the
 event's `log`) go to lazyflk as a note.
 
