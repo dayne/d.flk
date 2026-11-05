@@ -484,6 +484,14 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Machines
 
+- [x] **A missing root disk is made again at start** (R1, mud
+  BUGS.flk.md #4, 2026-11-04). mud's restic backup skips machines'
+  `rootfs.ext4` (copies of `images/vN.ext4`); after a restore,
+  `flk resume` failed (firecracker couldn't open the drive) and the
+  runbook had a manual cp per machine. `VM.start` now copies it from the
+  release image when it's missing and says so; if the image is gone too,
+  the error says to redeploy. Test: `10-hello`
+  test_start_recreates_a_missing_root_disk.
 - [x] **Huge pages** (minecraft.flk BUGS #8): `[[vm]] huge_pages = "2M"`
   → Firecracker's machine-config; deploy (before building) and start
   refuse without enough free pool pages and print the sysctl commands;

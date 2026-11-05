@@ -78,6 +78,18 @@ test_images_and_disk_see_the_release() {
   grep -q '^==> \|STEP\|rootfs:' "$log" || fail "build log has no build output: $(head -3 "$log")"
 }
 
+# mud BUGS #4: host backups skip machines' root disks (copies of the
+# release image); after a restore, start makes the missing one again.
+test_start_recreates_a_missing_root_disk() {
+  wait_until 30 is_stopped
+  local id; id=$(machine_id)
+  rm "$FLK_HOME/apps/$APP/machines/$id/rootfs.ext4"
+  local before out; before=$(log_count "custom cmd") # test_experimental_cmd's CMD is still on
+  out=$(flk machine start "$id" 2>&1) || fail "start failed: $out"
+  assert_contains "$out" "root disk was missing; made again from v"
+  wait_until 30 log_count_gt "$before" "custom cmd" || fail "didn't boot on the new root disk"
+}
+
 # flkforge BUGS.flk.md #1: any http check crashed deploy (NameError: Net
 # inside Flk is Flk::Net). The app becomes a tiny web server (busybox nc;
 # alpine has no httpd) answering with a status: 200 passes the check, 500

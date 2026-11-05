@@ -76,6 +76,20 @@ module Flk
       end
     end
 
+    # The root disk is a copy of the release image, thrown away on every
+    # deploy, so host backups skip it (../mud BUGS.flk.md #4). After a
+    # restore it's missing: copy it from the image again.
+    def restore_rootfs!(m)
+      disk = m.path("rootfs.ext4")
+      return if File.exist?(disk)
+      rel = m.app.release(m.release)
+      unless rel && File.exist?(rel["path"].to_s)
+        raise Error, "machine #{m.id}'s root disk is missing, and so is v#{m.release}'s image: redeploy (flk deploy)"
+      end
+      Util.run!("cp", "--reflink=auto", "--sparse=always", rel["path"], disk)
+      puts "  machine #{m.id}: root disk was missing; made again from v#{m.release}'s image"
+    end
+
     def preflight!(m)
       raise AlreadyRunning, "machine #{m.id} is already running" if m.running?
       raise Error, "/dev/kvm not accessible; run: #{Util.setup_host_cmd}, then log out/in" unless File.writable?("/dev/kvm")
@@ -137,6 +151,7 @@ module Flk
     def start(m)
       Util.with_lock do
         preflight!(m)
+        restore_rootfs!(m)
         begin
           launch(m)
         rescue StandardError

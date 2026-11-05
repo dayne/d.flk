@@ -105,6 +105,11 @@ problems show up there with the fix. Then find the symptom below.
   how to move them; "predates flk-tmux.service":
   `sudo {{SRC}}/setup-host.sh --install-service`.
 
+- After restoring flk's state dir from a backup that skipped the
+  machines' `rootfs.ext4` (copies of the release images): `flk resume`
+  makes each missing one again from its release image and says so. "root
+  disk is missing, and so is vN's image": `flk deploy`.
+
 **After an apt upgrade every machine is stopped**
 - needrestart restarted `flk-tmux.service`, which stops the machines
   gracefully first. Units installed before it learned to resume after a
