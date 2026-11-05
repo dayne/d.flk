@@ -44,3 +44,6 @@ Working on flk itself:
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
   full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`,
   the order in `PLAN.md`, what's done and decided in `docs/history.md`.
+- Commit, never push. Dayne pushes every repo by hand: end with what's
+  waiting (`git log --oneline origin/main..main`), and leave git remotes,
+  SSH keys and agents alone, even if a push or fetch fails.
