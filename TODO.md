@@ -21,7 +21,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | valheim #2 | A failed build hides its own error and keeps no log | R1: fixed on branch r1-reliability (history.md) |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1: fixed on branch r1-reliability (history.md) |
-| valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1 |
+| valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1: fixed on branch r1-reliability (history.md) |
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1 |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1 |
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1 |
@@ -39,11 +39,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **No TCP wait on UDP-only apps (valheim #6).** `boot`
-  (`lib/flk/cli/machines.rb`) always waits 30s for TCP on
-  `internal_port`. Skip the wait when that service is `udp` or when the
-  app has `[checks]` (deploy runs them next). For udp with no checks, say
-  once that flk can't tell when it's ready and suggest a log check.
 - [ ] **before_deploy backups are copied too (enshrouded #2).** With
   `backup_copy_to` set, copy the pre-deploy backup after the machine is
   back up, at the end of the deploy, so it doesn't add downtime. It

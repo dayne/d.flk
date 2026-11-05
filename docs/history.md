@@ -136,6 +136,19 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **No TCP wait on a udp internal_port, nor before a deploy's
+  checks** (R1, valheim.flk BUGS.flk.md #6, 2026-11-04). `boot` always
+  waited 30s for TCP on internal_port: valheim's udp/2456 never answers,
+  so every deploy and start lost 30s and printed a false "nothing
+  listening" warning before its log check passed at once. machine_config
+  now carries `internal_protocol` (`[http_service]` is tcp); boot skips
+  the wait for udp (printing a hint toward a log check when there are no
+  checks) and, in a deploy, when health checks come right after (create
+  and update pass `checks_follow`). Plain start, restart and resume still
+  wait on tcp: it's their only readiness report. Tests: `44-boot-wait`
+  (new), `00-config` internal_protocol. Also fixed: the tests'
+  `port_address` took the host's first forwarded port, enshrouded-flk's
+  own address, so `20-mcshadow` failed on this host (on main too).
 - [x] **Log checks can end in `$`** (d.flkforge BUGS.flk.md #2,
   2026-11-04). `check_passes?` matched the raw console tail, whose lines
   end in "\r\r\n", so Ruby's `$` (before "\n") never matched after the

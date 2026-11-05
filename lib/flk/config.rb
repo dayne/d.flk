@@ -48,6 +48,14 @@ module Flk
         [data["services"]].flatten.compact.first&.dig("internal_port")
     end
 
+    # internal_port's protocol ([http_service] is tcp): boot can't wait
+    # for a udp port to accept connections.
+    def internal_protocol
+      return "tcp" if data.dig("http_service", "internal_port")
+      svc = [data["services"]].flatten.compact.first or return nil
+      (svc["protocol"] || "tcp").to_s.downcase
+    end
+
     def vm = [data["vm"]].flatten.compact.first || {}
 
     def cpus
@@ -319,6 +327,7 @@ module Flk
         "env" => env,
         "mount_specs" => mounts,
         "internal_port" => internal_port,
+        "internal_protocol" => internal_protocol,
         "ports" => ports,
         "kill_timeout" => kill_timeout,
         "kernel_args" => data.dig("flk", "kernel_args"),

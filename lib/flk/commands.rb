@@ -94,7 +94,8 @@ module Flk
         notes: ["Reads flk.toml / fly.toml in the current directory, or with -a APP the file flk recorded at the app's last launch/deploy, so it works from anywhere.",
                 "Creates machines on the first deploy (count from `flk scale count`, default 1); later deploys stop, update and reboot each machine in turn.",
                 "With health checks ([checks], services tcp_checks/http_checks, http_service checks; type tcp, http, or flk's log), each machine must pass them before the next is updated. One that fails goes back to its previous release, the release is marked failed, and the deploy stops (exit 1).",
-                "Without checks it waits up to 30s per machine for internal_port to accept connections, then warns but carries on.",
+                "Without checks it waits up to 30s per machine for a tcp internal_port to accept connections, then warns but carries on. " \
+                "A udp one can't be waited for: add a [checks] type = \"log\" to have the deploy wait for the app.",
                 "Warns about flk.toml keys it doesn't know (typos).",
                 "Volumes named in [[mounts]] must exist first: flk volumes create NAME --size 1 (one per machine).",
                 "With [flk.backup] before_deploy, a backup that fails (its verify hook, say) stops the deploy and the machine " \

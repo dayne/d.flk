@@ -221,7 +221,7 @@ module Flk
         count = [a.meta["scale"] || 1, 1].max
         puts "==> Creating #{count} machine#{'s' if count > 1}"
         count.times do
-          m = create_machine(a, rel, mconfig)
+          m = create_machine(a, rel, mconfig, checks_follow: checks.any?)
           next if (why = health_failure(m, checks)).nil?
           fail_release!(a, rel, why)
           raise Error.new("v#{rel['version']} failed its health checks on new machine #{m.id}: #{why}. " \
@@ -236,7 +236,7 @@ module Flk
         before = { "release" => m.release, "config" => m.h["config"] }
         taken = []
         was_running = m.running?
-        update_machine(m, rel, mconfig) do
+        update_machine(m, rel, mconfig, checks_follow: checks.any?) do
           if pre_backup
             begin
               taken = backup_before_deploy(m, rel, pre_backup)

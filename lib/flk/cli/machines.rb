@@ -180,7 +180,8 @@ module Flk
       end
     end
 
-    def create_machine(a, rel, mconfig)
+    # checks_follow: a deploy runs health checks right after the boot.
+    def create_machine(a, rel, mconfig, checks_follow: false)
       i = Net.allocate!
       id = SecureRandom.hex(7)
       h = {
@@ -194,11 +195,11 @@ module Flk
       m.save!
       install_rootfs(m, rel)
       own_new_volumes(m, rel)
-      boot(m, "Machine #{m.id} [#{m.name}] created", event: "machine.created")
+      boot(m, "Machine #{m.id} [#{m.name}] created", event: "machine.created", checks_follow: checks_follow)
     end
 
     # The block runs while the machine is stopped (before_deploy backups).
-    def update_machine(m, rel, mconfig)
+    def update_machine(m, rel, mconfig, checks_follow: false)
       puts "  #{m.id} [#{m.name}] stopping" if m.running?
       VM.stop(m)
       yield if block_given?
@@ -207,7 +208,8 @@ module Flk
       m.save!
       install_rootfs(m, rel)
       own_new_volumes(m, rel)
-      boot(m, "Machine #{m.id} [#{m.name}] updated to v#{rel['version']}", event: "machine.updated")
+      boot(m, "Machine #{m.id} [#{m.name}] updated to v#{rel['version']}", event: "machine.updated",
+              checks_follow: checks_follow)
     end
 
     # Root filesystem is ephemeral per release, exactly like Fly:
@@ -312,13 +314,23 @@ module Flk
 
     # revive: a restart by the restart policy; anything else is a person
     # starting it, which resets the count of restarts in a row.
-    def boot(m, msg, revive: false, event: "machine.started")
+    # Waits up to 30s for internal_port to take TCP connections, unless
+    # that can't tell anything: a udp port (../valheim.flk BUGS.flk.md #6:
+    # 30s lost and a false warning on every boot), or a deploy whose health
+    # checks come next (checks_follow).
+    def boot(m, msg, revive: false, event: "machine.started", checks_follow: false)
       m.h.delete("restarts") unless revive
       VM.start(m)
       Events.machine(revive ? "machine.restarted" : event, m, msg)
       puts "  #{Util.green('✔')} #{msg} (#{m.ip})"
       port = m.config["internal_port"] or return m
-      if VM.wait_port(m, port, 30)
+      if m.config["internal_protocol"] == "udp"
+        if Array(m.config["checks"]).empty?
+          puts "    udp/#{port}: flk can't tell when it's ready; a [checks] type = \"log\" can (a line it prints when up)"
+        end
+      elsif checks_follow
+        nil
+      elsif VM.wait_port(m, port, 30)
         puts "    listening on #{m.ip}:#{port}"
       else
         puts Util.yellow("    ⚠ nothing listening on #{m.ip}:#{port} after 30s; check: flk logs -i #{m.id}")

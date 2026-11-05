@@ -25,6 +25,17 @@ test_mcshadow_services_and_mounts() {
   assert_eq tcp "$(json_get machine_config.ports.0.proto <<<"$cfg")" "port proto"
   assert_eq "$HOST_PORT" "$(json_get machine_config.ports.0.port <<<"$cfg")" "host port"
   assert_eq 25565 "$(json_get machine_config.ports.0.internal_port <<<"$cfg")" "port target"
+  assert_eq tcp "$(json_get machine_config.internal_protocol <<<"$cfg")" "internal_protocol"
+}
+
+# valheim BUGS #6: boot can't wait on a udp internal_port, so it needs to know.
+test_internal_protocol() {
+  stage_app hello
+  toml_append '[[services]]' '  internal_port = 2456' '  protocol = "udp"'
+  assert_eq udp "$(config | json_get machine_config.internal_protocol)" "udp service"
+  stage_app hello
+  toml_append '[http_service]' '  internal_port = 8080' '[[services]]' '  internal_port = 2456' '  protocol = "udp"'
+  assert_eq tcp "$(config | json_get machine_config.internal_protocol)" "[http_service] comes first, and is tcp"
 }
 
 test_examples_parse_without_warnings() { # and the test apps
