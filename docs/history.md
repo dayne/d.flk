@@ -326,6 +326,22 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **Rootfs builds work next to their output, not in /tmp** (R1,
+  enshrouded.flk BUGS.flk.md #1, 2026-11-04). `flk-build-rootfs` wrote the
+  export as a tar and unpacked it, ~2x the image, in `${TMPDIR:-/tmp}`:
+  on mud a 15G RAM tmpfs with a quota, so Enshrouded's 10G image failed
+  (and without the quota would have taken RAM from the running games).
+  Now the work dir is `.flk-rootfs.PID.*` in the app's images dir (the
+  same disk as the result); `podman export` streams into tar, with
+  `flk-tar-caps` reading the same stream through a fifo (it skips by
+  reading on a pipe and drains it, so tee never gets SIGPIPE); free space
+  is checked first (2.25x the image's unpacked size + extra_mb + 64MB:
+  `not enough space to build the rootfs in DIR`); a later build removes
+  work dirs whose PID is gone (builds run outside the global lock, so
+  only dead ones). tar's xattr warnings show only when it fails. Tests:
+  `08-rootfs` (read-only TMPDIR, the space check before any export,
+  leftovers), and a real podman build. Not done: the doctor warning about
+  a small `/tmp` tmpfs, since nothing of flk's writes big files there now.
 - [x] **Interrupted builds**: `--force-rm`; on Ctrl-C/failure flk prints
   the `buildah rm` for the build containers it left (never removes them
   itself: another build's look the same); doctor warns about ones older

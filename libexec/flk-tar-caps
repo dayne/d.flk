@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# flk-tar-caps ROOTFS.tar
+# flk-tar-caps ROOTFS.tar   (a file, or a pipe: flk-build-rootfs streams
+#                           the export through one and reads it to the end)
 #
 # Prints "HEX<TAB>/path" for every file in the tar with a
 # security.capability xattr (PAX SCHILY.xattr.*, as podman/docker export
@@ -26,6 +27,7 @@ def pax(data)
 end
 
 File.open(ARGV.fetch(0), "rb") do |f|
+  seekable = File.file?(f)
   ext = {}
   long = nil
   while (hdr = f.read(512)) && hdr.bytesize == 512 && hdr != "\0" * 512
@@ -33,7 +35,7 @@ File.open(ARGV.fetch(0), "rb") do |f|
     type = hdr[156]
     pad = (512 - (size % 512)) % 512
     unless %w[x g L].include?(type) # file data: skip it, don't read it
-      f.seek(size + pad, IO::SEEK_CUR)
+      seekable ? f.seek(size + pad, IO::SEEK_CUR) : IO.copy_stream(f, File::NULL, size + pad)
     else
       data = f.read(size).to_s.b
       f.read(pad)
@@ -53,4 +55,6 @@ File.open(ARGV.fetch(0), "rb") do |f|
     ext = {}
     long = nil
   end
+  # The writer (tee) fails if its pipe closes early: read what's left.
+  IO.copy_stream(f, File::NULL) unless seekable
 end

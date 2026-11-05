@@ -16,8 +16,8 @@ workflow in its header), and the app's owner confirms. Last checked
 
 | Report | Title | Where it's planned |
 |---|---|---|
-| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed (history.md); in effect after `--install-service` on mud |
-| enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1 |
+| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect after `--install-service` on mud |
+| enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #2 | A failed build hides its own error and keeps no log | R1 |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1 |
 | valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1 |
@@ -37,16 +37,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **Rootfs builds work next to their output (enshrouded #1).**
-  `libexec/flk-build-rootfs` makes its work dir in `${TMPDIR:-/tmp}` and
-  writes the image there twice. Change it to: a work dir in the app's
-  `images/` directory in flk's state dir (the same disk as the result);
-  stream `podman export | tar -x` (no tar file, half the space); check
-  free space (at least the image size plus margin, from
-  `podman image inspect`) before starting, and name the dir and the need
-  in the error. `flk doctor` warns when `/tmp` is a tmpfs smaller than the
-  biggest app image (for other tools). No new setting. Test: a build with
-  `TMPDIR` on a small tmpfs writes nothing there.
 - [ ] **A failed build says why, and every build is logged (valheim #2).**
   `Image.engine_run!` (`lib/flk/image.rb`) throws away podman's output.
   On failure, print the build's own error lines (`ERROR`/`Error`/
@@ -65,9 +55,9 @@ hook and cron backups.
   (from the rootfs `/etc/passwd`, or a numeric USER) and say so
   (`volume vhdata: owned by 1000:1000, the image's USER ubuntu`). Keep
   `owner_from_image` until a chown has really happened, so a fixed image
-  still applies on the next deploy. New: `flk volumes chown NAME
-  UID[:GID]` (machine stopped) to repair a volume that's already wrong.
-  The command is additive; tell lazyflk.
+  still applies on the next deploy. A volume that's already wrong:
+  `flk files chown UID:GID VOL:/` exists (machine stopped). Name it in
+  the warning; no new command.
 - [ ] **A before_deploy verify failure no longer traps a broken app
   (valheim #5).** Three parts, all wanted:
   `FLK_BACKUP_REASON` (`before_deploy`, `backup`, `verify`) in the verify

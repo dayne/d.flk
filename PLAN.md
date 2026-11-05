@@ -56,17 +56,17 @@ apps", "Reliability"). In order of harm:
   stream the export, check free space.
 - valheim #2: a failed build hides why. Error lines up front, a build log
   per release (plus the last 3 failures), the path in the event.
-- valheim #4, #5, #6: volume owner from the image USER (+ `volumes
-  chown`); before_deploy verify can't trap a broken app
-  (`FLK_BACKUP_REASON`, `deploy --no-backup`, a warning when the release
-  never got healthy); no TCP wait on UDP-only apps.
+- valheim #4, #5, #6: volume owner from the image USER (repairs: the
+  existing `flk files chown`); before_deploy verify can't trap a broken
+  app (`FLK_BACKUP_REASON`, `deploy --no-backup`, a warning when the
+  release never got healthy); no TCP wait on UDP-only apps.
 - enshrouded #2, mud #4, mud #5: copy before_deploy backups after the
   roll; recreate a missing rootfs on start; label flk's images, plus
   `flk images prune`.
 - Docs: help topics `images`, `host`, `bugs`.
 
 Each fix comes with its report's test and updates the report's status.
-New commands and JSON (`volumes chown`, `images prune`, `build_log`, the
+New commands and JSON (`images prune`, `build_log`, the
 event's `log`) go to lazyflk as a note.
 
 ### M5: More than one host (design first)

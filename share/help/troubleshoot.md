@@ -43,6 +43,10 @@ problems show up there with the fix. Then find the symptom below.
   before the roll) failed, and no machine was stopped or changed: they
   still run vN. Fix the cause shown above it and deploy again. The same
   Dockerfile should fail under `podman build`.
+- `not enough space to build the rootfs in DIR`: turning the image into
+  the release's disk needs about twice the image's size, free next to
+  flk's images (`flk disk` shows where they are and what they take). Free
+  space there (`flk images`, `flk apps prune`); `/tmp` isn't used.
 - `groupadd: GID '1000' already exists` (or `useradd: UID 1000 is not
   unique`): ubuntu:23.04 and later ship user `ubuntu` as 1000:1000. Rename
   it (`usermod -l NEW -d /home/NEW -m ubuntu && groupmod -n NEW ubuntu`) or

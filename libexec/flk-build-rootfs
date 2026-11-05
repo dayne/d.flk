@@ -4,12 +4,40 @@
 # Flattens an OCI image into a bootable ext4 file without root:
 # `fakeroot` records file ownership from the tar, and `mkfs.ext4 -d`
 # (e2fsprogs >= 1.43) reads it back while populating the filesystem.
+#
+# It works next to OUT (flk's images dir), never in TMPDIR: /tmp can be a
+# small tmpfs in RAM (../enshrouded.flk BUGS.flk.md #1). The export streams
+# into tar, so the disk holds the unpacked tree and the ext4 image, never a
+# tar file as well.
 set -euo pipefail
 export PATH="$PATH:/usr/sbin:/sbin"
 
 engine=$1 image=$2 overlay=$3 out=$4 extra_mb=${5:-512}
 
-work=$(mktemp -d "${TMPDIR:-/tmp}/flk-rootfs.XXXXXX")
+outdir=$(dirname "$out")
+mkdir -p "$outdir"
+# A build killed outright leaves its work dir behind: remove those whose
+# build is gone (the PID is in the name; builds of other apps may be running).
+for old in "$outdir"/.flk-rootfs.*; do
+  [[ -d $old ]] || continue
+  pid=${old##*/.flk-rootfs.}; pid=${pid%%.*}
+  [[ $pid =~ ^[0-9]+$ ]] && ! kill -0 "$pid" 2>/dev/null && rm -rf "$old"
+done
+
+# Room for the unpacked tree and the ext4 image (that plus a quarter, plus
+# EXTRA_MB), on the disk they're written to. An engine that can't say how
+# big the image is skips the check.
+if size=$("$engine" image inspect --format '{{.Size}}' "$image" 2>/dev/null) && [[ $size =~ ^[0-9]+$ ]]; then
+  need=$(( size * 9 / 4 / 1048576 + extra_mb + 64 ))
+  free=$(df -Pm "$outdir" | awk 'NR == 2 { print $4 }')
+  if [[ $free =~ ^[0-9]+$ ]] && (( free < need )); then
+    echo "flk: not enough space to build the rootfs in $outdir: needs about $((need / 1024 + 1))GB" \
+         "(the image is $((size / 1048576))MB unpacked, plus the ext4 image), $((free / 1024))GB free" >&2
+    exit 1
+  fi
+fi
+
+work=$(mktemp -d "$outdir/.flk-rootfs.$$.XXXXXX")
 cid=""
 cleanup() {
   [[ -n $cid ]] && "$engine" rm -f "$cid" >/dev/null 2>&1 || true
@@ -19,7 +47,6 @@ trap cleanup EXIT
 
 # The trailing command lets `create` work for images with no CMD (scratch etc).
 cid=$("$engine" create "$image" /bin/true)
-"$engine" export "$cid" > "$work/rootfs.tar"
 
 fr=()
 if command -v fakeroot >/dev/null; then
@@ -28,10 +55,17 @@ else
   echo "flk: WARNING: fakeroot not found; every file in the rootfs will be owned by uid $(id -u)" >&2
 fi
 
-${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
-  root=$1 tar=$2 overlay=$3 out=$4 extra=$5
+# File capabilities are read from the same stream (flk-tar-caps, below).
+mkfifo "$work/caps.pipe"
+"$(dirname "$0")/flk-tar-caps" "$work/caps.pipe" > "$work/caps.tsv" &
+caps_pid=$!
+
+"$engine" export "$cid" | tee "$work/caps.pipe" | ${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
+  root=$1 overlay=$2 out=$3 extra=$4 err=$5
   mkdir -p "$root"
-  tar -xpf "$tar" -C "$root" --numeric-owner 2>/dev/null || tar -xpf "$tar" -C "$root" --numeric-owner
+  # tar warns about every xattr it can'"'"'t set without root: keep its
+  # output for a failure only.
+  tar -xpf - -C "$root" --numeric-owner 2>"$err" || { cat "$err" >&2; exit 1; }
   # tar creates files with their final mode, so mode 0000 ones (Fedora'"'"'s
   # /etc/shadow, /etc/gshadow) are unreadable for mkfs.ext4 -d. chmod under
   # fakeroot keeps the mode in the image but the real file readable, so
@@ -59,7 +93,8 @@ ${fr[@]+"${fr[@]}"} bash -euo pipefail -c '
   truncate -s "${size}M" "$out"
   mkfs.ext4 -F -q -L flk-root -d "$root" "$out"
   echo "    rootfs: ${used}MB used, ${size}MB image -> $out"
-' _ "$work/root" "$work/rootfs.tar" "$overlay" "$out" "$extra_mb"
+' _ "$work/root" "$overlay" "$out" "$extra_mb" "$work/tar.err"
+wait "$caps_pid" || { echo "flk: couldn't read file capabilities from the image" >&2; exit 1; }
 
 # File capabilities (setcap; newuidmap on Arch and Fedora) are xattrs that
 # tar can't restore without root, so mkfs.ext4 -d never sees them: write
@@ -69,7 +104,7 @@ while IFS=$'\t' read -r hex path; do
   printf "$(sed 's/../\\x&/g' <<<"$hex")" > "$work/cap.$n"
   echo "ea_set -f $work/cap.$n \"$path\" security.capability" >> "$work/caps.debugfs"
   n=$((n + 1))
-done < <("$(dirname "$0")/flk-tar-caps" "$work/rootfs.tar")
+done < "$work/caps.tsv"
 if ((n)); then
   # debugfs exits 0 when a command fails: anything past its banner is one
   debugfs -w -f "$work/caps.debugfs" "$out" >/dev/null 2>"$work/caps.err" || true
