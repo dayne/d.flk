@@ -99,7 +99,9 @@ port_map() { sudo -n /usr/local/libexec/flk-ports list; } # the live nft map
 host_listening() { ss -Hltn "sport = :$1" | grep -q .; }
 # where flk says its forwarded port answers (ADDRESS of the first active
 # row): the LAN IP, or the host's bind address when one is set
-port_address() { flk ports --json | json_get active.0.address | cut -d: -f1; }
+# this app's forwarded address (other apps on the host may bind elsewhere)
+port_address() { flk ports --json | ruby -rjson -e 'a = JSON.parse($stdin.read)["active"].find { _1["app"] == ARGV[0] }
+  puts a ? a["address"].sub(/:\d+\z/, "") : ""' "$APP"; }
 host_lan_ip() { ip -o route get 1.1.1.1 | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}'; }
 
 # Called by the runner after a failed vm test: append context to its log.
