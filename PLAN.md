@@ -45,7 +45,7 @@ What's missing:
 Order (decided 2026-11-04): R1, then M6, then M5 once Tailscale is
 settled.
 
-### R1: Reliability (the apps' reports)
+### R1: Reliability (the apps' reports): done 2026-11-05
 
 The real apps filed verified flk bugs in their own `BUGS.flk.md`; the
 index and the decided behaviour for each are in TODO.md ("Reported by
@@ -66,11 +66,8 @@ apps", "Reliability"). In order of harm:
 - Docs: help topics `dockerfile`, `host`, `bugs`.
 
 Each fix comes with its report's test and updates the report's status.
-Work happens on branch `r1-reliability` (worktree `~/flk-r1`); Dayne
-merges and pushes. When it reaches main: tell the flkforge session
-(d.flkforge `TODO.md` "When flk's r1-reliability reaches main": its http
-check gap, the log `$` rule, the setpriv note), and change the app
-repos' status lines from "not on main yet" to the merge commit.
+Done: merged to main at 7f0317f (2026-11-05); the flkforge session was
+told and the app repos' status lines name main.
 New commands and JSON (`images prune`, `build_log`, the
 event's `log`) go to lazyflk as a note.
 

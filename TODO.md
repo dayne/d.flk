@@ -12,23 +12,23 @@ there). This index keeps them in view. At the start of a flk session, read
 every `~/*/BUGS.flk.md` "Open" section and update this list. When one is
 fixed, set its `Status: fixed in <commit>: ...` line in the app's file (the
 workflow in its header), and the app's owner confirms. Last checked
-2026-11-04.
+2026-11-05.
 
 | Report | Title | Where it's planned |
 |---|---|---|
 | mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect after `--install-service` on mud |
-| enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed on branch r1-reliability (history.md) |
-| valheim #2 | A failed build hides its own error and keeps no log | R1: fixed on branch r1-reliability (history.md) |
-| valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed on branch r1-reliability (history.md) |
-| valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1: fixed on branch r1-reliability (history.md) |
-| valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1: fixed on branch r1-reliability (history.md) |
-| enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed on branch r1-reliability (history.md) |
-| mud #4 | Recreate a missing rootfs.ext4 from the release image | R1: fixed on branch r1-reliability (history.md) |
-| mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done on branch r1-reliability (history.md) |
+| enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed, on main since 7f0317f (history.md) |
+| valheim #2 | A failed build hides its own error and keeps no log | R1: fixed, on main since 7f0317f (history.md) |
+| valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed, on main since 7f0317f (history.md) |
+| valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1: fixed, on main since 7f0317f (history.md) |
+| valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1: fixed, on main since 7f0317f (history.md) |
+| enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed, on main since 7f0317f (history.md) |
+| mud #4 | Recreate a missing rootfs.ext4 from the release image | R1: fixed, on main since 7f0317f (history.md) |
+| mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done, on main since 7f0317f (history.md) |
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
-| flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed on branch r1-reliability (history.md) |
-| flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed on branch r1-reliability (history.md) |
+| flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f (history.md) |
+| flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f (history.md) |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 
 ## Reliability (PLAN.md R1)
@@ -39,8 +39,8 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-All of R1 is done on branch `r1-reliability` (docs/history.md); what's
-left is merging it (PLAN.md R1 says what to do then).
+All of R1 is done and on main since 7f0317f (2026-11-05,
+docs/history.md).
 
 ## Setup and host checks
 
