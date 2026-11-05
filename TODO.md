@@ -24,7 +24,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1: fixed on branch r1-reliability (history.md) |
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed on branch r1-reliability (history.md) |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1: fixed on branch r1-reliability (history.md) |
-| mud #5 | Protect flk's podman images from `podman image prune -a` | R1 |
+| mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done on branch r1-reliability (history.md) |
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed on branch r1-reliability (history.md) |
@@ -39,15 +39,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **flk's images survive a general prune, and flk can prune itself
-  (mud #5).** Build with `--label flk.app=APP --label flk.release=N`
-  (`[build] image` apps: a one-line build on top of the pulled image, or
-  document that they aren't covered). Help and doctor name the safe
-  filter (`podman image prune -a --filter label!=flk.app`). New
-  `flk images prune [--dry-run]`: remove only what flk doesn't keep (old
-  `vN` tags past `keep_releases`, images of destroyed apps, dangling
-  layers, build cache). Fold `flk apps prune`'s image part into it, or
-  have one call the other. Tell lazyflk.
 - [ ] **Docs: three new help topics.** Add them to `Commands::TOPICS`:
   - `images` (or `dockerfiles`): writing a Dockerfile for flk. The guest is
     a VM, not a container: init, `/bin/sh` versus the static init, USER

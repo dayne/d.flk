@@ -363,7 +363,7 @@ test_failed_build_says_machines_unchanged() {
   out=$(flk deploy 2>&1) && fail "a broken Dockerfile deployed"
   assert_contains "$(tail -n 2 <<<"$out" | head -n 1)" "Error: build failed; machines unchanged (no machines yet)" "error is the last thing said"
   assert_contains "$(tail -n 1 <<<"$out")" "Next: flk deploy (after fixing the build)" "then the next step"
-  assert_contains "$out" 'failed at STEP 2/2 (RUN false): exit status 1' "the failing step, short"
+  assert_contains "$out" 'failed at STEP 2/3 (RUN false): exit status 1' "the failing step, short"
   assert_contains "$out" "Build log: " "where the whole output is"
   local ev; ev=$(flk events --json | grep -F '"deploy.failed"' | tail -n 1)
   assert_contains "$(json_get detail <<<"$ev")" "build failed; machines unchanged (no machines yet): " "deploy.failed event"
@@ -561,4 +561,33 @@ test_log_check_regex_anchors() {
     puts ARGV[1..].map { cli.send(:check_passes?, m, { "type" => "log", "match" => _1 }) }.join(" ")' \
     "$d" '^fake: Server ready$' 'Server ready$' '^fake: starting$' 'ready\z' '^nope$')
   assert_eq "true true true false false" "$got" "anchored log checks"
+}
+
+# mud BUGS #5: flk images prune removes only what flk doesn't keep. A fake
+# engine stands in (the host's real store is left alone): one destroyed
+# app's tags and a dangling image go; nothing else is touched.
+test_images_prune() {
+  local bin="$WORK/fakeeng-$RUN_ID" gone="flk.local/flkt-gone-$RUN_ID"
+  mkdir -p "$bin"
+  cat >"$bin/podman" <<SH
+#!/bin/sh
+echo "\$*" >>"$bin/calls"
+case "\$*" in
+  "images --format {{.Tag}} $gone") printf 'v1\nv2\n' ;;
+  "images --format {{.Repository}}") echo "$gone" ;;
+  "images -q --filter dangling=true") echo abc123 ;;
+esac
+exit 0
+SH
+  chmod +x "$bin/podman"
+  local out
+  out=$(FLK_ENGINE="$bin/podman" flk images prune --dry-run 2>&1) || fail "dry run failed: $out"
+  assert_contains "$out" "Would remove 2 image tags:"
+  assert_contains "$out" "$gone:v1"
+  assert_contains "$out" "Would remove 1 dangling image"
+  grep -qE '^(rmi|image prune)' "$bin/calls" && fail "the dry run removed something: $(cat "$bin/calls")"
+  out=$(FLK_ENGINE="$bin/podman" flk images prune 2>&1) || fail "prune failed: $out"
+  assert_eq "rmi $gone:v1
+rmi $gone:v2
+image prune -f" "$(grep -E '^(rmi|image prune)' "$bin/calls")" "what it removed"
 }

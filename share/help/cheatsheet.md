@@ -52,6 +52,9 @@ Data
 Clean up
   flk apps destroy APP --yes         machines, volumes, images (external volume files are kept)
   flk apps prune                     images of apps that are already gone
+  flk images prune [--dry-run]       free podman's store, keeping what flk needs
+                                     (not podman image prune -a: it takes flk's
+                                     images and every base image)
 
 More: flk COMMAND --help, flk help TOPIC (install, first-app, operate,
 troubleshoot, uninstall), flk help --all for everything.

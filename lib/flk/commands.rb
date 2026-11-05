@@ -131,9 +131,21 @@ module Flk
         summary: "Disk space flk uses, per app: release images, machine disks, volumes, logs; and backups",
         notes: ["Sizes are allocated bytes (sparse files count only what they use); --json also gives apparent sizes.",
                 "External volumes (--path / import) are counted apart: they're on other disks."] },
-      { name: "images", group: "Host", opts: [JSON_OPT], json: true,
-        summary: "flk's container images (flk.local/APP:vN): size, whether a machine runs that release, orphans",
-        notes: ["Read-only. Images of destroyed apps (orphan) go with flk apps prune; deploys keep the last two per app."] },
+      { name: "images", group: "Host", default_sub: "list", summary: "flk's container images, and pruning them",
+        subs: [
+          { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
+            summary: "flk's container images (flk.local/APP:vN): size, whether a machine runs that release, orphans",
+            notes: ["Read-only. Images of destroyed apps (orphan) go with flk images prune (or flk apps prune); " \
+                    "deploys keep the last two per app."] },
+          { name: "prune", opts: [["--dry-run", "Only say what would go"]],
+            summary: "Free podman's (or docker's) store of what flk doesn't keep",
+            notes: ["Removes the image tags a deploy would prune (past [flk] keep_releases, except releases a machine is on), " \
+                    "the images of destroyed apps, and dangling images (no tag, no child). Base images and build caches stay, " \
+                    "so the next deploy doesn't download or rebuild everything.",
+                    "Use it instead of podman image prune -a, which also removes flk's kept images (rollback) and every base " \
+                    "image. To prune the rest of the store and spare flk's: podman image prune -a --filter label!=flk.app " \
+                    "(images flk built since it labels them: flk.app, flk.release; [build] image apps aren't labelled)."] }
+        ] },
       { name: "apps", group: "Apps", default_sub: "list", summary: "List or destroy apps",
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true, summary: "All apps on this host" },

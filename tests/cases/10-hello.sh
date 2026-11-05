@@ -76,6 +76,12 @@ test_images_and_disk_see_the_release() {
   local log; log=$(flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["current"] }["build_log"]')
   [[ $log == */builds/v*.log && -s $log ]] || fail "current release has no build log: $log"
   grep -q '^==> \|STEP\|rootfs:' "$log" || fail "build log has no build output: $(head -3 "$log")"
+  # labelled, so podman image prune -a --filter label!=flk.app spares it (mud BUGS #5)
+  if [[ ${FLK_ENGINE:-podman} == podman ]]; then
+    local tag; tag=$(json_get repo <<<"$img"):$(json_get tag <<<"$img")
+    assert_eq "$APP $(json_get release <<<"$img")" \
+      "$(podman image inspect --format '{{index .Labels "flk.app"}} {{index .Labels "flk.release"}}' "$tag")" "image labels"
+  fi
 }
 
 # mud BUGS #4: host backups skip machines' root disks (copies of the

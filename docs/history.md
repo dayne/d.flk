@@ -395,6 +395,19 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **flk's images survive a general prune, and `flk images prune`**
+  (R1, mud BUGS.flk.md #5, 2026-11-04). A `podman image prune -a` on mud
+  removed every image, flk's kept releases included, so each next deploy
+  rebuilt from scratch (Enshrouded: 10GB of Steam). Builds are now
+  labelled `flk.app=APP`, `flk.release=N`, so
+  `podman image prune -a --filter label!=flk.app` spares them (images
+  built before, and `[build] image` apps, aren't labelled). `flk images`
+  became `flk images list` (still the default, same JSON) plus
+  `flk images prune [--dry-run]`: the tags a deploy would prune (never
+  one newer than the app's last recorded release: a deploy may be
+  building it), destroyed apps' images, and dangling images; base images
+  and build caches stay. Tests: `05-cli` test_images_prune (a fake engine
+  logs what it would remove), `10-hello` (labels on a real build).
 - [x] **A failed build says why, and every build is logged** (R1,
   valheim.flk BUGS.flk.md #2, 2026-11-04). A failed deploy said only
   `podman build failed`; the cause (`ERROR: Steam served build ...`) was

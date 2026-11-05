@@ -155,7 +155,10 @@ module Flk
         args = cfg.build_args.flat_map { |k, v| ["--build-arg", "#{k}=#{v}"] }
         before = storage_containers
         begin
-          engine_run!(eng, "build", "--force-rm", "-t", tag, "-f", df, *args, cfg.dir, log: log)
+          # labels: `podman image prune -a --filter label!=flk.app` spares
+          # flk's images (../mud BUGS.flk.md #5)
+          engine_run!(eng, "build", "--force-rm", "--label", "flk.app=#{app.name}", "--label", "flk.release=#{version}",
+                      "-t", tag, "-f", df, *args, cfg.dir, log: log)
         rescue Exception # rubocop:disable Lint/RescueException -- Ctrl-C too
           leftovers_note(storage_containers - before)
           raise
@@ -206,9 +209,33 @@ module Flk
 
     # Keep the images (rootfs file and engine tag) of the last `keep`
     # releases that didn't fail, and of any release a machine is on.
-    def prune(app, keep: 2)
+    # The releases whose images stay: the last `keep` that didn't fail, and
+    # any a machine is on.
+    def keep_versions(app, keep)
       ok = app.meta["releases"].reject { _1["status"] == "failed" }.last(keep).map { _1["version"] }
-      keep_v = (ok + app.machines.map(&:release)).uniq
+      (ok + app.machines.map(&:release)).uniq
+    end
+
+    # Tags of app's images a deploy would prune now. Not ones newer than its
+    # last recorded release: a deploy may be building them right now.
+    def prunable_tags(app, keep)
+      keep_v = keep_versions(app, keep)
+      last = app.meta["releases"].last&.dig("version") || 0
+      tags(app.name).select { (v = _1[/\Av(\d+)\z/, 1]&.to_i) && v <= last && !keep_v.include?(v) }
+    end
+
+    # Untagged images nothing uses (no tag, no child image): what a plain
+    # `image prune` removes. Base images and build caches have tags or
+    # children, so they stay.
+    def dangling_ids
+      out, st = Open3.capture2e(engine, "images", "-q", "--filter", "dangling=true")
+      st.success? ? out.split.uniq : []
+    end
+
+    def prune_dangling! = Util.run!(engine, "image", "prune", "-f")
+
+    def prune(app, keep: 2)
+      keep_v = keep_versions(app, keep)
       Dir.glob(File.join(app.dir, "images", "v*.ext4")).each do |f|
         FileUtils.rm_f(f) unless keep_v.include?(File.basename(f)[/\d+/].to_i)
       end

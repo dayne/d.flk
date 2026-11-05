@@ -101,7 +101,7 @@ module Flk
       puts "Container images: flk images"
     end
 
-    def cmd_images(_args, o)
+    def images_list(_args, o)
       rows = Image.list.map do |i|
         name = i["repo"].delete_prefix("flk.local/")
         a = App::NAME_RE.match?(name) ? App.new(name) : nil
@@ -124,6 +124,31 @@ module Flk
                  end
         [r["repo"], r["tag"], r["size_bytes"] ? Backup.gb(r["size_bytes"]) : "?", r["created_at"] ? Util.ago(r["created_at"]) : "?", status]
       end)
+    end
+
+    # Frees the engine's store of what flk doesn't keep (../mud
+    # BUGS.flk.md #5: a general `podman image prune -a` took flk's kept
+    # images and every base image, so each next deploy rebuilt from scratch).
+    def images_prune(_args, o)
+      gone = App.all.flat_map do |a|
+        Image.prunable_tags(a, config_for(a.name)&.keep_releases || 2).map { "#{Image.repo(a.name)}:#{_1}" }
+      end
+      orphans = Image.orphan_repos
+      gone += orphans.flat_map { |n| Image.tags(n).map { "#{Image.repo(n)}:#{_1}" } }
+      dangling = Image.dangling_ids
+      if o[:dry_run]
+        puts gone.empty? ? "No flk image tags to remove" : "Would remove #{gone.size} image tag#{'s' unless gone.size == 1}:"
+        gone.each { puts "  #{_1}" }
+        puts "Would remove #{dangling.size} dangling image#{'s' unless dangling.size == 1} (no tag, nothing uses them)"
+        return
+      end
+      gone.each { system(Image.engine, "rmi", _1, out: File::NULL, err: File::NULL) }
+      puts "Removed #{gone.size} image tag#{'s' unless gone.size == 1}#{": #{gone.join(', ')}" if gone.any?}"
+      # untagging can leave images dangling: count again
+      dangling = Image.dangling_ids
+      Image.prune_dangling! if dangling.any?
+      puts "Removed #{dangling.size} dangling image#{'s' unless dangling.size == 1}"
+      next_step("flk images", "flk disk")
     end
   end
 end
