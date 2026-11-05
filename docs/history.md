@@ -136,6 +136,13 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **http health checks work** (d.flkforge BUGS.flk.md #1,
+  2026-11-04). Any `[checks.NAME] type = "http"` made `flk deploy` crash
+  after boot: inside `module Flk`, `Net::HTTP` resolved to `Flk::Net`
+  (model.rb's network constants), so the request raised NameError, and so
+  did the `rescue` list (`Net::OpenTimeout`...). Now `::Net`. No real app
+  used http checks. Test: `10-hello` turns the app into a busybox-nc web
+  server; status 200 deploys, 500 fails its check and rolls back.
 - [x] **A restart of flk-tmux.service brings the machines back** (R1,
   mud BUGS.flk.md #6, 2026-11-04). needrestart restarted the unit after an
   apt upgrade (2026-10-26); its ExecStop stop-all stopped every VM and

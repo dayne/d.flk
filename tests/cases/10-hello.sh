@@ -77,3 +77,37 @@ test_images_and_disk_see_the_release() {
   [[ $log == */builds/v*.log && -s $log ]] || fail "current release has no build log: $log"
   grep -q '^==> \|STEP\|rootfs:' "$log" || fail "build log has no build output: $(head -3 "$log")"
 }
+
+# flkforge BUGS.flk.md #1: any http check crashed deploy (NameError: Net
+# inside Flk is Flk::Net). The app becomes a tiny web server (busybox nc;
+# alpine has no httpd) answering with a status: 200 passes the check, 500
+# fails it and the machine goes back.
+test_http_checks_gate_the_deploy() {
+  wait_until 30 is_stopped
+  web_toml() {
+    cat >"$APP_DIR/flk.toml" <<TOML
+app = "$APP"
+[build]
+  dockerfile = "Dockerfile"
+[experimental]
+  cmd = ["sh", "-c", "while :; do { printf 'HTTP/1.0 $1 X\\r\\nContent-Length: 2\\r\\n\\r\\nok'; sleep 1; } | nc -l -p 8080 >/dev/null; done"]
+[[vm]]
+  cpus = 1
+  memory_mb = 128
+[checks.web]
+  type = "http"
+  port = 8080
+  path = "/"
+  grace_period = "$2"
+TOML
+  }
+  local out
+  web_toml 200 30s
+  out=$(flk deploy 2>&1) || fail "deploy with a passing http check failed: $out"
+  assert_contains "$out" "check web (http"
+  web_toml 500 5s
+  out=$(flk deploy 2>&1) && fail "a 500 passed the http check: $out"
+  assert_contains "$out" "failed its health checks"
+  [[ $out == *NameError* ]] && fail "crashed: $out"
+  true
+}

@@ -27,6 +27,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1 |
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
+| flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed on branch r1-reliability (history.md) |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 
 ## Reliability (PLAN.md R1)

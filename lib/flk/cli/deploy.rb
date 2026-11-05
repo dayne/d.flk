@@ -314,7 +314,7 @@ module Flk
       when "tcp"
         Socket.tcp(m.ip, c["port"], connect_timeout: 2) { true }
       when "http"
-        res = Net::HTTP.start(m.ip, c["port"], open_timeout: 2, read_timeout: 5) { _1.get(c["path"]) }
+        res = ::Net::HTTP.start(m.ip, c["port"], open_timeout: 2, read_timeout: 5) { _1.get(c["path"]) }
         res.code.to_i.between?(200, 399)
       when "log"
         log = m.path("console.log")
@@ -322,7 +322,7 @@ module Flk
         since = tail.rindex("--- flk: booting") || 0
         tail[since..].scrub.match?(Regexp.new(c["match"]))
       end
-    rescue SystemCallError, IOError, Net::OpenTimeout, Net::ReadTimeout, Net::HTTPBadResponse, EOFError
+    rescue SystemCallError, IOError, ::Net::OpenTimeout, ::Net::ReadTimeout, ::Net::HTTPBadResponse, EOFError
       false
     end
 
