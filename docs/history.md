@@ -136,6 +136,12 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **Log checks can end in `$`** (d.flkforge BUGS.flk.md #2,
+  2026-11-04). `check_passes?` matched the raw console tail, whose lines
+  end in "\r\r\n", so Ruby's `$` (before "\n") never matched after the
+  text and such a check timed out. It strips "\r" first, like the shared
+  reader behind `console --wait-log` and backup hooks' `wait` already
+  did. Test: `05-cli` test_log_check_regex_anchors.
 - [x] **A before_deploy verify failure no longer traps a broken app, or
   leaves a working one down** (R1, valheim.flk BUGS.flk.md #5,
   2026-11-04). valheim's v1 never started, so its volume held no world;

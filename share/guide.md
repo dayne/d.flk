@@ -130,7 +130,8 @@ also its own help page: {{TOPICS}}.
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
 - `[checks.NAME]`: health checks a deploy waits for: `type` = `"tcp"`
   (`port`), `"http"` (`port`, `path`; 2xx/3xx passes) or flk's `"log"`
-  (`match` = a regex for a console line since boot). Each must pass within
+  (`match` = a regex for a console line since boot; `^` and `$` match at
+  each line's start and end). Each must pass within
   `grace_period` (default 60s) or the machine goes back to its previous
   release and the deploy stops. Also read: `[[services.tcp_checks]]`,
   `[[services.http_checks]]` (on that service's port), `[[http_service.checks]]`.

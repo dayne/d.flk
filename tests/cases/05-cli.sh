@@ -547,3 +547,16 @@ test_image_user_from_the_rootfs() {
   assert_eq "=0:0:true ubuntu=1000:1000:false ubuntu:staff=1000:50:false 1234=1234:1234:false 1000=1000:1000:false ghost=nil:nil:false ubuntu:nogroup=nil:nil:false " \
     "$got" "image_user"
 }
+
+# d.flkforge BUGS #2: console lines end in \r\r\n, so a log check ending in
+# `$` never matched; only lines since the last boot count.
+test_log_check_regex_anchors() {
+  local d="$WORK/logcheck-$RUN_ID"; mkdir -p "$d"
+  printf 'fake: Server ready\r\r\n--- flk: booting v2\r\r\nfake: starting\r\r\nfake: Server ready\r\r\n' >"$d/console.log"
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e '
+    m = Struct.new(:dir) { def path(n) = File.join(dir, n) }.new(ARGV[0])
+    cli = Flk::CLI.allocate
+    puts ARGV[1..].map { cli.send(:check_passes?, m, { "type" => "log", "match" => _1 }) }.join(" ")' \
+    "$d" '^fake: Server ready$' 'Server ready$' '^fake: starting$' 'ready\z' '^nope$')
+  assert_eq "true true true false false" "$got" "anchored log checks"
+}

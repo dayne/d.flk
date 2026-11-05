@@ -344,7 +344,9 @@ module Flk
         log = m.path("console.log")
         tail = File.open(log, "rb") { |f| f.seek([f.size - 262_144, 0].max); f.read }.to_s
         since = tail.rindex("--- flk: booting") || 0
-        tail[since..].scrub.match?(Regexp.new(c["match"]))
+        # serial console lines end in "\r\r\n": without the \r, `$` works
+        # (d.flkforge BUGS.flk.md #2), as in console --wait-log
+        tail[since..].scrub.delete("\r").match?(Regexp.new(c["match"]))
       end
     rescue SystemCallError, IOError, ::Net::OpenTimeout, ::Net::ReadTimeout, ::Net::HTTPBadResponse, EOFError
       false
