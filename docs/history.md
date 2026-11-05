@@ -136,6 +136,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **before_deploy backups are copied to backup_copy_to** (R1,
+  enshrouded.flk BUGS.flk.md #2, 2026-11-04). Only `flk volumes backup`
+  copied its new backup; a deploy's own before_deploy backups stayed on
+  the backup disk. Now `deploy` and `releases rollback` copy the
+  release's before_deploy backups once the roll is over, succeeded or
+  not (copying during it would add to the downtime), outside the global
+  lock. A failed copy warns (`backup.copy_failed`, and the `flk volumes
+  copy --backup FILE` to retry): the deploy is done and the backup fine.
+  Test: `42-deploy-volumes` test_before_deploy_backups_are_copied.
 - [x] **No TCP wait on a udp internal_port, nor before a deploy's
   checks** (R1, valheim.flk BUGS.flk.md #6, 2026-11-04). `boot` always
   waited 30s for TCP on internal_port: valheim's udp/2456 never answers,

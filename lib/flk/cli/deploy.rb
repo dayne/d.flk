@@ -109,6 +109,7 @@ module Flk
           FileUtils.rm_f(File.join(a.dir, "images", "v#{version}.ext4"))
           Image.untag(a.name) { _1 == "v#{version}" }
         end
+        copy_deploy_backups(a, version, pre) if recorded
       end
       Image.prune(a, keep: cfg.keep_releases)
 
@@ -184,6 +185,28 @@ module Flk
                          extra: { "reason" => "before_deploy", "release" => m.release, "for_release" => rel["version"] })
         { "machine" => m.id, "volume" => v["name"], "volume_id" => v["id"], "file" => File.basename(dst), "path" => dst }
       end
+    end
+
+    # The release's before_deploy backups go to backup_copy_to too, like any
+    # backup, but only once the roll is over (succeeded or not): copying
+    # during it would add to the downtime (../enshrouded.flk BUGS.flk.md #2).
+    # A copy that fails only warns: the deploy is done, the backup is fine.
+    def copy_deploy_backups(a, version, pre)
+      return unless pre && (dest = Host.settings["backup_copy_to"])
+      taken = Array(a.release(version)&.dig("backups"))
+      return if taken.empty?
+      dest = Backup.copy_dest!(dest)
+      taken.each do |t|
+        v = a.volumes.find { _1["id"] == t["volume_id"] } or next
+        begin
+          copy_one(a, v, pre[:root], dest, t["file"], Backup.copy_keep(nil))
+        rescue Error => e
+          warn Util.yellow("  ⚠ #{e.message}; the backup itself is fine (again: flk volumes copy #{v['name']} --backup #{t['file']})")
+          Events.emit("backup.copy_failed", app: a.name, machine: t["machine"], detail: "#{v['name']}: #{e.message}")
+        end
+      end
+    rescue Error => e
+      warn Util.yellow("  ⚠ before_deploy backups not copied: #{e.message}")
     end
 
     # Puts each of m's volumes (machine stopped) back from a backup:

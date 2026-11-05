@@ -77,6 +77,7 @@ module Flk
       cfg = config_for(a.name)
       restore = o[:with_volumes] ? volumes_of_release!(a, target) : {}
       pre = pre_deploy_backup(a, cfg, force: o[:with_volumes])
+      version = nil
       Util.with_lock do
         machines = deploy_capacity!(a, mconfig)
         meta = a.meta
@@ -92,6 +93,8 @@ module Flk
         a.save_meta(meta)
         roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback], pre_backup: pre, restore: restore)
       end
+    ensure
+      copy_deploy_backups(a, version, pre) if version # after the lock: a copy can take a while
       Image.prune(a, keep: (config_for(a.name)&.keep_releases || 2))
       puts Util.green("\n✔ #{a.name} is on v#{a.current_release['version']} (the image and config of v#{target['version']})")
       next_step("flk status", "flk releases")

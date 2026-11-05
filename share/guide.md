@@ -179,7 +179,8 @@ also its own help page: {{TOPICS}}.
   release fails its health checks, the machine goes back with its volumes
   as they were; `flk releases rollback --with-volumes` uses these backups
   later. They're ordinary backups (`reason = "before_deploy"`), pruned by
-  `keep` like the rest. If one fails (its verify hook, say), the deploy
+  `keep` like the rest, and copied to `backup_copy_to` (host.toml) like
+  the rest, once the roll is over (not during the downtime). If one fails (its verify hook, say), the deploy
   stops and the machine starts again on its old release; `flk deploy
   --no-backup` skips them. A machine whose release never passed its
   health checks only gets a warning from a failed verify: there's nothing

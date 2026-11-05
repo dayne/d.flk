@@ -22,7 +22,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1: fixed on branch r1-reliability (history.md) |
 | valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1: fixed on branch r1-reliability (history.md) |
-| enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1 |
+| enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed on branch r1-reliability (history.md) |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1 |
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1 |
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
@@ -39,11 +39,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **before_deploy backups are copied too (enshrouded #2).** With
-  `backup_copy_to` set, copy the pre-deploy backup after the machine is
-  back up, at the end of the deploy, so it doesn't add downtime. It
-  appears in `flk volumes backups` like any other copy. Document it in
-  the Config section.
 - [ ] **Recreate a missing rootfs on start (mud #4).** If a machine's
   `rootfs.ext4` is missing and its release image exists, install it
   again (the root disk is per release anyway) and say so. Helps restores

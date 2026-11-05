@@ -111,3 +111,20 @@ test_hook_sees_why_it_runs() {
   flk volumes verify >/dev/null 2>&1 || fail "verify failed"
   assert_eq verify "$(tail -n 1 "$APP_DIR/reasons.log")" "flk volumes verify"
 }
+
+# enshrouded BUGS #2: with backup_copy_to set, a deploy's before_deploy
+# backups are copied there too, once the roll is over.
+test_before_deploy_backups_are_copied() {
+  local cp="$WORK/copies-42-$RUN_ID"; mkdir -p "$cp"
+  printf 'backup_copy_to = "%s"\n' "$cp" >>"$FLK_HOST_CONFIG"
+  local out file
+  out=$(flk deploy 2>&1) || fail "deploy failed: $out"
+  file=$(flk volumes backups --json | ruby -rjson -e '
+    puts JSON.parse($stdin.read).select { _1["reason"] == "before_deploy" }.max_by { _1["created_at"] }["file"]')
+  assert_contains "$out" "==> copy world/$file to $cp"
+  [[ -f $cp/$APP/world/$file ]] || fail "no copy of $file in $cp: $(ls -R "$cp")"
+  [[ $(grep -n "copy world/" <<<"$out" | cut -d: -f1) -gt $(grep -n "updated to v" <<<"$out" | cut -d: -f1) ]] ||
+    fail "copied before the machine was back up: $out"
+  wait_mc 60
+  rm -rf "$cp"
+}
