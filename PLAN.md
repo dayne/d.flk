@@ -42,6 +42,33 @@ What's missing:
 
 ## Next
 
+Order (decided 2026-11-04): R1, then M6, then M5 once Tailscale is
+settled.
+
+### R1: Reliability (the apps' reports)
+
+The real apps filed verified flk bugs in their own `BUGS.flk.md`; the
+index and the decided behaviour for each are in TODO.md ("Reported by
+apps", "Reliability"). In order of harm:
+- mud #6: a restart of flk-tmux.service (needrestart) leaves every VM
+  down. Resume after a restart, never at boot.
+- enshrouded #1: rootfs builds in a RAM tmpfs. Work next to the output,
+  stream the export, check free space.
+- valheim #2: a failed build hides why. Error lines up front, a build log
+  per release (plus the last 3 failures), the path in the event.
+- valheim #4, #5, #6: volume owner from the image USER (+ `volumes
+  chown`); before_deploy verify can't trap a broken app
+  (`FLK_BACKUP_REASON`, `deploy --no-backup`, a warning when the release
+  never got healthy); no TCP wait on UDP-only apps.
+- enshrouded #2, mud #4, mud #5: copy before_deploy backups after the
+  roll; recreate a missing rootfs on start; label flk's images, plus
+  `flk images prune`.
+- Docs: help topics `images`, `host`, `bugs`.
+
+Each fix comes with its report's test and updates the report's status.
+New commands and JSON (`volumes chown`, `images prune`, `build_log`, the
+event's `log`) go to lazyflk as a note.
+
 ### M5: More than one host (design first)
 
 These items build on M1's copies and M3's events:
@@ -61,12 +88,13 @@ past P0.
 
 flkforge (`~/d.flkforge`) writes new apps from snippets. What it needs
 from flk is in TODO.md ("For flkforge"). Nothing here waits on M5, so it
-can come first. In order:
+comes after R1. In order:
 - `flk build`: build and inspect an image without deploying. It's the
   base for the rest and useful on its own to anyone writing a Dockerfile.
 - Image warnings at build/deploy (no user switch, no CMD, a mount over
   image files, volume ownership).
-- `type = "exec"` health checks, through the agent.
+- Checks as one design: `exec` (through the agent), `udp`/`a2s`
+  (valheim #1), and a `[deploy] preflight` host hook (valheim #3).
 - `[[mounts]] seed = true`: fill a new volume from the image.
 - flk.toml keys in `help --all --json`; the exact guest env list.
 

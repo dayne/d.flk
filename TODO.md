@@ -5,6 +5,124 @@ today, and where a fix could go. The order of work is in `PLAN.md`; what's
 done (and the decisions behind it) is in `docs/history.md`; host and
 game-server work is in `~/mud`.
 
+## Reported by apps (index)
+
+Apps file flk bugs in their own `BUGS.flk.md` (full text, cause and test
+there). This index keeps them in view. At the start of a flk session, read
+every `~/*/BUGS.flk.md` "Open" section and update this list. When one is
+fixed, set its `Status: fixed in <commit>: ...` line in the app's file (the
+workflow in its header), and the app's owner confirms. Last checked
+2026-11-04.
+
+| Report | Title | Where it's planned |
+|---|---|---|
+| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1 |
+| enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1 |
+| valheim #2 | A failed build hides its own error and keeps no log | R1 |
+| valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1 |
+| valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1 |
+| valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1 |
+| enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1 |
+| mud #4 | Recreate a missing rootfs.ext4 from the release image | R1 |
+| mud #5 | Protect flk's podman images from `podman image prune -a` | R1 |
+| valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
+| valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
+| minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
+
+## Reliability (PLAN.md R1)
+
+Decided with Dayne on 2026-11-04. Each fix lands with the test its report
+describes (tests/cases, `flkt-*` apps only), then the report's status line
+is updated. Every change must be a no-op for apps that don't use it, or
+plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
+hook and cron backups.
+
+- [ ] **A restart of flk-tmux.service brings the VMs back (mud #6).**
+  Today the unit's ExecStop runs `flk stop-all`, which is right at
+  shutdown. After a restart (needrestart after `apt upgrade`) nothing
+  resumes. Wanted: a restart is a short blip, and the VMs come back on
+  their own. Sketch: ExecStop leaves a marker in the state dir when the
+  system isn't shutting down (`systemctl is-system-running` isn't
+  `stopping`), and `ExecStartPost` runs `flk resume` only if that marker
+  exists, then removes it. At boot there's no marker, so
+  flk-machines.service stays the only thing starting machines. Unit
+  text: `setup-host.sh` around line 178. Test: restart the unit with a
+  `flkt-` machine running; it's running again afterwards, and a boot
+  doesn't double-start.
+- [ ] **Rootfs builds work next to their output (enshrouded #1).**
+  `libexec/flk-build-rootfs` makes its work dir in `${TMPDIR:-/tmp}` and
+  writes the image there twice. Change it to: a work dir in the app's
+  `images/` directory in flk's state dir (the same disk as the result);
+  stream `podman export | tar -x` (no tar file, half the space); check
+  free space (at least the image size plus margin, from
+  `podman image inspect`) before starting, and name the dir and the need
+  in the error. `flk doctor` warns when `/tmp` is a tmpfs smaller than the
+  biggest app image (for other tools). No new setting. Test: a build with
+  `TMPDIR` on a small tmpfs writes nothing there.
+- [ ] **A failed build says why, and every build is logged (valheim #2).**
+  `Image.engine_run!` (`lib/flk/image.rb`) throws away podman's output.
+  On failure, print the build's own error lines (`ERROR`/`Error`/
+  `error:`/`FATAL` from the failing step, as a "The build said:" block)
+  and the failing step shortened (`failed at STEP 3/3 (RUN ...): exit
+  status 1`). Save every build's output to `apps/APP/builds/vN.log`, and
+  keep the logs of the releases still kept (`keep_releases`) plus the last
+  3 failed builds. The error, `deploy.failed`'s detail (the first error
+  line, cut to about 200 characters) and a new `"log"` field in the event
+  name the file. `flk releases --json` gets `build_log` per release.
+  Test: the report's 50-lines-of-noise Dockerfile.
+- [ ] **A new volume takes the image user's owner (valheim #4).**
+  `own_new_volumes` (`lib/flk/cli/machines.rb`) chowns only when the
+  mount point exists in the image and isn't root's. When it's missing
+  (or root's) and the image's USER isn't root, use that user's uid:gid
+  (from the rootfs `/etc/passwd`, or a numeric USER) and say so
+  (`volume vhdata: owned by 1000:1000, the image's USER ubuntu`). Keep
+  `owner_from_image` until a chown has really happened, so a fixed image
+  still applies on the next deploy. New: `flk volumes chown NAME
+  UID[:GID]` (machine stopped) to repair a volume that's already wrong.
+  The command is additive; tell lazyflk.
+- [ ] **A before_deploy verify failure no longer traps a broken app
+  (valheim #5).** Three parts, all wanted:
+  `FLK_BACKUP_REASON` (`before_deploy`, `backup`, `verify`) in the verify
+  hook's env; `flk deploy --no-backup` (skip this deploy's
+  before_deploy backup), named in the error's `Next:` lines; and when the
+  machine's current release never passed its checks (no
+  `deploy.succeeded` for it), a failed verify warns instead of stopping.
+- [ ] **No TCP wait on UDP-only apps (valheim #6).** `boot`
+  (`lib/flk/cli/machines.rb`) always waits 30s for TCP on
+  `internal_port`. Skip the wait when that service is `udp` or when the
+  app has `[checks]` (deploy runs them next). For udp with no checks, say
+  once that flk can't tell when it's ready and suggest a log check.
+- [ ] **before_deploy backups are copied too (enshrouded #2).** With
+  `backup_copy_to` set, copy the pre-deploy backup after the machine is
+  back up, at the end of the deploy, so it doesn't add downtime. It
+  appears in `flk volumes backups` like any other copy. Document it in
+  the Config section.
+- [ ] **Recreate a missing rootfs on start (mud #4).** If a machine's
+  `rootfs.ext4` is missing and its release image exists, install it
+  again (the root disk is per release anyway) and say so. Helps restores
+  after a disk loss (`~/mud/docs/backup-and-restore.md` step 8).
+- [ ] **flk's images survive a general prune, and flk can prune itself
+  (mud #5).** Build with `--label flk.app=APP --label flk.release=N`
+  (`[build] image` apps: a one-line build on top of the pulled image, or
+  document that they aren't covered). Help and doctor name the safe
+  filter (`podman image prune -a --filter label!=flk.app`). New
+  `flk images prune [--dry-run]`: remove only what flk doesn't keep (old
+  `vN` tags past `keep_releases`, images of destroyed apps, dangling
+  layers, build cache). Fold `flk apps prune`'s image part into it, or
+  have one call the other. Tell lazyflk.
+- [ ] **Docs: three new help topics.** Add them to `Commands::TOPICS`:
+  - `images` (or `dockerfiles`): writing a Dockerfile for flk. The guest is
+    a VM, not a container: init, `/bin/sh` versus the static init, USER
+    and setpriv, mount points and ownership, stop signals and
+    `kill_timeout`, run wrappers, pinning builds, full image names. It's
+    also the source for flkforge's hints.
+  - `host`: maintaining a flk host while apps run: apt upgrades and
+    needrestart, reboots, podman pruning, `/tmp` and disk space, what's
+    safe and what stops VMs.
+  - `bugs`: the BUGS.flk.md format and workflow, written once, so app
+    repos and flkforge use the same header (today each repo has its own
+    copy).
+
 ## Setup and host checks
 
 - [ ] **Firewall and distro paths are untested on real hosts.** Only Ubuntu
@@ -79,13 +197,26 @@ same review.
   - USER non-root and the volume's root owned by root with no mount point
     owned by that user in the image (valheim.flk BUGS #4): suggest
     `flk volumes create ... --owner UID:GID`.
-- [ ] **Check type `exec`.** `[checks.NAME] type = "exec"`,
-  `command = ["sh", "-c", "..."]`, `user`: run a command in the guest
-  through the agent, and pass on exit 0. Deploy checks today see only
-  ports and log lines. This would let a release prove the volume is
-  mounted, the tool runs, or the app's own health command passes, and
-  roll back otherwise. Needs the agent (no Go, no exec check: say so in
-  config show). flkforge snippets would carry these as their smoke tests.
+- [ ] **Checks, designed as one piece.** Three new kinds share config,
+  events, `Next:` lines and rollback, so design them together (decided
+  2026-11-04):
+  - `type = "exec"`: `command = ["sh", "-c", "..."]`, `user`: run a
+    command in the guest through the agent, and pass on exit 0. Deploy
+    checks today see only ports and log lines. This lets a release prove
+    the volume is mounted, the tool runs, or the app's own health command
+    passes, and roll back otherwise. Needs the agent (no Go, no exec
+    check: say so in config show). flkforge snippets would carry these as
+    their smoke tests.
+  - `type = "udp"` (`port`, optional `send`/`expect`) and the shorthand
+    `type = "a2s"` (Steam's A2S_INFO, handling the challenge reply) for
+    UDP-only game servers (valheim #1: first check that Valheim answers
+    A2S when `-public 0`).
+  - `[deploy] preflight = "CMD"`: a host command run in the flk.toml's
+    directory before the build (env `FLK_APP`, `FLK_RELEASE` = the next
+    version). A non-zero exit stops the deploy with `deploy failed;
+    machines unchanged` and the command's last line, before any build;
+    `flk deploy --no-preflight` skips it (valheim #3: a stale Steam pin
+    shouldn't cost a 2GB download).
 - [ ] **Seed a new volume from the image.** `[[mounts]] seed = true`
   (flk only): when the volume is empty on first mount, copy what the image
   has at `destination` into it first, as Docker does with a named volume.
