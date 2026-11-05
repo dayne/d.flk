@@ -136,6 +136,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **Three help topics** (R1, 2026-11-05): `flk help dockerfile`
+  (writing a Dockerfile for flk: what a deploy does with it, the guest is
+  a VM, the exact env inside, USER and setpriv, volume owners, stopping,
+  pinning, readiness), `flk help host` (the three services and what
+  restarting each does, upgrades and needrestart, what stops machines,
+  disk space and `images prune`, host backups), `flk help bugs` (the
+  BUGS.flk.md format, written once). The first was going to be `images`,
+  but `flk help images` must stay the command's help. The guide's env
+  line lists every variable (M6's "guest env contract").
 - [x] **before_deploy backups are copied to backup_copy_to** (R1,
   enshrouded.flk BUGS.flk.md #2, 2026-11-04). Only `flk volumes backup`
   copied its new backup; a deploy's own before_deploy backups stayed on

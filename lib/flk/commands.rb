@@ -34,7 +34,10 @@ module Flk
       "first-app" => "Launch, configure, deploy and check an app",
       "operate" => "Day to day: changes, logs, consoles, reboots, disk, updates",
       "troubleshoot" => "Symptom -> cause -> command",
-      "uninstall" => "Removing apps, host setup and files"
+      "uninstall" => "Removing apps, host setup and files",
+      "dockerfile" => "Writing a Dockerfile for flk: the guest is a VM, not a container",
+      "host" => "Looking after the host while apps run: services, upgrades, disk space",
+      "bugs" => "Reporting flk bugs from an app: the BUGS.flk.md format"
     }.freeze
 
     LIST = [

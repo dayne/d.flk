@@ -63,7 +63,7 @@ apps", "Reliability"). In order of harm:
 - enshrouded #2, mud #4, mud #5: copy before_deploy backups after the
   roll; recreate a missing rootfs on start; label flk's images, plus
   `flk images prune`.
-- Docs: help topics `images`, `host`, `bugs`.
+- Docs: help topics `dockerfile`, `host`, `bugs`.
 
 Each fix comes with its report's test and updates the report's status.
 Work happens on branch `r1-reliability` (worktree `~/flk-r1`); Dayne
@@ -101,7 +101,7 @@ comes after R1. In order:
 - Checks as one design: `exec` (through the agent), `udp`/`a2s`
   (valheim #1), and a `[deploy] preflight` host hook (valheim #3).
 - `[[mounts]] seed = true`: fill a new volume from the image.
-- flk.toml keys in `help --all --json`; the exact guest env list.
+- flk.toml keys in `help --all --json` (the exact guest env list is done: R1 docs).
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.

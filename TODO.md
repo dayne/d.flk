@@ -39,18 +39,8 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **Docs: three new help topics.** Add them to `Commands::TOPICS`:
-  - `images` (or `dockerfiles`): writing a Dockerfile for flk. The guest is
-    a VM, not a container: init, `/bin/sh` versus the static init, USER
-    and setpriv, mount points and ownership, stop signals and
-    `kill_timeout`, run wrappers, pinning builds, full image names. It's
-    also the source for flkforge's hints.
-  - `host`: maintaining a flk host while apps run: apt upgrades and
-    needrestart, reboots, podman pruning, `/tmp` and disk space, what's
-    safe and what stops VMs.
-  - `bugs`: the BUGS.flk.md format and workflow, written once, so app
-    repos and flkforge use the same header (today each repo has its own
-    copy).
+All of R1 is done on branch `r1-reliability` (docs/history.md); what's
+left is merging it (PLAN.md R1 says what to do then).
 
 ## Setup and host checks
 
@@ -160,10 +150,6 @@ same review.
   from the same source as the Config section of `share/guide.md`. That
   would also let `tests/cases/00-config.sh` check that the guide and the
   parser agree.
-- [ ] **The guest env contract, exactly.** `share/guide.md` says "the
-  `FLK_*` equivalents": list each variable the app sees, with an example,
-  so snippets can rely on them (another agent couldn't tell and read `ip`
-  instead).
 - [ ] **Ideas, not yet asked for:** `flk config show --file PATH` (check a
   file outside cwd); a `flk ssh config APP` that prints an
   `~/.ssh/config` entry for editors' remote modes (when the image runs

@@ -51,8 +51,10 @@ shows the live state with suggested next steps.
 Inside every machine, like a container: `/dev/fd`, `/dev/stdin`,
 `/dev/stdout`, `/dev/stderr`, `/dev/pts`, `/dev/shm`; the app's stdin is
 the serial console. Env: `FLY_APP_NAME`, `FLY_MACHINE_ID`, `FLY_PRIVATE_IP`,
-`FLY_REGION=local`, the `FLK_*` equivalents, `FLK_RELEASE`, plus `[env]`
-and secrets.
+`FLY_REGION=local`; `FLK_APP_NAME`, `FLK_MACHINE_ID`, `FLK_IP`,
+`FLK_HOSTNAME` (the machine's name), `FLK_RELEASE` (`vN`), `FLK_PREFIX`,
+`FLK_GATEWAY`, `FLK_DNS`, `FLK_STDIN`; plus `[env]` and secrets. Writing
+a Dockerfile for it: `flk help dockerfile`.
 
 ## Rules for agents and scripts
 
