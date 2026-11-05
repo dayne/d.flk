@@ -20,7 +20,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #2 | A failed build hides its own error and keeps no log | R1: fixed on branch r1-reliability (history.md) |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed on branch r1-reliability (history.md) |
-| valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1 |
+| valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1: fixed on branch r1-reliability (history.md) |
 | valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1 |
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1 |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1 |
@@ -38,13 +38,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **A before_deploy verify failure no longer traps a broken app
-  (valheim #5).** Three parts, all wanted:
-  `FLK_BACKUP_REASON` (`before_deploy`, `backup`, `verify`) in the verify
-  hook's env; `flk deploy --no-backup` (skip this deploy's
-  before_deploy backup), named in the error's `Next:` lines; and when the
-  machine's current release never passed its checks (no
-  `deploy.succeeded` for it), a failed verify warns instead of stopping.
 - [ ] **No TCP wait on UDP-only apps (valheim #6).** `boot`
   (`lib/flk/cli/machines.rb`) always waits 30s for TCP on
   `internal_port`. Skip the wait when that service is `udp` or when the

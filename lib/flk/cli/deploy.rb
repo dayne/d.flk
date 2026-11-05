@@ -78,7 +78,8 @@ module Flk
       mconfig = cfg.machine_config
 
       deploy_capacity!(a, mconfig) # before the slow build
-      pre = pre_deploy_backup(a, cfg)
+      pre = o[:no_backup] ? nil : pre_deploy_backup(a, cfg)
+      puts Util.yellow("Skipping the before_deploy backups (--no-backup)") if o[:no_backup] && cfg.backup["before_deploy"]
       version = (a.meta["releases"].last&.dig("version") || 0) + 1
       puts "==> Release v#{version} of #{a.name}"
       recorded = rolling = false
@@ -172,9 +173,14 @@ module Flk
 
     # Backs up the volumes attached to m (stopped) for a roll to rel;
     # returns [{ machine, volume, volume_id, file, path }].
+    # A machine whose release failed its health checks never had anything
+    # good on its volumes, so a verify hook failing there only warns
+    # (../valheim.flk BUGS.flk.md #5: the deploy that would fix a first
+    # start couldn't get past it).
     def backup_before_deploy(m, rel, pre)
+      soft = m.app.release(m.release)&.dig("status") == "failed"
       m.app.volumes.select { _1["attached_machine"] == m.id }.map do |v|
-        dst = backup_one(m.app, v, pre[:root], pre[:plan], pre[:keep], pre[:hook_dir], check: true, fast: true,
+        dst = backup_one(m.app, v, pre[:root], pre[:plan], pre[:keep], pre[:hook_dir], check: true, fast: true, soft_verify: soft,
                          extra: { "reason" => "before_deploy", "release" => m.release, "for_release" => rel["version"] })
         { "machine" => m.id, "volume" => v["name"], "volume_id" => v["id"], "file" => File.basename(dst), "path" => dst }
       end
@@ -229,9 +235,14 @@ module Flk
       machines.each do |m|
         before = { "release" => m.release, "config" => m.h["config"] }
         taken = []
+        was_running = m.running?
         update_machine(m, rel, mconfig) do
           if pre_backup
-            taken = backup_before_deploy(m, rel, pre_backup)
+            begin
+              taken = backup_before_deploy(m, rel, pre_backup)
+            rescue Error => e
+              backup_stopped_the_roll!(a, rel, m, was_running, e, done)
+            end
             record_release_backups(a, rel, taken)
           end
           restore_volumes(m, restore[m.id] || {})
@@ -251,6 +262,19 @@ module Flk
         steps << "flk releases rollback" if done.any?
         raise Error.new(msg, next_steps: steps)
       end
+    end
+
+    # A before_deploy backup failed with m stopped and still on its old
+    # release: start it again (if it was running), and stop the roll. It
+    # used to stay down.
+    def backup_stopped_the_roll!(a, rel, m, was_running, cause, done)
+      fail_release!(a, rel, "the before_deploy backup of #{m.id} failed")
+      boot(m, "Machine #{m.id} [#{m.name}] started again on v#{m.release} (deploy stopped)") if was_running
+      msg = "the before_deploy backup of #{m.id} [#{m.name}] failed, so it stays on v#{m.release}" \
+            "#{was_running ? ' (running again)' : ''}: #{cause.message}"
+      msg += "; #{done.map(&:id).join(', ')} already moved to v#{rel['version']} (back: flk releases rollback)" if done.any?
+      raise Error.new(msg, next_steps: ["flk deploy --no-backup (deploy without the backup)",
+                                        "fix [flk.backup] verify, then flk deploy"])
     end
 
     def fail_release!(a, rel, why)

@@ -46,7 +46,8 @@ module Flk
 
     # Returns the backup's path. fast: the machine is stopped for us (a
     # deploy), so copy at normal I/O priority.
-    def backup_one(a, v, root, plan, keep, hook_dir, check:, fast: false, extra: {})
+    # soft_verify: a failing verify hook warns instead of raising.
+    def backup_one(a, v, root, plan, keep, hook_dir, check:, fast: false, soft_verify: false, extra: {})
       src = v["path"]
       raise Error, "#{src} is missing (is its disk mounted?)" unless File.exist?(src)
       dir = Backup.dir_for(root, a.name, v)
@@ -79,9 +80,15 @@ module Flk
            "#{" (#{what} #{window.round(1)}s)" if what}, fsck: #{state}#{' (journal replayed)' if replayed}"
       if plan["verify"] && check && state != "errors"
         res = Backup.verify(Backup.list(root, a.name, v).find { _1["path"] == dst }, hook: plan["verify"], hook_dir: hook_dir,
-                            env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"] })
+                            env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"],
+                                   "FLK_BACKUP_REASON" => extra["reason"] || "backup" })
         puts "  #{res['verify'] == 'clean' ? Util.green('✔') : Util.red('✘')} verify hook: #{res['verify']}"
-        raise Error, "the verify hook failed for #{File.basename(dst)}: #{res['verify_detail']}" unless res["verify"] == "clean"
+        if res["verify"] != "clean" && soft_verify
+          puts Util.yellow("  ⚠ the verify hook failed (#{res['verify_detail']}), but this machine's release never passed " \
+                           "its health checks: nothing good to protect, going on")
+        elsif res["verify"] != "clean"
+          raise Error, "the verify hook failed for #{File.basename(dst)}: #{res['verify_detail']}"
+        end
       end
       log = dst.sub(/\.ext4\z/, ".fsck.log")
       if state == "errors"
@@ -227,7 +234,7 @@ module Flk
         bs.map do |b|
           print "==> #{v['name']}/#{b['file']} " unless o[:json]
           $stdout.flush
-          r = Backup.verify(b, hook: hook, hook_dir: cfg&.dir || Dir.pwd, env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"] })
+          r = Backup.verify(b, hook: hook, hook_dir: cfg&.dir || Dir.pwd, env: { "FLK_APP" => a.name, "FLK_VOLUME" => v["name"], "FLK_BACKUP_REASON" => "verify" })
           puts "#{r['verify'] == 'clean' ? Util.green('✔') : Util.red('✘')} #{r['verify']}: #{r['verify_detail']}" unless o[:json]
           r.merge("volume" => v["name"], "file" => b["file"], "path" => b["path"])
         end

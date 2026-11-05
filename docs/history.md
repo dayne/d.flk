@@ -136,6 +136,20 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **A before_deploy verify failure no longer traps a broken app, or
+  leaves a working one down** (R1, valheim.flk BUGS.flk.md #5,
+  2026-11-04). valheim's v1 never started, so its volume held no world;
+  the deploy meant to fix it stopped at the verify hook ("no
+  /worlds_local/flktest in the backup") with no way past. Now: the hook
+  gets `FLK_BACKUP_REASON` (`backup`, `before_deploy`, `verify`);
+  `flk deploy --no-backup` skips the before_deploy backups and the error
+  names it; and when the machine's release has status failed (never
+  passed its checks), a failed verify warns and the deploy goes on.
+  Found on the way: a failed before_deploy backup (any cause) left the
+  machine *stopped* on its old release with nothing to start it, and the
+  new release looked fine. Now it starts again (if it was running), the
+  release is marked failed, and the roll stops. Tests: `42-deploy-volumes`
+  (four new).
 - [x] **A new volume takes the image's USER when the image has no mount
   point for it** (R1, valheim.flk BUGS.flk.md #4, 2026-11-04). A volume
   from `volumes create` (no --owner) took the owner of the mount point in

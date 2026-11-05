@@ -80,5 +80,5 @@ kill_timeout = "30s"        # 30, "30s" or "2m": stop request to kill (default 1
   post = [{ console = "save-on" }]   # run even if the backup failed
   settle = 5                # seconds between pre and the copy (the default)
   keep = 7                  # backups per volume
-  verify = "debugfs -R 'stat /level.dat' \"$FLK_BACKUP\""   # after e2fsck; exit 0 = good
+  verify = "debugfs -R 'stat /level.dat' \"$FLK_BACKUP\""   # after e2fsck; exit 0 = good ($FLK_BACKUP_REASON: backup, before_deploy, verify)
   before_deploy = false     # true: back up volumes during each deploy's stop

@@ -63,3 +63,51 @@ test_rollback_with_volumes_needs_backups() {
   out=$(flk releases rollback v2 --with-volumes 2>&1) && fail "rolled back volumes with no backups"
   assert_contains "$out" "no before-deploy backup from v2"
 }
+
+# valheim BUGS #5: a before_deploy verify failure. The machine used to stay
+# stopped; the hook couldn't tell why it ran; nothing let the deploy past.
+# hook.sh logs its reason and passes only while ./pass exists.
+release_of_machine() { flk machine list --json | json_get 0.release; }
+newest_release() { flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).map { _1["version"] }.max'; }
+
+test_failed_backup_starts_the_machine_again() {
+  wait_mc 60
+  printf 'echo "$FLK_BACKUP_REASON" >>reasons.log\ntest -f pass\n' >"$APP_DIR/hook.sh"
+  sed -i 's/^  before_deploy = true/  before_deploy = true\n  verify = "sh hook.sh"/' "$APP_DIR/flk.toml"
+  local was out; was=$(release_of_machine)
+  out=$(flk deploy 2>&1) && fail "deployed past a failing verify hook"
+  assert_contains "$out" "the before_deploy backup of"
+  assert_contains "$out" "flk deploy --no-backup"
+  assert_eq "$was" "$(release_of_machine)" "machine stays on its release"
+  assert_eq started "$(flk machine list --json | json_get 0.state)" "and runs again"
+  assert_eq failed "$(release_json "$(newest_release)" | json_get status)" "the new release is marked failed"
+  assert_eq before_deploy "$(tail -n 1 "$APP_DIR/reasons.log")" "FLK_BACKUP_REASON"
+  wait_mc 60
+}
+
+test_no_backup_deploys_without_it() {
+  local n out; n=$(before_deploy_backups | wc -w)
+  out=$(flk deploy --no-backup 2>&1) || fail "deploy --no-backup failed: $out"
+  assert_contains "$out" "Skipping the before_deploy backups (--no-backup)"
+  assert_eq "$n" "$(before_deploy_backups | wc -w)" "no new before_deploy backup"
+  wait_mc 60
+}
+
+test_never_healthy_release_only_warns() {
+  sed -i '/^\[flk.backup\]/i [checks.never]\n  type = "tcp"\n  port = 9\n  grace_period = "4s"\n' "$APP_DIR/flk.toml"
+  flk deploy --no-backup --no-rollback >/dev/null 2>&1 && fail "passed a check nothing answers"
+  local bad; bad=$(release_of_machine)
+  assert_eq failed "$(release_json "$bad" | json_get status)" "machine left on a failed release"
+  sed -i '/^\[checks.never\]/,/^$/d' "$APP_DIR/flk.toml"
+  local out; out=$(flk deploy 2>&1) || fail "the fixing deploy was blocked: $out"
+  assert_contains "$out" "never passed its health checks: nothing good to protect"
+  wait_mc 60
+}
+
+test_hook_sees_why_it_runs() {
+  touch "$APP_DIR/pass"
+  flk volumes backup >/dev/null 2>&1 || fail "backup failed"
+  assert_eq backup "$(tail -n 1 "$APP_DIR/reasons.log")" "flk volumes backup"
+  flk volumes verify >/dev/null 2>&1 || fail "verify failed"
+  assert_eq verify "$(tail -n 1 "$APP_DIR/reasons.log")" "flk volumes verify"
+}

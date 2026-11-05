@@ -169,7 +169,8 @@ also its own help page: {{TOPICS}}.
   `keep`: backups per volume. `verify`: a host command that checks a
   backup after e2fsck (by `flk volumes backup` and `flk volumes verify`),
   run in the flk.toml's directory with `FLK_BACKUP` (the image file),
-  `FLK_APP` and `FLK_VOLUME`; exit 0 means good. It can read files without
+  `FLK_APP`, `FLK_VOLUME` and `FLK_BACKUP_REASON` (`backup`,
+  `before_deploy` or `verify`); exit 0 means good. It can read files without
   mounting: `debugfs -R 'stat /world/level.dat' "$FLK_BACKUP"`.
   `before_deploy = true`: deploys and rollbacks back up each machine's
   volumes while it's stopped for the update (a full copy unless the backup
@@ -177,7 +178,11 @@ also its own help page: {{TOPICS}}.
   release fails its health checks, the machine goes back with its volumes
   as they were; `flk releases rollback --with-volumes` uses these backups
   later. They're ordinary backups (`reason = "before_deploy"`), pruned by
-  `keep` like the rest. Example (Minecraft, over its console):
+  `keep` like the rest. If one fails (its verify hook, say), the deploy
+  stops and the machine starts again on its old release; `flk deploy
+  --no-backup` skips them. A machine whose release never passed its
+  health checks only gets a warning from a failed verify: there's nothing
+  good on its volumes to protect. Example (Minecraft, over its console):
   `mode = "live"`, `pre = [{ console = "save-off" }, { console = "save-all flush", wait = "Saved the game" }]`,
   `post = [{ console = "save-on" }]`.
 
