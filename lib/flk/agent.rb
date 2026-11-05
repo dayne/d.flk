@@ -74,14 +74,23 @@ module Flk
       # a machine that just booted: its agent may not be listening yet
       fresh = (Time.now - Time.parse(m.h["started_at"].to_s) rescue 999) < 20
       deadline = Time.now + (fresh ? 15 : 0)
+      refused = false
       loop do
-        io = UNIXSocket.new(s)
-        io.write("CONNECT #{PORT}\n")
-        line = io.wait_readable(5) && io.gets
-        return io if line&.start_with?("OK")
-        io.close
+        begin
+          io = UNIXSocket.new(s)
+          io.write("CONNECT #{PORT}\n")
+          line = io.wait_readable(5) && io.gets
+          return io if line&.start_with?("OK")
+          io.close
+        rescue Errno::ECONNREFUSED, Errno::ENOENT, Errno::ECONNRESET, Errno::EPIPE
+          refused = true # firecracker is still (re)starting: its socket isn't listening yet
+        end
         break if Time.now >= deadline
         sleep 0.5
+      end
+      if refused
+        raise Error, "machine #{m.id} isn't taking exec connections yet (it may be booting or stopping); " \
+                     "try again in a few seconds: flk machine status #{m.id}"
       end
       raise Error, "the agent in machine #{m.id} isn't answering: its release was built without one " \
                    "(redeploy with flk deploy; building it needs Go, see flk doctor)"

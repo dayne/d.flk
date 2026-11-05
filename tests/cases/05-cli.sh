@@ -531,3 +531,19 @@ test_tmux_panes_stay_in_the_server_unit() {
   systemctl --user reset-failed "$unit" 2>/dev/null || true
   assert_eq "$unit.service" "$got" "the pane's unit"
 }
+
+# valheim BUGS #4: who a release's app runs as, read from its rootfs the
+# way /flk/init does (names from the image's /etc/passwd and /etc/group).
+test_image_user_from_the_rootfs() {
+  local d="$WORK/imguser-$RUN_ID"; mkdir -p "$d/root/flk" "$d/root/etc"
+  printf 'root:x:0:0::/root:/bin/sh\nubuntu:x:1000:1000::/home/ubuntu:/bin/sh\n' >"$d/root/etc/passwd"
+  printf 'root:x:0:\nstaff:x:50:\nubuntu:x:1000:\n' >"$d/root/etc/group"
+  local u got
+  for u in "" ubuntu ubuntu:staff 1234 1000 ghost ubuntu:nogroup; do
+    printf '%s' "$u" >"$d/root/flk/user"
+    rm -f "$d/img"; truncate -s 8M "$d/img"; mkfs.ext4 -q -F -d "$d/root" "$d/img" 2>/dev/null || PATH=$PATH:/sbin mkfs.ext4 -q -F -d "$d/root" "$d/img"
+    got+="$u=$(ruby -I"$FLK_SRC/lib" -rflk -e 'u = Flk::CLI.allocate.send(:image_user, ARGV[0]); print "#{u[:uid].inspect}:#{u[:gid].inspect}:#{u[:root]}"' "$d/img") "
+  done
+  assert_eq "=0:0:true ubuntu=1000:1000:false ubuntu:staff=1000:50:false 1234=1234:1234:false 1000=1000:1000:false ghost=nil:nil:false ubuntu:nogroup=nil:nil:false " \
+    "$got" "image_user"
+}

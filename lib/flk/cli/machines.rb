@@ -220,8 +220,12 @@ module Flk
     # A volume from `volumes create` without --owner or --from-dir is an
     # empty ext4 owned by root. The first time a machine uses it, its root
     # takes the owner of the mount point in the release image, so a
-    # Dockerfile's `chown app /data` still holds with the volume over /data.
-    # Once per volume (the flag goes), and only for volumes created so.
+    # Dockerfile's `chown app /data` still holds with the volume over /data;
+    # with no such mount point (or a root-owned one) and a non-root USER,
+    # that user's (../valheim.flk BUGS.flk.md #4: vh-run, as ubuntu, couldn't
+    # write /data). The flag stays while nothing was decided and the volume
+    # is still empty, so a fixed image applies at the next deploy; a volume
+    # with data in it is never re-owned.
     def own_new_volumes(m, rel)
       vols = m.app.volumes
       todo = Array(m.config["mounts"]).filter_map do |mt|
@@ -229,16 +233,52 @@ module Flk
         [v, mt["destination"]] if v&.dig("owner_from_image")
       end
       return if todo.empty?
+      user = nil
       todo.each do |v, dest|
-        e = VolFS.stat(rel["path"], dest)
-        if e&.dir? && [e.uid, e.gid] != [0, 0]
-          VolFS.batch!(v["path"], VolFS.owner_cmds("/", e.uid, e.gid))
-          VolFS.fsck!(v["path"])
-          puts "  volume #{v['name']}: root now owned by #{e.uid}:#{e.gid}, like #{dest} in the image"
+        unless (VolFS.list(v["path"], "/").map(&:name) - ["lost+found"]).empty?
+          v.delete("owner_from_image")
+          next
         end
-        v.delete("owner_from_image")
+        e = VolFS.stat(rel["path"], dest)
+        user ||= image_user(rel["path"])
+        uid, gid, why =
+          if e&.dir? && [e.uid, e.gid] != [0, 0] then [e.uid, e.gid, "like #{dest} in the image"]
+          elsif user[:uid]&.positive?
+            [user[:uid], user[:gid], "the image's USER #{user[:name]}; #{dest} #{e ? "is root's" : "isn't"} in the image"]
+          end
+        if uid
+          VolFS.batch!(v["path"], VolFS.owner_cmds("/", uid, gid))
+          VolFS.fsck!(v["path"])
+          puts "  volume #{v['name']}: root now owned by #{uid}:#{gid} (#{why})"
+          v.delete("owner_from_image")
+        elsif !user[:root]
+          warn Util.yellow("  ⚠ volume #{v['name']} stays owned by root, but the app runs as #{user[:name]}, which isn't " \
+                           "in the image's /etc/passwd: add `RUN install -d -o USER -g GROUP #{dest}` to the Dockerfile, " \
+                           "or with the machine stopped: flk files chown UID:GID #{v['name']}:/")
+        end
       end
       m.app.save_volumes(vols)
+    end
+
+    # Who the release's app runs as (its image's USER, as /flk/init reads
+    # it): { name:, uid:, gid:, root: }; uid nil when a name can't be found
+    # in the image's /etc/passwd. Like init: no group means the passwd
+    # entry's, or for a numeric user without one, the same number.
+    def image_user(img)
+      u = (VolFS.read(img, "/flk/user").strip rescue "")
+      return { name: "root", uid: 0, gid: 0, root: true } if ["", "root", "0", "0:0"].include?(u)
+      usr, grp = u.split(":", 2)
+      table = lambda do |file|
+        (VolFS.read(img, file) rescue "").lines.map { _1.chomp.split(":") }
+      end
+      pw = table.call("/etc/passwd").find { usr.match?(/\A\d+\z/) ? _1[2] == usr : _1[0] == usr }
+      uid = usr.match?(/\A\d+\z/) ? usr.to_i : pw&.[](2)&.to_i
+      gid = if grp.nil? then pw ? pw[3].to_i : uid
+            elsif grp.match?(/\A\d+\z/) then grp.to_i
+            else table.call("/etc/group").find { _1[0] == grp }&.[](2)&.to_i
+            end
+      uid = nil if gid.nil?
+      { name: u, uid: uid, gid: gid, root: uid&.zero? || false }
     end
 
     # A volume attaches to exactly one machine. Prefer the one this machine

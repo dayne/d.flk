@@ -294,7 +294,8 @@ module Flk
             summary: "Create a volume for [[mounts]] source = NAME",
             notes: ["Without --owner or --from-dir, the root takes the owner of the mount point in the image " \
                     "the first time a machine uses the volume, so a Dockerfile's `chown app /data` still works " \
-                    "with the volume mounted over /data."] },
+                    "with the volume mounted over /data. With no such mount point (or a root-owned one), " \
+                    "it takes the image's USER instead. A volume that already holds data is never re-owned."] },
           { name: "import", args: "NAME", opts: [["--path FILE", "An existing ext4 image file (required)"]],
             summary: "Register an existing ext4 image as a volume; flk never deletes it",
             notes: ["Size comes from the file. Don't mount it on the host while a machine uses it."] },

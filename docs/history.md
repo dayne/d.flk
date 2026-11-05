@@ -136,6 +136,26 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **A new volume takes the image's USER when the image has no mount
+  point for it** (R1, valheim.flk BUGS.flk.md #4, 2026-11-04). A volume
+  from `volumes create` (no --owner) took the owner of the mount point in
+  the image, if there was one and it wasn't root's; otherwise it stayed
+  root's and the flag went anyway, so valheim's vh-run (USER ubuntu)
+  couldn't write /data and fixing the Dockerfile didn't help. Now
+  `own_new_volumes` falls back to the image's USER (read from the
+  rootfs's /flk/user, names through its /etc/passwd and /etc/group, a
+  numeric user without an entry as uid:uid, like init) and says which; a
+  USER it can't resolve gets a warning naming `flk files chown`. The flag
+  stays while nothing was decided and the volume is still empty (a fixed
+  image applies next deploy), and a volume with data is never re-owned.
+  No `volumes chown` command: `flk files chown UID:GID VOL:/` does it.
+  Found on the way: Alpine 3.20's busybox `setpriv` has no `--reuid`, and
+  init used it, so any Alpine image with a USER died at boot; init now
+  checks for `--reuid` (falls back to root with the warning, see TODO
+  Machines). And `flk exec` right after a boot crashed with a Ruby
+  backtrace (ECONNREFUSED while firecracker's socket wasn't listening):
+  it now retries in the fresh-boot window, then says to try again.
+  Tests: `43-volume-owner` (new), `05-cli` image_user.
 - [x] **http health checks work** (d.flkforge BUGS.flk.md #1,
   2026-11-04). Any `[checks.NAME] type = "http"` made `flk deploy` crash
   after boot: inside `module Flk`, `Net::HTTP` resolved to `Flk::Net`

@@ -19,7 +19,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect after `--install-service` on mud |
 | enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #2 | A failed build hides its own error and keeps no log | R1: fixed on branch r1-reliability (history.md) |
-| valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1 |
+| valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed on branch r1-reliability (history.md) |
 | valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1 |
 | valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1 |
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1 |
@@ -38,16 +38,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **A new volume takes the image user's owner (valheim #4).**
-  `own_new_volumes` (`lib/flk/cli/machines.rb`) chowns only when the
-  mount point exists in the image and isn't root's. When it's missing
-  (or root's) and the image's USER isn't root, use that user's uid:gid
-  (from the rootfs `/etc/passwd`, or a numeric USER) and say so
-  (`volume vhdata: owned by 1000:1000, the image's USER ubuntu`). Keep
-  `owner_from_image` until a chown has really happened, so a fixed image
-  still applies on the next deploy. A volume that's already wrong:
-  `flk files chown UID:GID VOL:/` exists (machine stopped). Name it in
-  the warning; no new command.
 - [ ] **A before_deploy verify failure no longer traps a broken app
   (valheim #5).** Three parts, all wanted:
   `FLK_BACKUP_REASON` (`before_deploy`, `backup`, `verify`) in the verify
@@ -244,13 +234,16 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
 
 ## Machines
 
-- [ ] **A non-root USER silently runs as root on busybox images.**
+- [ ] **A non-root USER runs as root on busybox images.**
   `share/init.sh` (`start_app`) switches to the image's USER with
-  `setpriv`, else `chroot --userspec`, else it logs
+  util-linux `setpriv`, else `chroot --userspec`, else it logs
   `WARNING: can't switch to user ...; running as root` and runs the app as
   root. Alpine and other busybox images have neither, so a Dockerfile
   with `USER app` runs as root there, and the only sign is one line in
-  the boot log. (Found 2026-11-04 in the flkforge design review.)
+  the boot log. (Found 2026-11-04 in the flkforge design review.) Worse
+  until the R1 valheim #4 work: Alpine 3.20's busybox *has* a `setpriv`
+  applet, without `--reuid`; init called it and the app died at boot.
+  init now checks for `--reuid` first (so: root, with the warning).
   - *Fix:* the agent already switches users when it's PID 1
     (`agent/init.go`, `lookupUser`). Give it a mode init.sh can exec,
     e.g. `/flk/agent run-as USER -- /flk/cmd` (resolves names from the
@@ -264,8 +257,9 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
     and mqtt-flk (Alpine) sets no USER. Confirm with
     `flk -a APP exec sh -c 'cat /flk/user; command -v setpriv'` before
     merging.
-  - *Test:* a `tests/apps/` Alpine image with `USER nobody` whose CMD
-    prints `id -u`; it must print 65534, not 0.
+  - *Test:* `43-volume-owner` boots an Alpine image with `USER app` and
+    expects the fallback warning today; with the fix, its CMD should
+    print `id -u` = 1100, not 0.
 
 - [ ] **flk's tmux server keeps its groups.** The server now stays up when idle
   (for the exit hook). If it lacks `kvm` and no machines run, flk restarts it

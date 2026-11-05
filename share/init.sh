@@ -79,7 +79,9 @@ start_app() {
   case "$u" in ""|root|0|0:0) exec /flk/cmd ;; esac
   usr=${u%%:*}; grp=""
   [ "$usr" != "$u" ] && grp=${u#*:}
-  if command -v setpriv >/dev/null 2>&1; then
+  # util-linux's setpriv; busybox's (Alpine 3.20+) has no --reuid, and
+  # calling it anyway killed the app at boot.
+  if command -v setpriv >/dev/null 2>&1 && setpriv --help 2>&1 | grep -q -- --reuid; then
     [ -n "$grp" ] || grp=$(id -g "$usr" 2>/dev/null || echo "$usr")
     exec setpriv --reuid="$usr" --regid="$grp" --clear-groups /flk/cmd
   elif chroot --help 2>&1 | grep -q userspec; then

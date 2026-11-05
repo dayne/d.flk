@@ -56,7 +56,8 @@ problems show up there with the fix. Then find the symptom below.
 - The app can't write to its volume (`Permission denied` under the mount
   point): the volume's root is owned by root. A volume made with
   `flk volumes create` takes the owner of the mount point in the image on
-  its first use; for an older one, or another owner:
+  its first use, or else the image's USER (the deploy says which); for an
+  older one, one that had data already, or another owner:
   `flk machine stop ID`, `flk files chown UID:GID VOL:/`, start again
   (or create volumes with `--owner UID:GID`).
 - `nothing listening on IP:PORT after 30s`: the app is up but not on
