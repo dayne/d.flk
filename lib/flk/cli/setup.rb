@@ -441,6 +441,9 @@ module Flk
       elsif !File.exist?("/etc/systemd/system/#{VM::SERVER_UNIT}")
         record["boot service predates #{VM::SERVER_UNIT}: machines started from a shell can be killed, " \
                "not stopped, at shutdown", "warn", fix]
+      elsif !File.read("/etc/systemd/system/#{VM::SERVER_UNIT}").include?("ExecStartPost=")
+        record["#{VM::SERVER_UNIT} predates resuming after a restart: if it's restarted (needrestart after " \
+               "an apt upgrade), every machine stays stopped until flk resume", "warn", fix]
       elsif (gaps = mount_dirs.filter_map { mount_gap(_1) }).any?
         gaps.each { |problem, how| record[problem, "warn", how] }
       else

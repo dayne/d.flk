@@ -16,7 +16,7 @@ workflow in its header), and the app's owner confirms. Last checked
 
 | Report | Title | Where it's planned |
 |---|---|---|
-| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1 |
+| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed (history.md); in effect after `--install-service` on mud |
 | enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1 |
 | valheim #2 | A failed build hides its own error and keeps no log | R1 |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1 |
@@ -37,18 +37,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **A restart of flk-tmux.service brings the VMs back (mud #6).**
-  Today the unit's ExecStop runs `flk stop-all`, which is right at
-  shutdown. After a restart (needrestart after `apt upgrade`) nothing
-  resumes. Wanted: a restart is a short blip, and the VMs come back on
-  their own. Sketch: ExecStop leaves a marker in the state dir when the
-  system isn't shutting down (`systemctl is-system-running` isn't
-  `stopping`), and `ExecStartPost` runs `flk resume` only if that marker
-  exists, then removes it. At boot there's no marker, so
-  flk-machines.service stays the only thing starting machines. Unit
-  text: `setup-host.sh` around line 178. Test: restart the unit with a
-  `flkt-` machine running; it's running again afterwards, and a boot
-  doesn't double-start.
 - [ ] **Rootfs builds work next to their output (enshrouded #1).**
   `libexec/flk-build-rootfs` makes its work dir in `${TMPDIR:-/tmp}` and
   writes the image there twice. Change it to: a work dir in the app's

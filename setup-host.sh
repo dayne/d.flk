@@ -161,6 +161,8 @@ EOF
   # stop anything). flk starts it through the port helper when it isn't
   # running (VM.ensure_server). Stopped on its own, it stops the machines
   # gracefully first; at shutdown flk-machines has done that already.
+  # Restarted (needrestart after an apt upgrade: ../mud BUGS.flk.md #6), it
+  # starts them again.
   cat > /etc/systemd/system/flk-tmux.service <<UNIT
 [Unit]
 Description=flk's tmux server: every flk machine runs in it
@@ -184,6 +186,13 @@ ExecStart=$tmux_bin -L flk start-server \; set-option -g exit-empty off
 # substituting it when unset.)
 ExecStop=/bin/sh -c 'test -n "\$\${MAINPID}" || exit 0; exec $ruby_bin $src/bin/flk stop-all'
 TimeoutStopSec=330
+# After a restart, ExecStop's stop-all has stopped every machine (marked to
+# start again): resume them. flk-machines.service is active only once it has
+# resumed them itself, so at boot and at install time (it's still to come)
+# this does nothing. '-': a machine that fails to resume mustn't fail this
+# unit, which would run ExecStop and stop the rest.
+ExecStartPost=-/bin/sh -c 'systemctl is-active --quiet flk-machines.service || exit 0; exec env FLK_BRIDGE=$bridge FLK_SUBNET=$subnet FLK_TAPS=$taps $ruby_bin $src/bin/flk resume'
+TimeoutStartSec=20min
 
 [Install]
 WantedBy=multi-user.target

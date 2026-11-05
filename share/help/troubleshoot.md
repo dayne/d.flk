@@ -98,6 +98,12 @@ problems show up there with the fix. Then find the symptom below.
   how to move them; "predates flk-tmux.service":
   `sudo {{SRC}}/setup-host.sh --install-service`.
 
+**After an apt upgrade every machine is stopped**
+- needrestart restarted `flk-tmux.service`, which stops the machines
+  gracefully first. Units installed before it learned to resume after a
+  restart leave them stopped. Now: `flk resume`. For next time:
+  `sudo {{SRC}}/setup-host.sh --install-service` (doctor warns until then).
+
 **Where things are**
 - Machine files: `{{ROOT}}/apps/APP/machines/ID/` (console.log,
   firecracker.log, machine.json, vm.json).

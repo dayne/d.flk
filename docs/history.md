@@ -136,6 +136,18 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **A restart of flk-tmux.service brings the machines back** (R1,
+  mud BUGS.flk.md #6, 2026-11-04). needrestart restarted the unit after an
+  apt upgrade (2026-10-26); its ExecStop stop-all stopped every VM and
+  nothing started them again. The unit now has a guarded `ExecStartPost`
+  that runs `flk resume` only while `flk-machines.service` is active: on
+  a restart, never at boot or install (flk-machines resumes them itself
+  then, and it's `RemainAfterExit`, so "active" means it already has).
+  '-' keeps a failed resume from failing the unit (which would stop
+  everything again). `flk doctor` warns about units from before this
+  change. Test: `05-cli` renders the units and runs the command with a
+  fake systemctl as both boot and restart. Takes effect on a host after
+  `sudo setup-host.sh --install-service`.
 - [x] **Forwarded ports on 127.0.0.1** (decided 2026-10-14: won't do; use
   the LAN IP or `flk proxy`) (from the bug report, optional part):
   loopback is skipped on purpose; making it work needs `route_localnet`

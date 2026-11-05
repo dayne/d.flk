@@ -421,7 +421,7 @@ test_install_service_units_verify() {
   command -v systemd-analyze >/dev/null || skip_test "no systemd-analyze"
   local d; d=$(mktemp -d)
   awk '/^install_service\(\) \{/,/^}/' "$FLK_SRC/setup-host.sh" |
-    sed -e "s|/etc/systemd/system|$d|g" -e '/systemctl /d' >"$d/fn.sh"
+    sed -e "s|/etc/systemd/system|$d|g" -e '/^  systemctl /d' >"$d/fn.sh"
   (user=$USER bridge=flkbr0 subnet=172.30.0 taps=16 min_port=1024 src=$FLK_SRC self=$FLK_SRC/setup-host.sh
    sudo() { shift 3; "$@"; } # sudo -u USER -H CMD...
    source "$d/fn.sh"; install_service >/dev/null) || fail "install_service failed"
@@ -441,6 +441,25 @@ test_install_service_units_verify() {
   grep -q -- '--install-service) .*exit' "$FLK_SRC/setup-host.sh" && fail "--install-service exits before the setup"
   grep -qF 'test -n "$${MAINPID}" || exit 0' "$d/flk-tmux.service" ||
     fail "flk-tmux ExecStop isn't guarded: installing it next to a running server would stop every machine"
+  # A restart (needrestart) resumes the machines ExecStop stopped, but never
+  # at boot or install, when flk-machines.service isn't active yet (it
+  # resumes them itself). Run the rendered command with a fake systemctl
+  # and ruby standing in for flk.
+  local post; post=$(sed -n 's/^ExecStartPost=//p' "$d/flk-tmux.service")
+  [[ $post == -/bin/sh* ]] || fail "flk-tmux ExecStartPost must start with '-' (a failed resume mustn't stop the unit): $post"
+  grep -q '^TimeoutStartSec=20min' "$d/flk-tmux.service" || fail "flk-tmux needs flk-machines' start timeout for its resume"
+  mkdir "$d/bin"
+  printf '#!/bin/sh\n[ "$*" = "is-active --quiet flk-machines.service" ] && exit "$ACTIVE"; exit 2\n' >"$d/bin/systemctl"
+  printf '#!/bin/sh\necho "$FLK_BRIDGE $*" >>"%s/ran"\n' "$d" >"$d/bin/ruby"
+  chmod +x "$d/bin/systemctl" "$d/bin/ruby"
+  post=${post#-}
+  local rb=${post% "$FLK_SRC"/bin/flk resume*}
+  rb=${rb##* }
+  post=${post//"$rb "/"$d/bin/ruby "}
+  ACTIVE=3 PATH="$d/bin:$PATH" eval "$post" || fail "ExecStartPost failed at boot"
+  [[ ! -e $d/ran ]] || fail "ExecStartPost ran flk at boot (flk-machines not active yet): $(cat "$d/ran")"
+  ACTIVE=0 PATH="$d/bin:$PATH" eval "$post" || fail "ExecStartPost failed after a restart"
+  assert_eq "flkbr0 $FLK_SRC/bin/flk resume" "$(cat "$d/ran" 2>/dev/null)" "ExecStartPost after a restart"
   rm -rf "$d"
 }
 
