@@ -100,6 +100,11 @@ comes after R1. In order:
 - `[[mounts]] seed = true`: fill a new volume from the image.
 - flk.toml keys in `help --all --json` (the exact guest env list is done: R1 docs).
 
+flkforge's own order (2026-11-05): `flk build`, then `seed = true` (its
+core/home-volume seeds with a script today), then `exec` checks, then
+the keys in `--json` (`flkforge explain KEY` parses the help text today).
+Dayne decides between the two orders when M6 starts.
+
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.
 
