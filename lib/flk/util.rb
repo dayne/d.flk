@@ -110,10 +110,11 @@ module Flk
 
     # Like sh!, streaming output as it comes, but also returns it, so the
     # caller can explain known failures: [output, Process::Status].
-    def sh_capture(*cmd)
+    # tee: an IO that gets each line as well (a build log).
+    def sh_capture(*cmd, tee: nil)
       out = +""
       Open3.popen2e(*cmd) do |_in, io, wait|
-        io.each_line { |l| $stdout.print l; $stdout.flush; out << l }
+        io.each_line { |l| $stdout.print l; $stdout.flush; tee&.write(l); out << l }
         [out, wait.value]
       end
     end

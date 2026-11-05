@@ -77,7 +77,11 @@ and secrets.
   that fixes them, or followed by a `Next:` line. The exit code is 1. A
   deploy that fails before touching any machine ends with
   `Error: build failed; machines unchanged (still on vN)` (or `deploy
-  failed; ...`): nothing needs stopping or rolling back.
+  failed; ...`): nothing needs stopping or rolling back. Just above it, a
+  failed build shows what the build said (its error lines), the step
+  that failed, and `Build log: FILE`: every build's whole output is kept
+  in `APP/builds/` (each kept release's as `vN.log`, `build_log` in
+  `flk releases --json`; the last 3 failed builds as `vN-failed-TIME.log`).
 - **Where the config is.** `launch` uses the current directory. After an
   app's first `launch` or `deploy` there, flk remembers its config file
   (`config_path` in `status --json`), so `flk -a APP deploy` and
@@ -186,7 +190,8 @@ a key flk doesn't know at all gets a warning. Every key, annotated:
 
 `flk events` reads a history kept in the state dir (`events.jsonl`), written
 by every flk command and the tmux exit hook. `--json` prints one object
-per line: `{ "at", "app", "machine", "type", "release"?, "detail"? }`.
+per line: `{ "at", "app", "machine", "type", "release"?, "detail"?, "log"? }`
+(`log`: a file with the whole story, such as a failed build's output).
 `type` is one of a fixed set (new ones may be added; existing ones keep
 their meaning). `detail` is free text on one line: a cause that had
 several lines (rsync's, podman's) has them joined with " · ".
@@ -196,7 +201,9 @@ several lines (rsync's, podman's) has them joined with " · ".
 A deploy that fails before it touches a machine (the build, or a check
 before the roll) is a `deploy.failed` whose `release` is the unchanged
 current one and whose `detail` starts with `build failed; machines
-unchanged` (or `deploy failed; ...`). A health-check failure during the
+unchanged` (or `deploy failed; ...`); after a failed build, `detail` ends
+with the build's own first error line and `log` names its saved output.
+A health-check failure during the
 roll is a `deploy.failed` for the new release, its `detail` starting with
 `vN failed its health checks`.
 

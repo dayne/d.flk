@@ -41,8 +41,10 @@ problems show up there with the fix. Then find the symptom below.
   (with `FLK_TAPS=32` for more machines).
 - `build failed; machines unchanged (still on vN)`: the build (or a check
   before the roll) failed, and no machine was stopped or changed: they
-  still run vN. Fix the cause shown above it and deploy again. The same
-  Dockerfile should fail under `podman build`.
+  still run vN. Fix the cause shown above it ("The build said:") and deploy
+  again. The build's whole output is in the `Build log:` file it names
+  (also in the `deploy.failed` event's `log`), so there's no need to
+  build again to read it.
 - `not enough space to build the rootfs in DIR`: turning the image into
   the release's disk needs about twice the image's size, free next to
   flk's images (`flk disk` shows where they are and what they take). Free

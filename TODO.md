@@ -18,7 +18,7 @@ workflow in its header), and the app's owner confirms. Last checked
 |---|---|---|
 | mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect after `--install-service` on mud |
 | enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed on branch r1-reliability (history.md) |
-| valheim #2 | A failed build hides its own error and keeps no log | R1 |
+| valheim #2 | A failed build hides its own error and keeps no log | R1: fixed on branch r1-reliability (history.md) |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1 |
 | valheim #5 | A before_deploy verify failure blocks the deploy that fixes a first start | R1 |
 | valheim #6 | Boot waits 30s for TCP on a UDP-only internal_port | R1 |
@@ -37,17 +37,6 @@ is updated. Every change must be a no-op for apps that don't use it, or
 plainly safer for them: main's `bin/flk` runs the real apps' boot, exit
 hook and cron backups.
 
-- [ ] **A failed build says why, and every build is logged (valheim #2).**
-  `Image.engine_run!` (`lib/flk/image.rb`) throws away podman's output.
-  On failure, print the build's own error lines (`ERROR`/`Error`/
-  `error:`/`FATAL` from the failing step, as a "The build said:" block)
-  and the failing step shortened (`failed at STEP 3/3 (RUN ...): exit
-  status 1`). Save every build's output to `apps/APP/builds/vN.log`, and
-  keep the logs of the releases still kept (`keep_releases`) plus the last
-  3 failed builds. The error, `deploy.failed`'s detail (the first error
-  line, cut to about 200 characters) and a new `"log"` field in the event
-  name the file. `flk releases --json` gets `build_log` per release.
-  Test: the report's 50-lines-of-noise Dockerfile.
 - [ ] **A new volume takes the image user's owner (valheim #4).**
   `own_new_volumes` (`lib/flk/cli/machines.rb`) chowns only when the
   mount point exists in the image and isn't root's. When it's missing

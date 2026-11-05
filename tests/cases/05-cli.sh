@@ -361,11 +361,60 @@ test_failed_build_says_machines_unchanged() {
   out=$(flk deploy 2>&1) && fail "a broken Dockerfile deployed"
   assert_contains "$(tail -n 2 <<<"$out" | head -n 1)" "Error: build failed; machines unchanged (no machines yet)" "error is the last thing said"
   assert_contains "$(tail -n 1 <<<"$out")" "Next: flk deploy (after fixing the build)" "then the next step"
-  assert_contains "$out" "command failed:" "the cause is still shown"
+  assert_contains "$out" 'failed at STEP 2/2 (RUN false): exit status 1' "the failing step, short"
+  assert_contains "$out" "Build log: " "where the whole output is"
   local ev; ev=$(flk events --json | grep -F '"deploy.failed"' | tail -n 1)
   assert_contains "$(json_get detail <<<"$ev")" "build failed; machines unchanged (no machines yet): " "deploy.failed event"
-  [[ $(json_get detail <<<"$ev") == *": "*" build failed" ]] || fail "detail isn't short: $ev"
+  assert_eq 1 "$(json_get detail <<<"$ev" | wc -l)" "detail is one line"
   assert_eq "[]" "$(flk releases --json | tr -d ' \n')" "no release from the failed build"
+}
+
+# valheim BUGS #2: the cause of a failed build was 40 lines up and then
+# gone. The build's own error line is shown just above flk's, it's in the
+# event, and the whole output is kept.
+test_failed_build_shows_its_error_and_keeps_a_log() {
+  command -v podman >/dev/null && [[ ${FLK_ENGINE:-podman} == podman ]] || skip_test "podman only"
+  podman image exists docker.io/library/alpine:3.20 || skip_test "needs docker.io/library/alpine:3.20 pulled"
+  stage_app hello buildlog
+  trap destroy_app EXIT
+  printf 'FROM docker.io/library/alpine:3.20\nRUN for i in $(seq 50); do echo noise $i; done; echo "ERROR: pin is stale" >&2; exit 1\n' \
+    >"$APP_DIR/Dockerfile"
+  flk launch --no-deploy >/dev/null
+  local out
+  out=$(flk deploy 2>&1) && fail "a failing build deployed"
+  assert_contains "$(tail -n 8 <<<"$out")" "ERROR: pin is stale" "the build's error, near the end"
+  assert_contains "$(tail -n 8 <<<"$out")" "The build said:" "labelled"
+  local ev log; ev=$(flk events --json | grep -F '"deploy.failed"' | tail -n 1)
+  assert_contains "$(json_get detail <<<"$ev")" "ERROR: pin is stale" "the cause in the event"
+  log=$(json_get log <<<"$ev")
+  [[ $log == */builds/v1-failed-*.log && -f $log ]] || fail "event's log isn't a kept failed-build log: $log"
+  assert_eq 50 "$(grep -c '^noise' "$log")" "the whole output in the log"
+  assert_contains "$out" "Build log: $log" "the error names the same file"
+}
+
+test_explain_failure_reads_the_failing_step() {
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e '
+    out = ["[1/2] STEP 1/2: FROM steamcmd AS steam", "error: an earlier warning", "[1/2] STEP 2/2: RUN for try in 1 2 3; do steamcmd +app_update 896660 validate; done && check-the-pin",
+           "Update state (0x61) downloading", "ERROR: Steam served build 25909431 but flk.toml pins 25730807", "",
+           "Error: building at STEP \"RUN for try in 1 2 3; do steamcmd +app_update 896660 validate; done && check-the-pin\": while running runtime: exit status 1"].join("\n")
+    said, step = Flk::Image.explain_failure(out, "fallback")
+    puts said, step')
+  assert_eq "ERROR: Steam served build 25909431 but flk.toml pins 25730807
+failed at STEP 2/2 (RUN for try in 1 2 3; do steamcmd +app_update 896660 validat…): exit status 1" "$got" "explain_failure"
+  got=$(ruby -I"$FLK_SRC/lib" -rflk -e 'said, step = Flk::Image.explain_failure("line 1\nflk: not enough space to build the rootfs in /x\n", "converting failed"); puts said, step')
+  assert_eq "flk: not enough space to build the rootfs in /x
+converting failed" "$got" "a step without podman's markers"
+}
+
+test_failed_build_logs_are_capped() {
+  local d="$WORK/buildlogs-$RUN_ID"; mkdir -p "$d/builds"
+  for t in 20261101T000000000Z 20261102T000000000Z 20261103T000000000Z 20261104T000000000Z 20261105T000000000Z; do
+    touch "$d/builds/v4-failed-$t.log"
+  done
+  touch "$d/builds/v3.log"
+  ruby -I"$FLK_SRC/lib" -rflk -e 'Flk::Image.prune_failed_logs(Struct.new(:dir).new(ARGV[0]))' "$d"
+  assert_eq "v3.log v4-failed-20261103T000000000Z.log v4-failed-20261104T000000000Z.log v4-failed-20261105T000000000Z.log" \
+    "$(cd "$d/builds" && echo *)" "the 3 newest failed logs (and release logs) kept"
 }
 
 test_build_hint_for_taken_ids() {

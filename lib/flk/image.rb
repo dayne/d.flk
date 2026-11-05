@@ -25,9 +25,50 @@ module Flk
       false
     end
 
-    # Runs a build/pull, turning podman's short-name failure into the fix.
-    def engine_run!(*cmd)
-      out, st = Util.sh_capture(*cmd)
+    # A build step that failed: what the build itself said (its error lines,
+    # not the podman command line), and where the whole output is.
+    # (../valheim.flk BUGS.flk.md #2: the cause was 40 lines up, then gone.)
+    class BuildFailed < Error
+      attr_reader :said, :step
+      attr_accessor :log
+
+      def initialize(said, step, hint = "")
+        @said = said
+        @step = step
+        @hint = hint
+        super(nil)
+      end
+
+      # For the deploy.failed event: one line, the build's own words.
+      def first_line = (said.first || step).to_s.strip[0, 200]
+
+      def message
+        parts = []
+        parts << "The build said:\n#{said.map { "  #{_1}" }.join("\n")}" if said.any?
+        parts << step
+        parts << "Build log: #{log}" if log
+        parts.join("\n") + @hint
+      end
+      alias to_s message
+    end
+
+    FAILED_LOGS_KEPT = 3
+
+    def log_dir(app) = File.join(app.dir, "builds")
+
+    # The build log of release vN (nil when there's none: a rollback, or a
+    # release from before flk kept them).
+    def build_log(app, version)
+      f = File.join(log_dir(app), "v#{version}.log")
+      File.exist?(f) ? f : nil
+    end
+
+    # Runs a build/pull/conversion step, into the log too. Turns podman's
+    # short-name failure into the fix, and any other failure into what the
+    # build said.
+    # what: the step, when the output doesn't name it ("podman build failed").
+    def engine_run!(*cmd, log: nil, what: nil)
+      out, st = Util.sh_capture(*cmd, tee: log)
       return if st.success?
       if (name = out[/short-name "([^"]+)" did not resolve/, 1])
         full = name.include?("/") ? "docker.io/#{name}" : "docker.io/library/#{name}"
@@ -35,7 +76,34 @@ module Flk
                      "Fix it once for your user (no root):\n  #{REGISTRIES_FIX}\n" \
                      "or use the full name, e.g. FROM #{full}"
       end
-      raise Error, "command failed: #{cmd.shelljoin}#{build_hint(out)}"
+      said, step = explain_failure(out, what || "#{File.basename(cmd[0])} #{cmd[1]} failed")
+      raise BuildFailed.new(said, step, build_hint(out))
+    end
+
+    ERROR_LINE = /\A\s*(?:#\d+ )?(?:ERROR|Error|error|FATAL|Fatal|fatal)\b[:!]?|\Aflk: /
+    STEP_LINE = /\A(?:\[\d+\/\d+\] )?STEP (\d+\/\d+): /
+
+    # The lines worth showing from a failed step's output, and one line
+    # naming the step: [said, step]. podman marks steps "[1/2] STEP 3/4: RUN
+    # ..." and ends with `Error: building at STEP "RUN ...": ...: exit
+    # status 1`; error lines are taken from the failing step only (earlier
+    # steps' warnings aren't the cause), else its last lines.
+    def explain_failure(out, fallback)
+      lines = out.lines.map { _1.chomp.sub(/\s+\z/, "") }
+      at = lines.rindex { _1.match?(STEP_LINE) }
+      fin = lines.rindex { _1.start_with?("Error: building at STEP") }
+      body = lines[(at ? at + 1 : 0)...(fin || lines.size)].reject(&:empty?)
+      said = body.grep(ERROR_LINE)
+      said = body.last(10) if said.empty?
+      said = said.last(10).map { _1.size > 300 ? "#{_1[0, 300]}…" : _1 }
+      step = if fin && (m = lines[fin].match(/\AError: building at STEP "(.*)": (?:.*: )?(.+)\z/))
+               n = at && lines[at][STEP_LINE, 1]
+               text = m[1].size > 60 ? "#{m[1][0, 60]}…" : m[1]
+               "failed at STEP #{n ? "#{n} " : ''}(#{text}): #{m[2]}"
+             else
+               fallback
+             end
+      [said, step]
     end
 
     # Known Dockerfile mistakes in the build output, and their fix.
@@ -46,7 +114,30 @@ module Flk
         "groupmod -n NEW ubuntu), or remove it first (userdel -r ubuntu)."
     end
 
+    # Builds release vN's image and rootfs, saving all the output in
+    # builds/vN.log. A failed build's log becomes vN-failed-TIME.log (the
+    # next try reuses vN), and the newest FAILED_LOGS_KEPT of those are kept.
     def build(app, cfg, version, image_override: nil)
+      FileUtils.mkdir_p(log_dir(app))
+      path = File.join(log_dir(app), "v#{version}.log")
+      File.open(path, "w") do |log|
+        log.sync = true
+        log.puts "# flk: build of #{app.name} v#{version}, #{Util.now}"
+        build_into(app, cfg, version, image_override, log)
+      end
+    rescue Error => e
+      failed = File.join(log_dir(app), "v#{version}-failed-#{Time.now.utc.strftime('%Y%m%dT%H%M%S%LZ')}.log")
+      begin
+        File.rename(path, failed)
+        e.log = failed if e.respond_to?(:log=)
+      rescue SystemCallError
+        nil
+      end
+      prune_failed_logs(app)
+      raise
+    end
+
+    def build_into(app, cfg, version, image_override, log)
       eng = engine
       tag = "flk.local/#{app.name}:v#{version}"
       src = image_override || cfg.image
@@ -54,7 +145,7 @@ module Flk
       if src
         unless system(eng, "image", "inspect", src, out: File::NULL, err: File::NULL)
           puts "==> Pulling #{src}"
-          engine_run!(eng, "pull", src)
+          engine_run!(eng, "pull", src, log: log)
         end
         Util.run!(eng, "tag", src, tag)
       else
@@ -64,7 +155,7 @@ module Flk
         args = cfg.build_args.flat_map { |k, v| ["--build-arg", "#{k}=#{v}"] }
         before = storage_containers
         begin
-          engine_run!(eng, "build", "--force-rm", "-t", tag, "-f", df, *args, cfg.dir)
+          engine_run!(eng, "build", "--force-rm", "-t", tag, "-f", df, *args, cfg.dir, log: log)
         rescue Exception # rubocop:disable Lint/RescueException -- Ctrl-C too
           leftovers_note(storage_containers - before)
           raise
@@ -77,7 +168,8 @@ module Flk
       Dir.mktmpdir("flk-overlay") do |ov|
         write_overlay(File.join(ov, "flk"), cfg, icfg)
         puts "==> Converting image to rootfs"
-        Util.sh!(File.join(LIBEXEC, "flk-build-rootfs"), eng, tag, ov, out, cfg.rootfs_extra_mb.to_s)
+        engine_run!(File.join(LIBEXEC, "flk-build-rootfs"), eng, tag, ov, out, cfg.rootfs_extra_mb.to_s,
+                    log: log, what: "converting the image to a rootfs failed")
       end
 
       { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
@@ -121,6 +213,16 @@ module Flk
         FileUtils.rm_f(f) unless keep_v.include?(File.basename(f)[/\d+/].to_i)
       end
       untag(app.name) { !keep_v.include?(_1.delete_prefix("v").to_i) }
+      Dir.glob(File.join(log_dir(app), "v*.log")).each do |f|
+        next if f.include?("-failed-")
+        FileUtils.rm_f(f) unless keep_v.include?(File.basename(f)[/\d+/].to_i)
+      end
+      prune_failed_logs(app)
+    end
+
+    def prune_failed_logs(app)
+      Dir.glob(File.join(log_dir(app), "v*-failed-*.log")).sort_by { File.basename(_1)[/failed-(.*)\.log/, 1] }
+         .reverse.drop(FAILED_LOGS_KEPT).each { FileUtils.rm_f(_1) }
     end
 
     # podman's build containers ("working containers", buildah's, shown by

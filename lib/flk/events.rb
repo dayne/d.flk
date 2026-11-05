@@ -38,11 +38,13 @@ module Flk
 
     def path = File.join(ROOT, "events.jsonl")
 
-    def emit(type, app: nil, machine: nil, release: nil, detail: nil)
+    # log: a file with the whole story (a failed build's output).
+    def emit(type, app: nil, machine: nil, release: nil, detail: nil, log: nil)
       raise ArgumentError, "unknown event type #{type}" unless TYPES.key?(type)
       ev = { "at" => Time.now.utc.iso8601(3), "app" => app, "machine" => machine, "type" => type }
       ev["release"] = release if release
       ev["detail"] = one_line(detail) if detail
+      ev["log"] = log if log
       FileUtils.mkdir_p(ROOT)
       rotate if (File.size?(path) || 0) > MAX_BYTES
       # one write of one short line with O_APPEND: whole lines, even from

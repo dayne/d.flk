@@ -326,6 +326,23 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **A failed build says why, and every build is logged** (R1,
+  valheim.flk BUGS.flk.md #2, 2026-11-04). A failed deploy said only
+  `podman build failed`; the cause (`ERROR: Steam served build ...`) was
+  40 lines up and kept nowhere, so finding it meant a 2GB rebuild. Now
+  each step (pull or build, then the rootfs conversion) streams to the
+  terminal and to `APP/builds/vN.log`. On failure (`Image::BuildFailed`)
+  flk prints "The build said:" (error lines of the failing step only, or
+  its last 10 lines), the step shortened (`failed at STEP 2/2 (RUN …):
+  exit status 1`) and `Build log: FILE`, just above `build failed;
+  machines unchanged`. A failed build's log is renamed
+  `vN-failed-TIME.log` (the next try reuses vN); the newest 3 are kept,
+  and `vN.log` goes with its release image. `deploy.failed` gets the
+  build's first error line in `detail` and a new `log` field;
+  `flk releases --json` has `build_log`. The rootfs conversion's own
+  errors (`flk: not enough space ...`) come through the same way. Tests:
+  `05-cli` (the report's 50-lines-of-noise build; explain_failure on
+  multi-stage output; failed-log cap), `10-hello` (a release's log).
 - [x] **Rootfs builds work next to their output, not in /tmp** (R1,
   enshrouded.flk BUGS.flk.md #1, 2026-11-04). `flk-build-rootfs` wrote the
   export as a tar and unpacked it, ~2x the image, in `${TMPDIR:-/tmp}`:

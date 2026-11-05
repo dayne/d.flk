@@ -28,7 +28,8 @@ module Flk
       on = a.machines.map(&:release)
       rows = rels.map do |r|
         r.reject { |k, _| k == "config" }.merge("current" => r["version"] == cur, "image" => File.exist?(r["path"].to_s),
-                                              "machines" => on.count(r["version"]))
+                                              "machines" => on.count(r["version"]),
+                                              "build_log" => Image.build_log(a, r["version"]))
       end
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No releases") if rows.empty?

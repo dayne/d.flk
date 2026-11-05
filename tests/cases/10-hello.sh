@@ -72,4 +72,8 @@ test_images_and_disk_see_the_release() {
   local d; d=$(flk disk --json | ruby -rjson -e 'puts JSON.generate(JSON.parse($stdin.read)["apps"].find { _1["app"] == ARGV[0] })' "$APP")
   [[ $(json_get images.bytes <<<"$d") -gt 0 ]] || fail "release image not counted: $d"
   [[ $(json_get rootfs.apparent <<<"$d") -gt 0 ]] || fail "machine rootfs not counted: $d"
+  # Every kept release has its build's output (valheim BUGS #2).
+  local log; log=$(flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["current"] }["build_log"]')
+  [[ $log == */builds/v*.log && -s $log ]] || fail "current release has no build log: $log"
+  grep -q '^==> \|STEP\|rootfs:' "$log" || fail "build log has no build output: $(head -3 "$log")"
 }
