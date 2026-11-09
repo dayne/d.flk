@@ -50,7 +50,7 @@ module Flk
       { name: "help", group: "Start here", args: "[COMMAND|TOPIC] [SUBCOMMAND]",
         opts: [["--all", "The full reference: concepts, every command, config, workflows, gotchas"],
                ["--json", "With --all: the command table as JSON"]],
-        summary: "Show help for flk, a command, or a topic (cheatsheet, install, first-app, operate, troubleshoot, uninstall)",
+        summary: "Show help for flk, a command, or a topic (#{TOPICS.keys.join(", ")})",
         notes: ["`flk COMMAND --help` is the same as `flk help COMMAND`."] },
       { name: "completion", group: "Start here", args: "SHELL",
         summary: "Print a tab-completion script (bash; zsh via bashcompinit)",

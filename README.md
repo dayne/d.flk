@@ -66,7 +66,7 @@ again after each fix. `tests/run.sh` checks flk itself end to end.
 
 ```
 flk context [--all]           # what flk sees now: host, app(s), machines, ports, next steps
-flk help [COMMAND|TOPIC]      # one command, or a guide: cheatsheet install first-app operate troubleshoot uninstall
+flk help [COMMAND|TOPIC]      # one command, or a guide: cheatsheet install first-app operate troubleshoot dockerfile host bugs uninstall
 flk help --all [--json]       # full reference: concepts, config, every command, the guides
 
 flk launch | deploy | status | releases [rollback [vN]] | config show
@@ -81,7 +81,7 @@ flk secrets list|set|unset|import
 flk volumes list|create [--owner UID:GID]|import|destroy|extend|move
 flk volumes backup|backups|verify|restore|copy
 flk files ls|cat|cp|rm|mkdir|chown VOL:PATH        # no mount, no root
-flk apps list|destroy|prune | disk | images
+flk apps list|destroy|prune | disk | images [list|prune]
 flk resume | stop-all | doctor | setup | completion bash | version
 ```
 
@@ -141,6 +141,7 @@ then powers off. flk falls back to TERM and then KILL on the firecracker process
   apps/APP/
     app.json  secrets.json  volumes.json
     images/vN.ext4                  # last 2 releases kept
+    builds/vN.log                   # each kept release's build output, plus the last 3 failed
     volumes/vol_xxx.ext4
     machines/ID/
       machine.json  vm.json  rootfs.ext4  config.ext4

@@ -1,4 +1,4 @@
-# Plan (2026-10-15)
+# Plan (2026-11-08)
 
 This is the roadmap for flk, the tool: its commands and capabilities.
 Host work (disks, backup targets, kernel settings, the game servers'
@@ -31,7 +31,8 @@ One host runs fly.io-style apps end to end: deploys with health checks,
 releases and rollback; volumes with verified backups, copies off the disk
 and rollback with a release; files in volumes without root; events, exec
 and `APP.internal` names; a first install that leads the way. lazyflk's
-gaps G1–G16 are closed.
+gaps G1–G16 are closed. R1 fixed every bug the real apps reported
+(2026-11-05); what they still ask for are features (M6 checks).
 
 What's missing:
 - More than one host: no failover, no volume sync (M5).
@@ -69,7 +70,8 @@ Each fix comes with its report's test and updates the report's status.
 Done: merged to main at 7f0317f (2026-11-05); the flkforge session was
 told and the app repos' status lines name main.
 New commands and JSON (`images prune`, `build_log`, the
-event's `log`) go to lazyflk as a note.
+event's `log`) are in lazyflk's TODO as a note ("From flk 97f57a1 and
+after").
 
 ### M5: More than one host (design first)
 
@@ -96,7 +98,9 @@ comes after R1. In order:
 - Image warnings at build/deploy (no user switch, no CMD, a mount over
   image files, volume ownership).
 - Checks as one design: `exec` (through the agent), `udp`/`a2s`
-  (valheim #1), and a `[deploy] preflight` host hook (valheim #3).
+  (valheim #1), a `[deploy] preflight` host hook (valheim #3), and
+  checks on an interval while running, shown in `flk status`
+  (enshrouded #3).
 - `[[mounts]] seed = true`: fill a new volume from the image.
 - flk.toml keys in `help --all --json` (the exact guest env list is done: R1 docs).
 
@@ -113,6 +117,8 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - A non-root USER silently runs as root on busybox images (TODO.md,
   Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
+- `flk logs --boot` (enshrouded #3; TODO.md, Machines): small, helps
+  every chatty game server now.
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Volume snapshots: need volumes on a reflink filesystem or LVM thin (a
   host decision first, `~/mud`).

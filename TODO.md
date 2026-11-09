@@ -12,11 +12,11 @@ there). This index keeps them in view. At the start of a flk session, read
 every `~/*/BUGS.flk.md` "Open" section and update this list. When one is
 fixed, set its `Status: fixed in <commit>: ...` line in the app's file (the
 workflow in its header), and the app's owner confirms. Last checked
-2026-11-05.
+2026-11-08.
 
 | Report | Title | Where it's planned |
 |---|---|---|
-| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect after `--install-service` on mud |
+| mud #6 | Restarting flk-tmux.service stops every VM; nothing resumes them | R1: fixed in f7f9b4a (history.md); in effect on mud (units reinstalled, doctor clean 2026-11-08) |
 | enshrouded #1 | rootfs build works in /tmp (a RAM tmpfs on mud) | R1: fixed, on main since 7f0317f (history.md) |
 | valheim #2 | A failed build hides its own error and keeps no log | R1: fixed, on main since 7f0317f (history.md) |
 | valheim #4 | A volume flk makes on its own stays root's (no mount point in the image) | R1: fixed, on main since 7f0317f (history.md) |
@@ -27,8 +27,9 @@ workflow in its header), and the app's owner confirms. Last checked
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done, on main since 7f0317f (history.md) |
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
-| flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f (history.md) |
-| flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f (history.md) |
+| flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
+| flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
+| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | M6, checks (interval health); `logs --boot` and `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 
 ## Reliability (PLAN.md R1)
@@ -90,9 +91,11 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
 ## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
 
-flkforge (designed 2026-11-04, nothing built yet) is a CLI and TUI wizard
-that writes a Dockerfile and flk.toml from reusable snippets, explaining
-each choice as it goes. Like lazyflk it uses only flk's CLI, so these are
+flkforge (at its M4 on 2026-11-05: the wizard, a CLI for agents, flk-run
+and 52 snippets) is a CLI and TUI wizard that writes a Dockerfile and
+flk.toml from reusable snippets, explaining each choice as it goes. Where
+flk lacks something below it works around it today (a seeding script,
+parsing `help --all` text), so each item lets it drop a workaround. Like lazyflk it uses only flk's CLI, so these are
 flk changes, all additive and opt-in. flkforge records what it needs in
 its own `BUGS.flk.md`. The setpriv entry under Machines came out of the
 same review.
@@ -136,6 +139,15 @@ same review.
     machines unchanged` and the command's last line, before any build;
     `flk deploy --no-preflight` skips it (valheim #3: a stale Steam pin
     shouldn't cost a 2GB download).
+  - Health while running (enshrouded #3, 2026-11-08): checks run only
+    during a deploy, so `flk status` can't say whether a machine is up now.
+    An opt-in `interval = "5m"` per check, the last result per machine in
+    `flk status --json` (`checks: {NAME: {ok, at, since}}`), and
+    `check.failed` / `check.recovered` events on a change. A `log` check
+    that passed for this boot stays passed (a boot fact; today it reads the
+    last 256KB since the boot marker, too little for a chatty app); tcp,
+    http, udp/a2s and exec re-run. The game repos' status tools would stop
+    scraping logs.
 - [ ] **Seed a new volume from the image.** `[[mounts]] seed = true`
   (flk only): when the volume is empty on first mount, copy what the image
   has at `destination` into it first, as Docker does with a named volume.
@@ -222,6 +234,12 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
   (for the exit hook). If it lacks `kvm` and no machines run, flk restarts it
   by itself; with machines running it still says to stop them and run
   `tmux -L flk kill-server`.
+- [ ] **`flk logs --boot`** (enshrouded #3): the lines since the latest
+  `--- flk: booting` marker, reading `console.log.1` too when the boot
+  started there. `flk logs` is `tail -n N` of `console.log` only
+  (`lib/flk/cli/console.rb`), so a chatty app's boot scrolls out, and is
+  gone at the 10MB rotation. Small, additive. Lower value, same report:
+  `[flk] log_max_mb` per app (FLK_LOG_MAX_MB is host-wide).
 - [ ] **Huge pages on a real pool.** `[[vm]] huge_pages = "2M"` is built
   and tested without a pool; booting on one needs root to reserve it
   (`tests/cases/45-hugepages.sh` runs when a pool exists).

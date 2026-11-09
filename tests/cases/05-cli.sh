@@ -204,7 +204,7 @@ test_volume_from_dir() {
 
 test_help_topics() {
   local t out
-  for t in cheatsheet install first-app operate troubleshoot uninstall; do
+  for t in cheatsheet install first-app operate troubleshoot uninstall dockerfile host bugs; do
     out=$("$FLK_BIN" help "$t")
     [[ -n $out && $out != *"{{"* ]] || fail "flk help $t empty or has a placeholder"
   done

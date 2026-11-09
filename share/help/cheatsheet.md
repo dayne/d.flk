@@ -57,4 +57,5 @@ Clean up
                                      images and every base image)
 
 More: flk COMMAND --help, flk help TOPIC (install, first-app, operate,
-troubleshoot, uninstall), flk help --all for everything.
+troubleshoot, dockerfile, host, bugs, uninstall), flk help --all for
+everything.
