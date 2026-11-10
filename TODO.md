@@ -29,7 +29,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
-| enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed on branch fix-pruned-copies (history.md) |
+| enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
 | enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | M6, checks (interval health); `logs --boot` and `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 
