@@ -121,5 +121,7 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - `flk logs --boot` (enshrouded #3; TODO.md, Machines): small, helps
   every chatty game server now.
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
+- Recording the kernel each release and boot used (TODO.md, Guest
+  kernels). Per-app kernels (ntsync) are parked until enshrouded asks.
 - Volume snapshots: need volumes on a reflink filesystem or LVM thin (a
   host decision first, `~/mud`).

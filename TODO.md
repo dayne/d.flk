@@ -212,6 +212,51 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
 - [ ] **Snapshots of machines** (Firecracker snapshot/restore): suspend and
   sub-second resume.
 
+## Guest kernels
+
+One guest kernel serves the whole host: `flk setup`
+(`libexec/flk-fetch-assets`) downloads Firecracker's CI kernel (6.18.56 on
+mud) and its `.config` to `kernel/vmlinux`; `FLK_KERNEL` overrides it, but
+for every app at once. flk puts no modules in the guest, so a feature
+must be built in (`=y`).
+
+- [ ] **Parked: per-app guest kernels (for `CONFIG_NTSYNC`).**
+  enshrouded.flk measured Wine's sync overhead on 2026-11-08 (its
+  `docs/ops-log.md`, TODO "Future considerations"). Plain Wine with ntsync
+  (`/dev/ntsync`, Wine 11 / recent GE-Proton) would need `CONFIG_NTSYNC=y`,
+  which the CI kernel doesn't set. Dayne parked it: revisit only on
+  performance problems, and no request is filed. The cheaper option comes
+  first and needs nothing from flk: GE-Proton's fsync uses `futex_waitv`,
+  which the current kernel has. If ntsync is still wanted after that:
+  - `[flk] kernel = "NAME"` (flk only, opt-in): this app's machines boot
+    `kernel/NAME/vmlinux` (with its `.config`). Apps without the key keep
+    the default, so real apps are unaffected.
+  - `flk kernel add NAME PATH|URL` installs one; later maybe
+    `flk kernel build NAME --enable NTSYNC`: the CI config's kernel version
+    from kernel.org with the extra options (no root, but a compiler
+    toolchain, and every kernel update becomes flk's to rebuild). The
+    first one, built by hand on mud, is host work (`~/mud`).
+  - doctor and `config show` warn when an app names a missing kernel, or
+    (with a `.config`) one that lacks an option the app lists; deploy
+    says which kernel it boots.
+  - Guest side: both inits mount devtmpfs, so `/dev/ntsync` appears by
+    itself. Check its mode: the driver should create it 0666 since 6.14
+    (unverified). If not, init needs a `chmod` for a non-root USER.
+  - *Test:* a `flkt-*` app with `kernel = "ntsync"` sees `/dev/ntsync`
+    and can open it as its USER; an app without the key boots the default
+    kernel, unchanged.
+
+- [ ] **A release doesn't record the kernel it booted.** Re-running
+  `flk setup` replaces `kernel/vmlinux`, and every machine boots the new
+  kernel at its next start, silently: nothing in `flk releases`, events
+  or status says a kernel changed. Record it per release and per boot
+  (version from the `.config` header, plus a sha256 of `vmlinux`) in
+  `releases --json` and `status --json` (additive), and have the
+  `machine.started` event say when the kernel differs from the last boot.
+  Optionally `flk setup` keeps the previous kernel (`vmlinux.prev`), so a
+  machine can go back to it. Do this with per-app kernels, which need the
+  same bookkeeping.
+
 ## Machines
 
 - [ ] **A non-root USER runs as root on busybox images.**
