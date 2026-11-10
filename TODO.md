@@ -171,7 +171,8 @@ same review.
   "not enough free volumes" hint, whose `volumes create` then fails.
   Check it in config (an error, or a warning that names the rule), with
   the other image warnings. Found 2026-11-10 from flkforge's question
-  (its `core/volume` already refuses dashes).
+  (its `core/volume` and a `volume-name` rule match flk's exactly since
+  d.flkforge 3d75219; tell flkforge when config checks it).
 - [ ] **Ideas, not yet asked for:** `flk config show --file PATH` (check a
   file outside cwd); a `flk ssh config APP` that prints an
   `~/.ssh/config` entry for editors' remote modes (when the image runs
