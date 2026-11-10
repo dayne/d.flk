@@ -220,7 +220,7 @@ module Flk
                  rows.map { [_1["volume"], _1["file"], Util.ago(_1["created_at"]), Backup.gb(_1["bytes_used"]),
                              _1["mode"] || "-", _1["check"] || "-",
                              _1["verified_at"] ? "#{_1['verify']} #{Util.ago(_1['verified_at'])}" : "-",
-                             Array(_1["copies"]).map { |c| "#{c['ok'] ? '' : 'FAILED '}#{c['to']}" }.join(", ").then { |s| s.empty? ? "-" : s }] })
+                             Array(_1["copies"]).reject { |c| c["pruned_at"] }.map { |c| "#{c['ok'] ? '' : 'FAILED '}#{c['to']}" }.join(", ").then { |s| s.empty? ? "-" : s }] })
     end
 
     def volumes_verify(args, o)

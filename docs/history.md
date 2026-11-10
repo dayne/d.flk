@@ -145,6 +145,14 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   BUGS.flk.md format, written once). The first was going to be `images`,
   but `flk help images` must stay the command's help. The guide's env
   line lists every variable (M6's "guest env contract").
+- [x] **A copy pruned at backup_copy_to isn't listed as there**
+  (enshrouded.flk BUGS.flk.md #4, 2026-11-10). `prune_copies` deleted the
+  oldest copies but left them in their backups' `copies`, so
+  `flk volumes backups` promised copies that were gone. Each copy now
+  marks the entries for that destination whose file isn't there any more
+  with `pruned_at` (this prune's, and stale ones from before), the table
+  leaves them out, and doctor's newest-copy age ignores them. Additive in
+  `--json`. Test: `26-backup-tools` test_backup_copies_to_another_disk.
 - [x] **before_deploy backups are copied to backup_copy_to** (R1,
   enshrouded.flk BUGS.flk.md #2, 2026-11-04). Only `flk volumes backup`
   copied its new backup; a deploy's own before_deploy backups stayed on

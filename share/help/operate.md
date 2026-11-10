@@ -140,7 +140,8 @@ survive that disk. Add `backup_copy_to = "/mnt/usb/flk"` (another disk) or
 `~/.config/flk/host.toml`, and every `flk volumes backup` then copies the
 new backup there too, keeping `backup_copy_keep` (default `backup_keep`) per
 volume. `flk volumes copy` sends one by hand (it skips what's already
-there), `flk volumes backups` shows where each backup was copied, and
+there), `flk volumes backups` shows where each backup's copy still is
+(`--json`: a copy pruned there has `pruned_at`), and
 `flk doctor` warns when a volume's newest copy is older than
 `backup_copy_warn_days` (8).
 

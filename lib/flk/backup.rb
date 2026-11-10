@@ -350,7 +350,9 @@ module Flk
           copy(b["path"], File.join(d, b["file"]))
           FileUtils.cp(b["path"].sub(/\.ext4\z/, ".json"), File.join(d, b["file"].sub(/\.ext4\z/, ".json")))
         end
-        entry.merge!("ok" => true, "pruned" => prune_copies(dest, app, vol, keep))
+        pruned = prune_copies(dest, app, vol, keep)
+        entry.merge!("ok" => true, "pruned" => pruned)
+        forget_copies(File.dirname(b["path"]), dest, (have.keys | [b["file"]]) - pruned)
       rescue Error, SystemCallError => e
         entry["error"] = e.message
       end
@@ -389,9 +391,24 @@ module Flk
       old
     end
 
-    # The newest successful copy to dest of any of these backups: time or nil.
+    # Marks the copies to dest of the backups in dir that aren't there any
+    # more (pruned by backup_copy_keep, now or by an older flk) with
+    # "pruned_at", so nobody counts on them at restore time.
+    def forget_copies(dir, dest, present)
+      Dir.children(dir).grep(NAME_RE).each do |f|
+        next if present.include?(f)
+        path = File.join(dir, f)
+        copies = (JSON.parse(File.read(path.sub(/\.ext4\z/, ".json"))) rescue {})["copies"] or next
+        next unless copies.any? { _1["to"] == dest && _1["ok"] && !_1["pruned_at"] }
+        update_meta(path, "copies" => copies.map { _1["to"] == dest && _1["ok"] && !_1["pruned_at"] ? _1.merge("pruned_at" => Util.now) : _1 })
+      end
+    end
+
+    # The newest successful copy to dest of any of these backups that's still
+    # there: time or nil.
     def newest_copy(backups, dest)
-      backups.flat_map { Array(_1["copies"]) }.select { _1["ok"] && _1["to"] == dest }.map { Time.parse(_1["at"]) }.max
+      backups.flat_map { Array(_1["copies"]) }.select { _1["ok"] && !_1["pruned_at"] && _1["to"] == dest }
+             .map { Time.parse(_1["at"]) }.max
     end
   end
 end

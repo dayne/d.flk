@@ -98,6 +98,11 @@ SH
   chmod +x "$WORK/fakebin-$RUN_ID/ssh"
 }
 host_conf() { printf 'backup_dir = "%s"\n' "$BK" >"$FLK_HOST_CONFIG"; printf '%s\n' "$@" >>"$FLK_HOST_CONFIG"; }
+# copy_field N DEST KEY: KEY of backup N's copy entry for DEST (empty if none)
+copy_field() {
+  backups_json | ruby -rjson -e 'c = Array(JSON.parse($stdin.read).dig(ARGV[0].to_i, "copies")).find { _1["to"] == ARGV[1] }
+    puts c&.dig(ARGV[2]).to_s' "$@"
+}
 offsite_files() { ls "$1/$APP/data" 2>/dev/null | grep -c '\.ext4$' || true; }
 
 test_backup_copies_to_another_disk() {
@@ -114,6 +119,17 @@ test_backup_copies_to_another_disk() {
   for i in 1 2; do sleep 1; flk volumes backup data >/dev/null || fail "backup $i failed"; done
   assert_eq 2 "$(offsite_files "$OFF")" "backup_copy_keep = 2 at the destination"
   cmp -s "$(backups_json | json_get 0.path)" "$OFF/$APP/data/$(backups_json | json_get 0.file)" || fail "the copy differs"
+  # enshrouded.flk BUGS #4: the oldest backup's copy was pruned there, so
+  # it no longer claims one
+  local oldest; oldest=$(backups_json | json_get 2.file)
+  [[ $(backups_json | json_get 2.copies.0.pruned_at) != null ]] || fail "pruned copy still recorded as there"
+  assert_eq null "$(backups_json | json_get 0.copies.0.pruned_at)" "the newest copy is there"
+  [[ $(flk volumes backups | grep "$oldest") =~ [[:space:]]-$ ]] || fail "COPIES for a pruned copy: $(flk volumes backups | grep "$oldest")"
+  # an entry an older flk left behind is put right at the next copy
+  ruby -rjson -e 'f = ARGV[0]; m = JSON.parse(File.read(f)); m["copies"].each { _1.delete("pruned_at") }
+    File.write(f, JSON.generate(m))' "$(backups_json | json_get 2.path | sed 's/\.ext4$/.json/')"
+  flk volumes copy data >/dev/null || fail "copy failed"
+  [[ $(backups_json | json_get 2.copies.0.pruned_at) != null ]] || fail "a stale copy entry wasn't put right"
 }
 
 test_copies_over_ssh() {
@@ -127,6 +143,7 @@ test_copies_over_ssh() {
   out=$(PATH="$WORK/fakebin-$RUN_ID:$PATH" flk volumes backup data) || fail "backup with a remote copy failed: $out"
   assert_contains "$out" "pruned 1 old copy there"
   assert_eq 1 "$(offsite_files "$remote")" "remote prune to keep 1"
+  [[ -n $(copy_field 1 "fakehost:$remote" pruned_at) ]] || fail "the copy pruned at the remote is still recorded"
   [[ -z $(ls -A "$remote/$APP/data" | grep -v "^$(backups_json | json_get 0.file | sed 's/\.ext4$//')") ]] ||
     fail "leftovers at the remote: $(ls -A "$remote/$APP/data")"
 }
