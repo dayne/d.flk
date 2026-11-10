@@ -91,8 +91,10 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
 ## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
 
-flkforge (at its M4 on 2026-11-05: the wizard, a CLI for agents, flk-run
-and 52 snippets) is a CLI and TUI wizard that writes a Dockerfile and
+flkforge (past its M4 by 2026-11-10: the wizard, a CLI for agents,
+flk-run, 52 snippets, `import` of a hand-written app, a hub of shared
+recipes in git repos, and a proposal to start it from lazyflk) is a CLI
+and TUI wizard that writes a Dockerfile and
 flk.toml from reusable snippets, explaining each choice as it goes. Where
 flk lacks something below it works around it today (a seeding script,
 parsing `help --all` text), so each item lets it drop a workaround. Like lazyflk it uses only flk's CLI, so these are
@@ -162,6 +164,14 @@ same review.
   from the same source as the Config section of `share/guide.md`. That
   would also let `tests/cases/00-config.sh` check that the guide and the
   parser agree.
+- [ ] **A `[[mounts]] source` that isn't a volume name passes config.**
+  `flk volumes create` takes only `[a-z0-9_]{1,30}`
+  (`lib/flk/cli/volumes.rb`), but `flk config show` accepts
+  `source = "my-data"` with no warning, so the first sign is the deploy's
+  "not enough free volumes" hint, whose `volumes create` then fails.
+  Check it in config (an error, or a warning that names the rule), with
+  the other image warnings. Found 2026-11-10 from flkforge's question
+  (its `core/volume` already refuses dashes).
 - [ ] **Ideas, not yet asked for:** `flk config show --file PATH` (check a
   file outside cwd); a `flk ssh config APP` that prints an
   `~/.ssh/config` entry for editors' remote modes (when the image runs

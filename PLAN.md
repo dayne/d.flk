@@ -22,8 +22,9 @@ Sources: `TODO.md`, the flk requests in `~/minecraft.flk` and
 - Tests use `flkt-*` apps only. Never start, stop, deploy or back up any
   other app (`minecraft-flk`, `vintagestory-flk`, `mqtt-flk`,
   `opencode-sandbox`...).
-- CLI and JSON are lazyflk's API, so changes are additive. Record what
-  lazyflk needs in `TODO.md` ("For lazyflk").
+- CLI and JSON are an API (lazyflk, flkforge, gamebus, the game repos'
+  scripts), so changes are additive. Record what lazyflk needs in
+  `TODO.md` ("For lazyflk").
 
 ## Where flk stands
 

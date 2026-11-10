@@ -40,7 +40,11 @@ Working on flk itself:
 - lazyflk, the terminal UI, is its own repo (github.com/dayne/d.lazyflk;
   `~/d.lazyflk` on the reference host). It uses only flk's CLI, so CLI and
   JSON changes are its API: keep them additive, and record what it needs
-  in `TODO.md` ("For lazyflk").
+  in `TODO.md` ("For lazyflk"). Other tools read the CLI too: flkforge
+  (the app wizard, `~/d.flkforge`; its needs are "For flkforge" and PLAN
+  M6), gamebus (`~/m.gamebus`: `events --all -f --json`, `apps list
+  --json`, `status --json`, `logs --no-tail`) and the game repos' own
+  scripts.
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
   full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`,
   the order in `PLAN.md`, what's done and decided in `docs/history.md`.
