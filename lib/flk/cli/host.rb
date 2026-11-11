@@ -108,7 +108,8 @@ module Flk
         live = a&.exists?
         rel = i["tag"][/\Av(\d+)\z/, 1]&.to_i
         ms = live ? a.machines : []
-        i.merge("app" => name, "release" => rel, "orphan" => !live,
+        trial = i["tag"] == Image::TRIAL_TAG
+        i.merge("app" => name, "release" => rel, "orphan" => !live && !trial, "trial" => trial,
                 "current" => live && rel && a.current_release&.dig("version") == rel || false,
                 "in_use" => !rel.nil? && ms.any? { _1.release == rel },
                 "running" => !rel.nil? && ms.any? { _1.release == rel && _1.running? })
@@ -116,7 +117,8 @@ module Flk
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No flk images") if rows.empty?
       Util.table(%w[REPO TAG SIZE CREATED STATUS], rows.map do |r|
-        status = if r["orphan"] then "orphan (flk apps prune)"
+        status = if r["trial"] then "flk build (not a release)"
+                 elsif r["orphan"] then "orphan (flk apps prune)"
                  elsif r["running"] then "running"
                  elsif r["in_use"] then "in use (stopped)"
                  elsif r["current"] then "current"
@@ -135,6 +137,7 @@ module Flk
       end
       orphans = Image.orphan_repos
       gone += orphans.flat_map { |n| Image.tags(n).map { "#{Image.repo(n)}:#{_1}" } }
+      gone += Image.trial_tags
       dangling = Image.dangling_ids
       if o[:dry_run]
         puts gone.empty? ? "No flk image tags to remove" : "Would remove #{gone.size} image tag#{'s' unless gone.size == 1}:"

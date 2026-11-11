@@ -48,6 +48,13 @@ module Flk
                 (Time.at(out[/^\s*mtime: 0x(\h+)/, 1].to_i(16)).utc.iso8601 rescue nil))
     end
 
+    # A symlink's target (nil: not a symlink, or one too long for debugfs
+    # to show in stat).
+    def readlink(img, path)
+      out, = Open3.capture3(bin, "-R", "stat #{q(path)}", img)
+      out[/^Fast link dest: "(.*)"$/, 1]
+    end
+
     def stat!(img, path) = stat(img, path) || raise(Error, "#{clean(path)}: no such file or directory in the volume")
 
     LS_RE = /\A\s*\d+\s+(\d+)\s+\(\d+\)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+-\w{3}-\d{4} \d\d:\d\d) (.*)\z/

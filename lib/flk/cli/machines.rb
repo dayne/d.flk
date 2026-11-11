@@ -242,7 +242,7 @@ module Flk
           next
         end
         e = VolFS.stat(rel["path"], dest)
-        user ||= image_user(rel["path"])
+        user ||= ImageReport.user(rel["path"])
         uid, gid, why =
           if e&.dir? && [e.uid, e.gid] != [0, 0] then [e.uid, e.gid, "like #{dest} in the image"]
           elsif user[:uid]&.positive?
@@ -260,27 +260,6 @@ module Flk
         end
       end
       m.app.save_volumes(vols)
-    end
-
-    # Who the release's app runs as (its image's USER, as /flk/init reads
-    # it): { name:, uid:, gid:, root: }; uid nil when a name can't be found
-    # in the image's /etc/passwd. Like init: no group means the passwd
-    # entry's, or for a numeric user without one, the same number.
-    def image_user(img)
-      u = (VolFS.read(img, "/flk/user").strip rescue "")
-      return { name: "root", uid: 0, gid: 0, root: true } if ["", "root", "0", "0:0"].include?(u)
-      usr, grp = u.split(":", 2)
-      table = lambda do |file|
-        (VolFS.read(img, file) rescue "").lines.map { _1.chomp.split(":") }
-      end
-      pw = table.call("/etc/passwd").find { usr.match?(/\A\d+\z/) ? _1[2] == usr : _1[0] == usr }
-      uid = usr.match?(/\A\d+\z/) ? usr.to_i : pw&.[](2)&.to_i
-      gid = if grp.nil? then pw ? pw[3].to_i : uid
-            elsif grp.match?(/\A\d+\z/) then grp.to_i
-            else table.call("/etc/group").find { _1[0] == grp }&.[](2)&.to_i
-            end
-      uid = nil if gid.nil?
-      { name: u, uid: uid, gid: gid, root: uid&.zero? || false }
     end
 
     # A volume attaches to exactly one machine. Prefer the one this machine

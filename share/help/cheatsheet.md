@@ -6,6 +6,7 @@ What's going on?
   flk doctor                         host health, each problem with its fix
 
 Run an app (in its directory, with a Dockerfile, flk.toml or fly.toml)
+  flk build                          build only: how it boots, as whom, mounts, warnings
   flk launch --no-deploy             write flk.toml if missing, register the app
   flk volumes create data --size 1   one per machine, for [[mounts]] source = "data"
   flk secrets set KEY=VALUE --stage  env vars kept out of flk.toml

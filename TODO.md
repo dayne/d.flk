@@ -103,7 +103,8 @@ flk changes, all additive and opt-in. flkforge records what it needs in
 its own `BUGS.flk.md`. The setpriv entry under Machines came out of the
 same review.
 
-- [ ] **`flk build`: build and inspect without deploying.** Today an image
+- [x] **`flk build`: build and inspect without deploying** (M6, on
+  branch m6-making-apps; history.md). Was: Today an image
   is only built by `deploy`, which needs a registered app and touches
   machines. flkforge's `check` (and anyone writing a Dockerfile) wants:
   `flk build [DIR] [--json]` builds the image and rootfs as deploy would,

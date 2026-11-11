@@ -412,6 +412,23 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **`flk build`** (PLAN M6, 2026-11-10). Builds the image and rootfs
+  as a deploy would (the same code: `Image.make_image`/`make_rootfs`), with
+  no registered app and no machines, and reports what flk will do with
+  them, read from the rootfs (`ImageReport`): shell or static init, the
+  agent, the command and where it came from (flk.toml, image, default),
+  workdir, env names, the USER and how init switches to it (`setpriv` /
+  `chroot` when the image's own binary knows `--reuid` / `--userspec`,
+  `agent` for the static init, `none` for busybox applets: then the app
+  runs as root), each mount destination (in the image, owner, entries the
+  volume hides), sizes, and `warnings` (filled by the next M6 item).
+  The image is `flk.local/APP:build` (label `flk.build`), the rootfs is
+  removed after, the log stays in `ROOT/build/APP/build.log`; one build per
+  app at a time. `flk images` marks the tag `trial`, `images prune` takes
+  it, `apps destroy` removes it, and doctor's orphan check ignores it.
+  `image_user` moved to `ImageReport.user`. Tests: `41-build`, and
+  `05-cli` test_image_user_switch.
+
 - [x] **flk's images survive a general prune, and `flk images prune`**
   (R1, mud BUGS.flk.md #5, 2026-11-04). A `podman image prune -a` on mud
   removed every image, flk's kept releases included, so each next deploy

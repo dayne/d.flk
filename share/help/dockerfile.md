@@ -14,6 +14,13 @@ boots a fresh copy of that disk, thrown away at the next deploy: anything
 that must last goes on a volume. A failed build prints what the build
 said and keeps its output in `APP/builds/` (`Build log: FILE`).
 
+**Try it without deploying.** `flk build` makes the same image and disk,
+with no app registered and no machines, and says what flk will do with
+them: shell init or the static one, the command, the user the app runs as
+and whether init can switch to it (Alpine's busybox can't: the app runs as
+root), whether `flk exec` will work, and what each `[[mounts]]`
+destination holds in the image. `--json` for scripts.
+
 **Name images in full.** `FROM docker.io/library/ubuntu:24.04`, not
 `FROM ubuntu:24.04`: podman on Ubuntu has no search registries, and short
 names fail ("short-name did not resolve").

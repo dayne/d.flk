@@ -158,6 +158,7 @@ module Flk
       Util.with_lock { a.machines.each { destroy_machine(_1, force: true) } }
       FileUtils.rm_rf(a.dir) # external volume files live outside it
       Image.untag(name)
+      Image.remove_trial(name)
       puts "Destroyed app #{name}"
       kept.each { puts "  kept external volume #{_1['name']} (#{_1['id']}): #{_1['path']}" }
       root = (Backup.root!(nil) rescue nil)
