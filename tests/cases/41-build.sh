@@ -24,6 +24,7 @@ built() { (cd "$APP_DIR" && flk build --json 2>/dev/null); }
 test_build_without_an_app() {
   local j; j=$(built) || fail "flk build failed: $(cd "$APP_DIR" && flk build 2>&1 | tail -5)"
   assert_eq "$APP" "$(json_get app <<<"$j")"
+  assert_eq true "$(json_get ok <<<"$j")"
   assert_eq shell "$(json_get init <<<"$j")"
   assert_eq image "$(json_get cmd_from <<<"$j")"
   assert_eq /data "$(json_get workdir <<<"$j")"
@@ -65,6 +66,11 @@ test_build_failure_says_why() {
   local out; out=$(cd "$d" && "$FLK_BIN" build 2>&1) && fail "a failing build passed"
   assert_contains "$out" "ERROR: no such package"
   assert_contains "$out" "Build log: $FLK_HOME/build/$APP-bad/build.log"
+  local j; j=$(cd "$d" && "$FLK_BIN" build --json 2>/dev/null) && fail "a failing build passed (--json)"
+  assert_eq false "$(json_get ok <<<"$j")" "--json on a failure"
+  assert_contains "$(json_get said <<<"$j")" "ERROR: no such package"
+  assert_eq "$FLK_HOME/build/$APP-bad/build.log" "$(json_get build_log <<<"$j")"
+  assert_contains "$(flk images prune --dry-run)" "$FLK_HOME/build/$APP-bad"
   rm -rf "$FLK_HOME/build/$APP-bad"
 }
 

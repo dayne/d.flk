@@ -98,7 +98,10 @@ module Flk
                 "[[mounts]] destination holds in the image. Then the config's warnings.",
                 "The image is tagged flk.local/APP:build (podman's layer cache makes the next deploy's build quick); the rootfs " \
                 "is removed after, and the build's output is kept in the log it names.",
-                "Exit 1 when the build fails, with the build's own error, as in deploy."] },
+                "Exit 1 when the build fails, with the build's own error, as in deploy; with --json, stdout still gets an " \
+                "object: ok false, error, and for a build failure said (its error lines), step and build_log.",
+                "image_bytes is the image's unpacked size in the engine's store; rootfs_used_bytes what the disk holds.",
+                "Remove builds with flk images prune (flk apps destroy for a registered app)."] },
       { name: "deploy", group: "Apps",
         opts: [["--image IMAGE", "Deploy this image instead of building"],
                ["--no-rollback", "Leave a machine that fails its health checks on the new release (to debug it)"],
@@ -153,7 +156,7 @@ module Flk
           { name: "prune", opts: [["--dry-run", "Only say what would go"]],
             summary: "Free podman's (or docker's) store of what flk doesn't keep",
             notes: ["Removes the image tags a deploy would prune (past [flk] keep_releases, except releases a machine is on), " \
-                    "the images of destroyed apps, flk build's images (APP:build), and dangling images (no tag, no child). Base images and build caches stay, " \
+                    "the images of destroyed apps, flk build's images (APP:build; and its logs, for apps that aren't registered), and dangling images (no tag, no child). Base images and build caches stay, " \
                     "so the next deploy doesn't download or rebuild everything.",
                     "Use it instead of podman image prune -a, which also removes flk's kept images (rollback) and every base " \
                     "image. To prune the rest of the store and spare flk's: podman image prune -a --filter label!=flk.app " \

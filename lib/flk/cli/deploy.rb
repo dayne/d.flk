@@ -131,9 +131,18 @@ module Flk
       $stdout = $stderr if o[:json] # the build's progress; stdout is the JSON
       rep = begin
         Image.trial_build(cfg, image_override: o[:image]) { ImageReport.report(_1["rootfs"], cfg, _1) }
+      rescue Error => e
+        raise unless o[:json]
+        $stdout = stdout
+        # stdout stays JSON for scripts; the words go to stderr as always
+        fail = { "ok" => false, "app" => cfg.app, "error" => e.message, "seconds" => (Time.now - t0).round(1) }
+        fail.merge!("said" => e.said, "step" => e.step, "build_log" => e.log) if e.is_a?(Image::BuildFailed)
+        puts JSON.pretty_generate(fail)
+        raise
       ensure
         $stdout = stdout
       end
+      rep = { "ok" => true }.merge(rep)
       rep["seconds"] = (Time.now - t0).round(1)
       return puts(JSON.pretty_generate(rep)) if o[:json]
       print_build_report(rep)

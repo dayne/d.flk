@@ -138,15 +138,19 @@ module Flk
       orphans = Image.orphan_repos
       gone += orphans.flat_map { |n| Image.tags(n).map { "#{Image.repo(n)}:#{_1}" } }
       gone += Image.trial_tags
+      trials = Dir.glob(File.join(ROOT, "build", "*")).reject { App.new(File.basename(_1)).exists? }
       dangling = Image.dangling_ids
       if o[:dry_run]
         puts gone.empty? ? "No flk image tags to remove" : "Would remove #{gone.size} image tag#{'s' unless gone.size == 1}:"
         gone.each { puts "  #{_1}" }
         puts "Would remove #{dangling.size} dangling image#{'s' unless dangling.size == 1} (no tag, nothing uses them)"
+        trials.each { puts "Would remove #{_1} (flk build's log; no such app)" }
         return
       end
       gone.each { system(Image.engine, "rmi", _1, out: File::NULL, err: File::NULL) }
       puts "Removed #{gone.size} image tag#{'s' unless gone.size == 1}#{": #{gone.join(', ')}" if gone.any?}"
+      trials.each { FileUtils.rm_rf(_1) }
+      puts "Removed #{trials.size} flk build dir#{'s' unless trials.size == 1} of apps that don't exist" if trials.any?
       # untagging can leave images dangling: count again
       dangling = Image.dangling_ids
       Image.prune_dangling! if dangling.any?
