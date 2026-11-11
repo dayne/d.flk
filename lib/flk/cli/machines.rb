@@ -237,12 +237,19 @@ module Flk
       return if todo.empty?
       user = nil
       todo.each do |v, dest|
+        user ||= ImageReport.user(rel["path"])
         unless (VolFS.list(v["path"], "/").map(&:name) - ["lost+found"]).empty?
           v.delete("owner_from_image")
+          # in use already: never re-owned, but say so if the app can't write it
+          r = { "user" => user.transform_keys(&:to_s).merge("switch" => "?"), "mounts" => [{ "source" => v["name"], "destination" => dest }] }
+          begin
+            ImageReport.volume_warnings(r, [v]).each { warn Util.yellow("  ⚠ #{_1['message']}\n    fix: #{_1['fix']}") }
+          rescue StandardError => e # never stops a start
+            warn Util.yellow("  ⚠ couldn't check volume #{v['name']}: #{e.message}")
+          end
           next
         end
         e = VolFS.stat(rel["path"], dest)
-        user ||= ImageReport.user(rel["path"])
         uid, gid, why =
           if e&.dir? && [e.uid, e.gid] != [0, 0] then [e.uid, e.gid, "like #{dest} in the image"]
           elsif user[:uid]&.positive?

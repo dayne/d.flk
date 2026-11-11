@@ -81,3 +81,42 @@ test_destroy_removes_the_trial_build() {
   ! podman image exists "flk.local/$APP:build" || fail "apps destroy left flk.local/$APP:build"
   [[ ! -d $FLK_HOME/build/$APP ]] || fail "apps destroy left $FLK_HOME/build/$APP"
 }
+
+# ---------- warnings (PLAN M6: what flk can see before anything runs) ----------
+
+# warn_codes DIR: the codes flk build --json gives for the app in DIR
+warn_codes() { (cd "$1" && "$FLK_BIN" build --json 2>/dev/null) | ruby -rjson -e 'puts JSON.parse($stdin.read)["warnings"].map { _1["code"] }.join(" ")'; }
+
+scratch_app() { # NAME DOCKERFILE_LINES...: a throwaway app dir, echoed
+  local d="$WORK/$1-$RUN_ID"; mkdir -p "$d"; shift
+  printf 'app = "%s"\n' "$(basename "$d")" >"$d/flk.toml"
+  printf '%s\n' "$@" >"$d/Dockerfile"
+  echo "$d"
+}
+
+test_warnings_from_the_image() {
+  local d codes
+  d=$(scratch_app "$APP-w1" 'FROM docker.io/library/alpine:3.20' 'CMD []')
+  assert_eq no-cmd "$(warn_codes "$d")" "no CMD"
+  d=$(scratch_app "$APP-w2" 'FROM docker.io/library/alpine:3.20' 'RUN adduser -D -u 1100 app && install -d -o 1200 /srv/x' \
+    'USER ghost' 'CMD ["true"]')
+  assert_eq user-unknown "$(warn_codes "$d")" "a USER the image doesn't have"
+  d=$(scratch_app "$APP-w3" 'FROM docker.io/library/alpine:3.20' 'RUN adduser -D -u 1100 app && install -d -o 1200 /srv/x && touch /etc/motd' \
+    'USER app' 'CMD ["true"]')
+  printf '[[mounts]]\n  source = "x"\n  destination = "/srv/x"\n[[mounts]]\n  source = "motd"\n  destination = "/etc/motd"\n' >>"$d/flk.toml"
+  codes=$(warn_codes "$d")
+  assert_contains "$codes" mount-owner-differs
+  assert_contains "$codes" mount-not-dir
+  codes=$(warn_codes "$APP_DIR")
+  assert_eq mount-hides-files "$codes" "the staged app: /data has a file"
+  local out; out=$(flk build 2>&1)
+  assert_contains "$out" "⚠ the volume at /data hides the 1 entry the image has there"
+  assert_contains "$out" "fix: copy them in at first start"
+  for d in w1 w2 w3; do rm -rf "$FLK_HOME/build/$APP-$d-$RUN_ID"; podman rmi "flk.local/$APP-$d-$RUN_ID:build" >/dev/null 2>&1 || true; done
+}
+
+test_a_mount_source_that_isnt_a_volume_name() {
+  local d; d=$(scratch_app "$APP-w4" 'FROM docker.io/library/alpine:3.20')
+  printf '[[mounts]]\n  source = "my-data"\n  destination = "/data"\n' >>"$d/flk.toml"
+  assert_contains "$(cd "$d" && "$FLK_BIN" config show 2>&1)" "source \\\"my-data\\\" isn't a volume name"
+}

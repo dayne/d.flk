@@ -42,6 +42,8 @@ module Flk
   SETUP_HOST = File.expand_path("../../setup-host.sh", __dir__)
   SANITY     = File.expand_path("../../flk-sanity.sh", __dir__)
   ENV_KEY = /\A[A-Za-z_][A-Za-z0-9_]*\z/
+  # flk volumes create; backup file names are built from it
+  VOLUME_NAME = /\A[a-z0-9_]{1,30}\z/
 
   module Util
     module_function

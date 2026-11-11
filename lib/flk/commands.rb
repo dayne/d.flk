@@ -177,7 +177,10 @@ module Flk
       { name: "config", group: "Apps", default_sub: "show", summary: "Inspect or set flk config",
         subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"],
                                       ["--host", "Show host settings (#{Host::PATH}) instead of app config"]], json: true,
-                 summary: "Print the parsed flk.toml / fly.toml (or host config with --host)" },
+                 summary: "Print the parsed flk.toml / fly.toml (or host config with --host)",
+                 notes: ["warnings: what's wrong with the file (unknown keys, [[mounts]] sources that aren't volume names). " \
+                         "image_warnings: what the deploy of the current release saw in its image ({code, message, fix}; " \
+                         "null before a deploy); flk build checks the image as it is now."] },
                { name: "set", args: "KEY=VALUE...",
                  summary: "Set host-level config values in #{Host::PATH}",
                  notes: ["Known keys: #{Host::KEYS.join(', ')}",

@@ -130,7 +130,12 @@ module Flk
       stdout = $stdout
       $stdout = $stderr if o[:json] # the build's progress; stdout is the JSON
       rep = begin
-        Image.trial_build(cfg, image_override: o[:image]) { ImageReport.report(_1["rootfs"], cfg, _1) }
+        Image.trial_build(cfg, image_override: o[:image]) do |b|
+          r = ImageReport.report(b["rootfs"], cfg, b)
+          a = App.new(cfg.app)
+          r["warnings"] += ImageReport.volume_warnings(r, a.volumes) if a.exists?
+          r
+        end
       rescue Error => e
         raise unless o[:json]
         $stdout = stdout
@@ -200,15 +205,15 @@ module Flk
     # The same warnings as strings, for JSON ([] without a readable config).
     def warning_strings(cfg)
       return [] unless cfg
-      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" }
+      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" } + cfg.mount_problems
     rescue StandardError
       []
     end
 
     # Warnings about the config that don't stop anything: unknown keys.
     def config_warnings(cfg)
-      cfg.unknown_keys.each do |k|
-        warn Util.yellow("⚠ #{File.basename(cfg.path)}: unknown key #{k}; flk ignores it")
+      warning_strings(cfg).each do |w|
+        warn Util.yellow("⚠ #{File.basename(cfg.path)}: #{w}")
       end
     end
 

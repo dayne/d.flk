@@ -90,13 +90,78 @@ module Flk
         "env" => Array(icfg["Env"]).map { _1.split("=", 2).first }.grep(ENV_KEY),
         "user" => { "name" => usr[:name], "uid" => usr[:uid], "gid" => usr[:gid], "root" => usr[:root],
                     "switch" => switch(img, usr, static) },
-        "mounts" => Array(cfg.machine_config["mount_specs"]).map { mount(img, _1) },
-        "warnings" => []
-      }
+        "mounts" => Array(cfg.machine_config["mount_specs"]).map { mount(img, _1) }
+      }.then { _1.merge("warnings" => warnings(_1)) }
+    end
+
+    def w(code, message, fix) = { "code" => code, "message" => message, "fix" => fix }
+
+    # What flk can see in the image that would go wrong only once it runs:
+    # [{ code, message, fix }]. Each one has its fix; none stops a deploy.
+    def warnings(r)
+      u = r["user"]
+      out = []
+      if !u["root"] && u["uid"].nil?
+        out << w("user-unknown", "USER #{u['name']} isn't in the image's /etc/passwd (or its group isn't in /etc/group): " \
+                                 "new volumes stay root's#{', and the app runs as root' unless r['init'] == 'static'}",
+                 "create the user in the Dockerfile (RUN adduser / useradd), or use a numeric USER uid:gid")
+      elsif u["switch"] == "none"
+        out << w("user-cant-switch", "the image can't switch to USER #{u['name']} (no util-linux setpriv, no flk-agent, " \
+                                     "no chroot --userspec): the app runs as root",
+                 "install Go on the host so flk builds flk-agent (flk doctor), or add util-linux's setpriv to the image")
+      end
+      if r["cmd_from"] == "default"
+        nosh = r["init"] == "static" ? ", which the image doesn't have: it can't boot" : ""
+        out << w("no-cmd", "no CMD or ENTRYPOINT: the machine runs /bin/sh#{nosh}",
+                 "add CMD to the Dockerfile, or [experimental] cmd in flk.toml")
+      end
+      unless r["agent"]
+        out << w("no-agent", "no flk-agent in the rootfs: no flk exec or flk ssh console on these machines",
+                 "install Go on the host (or set FLK_GO), then deploy again")
+      end
+      r["mounts"].each do |m|
+        next unless m["in_image"]
+        if m["type"] != "dir"
+          out << w("mount-not-dir", "#{m['destination']} is a #{m['type']} in the image, not a directory: the volume can't mount there",
+                   "mount the volume at a directory")
+          next
+        end
+        if m["entries"].to_i.positive?
+          out << w("mount-hides-files", "the volume at #{m['destination']} hides the #{m['entries']} " \
+                                        "entr#{m['entries'] == 1 ? 'y' : 'ies'} the image has there",
+                   "copy them in at first start (a wrapper script), or mount the volume elsewhere")
+        end
+        next if u["root"] || u["uid"].nil? || m["uid"].zero? || m["uid"] == u["uid"]
+        out << w("mount-owner-differs", "#{m['destination']} is owned by #{m['uid']}:#{m['gid']} in the image, so new volumes " \
+                                        "there will be too, but the app runs as #{u['name']} (#{u['uid']})",
+                 "chown it to the app's user in the Dockerfile (RUN install -d -o #{u['name']} #{m['destination']})")
+      end
+      out
+    end
+
+    # Volumes the app already has that its user can't write to (flk build
+    # and deploy for a registered app; machine start for one it just found
+    # in use). Volumes still flagged owner_from_image are left to machine
+    # start: it owns them if they're empty, and only it can tell (debugfs
+    # can't see what a running machine hasn't flushed).
+    def volume_warnings(r, vols)
+      u = r["user"]
+      return [] if u["root"] || u["uid"].nil? || u["switch"] == "none"
+      r["mounts"].flat_map do |m|
+        vols.select { _1["name"] == m["source"] && !_1["owner_from_image"] }.filter_map do |v|
+          e = (VolFS.stat(v["path"], "/") rescue nil) or next
+          mode = e.mode.to_i(8)
+          ok = (e.uid == u["uid"] && mode & 0o200 != 0) || (e.gid == u["gid"] && mode & 0o020 != 0) || mode & 0o002 != 0
+          next if ok
+          w("volume-not-writable", "volume #{v['name']} (#{v['id']}) at #{m['destination']} is owned by #{e.uid}:#{e.gid} " \
+                                   "mode #{e.mode}: the app, as #{u['name']} (#{u['uid']}), can't write to it",
+            "with the machine stopped: flk files chown #{u['uid']}:#{u['gid']} #{v['name']}:/ (add --recursive for its files)")
+        end
+      end
     end
 
     # What a volume mounted at destination hides and how its owner is set:
-    # { source, destination, in_image, uid, gid, entries }.
+    # { source, destination, in_image, type, uid, gid, entries }.
     def mount(img, spec)
       dest = spec["destination"]
       _path, e = resolve(img, dest)

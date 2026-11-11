@@ -34,6 +34,13 @@ test_a_volume_with_data_is_never_reowned() {
   [[ $out == *"volume data: root now owned"* ]] && fail "re-owned a volume with data: $out"
   assert_eq 0:0 "$(owner data)" "owner kept"
   assert_eq null "$(vol data owner_from_image)" "decided: it's in use"
+  # ... and says the app can't write to it, with the fix (PLAN M6 warnings)
+  assert_contains "$out" "volume data ("
+  assert_contains "$out" "the app, as app (1100), can't write to it"
+  assert_contains "$out" "flk files chown 1100:1100 data:/"
+  # (the next deploy's own check sees it too, now it's decided)
+  out=$(flk build --json 2>/dev/null)
+  assert_contains "$out" '"code": "volume-not-writable"'
 }
 
 test_new_volume_takes_the_image_users_owner() {

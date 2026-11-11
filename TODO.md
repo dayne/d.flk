@@ -113,7 +113,8 @@ same review.
   `can_switch_user` (setpriv / chroot --userspec / agent), whether the agent
   went in, image and rootfs sizes, and the problems below as warnings. Exit
   1 on a build failure, with podman's error as in deploy.
-- [ ] **Image warnings at build and deploy.** Things flk can see but only
+- [x] **Image warnings at build and deploy** (M6, on branch
+  m6-making-apps; history.md). Was: Things flk can see but only
   logs at boot today, or not at all. Each should be a warning with its fix,
   in `flk build`, `deploy` and `flk config show`:
   - non-root USER with no way to switch (see Machines);
@@ -166,7 +167,8 @@ same review.
   from the same source as the Config section of `share/guide.md`. That
   would also let `tests/cases/00-config.sh` check that the guide and the
   parser agree.
-- [ ] **A `[[mounts]] source` that isn't a volume name passes config.**
+- [x] **A `[[mounts]] source` that isn't a volume name passes config**
+  (M6 branch: a config warning; tell flkforge when it's on main).
   `flk volumes create` takes only `[a-z0-9_]{1,30}`
   (`lib/flk/cli/volumes.rb`), but `flk config show` accepts
   `source = "my-data"` with no warning, so the first sign is the deploy's

@@ -412,6 +412,26 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **Image warnings** (PLAN M6, 2026-11-10). `ImageReport.warnings`,
+  each `{code, message, fix}`, from the built rootfs: `user-unknown` (a
+  USER the image's passwd/group don't resolve), `user-cant-switch` (no
+  setpriv, agent or chroot), `no-cmd` (and with the static init: can't
+  boot), `no-agent`, `mount-not-dir`, `mount-hides-files`,
+  `mount-owner-differs` (a non-root mount point owner other than the USER:
+  new volumes copy it). For a registered app, `volume-not-writable`: an
+  existing volume's root the USER can't write. Volumes still flagged
+  owner_from_image are left to machine start, which owns them if empty and
+  else warns there: at deploy the machine is still running, and debugfs
+  can't see what it hasn't flushed (the first try missed exactly that).
+  `flk build` reports them; a deploy prints them after the build and keeps
+  them in the release (`releases --json` "warnings"); `config show` has the
+  current release's as `image_warnings`. A failure in the checks only
+  prints "couldn't check the image": they run on the real apps' deploys.
+  Config warnings (strings, like unknown keys): a `[[mounts]] source` that
+  isn't a volume name (`VOLUME_NAME`, shared with `volumes create`), or no
+  destination. Checked on the real apps' current releases first: none
+  would warn. Tests: `41-build` (each code), `43-volume-owner`
+  (volume-not-writable at deploy), `41-build` config show.
 - [x] **`flk build`** (PLAN M6, 2026-11-10). Builds the image and rootfs
   as a deploy would (the same code: `Image.make_image`/`make_rootfs`), with
   no registered app and no machines, and reports what flk will do with

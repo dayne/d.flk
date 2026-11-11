@@ -19,7 +19,13 @@ with no app registered and no machines, and says what flk will do with
 them: shell init or the static one, the command, the user the app runs as
 and how init switches to it, whether `flk exec` will work, and what each
 `[[mounts]]`
-destination holds in the image. `--json` for scripts.
+destination holds in the image. `--json` for scripts. Then its warnings,
+each with its fix: a USER the image doesn't have or can't switch to, no
+CMD, no agent (no `flk exec`), a mount over files the image has there (the
+volume hides them), over a file, or on a directory owned by another user,
+and a volume the app's user can't write to. A deploy prints the same ones
+and keeps them in the release (`flk releases --json`, `flk config show`);
+none stops it.
 
 **Name images in full.** `FROM docker.io/library/ubuntu:24.04`, not
 `FROM ubuntu:24.04`: podman on Ubuntu has no search registries, and short

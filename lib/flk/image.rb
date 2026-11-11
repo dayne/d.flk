@@ -141,9 +141,23 @@ module Flk
       tag = "flk.local/#{app.name}:v#{version}"
       out = File.join(app.dir, "images", "v#{version}.ext4")
       src = make_image(app.name, cfg, tag, image_override, log, "flk.release" => version)
-      make_rootfs(cfg, tag, out, log)
-      { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
-        "config" => cfg.machine_config }
+      icfg = make_rootfs(cfg, tag, out, log)
+      rel = { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
+              "config" => cfg.machine_config }
+      rel["warnings"] = image_warnings(app, cfg, rel, icfg)
+      rel
+    end
+
+    # The image's warnings (flk build's), printed during a deploy and kept
+    # in the release. Never stops the deploy.
+    def image_warnings(app, cfg, rel, icfg)
+      r = ImageReport.report(rel["path"], cfg, { "image_config" => icfg, "tag" => rel["tag"] })
+      ws = r["warnings"] + ImageReport.volume_warnings(r, app.volumes)
+      ws.each { warn Util.yellow("⚠ #{_1['message']}\n  fix: #{_1['fix']}") }
+      ws
+    rescue StandardError => e # a warning must never stop a deploy
+      warn Util.yellow("⚠ couldn't check the image: #{e.message}")
+      []
     end
 
     # Pulls src (an image name) or builds cfg's Dockerfile, as tag. Returns
