@@ -17,8 +17,8 @@ said and keeps its output in `APP/builds/` (`Build log: FILE`).
 **Try it without deploying.** `flk build` makes the same image and disk,
 with no app registered and no machines, and says what flk will do with
 them: shell init or the static one, the command, the user the app runs as
-and whether init can switch to it (Alpine's busybox can't: the app runs as
-root), whether `flk exec` will work, and what each `[[mounts]]`
+and how init switches to it, whether `flk exec` will work, and what each
+`[[mounts]]`
 destination holds in the image. `--json` for scripts.
 
 **Name images in full.** `FROM docker.io/library/ubuntu:24.04`, not
@@ -42,10 +42,12 @@ The app's stdin is the serial console (`flk console`), unless
 `[flk] stdin = "null"`.
 
 **USER.** flk switches to the image's USER with util-linux's `setpriv`
-(or a `chroot` that takes `--userspec`). Debian, Ubuntu and Fedora images
-have it. Alpine's busybox `setpriv` can't switch users: add
-`RUN apk add --no-cache setpriv`, or the app runs as root (with a warning
-in the boot log).
+(Debian, Ubuntu and Fedora images have it), else with flk-agent (Alpine:
+busybox's `setpriv` can't), else a `chroot` that takes `--userspec`.
+Groups are cleared; the user and group come from the image's
+`/etc/passwd` and `/etc/group`. Only with none of them (no agent: no Go
+on the host) does the app run as root, with a warning in the boot log;
+`flk build` says which applies.
 
 **Volumes and their owner.** `[[mounts]]` puts a volume over a path,
 hiding whatever the image had there: seed it at first start if the app

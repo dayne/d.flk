@@ -56,13 +56,15 @@ module Flk
       (VolFS.read(img, path) rescue "").include?(flag)
     end
 
-    # How init switches to the image's USER: "agent" (the static init),
-    # "setpriv", "chroot", or "none" (it runs the app as root, with one line
-    # in the boot log). nil when the app runs as root anyway.
+    # How init switches to the image's USER, in init.sh's order: util-linux
+    # "setpriv", flk-agent ("agent": also the static init), coreutils
+    # "chroot", or "none" (it runs the app as root, with one line in the
+    # boot log). nil when the app runs as root anyway.
     def switch(img, usr, static_init)
       return nil if usr[:root]
       return "agent" if static_init
       return "setpriv" if knows?(img, "setpriv", "reuid")
+      return "agent" if VolFS.stat(img, "/flk/agent")
       return "chroot" if knows?(img, "chroot", "userspec")
       "none"
     end

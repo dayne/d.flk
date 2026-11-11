@@ -29,8 +29,8 @@ test_build_without_an_app() {
   assert_eq /data "$(json_get workdir <<<"$j")"
   assert_eq app "$(json_get user.name <<<"$j")"
   assert_eq 1100 "$(json_get user.uid <<<"$j")"
-  # Alpine's busybox has no setpriv --reuid or chroot --userspec
-  assert_eq none "$(json_get user.switch <<<"$j")" "busybox can't switch users"
+  # Alpine's busybox has no setpriv --reuid: flk-agent switches instead
+  assert_eq agent "$(json_get user.switch <<<"$j")" "busybox image, flk-agent switches"
   assert_eq true "$(json_get mounts.0.in_image <<<"$j")"
   assert_eq 1100 "$(json_get mounts.0.uid <<<"$j")"
   assert_eq 1 "$(json_get mounts.0.entries <<<"$j")" "the file the volume hides"
@@ -43,7 +43,7 @@ test_build_without_an_app() {
 test_build_says_it_in_words() {
   local out; out=$(cd "$APP_DIR" && flk build 2>&1) || fail "flk build failed: $out"
   assert_contains "$out" "✔ Built $APP from Dockerfile"
-  assert_contains "$out" "can't switch to it: it runs as root"
+  assert_contains "$out" "app (1100:1100), switched by flk-agent"
   assert_contains "$out" "1 entry the volume hides"
   assert_contains "$out" "Next: flk launch --no-deploy"
 }

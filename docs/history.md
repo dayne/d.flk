@@ -531,6 +531,19 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Machines
 
+- [x] **A non-root USER runs as itself on busybox images** (TODO
+  Machines, 2026-11-10, before M6's warnings). Alpine's busybox has no
+  `setpriv --reuid` and no `chroot --userspec`, so init ran the app as root
+  with one line in the boot log. flk-agent 4 has `run-as USER CMD...`
+  (names from the image's passwd and group, groups cleared, setgid then
+  setuid, then exec; an unknown user runs as root with init's warning, so
+  a boot never breaks on it), and init.sh tries it after util-linux
+  setpriv and before chroot, when the agent says it's version 4 or later
+  (an old prebuilt agent ships when Go is gone). `flk build` reports
+  `switch: "agent"`. The real apps' images were checked: Ubuntu-based with
+  setpriv, or root; none changes. Tests: `43-volume-owner` (the app is up
+  as 1100), `41-build`, `05-cli` test_image_user_switch.
+
 - [x] **A missing root disk is made again at start** (R1, mud
   BUGS.flk.md #4, 2026-11-04). mud's restic backup skips machines'
   `rootfs.ext4` (copies of `images/vN.ext4`); after a restore,

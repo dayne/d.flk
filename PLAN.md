@@ -115,7 +115,7 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 
 ### Alongside (any time)
 
-- A non-root USER silently runs as root on busybox images (TODO.md,
+- Done (M6 branch): a non-root USER silently ran as root on busybox images (TODO.md,
   Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
 - `flk logs --boot` (enshrouded #3; TODO.md, Machines): small, helps

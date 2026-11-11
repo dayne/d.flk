@@ -6,7 +6,7 @@ TIER=vm
 setup_file() {
   stage_app hello
   echo 'RUN adduser -D -u 1100 app' >>"$APP_DIR/Dockerfile" # no /data in the image
-  toml_append '[experimental]' '  cmd = ["sh", "-c", "echo up; exec sleep 600"]' \
+  toml_append '[experimental]' '  cmd = ["sh", "-c", "echo up as $(id -u); exec sleep 600"]' \
               '[[restart]]' '  policy = "never"' \
               '[[mounts]]' '  source = "data"' '  destination = "/data"'
   flk launch --no-deploy
@@ -43,11 +43,9 @@ test_new_volume_takes_the_image_users_owner() {
   assert_eq 1100:1100 "$(owner fresh)" "owner"
   assert_eq null "$(vol fresh owner_from_image)" "done once"
   # Alpine's busybox setpriv has no --reuid: init used to call it anyway and
-  # the app died at boot. Now it falls back (as root, with a warning; the
-  # TODO's setpriv entry is the real fix).
-  local before; before=$(log_count "can't switch to user")
-  wait_until 30 log_count_gt "$before" "can't switch to user" || fail "init didn't fall back to root: $(console_log | tail -5)"
-  wait_log "up" 10
+  # the app died at boot, then ran it as root. flk-agent switches now.
+  wait_log "up as 1100" 30
+  [[ $(console_log) != *"can't switch to user"* ]] || fail "init fell back to root: $(console_log | tail -5)"
   assert_eq started "$(machine_state)" "machine running"
   assert_contains "$(flk exec --user 1100 -- sh -c 'touch /data/f && echo ok')" "ok" "the image's user can write"
 }

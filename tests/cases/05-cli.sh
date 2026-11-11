@@ -597,12 +597,13 @@ image prune -f" "$(grep -E '^(rmi|image prune)' "$bin/calls")" "what it removed"
 # (busybox applets know neither flag); the static init always can.
 test_image_user_switch() {
   local d="$WORK/imgswitch-$RUN_ID" got="" c
-  for c in setpriv chroot busybox static root; do
+  for c in setpriv chroot busybox busybox+agent static root; do
     rm -rf "$d"; mkdir -p "$d/root/flk" "$d/root/etc" "$d/root/bin" "$d/root/usr/bin"
     printf 'app:x:1100:1100::/home/app:/bin/sh\n' >"$d/root/etc/passwd"
     printf app >"$d/root/flk/user"
     [[ $c == root ]] && printf '' >"$d/root/flk/user"
     [[ $c == static ]] || printf 'stand-in shell\n' >"$d/root/bin/sh"
+    [[ $c == busybox+agent ]] && printf 'agent\n' >"$d/root/flk/agent"
     printf 'busybox\n' >"$d/root/bin/busybox"
     ln -s /bin/busybox "$d/root/usr/bin/setpriv"; ln -s /bin/busybox "$d/root/usr/bin/chroot"
     case $c in
@@ -613,5 +614,6 @@ test_image_user_switch() {
     got+="$c=$(ruby -I"$FLK_SRC/lib" -rflk -e 'i = ARGV[0]; s = Flk::VolFS.stat(i, "/bin/sh").nil?
       print Flk::ImageReport.switch(i, Flk::ImageReport.user(i), s).inspect' "$d/img") "
   done
-  assert_eq 'setpriv="setpriv" chroot="chroot" busybox="none" static="agent" root=nil ' "$got" "ImageReport.switch"
+  assert_eq 'setpriv="setpriv" chroot="chroot" busybox="none" busybox+agent="agent" static="agent" root=nil ' \
+    "$got" "ImageReport.switch"
 }

@@ -261,7 +261,9 @@ must be built in (`=y`).
 
 ## Machines
 
-- [ ] **A non-root USER runs as root on busybox images.**
+- [x] **A non-root USER runs as root on busybox images** (fixed on branch
+  m6-making-apps: flk-agent `run-as`, after setpriv, before chroot;
+  history.md). Was:
   `share/init.sh` (`start_app`) switches to the image's USER with
   util-linux `setpriv`, else `chroot --userspec`, else it logs
   `WARNING: can't switch to user ...; running as root` and runs the app as

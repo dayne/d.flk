@@ -150,7 +150,7 @@ module Flk
       puts "  runs      #{r['cmd'].map { _1.match?(/[\s"']/) || _1.empty? ? _1.inspect : _1 }.join(' ')}#{'   (no CMD: the default)' if r['cmd_from'] == 'default'}"
       puts "  in        #{r['workdir']}"
       who = u["root"] ? "root" : "#{u['name']} (#{u['uid'] || '?'}:#{u['gid'] || '?'})"
-      how = { "agent" => ", switched by the static init", "setpriv" => ", switched by setpriv", "chroot" => ", switched by chroot --userspec",
+      how = { "agent" => ", switched by flk-agent", "setpriv" => ", switched by setpriv", "chroot" => ", switched by chroot --userspec",
               "none" => ", but the image can't switch to it: it runs as root" }[u["switch"]]
       puts "  as        #{who}#{how}"
       puts "  exec      #{r['agent'] ? 'flk exec and ssh console work' : 'no flk-agent (needs Go on the host): no flk exec or ssh console'}"

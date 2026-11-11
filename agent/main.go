@@ -43,7 +43,11 @@ type request struct {
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "--version" {
-		fmt.Println("flk-agent 3")
+		fmt.Println("flk-agent 4")
+		return
+	}
+	if len(os.Args) > 3 && os.Args[1] == "run-as" { // /flk/init, for images whose setpriv can't
+		runAs(os.Args[2], os.Args[3:])
 		return
 	}
 	if len(os.Args) > 1 && os.Args[1] == "hosts" { // flk machine hosts-sync, through flk exec
@@ -309,6 +313,35 @@ func shell() string {
 		}
 	}
 	return ""
+}
+
+// run-as USER CMD...: /flk/init's way to start the app as the image's
+// USER when the image has no util-linux setpriv (Alpine's busybox). Groups
+// cleared, like setpriv --clear-groups and the static init. A user the
+// image doesn't know runs the app as root, with init's warning.
+func runAs(us string, argv []string) {
+	if cred, _, err := lookupUser(us); err != nil {
+		fmt.Printf("[flk-init] WARNING: can't switch to user '%s' (%v); running as root\n", us, err)
+	} else if err := switchTo(cred); err != nil {
+		fmt.Printf("[flk-init] WARNING: can't switch to user '%s' (%v); running as root\n", us, err)
+	}
+	path, err := lookPath(argv[0])
+	if err == nil {
+		err = syscall.Exec(path, argv, os.Environ())
+	}
+	fmt.Fprintf(os.Stderr, "[flk-init] can't run %s: %v\n", argv[0], err)
+	os.Exit(127)
+}
+
+// setgroups, setgid, setuid: for every thread (Go 1.16+), in that order.
+func switchTo(c *syscall.Credential) error {
+	if err := syscall.Setgroups([]int{}); err != nil {
+		return err
+	}
+	if err := syscall.Setgid(int(c.Gid)); err != nil {
+		return err
+	}
+	return syscall.Setuid(int(c.Uid))
 }
 
 // "name", "uid" or "uid:gid"
