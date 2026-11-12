@@ -44,7 +44,8 @@ problems show up there with the fix. Then find the symptom below.
   still run vN. Fix the cause shown above it ("The build said:") and deploy
   again. The build's whole output is in the `Build log:` file it names
   (also in the `deploy.failed` event's `log`), so there's no need to
-  build again to read it.
+  build again to read it: `flk releases log` prints the newest
+  (`--failed`, or a release `vN`).
 - `not enough space to build the rootfs in DIR`: turning the image into
   the release's disk needs about twice the image's size, free next to
   flk's images (`flk disk` shows where they are and what they take). Free

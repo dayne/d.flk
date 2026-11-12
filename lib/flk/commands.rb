@@ -46,7 +46,10 @@ module Flk
                ["--no-host", "Skip the host checks (flk doctor): cheap enough to poll; host is just lan_ip"]], json: true,
         summary: "What flk sees right now: host health, the current app, machines, ports, next steps",
         notes: ["Run this first. It resolves the app the same way other commands do (-a APP, or flk.toml / fly.toml in the current directory) and works even when there is none.",
-                "Also tidies machines that exited on their own, like status does."] },
+                "Also tidies machines that exited on their own, like status does.",
+                "--json: next_steps are plain strings; next_steps_detail has the same steps in the same order as " \
+                "{text, app, machine, kind}, kind one of problem, optional, stopped (a machine stopped on purpose), " \
+                "setup (what a new app still needs), info, ok."] },
       { name: "help", group: "Start here", args: "[COMMAND|TOPIC] [SUBCOMMAND]",
         opts: [["--all", "The full reference: concepts, every command, config, workflows, gotchas"],
                ["--json", "With --all: the command table as JSON"]],
@@ -118,6 +121,15 @@ module Flk
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
             summary: "Releases, newest first: current, failed (and why), kept for rollback, or pruned" },
+          { name: "log", args: "[VERSION|FILE]",
+            opts: [["--failed", "The newest failed build's log (of VERSION, if given)"]],
+            summary: "Print a build's output (default: the newest build, failed or not)",
+            notes: ["Every build's output is kept in APP/builds/: vN.log for each kept release, and the last 3 failed builds " \
+                    "as vN-failed-TIME.log (a failed build reuses its version, so a failed first deploy has v1 failed logs " \
+                    "and no release).",
+                    "VERSION is vN or N; FILE is a log's name as releases --json (build_log) or a deploy.failed event (log) gives it.",
+                    "Exit 1 with Error: when there's no such log (pruned with its release, a rollback, which builds nothing, " \
+                    "or a release from before flk kept logs)."] },
           { name: "rollback", args: "[VERSION]",
             opts: [["--no-rollback", "If the old release fails its health checks, leave the machine on it"],
                    ["--with-volumes", "Also put the volumes back as they were on that release (from the backups " \
@@ -168,8 +180,15 @@ module Flk
                { name: "set", args: "KEY=VALUE...",
                  summary: "Set host-level config values in #{Host::PATH}",
                  notes: ["Known keys: #{Host::KEYS.join(', ')}",
-                         "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5",
-                         "Values are written to #{Host::PATH} (created if missing). Run `flk doctor` to verify."] }] },
+                         "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5   " \
+                         "flk config set bind=10.0.0.5,10.0.0.6",
+                         "bind=A,B (a comma) writes a list; one address stays a string.",
+                         "Values are written to #{Host::PATH} (created if missing), and checked before the file is " \
+                         "replaced (a bad value leaves it unchanged). Run `flk doctor` to verify."] },
+               { name: "unset", args: "KEY...",
+                 summary: "Remove host-level config values from #{Host::PATH} (flk's defaults apply)",
+                 notes: ["Known keys: #{Host::KEYS.join(', ')}. A key that isn't set is reported, not an error.",
+                         "Checked like set before the file is replaced."] }] },
 
       { name: "machine", aliases: %w[machines m], group: "Machines", default_sub: "list",
         summary: "Manage machines (IDs accept a prefix or the machine name)",

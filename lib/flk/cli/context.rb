@@ -1,7 +1,33 @@
 module Flk
   # flk context: what flk sees now, and the next steps
   class CLI
+    # A next step: its text (next_steps keeps the plain strings), and for
+    # next_steps_detail what it's about and its kind: problem, optional,
+    # stopped (a machine stopped on purpose), setup (what a new app still
+    # needs), info, ok.
+    class Step < String
+      attr_reader :kind, :app, :machine
+
+      def initialize(text, kind, app: nil, machine: nil)
+        super(text)
+        @kind = kind
+        @app = app
+        @machine = machine
+      end
+
+      def detail(text = to_s) = { "text" => text, "app" => app, "machine" => machine, "kind" => kind }
+    end
+
     private
+
+    def step(text, kind, app: nil, machine: nil) = Step.new(text, kind, app: app, machine: machine)
+
+    # Plain strings for next_steps, and next_steps_detail beside them.
+    def steps_json(steps, prefix_app: false)
+      plain = steps.map { prefix_app && _1.app ? "#{_1.app}: #{_1}" : String.new(_1) }
+      detail = steps.zip(plain).map { |st, text| st.is_a?(Step) ? st.detail(text) : Step.new(st, "problem").detail(text) }
+      [plain, detail]
+    end
 
     def cmd_context(_args, o)
       reap_exited
@@ -13,15 +39,15 @@ module Flk
     # Every app at once: what's running where, what's reachable, what's wrong.
     def host_context(no_host: false)
       host = no_host ? [] : doctor_checks
-      steps = host.reject { _1["status"] == "pass" }
-                  .map { "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
+      steps = host.reject { _1["status"] == "pass" }.map { host_step(_1) }
       apps = App.all.map do |a|
         app_steps = []
         cfg = config_for(a.name)
         h = app_context(a, cfg, app_steps)
-        steps.concat(app_steps.reject { _1.start_with?("all good") }.map { "#{a.name}: #{_1}" })
+        steps.concat(app_steps.reject { _1.start_with?("all good") })
         h
       end
+      plain, detail = steps_json(steps, prefix_app: true)
       { "schema" => JSON_SCHEMA,
         "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
         "mount_dirs" => mount_dirs,
@@ -32,7 +58,11 @@ module Flk
                       "lan_ip" => Net.host_lan_ip, "address" => Net.host_address, "boot_service" => host.any? { _1["label"].start_with?("boot service (") },
                       "services" => services_status }
                   end,
-        "apps" => apps, "next_steps" => steps }
+        "apps" => apps, "next_steps" => plain, "next_steps_detail" => detail }
+    end
+
+    def host_step(p)
+      step("#{p['status'] == 'fail' ? 'fix' : 'optional'}: #{p['label']} -> #{p['hint']}", p["status"] == "fail" ? "problem" : "optional")
     end
 
     def host_context_text(c)
@@ -83,13 +113,13 @@ module Flk
                       end,
             "cwd" => Dir.pwd, "config" => nil, "app" => nil, "other_apps" => [], "next_steps" => [] }
       steps = c["next_steps"]
-      Array(c["host"]["problems"]).each { steps << "#{_1['status'] == 'fail' ? 'fix' : 'optional'}: #{_1['label']} -> #{_1['hint']}" }
+      Array(c["host"]["problems"]).each { steps << host_step(_1) }
 
       cfg = begin
         AppConfig.find
       rescue Error => e
         c["config"] = { "error" => e.message }
-        steps << "fix the config file: #{e.message}"
+        steps << step("fix the config file: #{e.message}", "problem")
         nil
       end
       if cfg
@@ -99,7 +129,7 @@ module Flk
           c["config"]["machine_config"] = mc
         rescue Error => e
           c["config"]["error"] = e.message
-          steps << "fix #{File.basename(cfg.path)}: #{e.message}"
+          steps << step("fix #{File.basename(cfg.path)}: #{e.message}", "problem")
         end
       end
 
@@ -107,19 +137,21 @@ module Flk
       if name
         c["app"] = app_context(App.new(name), cfg&.app == name ? cfg : config_for(name), steps)
       elsif !c["config"]
-        steps << "no flk.toml or fly.toml in #{Dir.pwd}: cd to an app directory, pass -a APP, or create one with: flk launch"
+        steps << step("no flk.toml or fly.toml in #{Dir.pwd}: cd to an app directory, pass -a APP, or create one with: flk launch", "info")
       end
       c["other_apps"] = apps_summary.reject { _1["name"] == name }
+      c["next_steps"], c["next_steps_detail"] = steps_json(steps)
       c
     end
 
     def app_context(a, cfg, steps)
+      st = ->(text, kind, machine: nil) { steps << step(text, kind, app: a.name, machine: machine) }
       h = { "name" => a.name, "registered" => a.exists?, "config_warnings" => warning_strings(cfg) }
       unless a.exists?
-        steps << (cfg ? "register the app: flk launch --no-deploy (then flk deploy)" : "app '#{a.name}' doesn't exist; see: flk apps list")
+        cfg ? st["register the app: flk launch --no-deploy (then flk deploy)", "setup"] : st["app '#{a.name}' doesn't exist; see: flk apps list", "problem"]
         return h
       end
-      h["config_warnings"].each { steps << "optional: #{File.basename(cfg.path)}: #{_1}" }
+      h["config_warnings"].each { st["optional: #{File.basename(cfg.path)}: #{_1}", "optional"] }
       ms = a.machines
       rel = a.current_release
       h.merge!("home" => a.dir, "config_path" => a.meta["config_path"],
@@ -135,45 +167,44 @@ module Flk
         have = a.volumes.count { _1["name"] == mt["source"] }
         next if have >= want
         n = want - have
-        steps << "[[mounts]] source '#{mt['source']}' needs #{n} more volume#{'s' if n > 1}: " \
-                 "flk volumes create #{mt['source']} --size 1#{" (run #{n} times)" if n > 1}"
+        st["[[mounts]] source '#{mt['source']}' needs #{n} more volume#{'s' if n > 1}: " \
+           "flk volumes create #{mt['source']} --size 1#{" (run #{n} times)" if n > 1}", "setup"]
       end
       unless a.meta["config_path"]
-        steps << "flk doesn't know where #{a.name}'s flk.toml is: run flk launch --no-deploy (or flk deploy) once in its directory"
+        st["flk doesn't know where #{a.name}'s flk.toml is: run flk launch --no-deploy (or flk deploy) once in its directory", "setup"]
       end
       if rel.nil?
-        steps << (cfg ? "deploy the first release: flk deploy" : "no release yet; run flk deploy from the app directory")
+        st[cfg ? "deploy the first release: flk deploy" : "no release yet; run flk deploy from the app directory", "setup"]
       elsif ms.empty?
-        steps << "no machines; flk deploy (or flk scale count 1)"
+        st["no machines; flk deploy (or flk scale count 1)", "setup"]
       end
       ms.reject(&:running?).each do |m|
-        steps << if m.h.dig("restarts", "gave_up_at")
-                   "machine #{m.id} [#{m.name}] kept failing; its restart policy gave up after " \
-                   "#{m.h.dig('restarts', 'count')} restarts: flk logs -i #{m.id} --no-tail, fix, then flk machine start #{m.id}"
-                 elsif m.desired_state == "started"
-                   "machine #{m.id} [#{m.name}] should be running but isn't (it exited, or the host restarted); " \
-                   "see why: flk logs -i #{m.id} --no-tail; bring it back: flk resume"
-                 else
-                   # lazyflk folds these by this wording ("is stopped;"): keep it
-                   # until context --json says which steps are information (TODO)
-                   "machine #{m.id} [#{m.name}] is stopped; start it: flk machine start #{m.id}"
-                 end
+        if m.h.dig("restarts", "gave_up_at")
+          st["machine #{m.id} [#{m.name}] kept failing; its restart policy gave up after " \
+             "#{m.h.dig('restarts', 'count')} restarts: flk logs -i #{m.id} --no-tail, fix, then flk machine start #{m.id}", "problem", machine: m.id]
+        elsif m.desired_state == "started"
+          st["machine #{m.id} [#{m.name}] should be running but isn't (it exited, or the host restarted); " \
+             "see why: flk logs -i #{m.id} --no-tail; bring it back: flk resume", "problem", machine: m.id]
+        else
+          # older lazyflk matched this wording (" is stopped;"); newer reads kind "stopped"
+          st["machine #{m.id} [#{m.name}] is stopped; start it: flk machine start #{m.id}", "stopped", machine: m.id]
+        end
       end
-      h["ports"]["blocked"].each { steps << "host port #{_1['key']} not forwarded: #{_1['blocked']}" }
-      h["ports"]["waiting"].each { steps << "host port #{_1['key']} is held by another machine; this one gets it when that stops" }
+      h["ports"]["blocked"].each { st["host port #{_1['key']} not forwarded: #{_1['blocked']}", "problem"] }
+      h["ports"]["waiting"].each { st["host port #{_1['key']} is held by another machine; this one gets it when that stops", "info"] }
       if rel && rel["version"]
         # newer than current = a failed release that deploy --no-rollback left running
         failed, other = ms.partition { stranded_on_failed?(a, _1, rel) }
         failed.each do |m|
-          steps << "machine #{m.id} [#{m.name}] is on v#{m.release}, which failed its health checks (left by --no-rollback): " \
-                   "see flk logs -i #{m.id} --no-tail; then flk releases rollback v#{rel['version']}, or fix and flk deploy"
+          st["machine #{m.id} [#{m.name}] is on v#{m.release}, which failed its health checks (left by --no-rollback): " \
+             "see flk logs -i #{m.id} --no-tail; then flk releases rollback v#{rel['version']}, or fix and flk deploy", "problem", machine: m.id]
         end
-        steps << "some machines run an older release; flk deploy rolls them" if cfg && other.any? { _1.release != rel["version"] }
+        st["some machines run an older release; flk deploy rolls them", "optional"] if cfg && other.any? { _1.release != rel["version"] }
       end
       up = ms.select(&:running?)
       if up.any? && steps.none? { !_1.start_with?("optional:") }
         port = up.first.config["internal_port"]
-        steps << "all good#{port ? "; try: curl http://#{up.first.ip}:#{port}/" : ''} (logs: flk logs)"
+        st["all good#{port ? "; try: curl http://#{up.first.ip}:#{port}/" : ''} (logs: flk logs)", "ok"]
       end
       h
     end

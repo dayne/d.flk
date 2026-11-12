@@ -37,6 +37,9 @@ test_app_stop_start_restart() {
   local before
   assert_contains "$(flk stop)" "stopped (stays stopped"
   assert_eq stopped "$(machine_state)" "after flk stop"
+  # stopped on purpose: information, not a problem (next_steps_detail, for lazyflk)
+  assert_eq "stopped $(machine_id)" "$(flk context --no-host --json | ruby -rjson -e 'd = JSON.parse($stdin.read)["next_steps_detail"]
+    s = d.find { _1["machine"] }; puts "#{s && s["kind"]} #{s && s["machine"]}"')" "kind of a stopped machine's step"
   assert_contains "$(flk stop)" "Nothing of $APP is running"
   before=$(log_count "up")
   assert_contains "$(flk start)" "started"

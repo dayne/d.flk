@@ -82,6 +82,15 @@ test_context_for_a_fresh_app() {
   assert_eq true "$(json_get app.registered <<<"$c")" registered
   assert_contains "$(json_get next_steps <<<"$c")" "flk deploy" "next steps"
   assert_contains "$(flk context)" "## Next steps" "text context"
+  # next_steps_detail (lazyflk): the same steps, each with what it's about and its kind
+  ruby -rjson -e 'c = JSON.parse($stdin.read); d = c["next_steps_detail"]
+    abort "detail #{d.size} vs #{c["next_steps"].size}" unless d.map { _1["text"] } == c["next_steps"]
+    abort "kinds: #{d}" unless d.all? { %w[problem optional stopped setup info ok].include?(_1["kind"]) && _1.key?("app") && _1.key?("machine") }
+    abort "no setup step for #{ARGV[0]}: #{d}" unless d.any? { _1["kind"] == "setup" && _1["app"] == ARGV[0] }' "$APP" <<<"$c" ||
+    fail "next_steps_detail"
+  c=$(flk context --all --no-host --json)
+  ruby -rjson -e 'c = JSON.parse($stdin.read); d = c["next_steps_detail"]
+    abort "--all: detail texts differ from next_steps" unless d.map { _1["text"] } == c["next_steps"]' <<<"$c" || fail "--all detail"
 }
 
 test_context_without_an_app() {
@@ -419,6 +428,12 @@ test_failed_build_shows_its_error_and_keeps_a_log() {
   [[ $log == */builds/v1-failed-*.log && -f $log ]] || fail "event's log isn't a kept failed-build log: $log"
   assert_eq 50 "$(grep -c '^noise' "$log")" "the whole output in the log"
   assert_contains "$out" "Build log: $log" "the error names the same file"
+  # lazyflk reads it through the CLI: no release yet, only the failed build
+  assert_eq 50 "$(flk releases log | grep -c '^noise')" "releases log: the newest build, a failed one"
+  assert_eq 50 "$(flk releases log --failed v1 | grep -c '^noise')" "releases log --failed v1"
+  assert_eq 50 "$(flk releases log "$(basename "$log")" | grep -c '^noise')" "releases log FILE (the event's)"
+  out=$(flk releases log v2 2>&1) && fail "releases log of a release that doesn't exist passed"
+  assert_contains "$out" "Error: no build log of v2"
 }
 
 test_explain_failure_reads_the_failing_step() {

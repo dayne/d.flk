@@ -252,6 +252,21 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### lazyflk gaps (G4–G14; G1–G3 are under Earlier, G15–G16 in git log)
 
+- [x] **`flk config set bind=A,B` and `flk config unset KEY...`** (lazyflk,
+  2026-11-11). A comma in `bind`'s value writes a TOML list (one address
+  stays a string); `unset` removes keys (one not set is reported, not an
+  error). Both replace a list that spans several lines whole, and check the
+  result before replacing the file, as set did. Test: `00-config`
+  test_config_set_and_unset (set had no test before).
+- [x] **`next_steps_detail` in `flk context --json`** (lazyflk, 2026-11-11).
+  Beside `next_steps` (the same strings, unchanged), the same steps in the
+  same order as `{text, app, machine, kind}`; kind is problem, optional,
+  stopped (desired_state stopped), setup, info or ok. Built from one list
+  (`CLI::Step`, a String that also carries them), so the two can't drift;
+  in `--all` the text has the `APP: ` prefix as before. lazyflk stops
+  matching " is stopped;". Tests: `05-cli` test_context_for_a_fresh_app,
+  `18-app-verbs`.
+
 - [x] **G5: context always runs doctor (cheap polling).** lazyflk polls
   `flk context --all --json` every 5s, and each call runs all 15 doctor
   checks (podman, `sudo -n -l`, systemctl...). Add `--no-host` to
@@ -411,6 +426,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   address rather than dropping ports.
 
 ### Builds
+
+- [x] **`flk releases log [VERSION|FILE] [--failed]`** (lazyflk, 2026-11-11).
+  Prints a kept build log: by default the newest build, failed or not (a
+  failed first deploy has only `v1-failed-*.log` and no release); `vN`,
+  `--failed`, or the file name from `build_log` / a `deploy.failed`
+  event's `log`. Exit 1 with `Error:` saying why when there's none
+  (pruned, a rollback, before flk kept logs). lazyflk only reads the CLI,
+  so it couldn't open the paths. Tests: `05-cli`
+  test_failed_build_shows_its_error_and_keeps_a_log, `10-hello`.
 
 - [x] **flk's images survive a general prune, and `flk images prune`**
   (R1, mud BUGS.flk.md #5, 2026-11-04). A `podman image prune -a` on mud
