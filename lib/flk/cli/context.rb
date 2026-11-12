@@ -154,6 +154,8 @@ module Flk
                    "machine #{m.id} [#{m.name}] should be running but isn't (it exited, or the host restarted); " \
                    "see why: flk logs -i #{m.id} --no-tail; bring it back: flk resume"
                  else
+                   # lazyflk folds these by this wording ("is stopped;"): keep it
+                   # until context --json says which steps are information (TODO)
                    "machine #{m.id} [#{m.name}] is stopped; start it: flk machine start #{m.id}"
                  end
       end

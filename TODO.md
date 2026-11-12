@@ -90,6 +90,18 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   Handed over: a note is in lazyflk's `TODO.md` ("From flk 21ffec9 and
   7cb3ddb"); close this when lazyflk has it.
 
+- [ ] **Say which next steps are only information** (lazyflk,
+  2026-11-11). `context --json` lists "machine ID [NAME] is stopped;
+  start it: flk machine start ID" for a machine the admin stopped
+  (`desired_state` stopped), next to real problems. lazyflk now shows
+  those as one quiet line ("3 apps stopped") instead of a Needs attention
+  entry each, and tells them apart by the wording plus the machine's
+  state. Asked, additive: next to `next_steps` (strings, unchanged), a
+  `next_steps_detail` list of `{text, app, machine, kind}` with kind e.g.
+  `problem`, `optional`, `stopped`; or leave such steps out of
+  `next_steps` and let `desired_state` speak. Until then a change to that
+  sentence makes them Needs attention entries again (nothing breaks).
+
 ## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
 
 flkforge (past its M4 by 2026-11-10: the wizard, a CLI for agents,
