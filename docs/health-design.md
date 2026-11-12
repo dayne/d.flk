@@ -1,6 +1,8 @@
 # Health while running (design draft)
 
-**Status: draft, 2026-11-11. A future effort, not scheduled.** M6 step 3
+**Status: draft, 2026-11-11. A future effort, not scheduled.** Decided
+with Dayne the same day: checks report and don't act; the MQTT bridge
+waits until its purpose is clearer. M6 step 3
 builds the check kinds that run at deploy (`exec`, `udp`/`a2s`,
 `[deploy] preflight`); this is the part after that: who runs checks while
 the apps run, what else it watches, and how lazyflk, gamebus and MQTT
@@ -56,7 +58,7 @@ Why not the other runners:
 
 ### Decisions to make
 
-- **Checks report; they don't act.** A failed interval check changes
+- **Checks report; they don't act** (decided 2026-11-11). A failed interval check changes
   status and emits an event. It doesn't restart a machine. An opt-in
   `on_failure = "restart"` (after N failures in a row) can come later,
   once the reporting has run on the real apps for a while. Restarting a
@@ -144,7 +146,7 @@ Where the bridge lives:
   script, without anything having to follow the stream. Add it only if a
   follower turns out to be a burden.
 
-Recommendation: flk emits; a separate bridge publishes. Start by
+Deferred (2026-11-11) until its purpose is clearer. Leaning: flk emits; a separate bridge publishes. Start by
 extending gamebus for the games, and split a generic bridge out when a
 non-game consumer wants it.
 
