@@ -649,6 +649,8 @@ module Flk
         "global_options" => GLOBAL_OPTS.map { { "switches" => switches(_1), "description" => desc(_1) } },
         "exit_codes" => EXIT_CODES.transform_keys(&:to_s),
         "commands" => LIST.map { ser.call(_1) },
+        # flk.toml keys: { key, table, name, type, default, flk_only, read, doc }
+        "config_keys" => ConfigKeys.all,
         "topics" => TOPICS
       }
     end

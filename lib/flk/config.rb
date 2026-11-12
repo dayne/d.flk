@@ -37,9 +37,14 @@ module Flk
     def entrypoint = argv(data.dig("experimental", "entrypoint"))
     def cmd        = argv(data.dig("experimental", "cmd"))
 
+    # seed (flk only): fill the volume, while it's empty, with what the
+    # image has at destination (VolFS.seed!). The key is only there when on.
     def mounts
       [data["mounts"]].flatten.compact.map do |m|
-        { "source" => m["source"].to_s, "destination" => m["destination"].to_s }
+        h = { "source" => m["source"].to_s, "destination" => m["destination"].to_s }
+        raise Error, "[[mounts]] seed must be true or false (got '#{m['seed']}')" unless [nil, true, false].include?(m["seed"])
+        h["seed"] = true if m["seed"]
+        h
       end
     end
 
@@ -302,36 +307,22 @@ module Flk
       raise Error, "[flk] keep_releases must be a number"
     end
 
-    # Keys flk reads, plus fly.toml keys it knows and ignores, by section;
-    # anything else is likely a typo (kill_timout), so deploy and config
-    # show warn. Checked one level into the sections flk uses.
-    KNOWN_KEYS = {
-      "" => %w[app primary_region kill_signal kill_timeout swap_size_mb console_command build deploy env
-               experimental files http_service services mounts processes statics vm checks metrics restart flk],
-      "build" => %w[image dockerfile args build-target build_target ignorefile builder builtin buildpacks settings],
-      "vm" => %w[size memory memory_mb cpus cpu_kind gpus gpu_kind processes kernel_args host_dedication_id persist_rootfs
-                 huge_pages],
-      "mounts" => %w[source destination processes initial_size auto_extend_size_threshold auto_extend_size_increment
-                     auto_extend_size_limit snapshot_retention scheduled_snapshots],
-      "services" => %w[internal_port protocol ports concurrency tcp_checks http_checks auto_stop_machines
-                       auto_start_machines min_machines_running processes script_checks],
-      "services.ports" => %w[port handlers force_https start_port end_port tls_options http_options proxy_proto_options],
-      "restart" => %w[policy retries max_retries processes],
-      "http_service" => %w[internal_port force_https auto_stop_machines auto_start_machines min_machines_running
-                           processes concurrency checks http_options tls_options],
-      "check" => %w[type port path method grace_period interval timeout headers protocol tls_skip_verify
-                    tls_server_name match command user send send_hex expect processes],
-      "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases internal_hosts],
-      "flk.backup" => %w[mode pre post settle keep verify before_deploy]
-    }.freeze
+    # Keys flk reads, plus fly.toml keys it knows and ignores, by section
+    # (from ConfigKeys, which also feeds `help --all --json`); anything
+    # else is likely a typo (kill_timout), so deploy and config show warn.
+    # Checked one level into the sections flk uses.
+    CHECKED_SECTIONS = ["", "build", "vm", "mounts", "services", "services.ports", "restart", "http_service", "check",
+                        "flk", "flk.backup"].freeze
+
+    def self.known_keys = @known_keys ||= ConfigKeys.known(CHECKED_SECTIONS)
 
     # ["kill_timout (did you mean kill_timeout?)", ...]
     def unknown_keys
       out = []
       look = lambda do |h, sect, prefix|
         return unless h.is_a?(Hash)
-        (h.keys - KNOWN_KEYS[sect]).each do |k|
-          guess = DidYouMean::SpellChecker.new(dictionary: KNOWN_KEYS[sect]).correct(k).first
+        (h.keys - AppConfig.known_keys[sect]).each do |k|
+          guess = DidYouMean::SpellChecker.new(dictionary: AppConfig.known_keys[sect]).correct(k).first
           out << "#{prefix}#{k}#{" (did you mean #{guess}?)" if guess}"
         end
       end

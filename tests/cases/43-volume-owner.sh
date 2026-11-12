@@ -56,3 +56,32 @@ test_new_volume_takes_the_image_users_owner() {
   assert_eq started "$(machine_state)" "machine running"
   assert_contains "$(flk exec --user 1100 -- sh -c 'touch /data/f && echo ok')" "ok" "the image's user can write"
 }
+
+# [[mounts]] seed = true (PLAN M6): an empty volume starts with what the
+# image has at its mount point, owners included; one with data is left alone.
+test_seed_fills_an_empty_volume_from_the_image() {
+  cat >>"$APP_DIR/Dockerfile" <<'DOCKER'
+USER root
+RUN mkdir -p /home/app/.cfg && echo shipped >/home/app/.cfg/settings && ln -s .cfg/settings /home/app/link \
+ && chown -R app:app /home/app && chmod 750 /home/app
+USER app
+DOCKER
+  toml_append '[[mounts]]' '  source = "home"' '  destination = "/home/app"' '  seed = true'
+  flk volumes create home --size 1 >/dev/null
+  local out; out=$(flk build 2>&1) || fail "build failed: $out"
+  [[ $out != *"hides the"*"/home/app"* && $out != *"/home/app hides"* ]] || fail "seed still warns about hidden files: $out"
+  out=$(flk deploy 2>&1) || fail "deploy failed: $out"
+  assert_contains "$out" "volume home: seeded from /home/app in v"
+  wait_log "up as 1100" 30
+  assert_eq 1100:1100 "$(owner home)" "the volume's root, like /home/app in the image"
+  assert_eq shipped "$(flk exec -- cat /home/app/link)" "files and symlinks copied"
+  assert_eq "1100:1100 750" "$(flk exec -- stat -c '%u:%g %a' /home/app)" "mount point owner and mode"
+  assert_contains "$(flk events --json -n 50)" '"type":"volume.seeded"' "event"
+  assert_eq true "$(flk machine list --json | json_get 0.volumes.1.seed)" "seed in the machine's mounts"
+  # the app's own changes survive the next deploy: seeding is for empty volumes
+  flk exec -- sh -c 'echo mine >/home/app/.cfg/settings' || fail "the app's user can't write its seeded file"
+  out=$(flk deploy 2>&1) || fail "second deploy failed: $out"
+  [[ $out != *"seeded from"* ]] || fail "seeded a volume that has data: $out"
+  wait_until 30 flk exec -- true
+  assert_eq mine "$(flk exec -- cat /home/app/.cfg/settings)" "data kept"
+}

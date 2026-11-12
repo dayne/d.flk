@@ -427,6 +427,40 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **`[[mounts]] seed = true`** (PLAN M6, 2026-11-11). A volume that's
+  empty (nothing but lost+found) when its machine is about to boot is
+  filled with what the release's image has at the mount point, as Docker
+  fills a new named volume: `seed_new_volumes`, before `own_new_volumes`,
+  on create, deploy and rollback (the machine is stopped then; a running
+  one's volume can't be read from the host). `VolFS.seed!` needs no root:
+  debugfs `rdump` copies the tree out under fakeroot, which remembers the
+  owners, `mkfs.ext4 -d` makes the volume again from it next to the old
+  file, e2fsck, then a rename, so a failure leaves the empty volume as it
+  was. The volume's root gets the directory's own owner and mode (mkfs
+  leaves it root's), and `owner_from_image` is settled. Not kept: setuid
+  bits, hard links, devices; a symlink gets its directory's owner (rdump
+  doesn't chown them). A seed that fails (too big for the volume) only
+  warns, and the next start tries again while the volume is empty: it
+  never stops a boot. Only when asked: other apps' volumes are untouched.
+  `volume.seeded` event; `seed: true` in the machine's `volumes`; the
+  `mount-hides-files` warning is dropped for a seeded mount and now
+  suggests `seed = true`. Tests: `27-files` test_seed_from_an_image,
+  `43-volume-owner` test_seed_fills_an_empty_volume_from_the_image,
+  `00-config` test_mount_seed_option.
+- [x] **flk.toml keys as JSON** (PLAN M6, 2026-11-11). `flk help --all
+  --json` has `config_keys`, one `{ key, table, name, type, default,
+  flk_only, read, doc }` per key (`read: false` for the fly.toml keys flk
+  accepts and ignores). The table is `lib/flk/config_keys.rb`, and the
+  parser's unknown-key lists (`AppConfig.known_keys`, was the `KNOWN_KEYS`
+  literal) are made from it, so a key can't be read without being listed;
+  the lists were compared before and after: identical. `[env]`,
+  `[experimental]` and `[deploy]` keys are listed but, as before, not
+  checked for typos (fly's own keys there aren't all known to flk). No
+  "since" version: flk has one version, 0.1.0. Tests: `00-config`
+  test_config_keys_json (shape, the parser's keys are all listed, listed
+  defaults are the parser's, the guide's Config section names every key
+  flk reads; that found `max_retries` undocumented).
+
 - [x] **`flk releases log [VERSION|FILE] [--failed]`** (lazyflk, 2026-11-11).
   Prints a kept build log: by default the newest build, failed or not (a
   failed first deploy has only `v1-failed-*.log` and no release); `vN`,

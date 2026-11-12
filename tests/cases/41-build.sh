@@ -111,7 +111,7 @@ test_warnings_from_the_image() {
   assert_eq mount-hides-files "$codes" "the staged app: /data has a file"
   local out; out=$(flk build 2>&1)
   assert_contains "$out" "⚠ the volume at /data hides the 1 entry the image has there"
-  assert_contains "$out" "fix: copy them in at first start"
+  assert_contains "$out" "fix: add seed = true to that [[mounts]] entry"
   for d in w1 w2 w3; do rm -rf "$FLK_HOME/build/$APP-$d-$RUN_ID"; podman rmi "flk.local/$APP-$d-$RUN_ID:build" >/dev/null 2>&1 || true; done
 }
 

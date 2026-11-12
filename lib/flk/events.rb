@@ -30,6 +30,7 @@ module Flk
       "backup.copied" => "a backup was copied to backup_copy_to",
       "backup.copy_failed" => "copying a backup elsewhere failed",
       "volume.restored" => "a volume's data was replaced from a backup",
+      "volume.seeded" => "an empty volume was filled from the image ([[mounts]] seed)",
       "port.forwarded" => "a host port now forwards to a machine",
       "port.dropped" => "a host port no longer forwards to that machine"
     }.freeze

@@ -279,6 +279,7 @@ module Flk
     # is still empty, so a fixed image applies at the next deploy; a volume
     # with data in it is never re-owned.
     def own_new_volumes(m, rel)
+      seed_new_volumes(m, rel)
       vols = m.app.volumes
       todo = Array(m.config["mounts"]).filter_map do |mt|
         v = vols.find { _1["id"] == mt["volume"] }
@@ -319,6 +320,41 @@ module Flk
       m.app.save_volumes(vols)
     end
 
+    # [[mounts]] seed = true: a volume that's still empty when its machine
+    # is about to boot gets what the release's image has at the mount
+    # point, owners and all, as Docker fills a new named volume (a home
+    # directory on a volume, a config directory the program ships). One
+    # with anything in it is never touched. Failing only warns and leaves
+    # the volume empty, to try again at the next start: never stops a boot.
+    def seed_new_volumes(m, rel)
+      todo = Array(m.config["mounts"]).select { _1["seed"] }
+      return if todo.empty?
+      vols = m.app.volumes
+      changed = false
+      todo.each do |mt|
+        v = vols.find { _1["id"] == mt["volume"] } or next
+        dest = mt["destination"]
+        begin
+          next unless (VolFS.list(v["path"], "/").map(&:name) - ["lost+found"]).empty?
+          e = VolFS.stat(rel["path"], dest)
+          unless e&.dir? && (VolFS.list(rel["path"], dest).map(&:name) - ["lost+found"]).any?
+            puts "  volume #{v['name']}: nothing to seed (#{dest} #{e&.dir? ? 'is empty' : "isn't a directory"} in v#{rel['version']}'s image)"
+            next
+          end
+          VolFS.seed!(rel["path"], dest, v["path"], label: v["name"])
+          # its root is now owned as in the image: nothing left to decide
+          changed = true if v.delete("owner_from_image")
+          puts "  volume #{v['name']}: seeded from #{dest} in v#{rel['version']}'s image"
+          Events.machine("volume.seeded", m, "#{v['name']} from #{dest} in v#{rel['version']}")
+        rescue StandardError => e
+          warn Util.yellow("  ⚠ volume #{v['name']} wasn't seeded from #{dest} and is still empty: #{e.message.lines.first.to_s.strip}\n" \
+                           "    fix: a bigger volume (flk volumes extend #{v['name']} --size GB, machine stopped) or fewer files " \
+                           "there in the image; the next start tries again while the volume is empty")
+        end
+      end
+      m.app.save_volumes(vols) if changed
+    end
+
     # A volume attaches to exactly one machine. Prefer the one this machine
     # already had, so redeploys never swap data between machines.
     def attach_volumes(a, mid, specs)
@@ -331,7 +367,7 @@ module Flk
             vols.find { _1["name"] == s["source"] && _1["attached_machine"].nil? } or
           raise Error, "no unattached volume named '#{s['source']}'; create one: flk volumes create #{s['source']} --size 1"
         v["attached_machine"] = mid
-        { "volume" => v["id"], "destination" => s["destination"] }
+        { "volume" => v["id"], "destination" => s["destination"] }.merge(s["seed"] ? { "seed" => true } : {})
       end
       a.save_volumes(vols)
       out

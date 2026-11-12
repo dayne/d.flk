@@ -113,21 +113,23 @@ Dayne chose the order above (2026-11-10).
 **Status (2026-11-11), steps 1-2 on main:** `flk build` (2ca82f0, aba8002), the busybox USER fix (91975bb),
 image warnings (8947c87) are done and tested (fast; VM cases 05, 10, 17,
 40, 41, 43; not the full suite). flkforge has adopted all of it.
-**Step 3 (checks):** the deploy-time kinds are on branch m6-checks
-(2026-11-11): `exec`, `udp` (Steam's A2S as a `send_hex` recipe, no `a2s`
+**Step 3 (checks):** the deploy-time kinds are on main (d49b4a8,
+2026-11-11): `exec`, `udp` (Steam's A2S as a `send_hex` recipe, no `a2s`
 type: core flk stays protocol-neutral) and `[deploy] preflight`. Tested:
-fast, VM cases 05, 16, 40. Send flkforge the TOML shapes when merged.
-Checks while running (enshrouded #3) are a later effort, drafted in
-`docs/health-design.md` (2026-11-11): `flk check`, then one host timer;
-checks report and don't act; an MQTT bridge waits for a clearer purpose.
-Then seed, then config keys as JSON.
+fast, VM cases 05, 16, 40, then the full suite on main.
+**Steps 4-5 (2026-11-11):** `[[mounts]] seed = true` and `config_keys`
+in `flk help --all --json` are done (history.md, Builds).
+**What's left of M6:** checks while running (enshrouded #3), a later
+effort drafted in `docs/health-design.md` (2026-11-11): `flk check`, then
+one host timer; checks report and don't act; an MQTT bridge waits for a
+clearer purpose.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.
 
 ### Alongside (any time)
 
-- Done (M6 branch): a non-root USER silently ran as root on busybox images (TODO.md,
+- Done (on main): a non-root USER silently ran as root on busybox images (TODO.md,
   Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
 - `flk logs --boot` (enshrouded #3; TODO.md, Machines): small, helps

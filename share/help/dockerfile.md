@@ -23,7 +23,7 @@ and how init switches to it, whether `flk exec` will work, and what each
 destination holds in the image. `--json` for scripts. Then its warnings,
 each with its fix: a USER the image doesn't have or can't switch to, no
 CMD, no agent (no `flk exec`), a mount over files the image has there (the
-volume hides them), over a file, or on a directory owned by another user,
+volume hides them, unless the mount has `seed = true`), over a file, or on a directory owned by another user,
 and a volume the app's user can't write to. A deploy prints the same ones
 and keeps them in the release (`flk releases --json`, `flk config show`);
 none stops it.
@@ -57,8 +57,8 @@ on the host) does the app run as root, with a warning in the boot log;
 `flk build` says which applies.
 
 **Volumes and their owner.** `[[mounts]]` puts a volume over a path,
-hiding whatever the image had there: seed it at first start if the app
-needs files in it. A new volume (`flk volumes create`, no `--owner`)
+hiding whatever the image had there: add `seed = true` to the mount if the
+app needs those files, and a new volume starts with a copy of them. A new volume (`flk volumes create`, no `--owner`)
 takes the owner of the mount point in the image the first time it's
 used, or else the image's USER. Make the mount point in the image owned
 by the app's user (`RUN install -d -o app -g app /data`) and both are

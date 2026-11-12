@@ -333,3 +333,71 @@ test_bad_checks_rejected() {
   out=$(config 2>&1) && fail "config show accepted preflight = 3"
   assert_contains "$out" "preflight must be a command string"
 }
+
+# [[mounts]] seed (PLAN M6): only in the mount when it's on; true or false.
+test_mount_seed_option() {
+  stage_app hello
+  toml_append '[[mounts]]' '  source = "home"' '  destination = "/home/app"' '  seed = true' \
+              '[[mounts]]' '  source = "data"' '  destination = "/data"'
+  local cfg; cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq '{"source":"home","destination":"/home/app","seed":true}' "$(json_get machine_config.mount_specs.0 <<<"$cfg")" "seeded mount"
+  assert_eq '{"source":"data","destination":"/data"}' "$(json_get machine_config.mount_specs.1 <<<"$cfg")" "a mount without seed is as before"
+  [[ $cfg != *"unknown key"* ]] || fail "seed warns as unknown: $cfg"
+  toml_set 'seed = true' 'seed = "yes"'
+  cfg=$(config 2>&1) && fail "seed = \"yes\" passed"
+  assert_contains "$cfg" "[[mounts]] seed must be true or false"
+}
+
+# flk.toml keys as JSON (PLAN M6): help --all --json lists every key the
+# parser knows, from the table its unknown-key warnings use, and the
+# guide's Config section names every key flk reads.
+test_config_keys_json() {
+  stage_app hello
+  local out
+  out=$("$FLK_BIN" help --all --json | ruby -rjson -I"$FLK_SRC/lib" -rflk -e '
+    keys = JSON.parse($stdin.read)["config_keys"]
+    k = keys.to_h { [_1["key"], _1] }
+    abort "a key is listed twice" unless k.size == keys.size
+    bad = keys.reject { (_1.keys - %w[key table name type default flk_only read doc]).empty? && _1["doc"].to_s.size > 10 }
+    abort "badly formed: #{bad.map { _1["key"] }}" if bad.any?
+    untyped = keys.select { _1["read"] && !%w[string integer boolean table list duration command regex].include?(_1["type"]) }
+    abort "no type: #{untyped.map { _1["key"] }}" if untyped.any?
+    e = k["flk.rootfs_extra_mb"]
+    puts [e["table"], e["type"], e["default"], e["flk_only"], e["read"]].join(" ")
+    e = k["checks.NAME.command"]
+    puts [e["table"], e["type"], e["flk_only"]].join(" ")
+    e = k["primary_region"]
+    puts [e["read"], e["flk_only"]].join(" ")
+    puts k.key?("mounts.seed") && k.key?("deploy.preflight") && k.key?("env.NAME") && k.key?("app")
+    # the parser warns about exactly the keys that are not in the list
+    Flk::AppConfig.known_keys.each do |sect, names|
+      names.each do |n|
+        key = Flk::ConfigKeys.key(sect, n)
+        abort "the parser knows #{key}, config_keys does not" unless k[key]
+      end
+    end
+    # the defaults listed are the ones a config without the key gets
+    toml = File.join(ARGV[1], "flk.toml")
+    cfg = Flk::AppConfig.new(toml)
+    cfg.data.delete("vm") # the hello app sets its memory
+    mc = cfg.machine_config
+    got = { "kill_timeout" => mc["kill_timeout"], "vm.cpus" => mc["cpus"], "vm.memory_mb" => mc["memory_mb"],
+            "restart.policy" => mc["restart"]["policy"], "restart.retries" => mc["restart"]["retries"],
+            "flk.stdin" => mc["stdin"], "flk.internal_hosts" => mc["internal_hosts"],
+            "flk.rootfs_extra_mb" => cfg.rootfs_extra_mb, "flk.keep_releases" => cfg.keep_releases,
+            "build.dockerfile" => Flk::AppConfig.new(toml).tap { _1.data.delete("build") }.dockerfile,
+            "flk.backup.mode" => cfg.backup["mode"], "flk.backup.settle" => cfg.backup["settle"],
+            "flk.backup.before_deploy" => cfg.backup["before_deploy"] }
+    got.each { |key, v| abort "#{key}: listed default #{k[key]["default"].inspect}, the parser gives #{v.inspect}" unless k[key]["default"] == v }
+    # the guide
+    g = File.read(File.join(ARGV[0], "share/guide.md"))[/^## Config.*?^## Events/m] or abort "no Config section in the guide"
+    missing = keys.select { _1["read"] && _1["name"] != "NAME" }.reject { |x| g.match?(/(?<![a-z_])#{Regexp.escape(x["name"])}(?![a-z_])/) }
+    abort "the guide never names: #{missing.map { _1["key"] }.join(", ")}" if missing.any?
+    puts "ok"' "$FLK_SRC" "$APP_DIR" 2>&1) || fail "$out"
+  assert_eq $'[flk] integer 512 true true\n[checks.NAME] command true\nfalse false\ntrue\nok' "$out"
+  # an unknown key still warns; a listed one doesn't
+  toml_append '[flk]' '  rootfs_extra_mb = 64' '  rootfs_extra = 1'
+  out=$(config 2>&1)
+  assert_contains "$out" "unknown key flk.rootfs_extra"
+  [[ $out != *"unknown key flk.rootfs_extra_mb"* ]] || fail "a listed key warns: $out"
+}

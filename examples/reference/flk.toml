@@ -29,6 +29,7 @@ kill_timeout = "30s"        # 30, "30s" or "2m": stop request to kill (default 1
 [[mounts]]
   source = "data"           # volume name: flk volumes create data --size 1
   destination = "/data"
+  # seed = true             # flk only: a new, empty volume starts with the image's files at destination
 
 # The port flk waits for after boot and prints as the app URL. Reachable on
 # the machine IP; set [flk] http_port to also serve it on a host port.

@@ -110,3 +110,41 @@ test_read_a_backup() {
   assert_eq deep "$(cat "$d/tree-$RUN_ID/a/b/c.txt")" "one directory back out of a backup"
   rm -rf "$d"
 }
+
+# VolFS.seed! ([[mounts]] seed = true): a directory of one image becomes
+# the content of an empty volume, with owners, modes and symlinks; when it
+# doesn't fit, the volume stays as it was.
+test_seed_from_an_image() {
+  local d="$WORK/seedimg-$RUN_ID" out
+  mkdir -p "$d/root/home/dev/.config"
+  echo rc >"$d/root/home/dev/.bashrc"; echo x >"$d/root/home/dev/.config/a"; ln -s .bashrc "$d/root/home/dev/link"
+  head -c 3000000 /dev/urandom >"$d/root/home/dev/big"
+  truncate -s 32M "$d/img.ext4"; truncate -s 64M "$d/vol.ext4"; truncate -s 2M "$d/tiny.ext4"
+  (cd "$d" && PATH=$PATH:/sbin:/usr/sbin fakeroot sh -c 'chown -R 1000:1000 root/home/dev; chown 0:50 root/home/dev/.config/a
+     chmod 750 root/home/dev; chmod 700 root/home/dev/.config; mkfs.ext4 -q -F -d root img.ext4'
+   PATH=$PATH:/sbin:/usr/sbin; mkfs.ext4 -q -F vol.ext4; mkfs.ext4 -q -F tiny.ext4) 2>/dev/null
+  chmod 600 "$d/vol.ext4"
+  out=$(cd "$d" && ruby -I"$FLK_SRC/lib" -rflk -e '
+    V = Flk::VolFS
+    V.seed!("img.ext4", "/home/dev", "vol.ext4", label: "data")
+    show = ->(p) { e = V.stat("vol.ext4", p); "#{p} #{e.type} #{e.uid}:#{e.gid} #{e.mode}" }
+    puts show["/"], show["/.bashrc"], show["/.config"], show["/.config/a"], show["/link"]
+    puts V.readlink("vol.ext4", "/link"), V.read("vol.ext4", "/big").bytesize
+    begin
+      V.seed!("img.ext4", "/home/dev", "tiny.ext4", label: "data")
+    rescue Flk::Error => e
+      puts "tiny: #{e.message[0, 40]}"
+    end
+    puts "tiny entries: #{V.list("tiny.ext4", "/").map(&:name).join(",")}"' 2>&1)
+  assert_contains "$out" "/ dir 1000:1000 0750" "the volume's root is the directory itself"
+  assert_contains "$out" "/.bashrc file 1000:1000 0664"
+  assert_contains "$out" "/.config dir 1000:1000 0700"
+  assert_contains "$out" "/.config/a file 0:50"
+  assert_contains "$out" "/link symlink 1000:1000"
+  assert_contains "$out" $'\n.bashrc\n3000000' "symlink target and file content"
+  assert_contains "$out" "tiny: it doesn't fit in the volume (2MB)"
+  assert_contains "$out" "tiny entries: lost+found" "the volume that was too small is untouched"
+  assert_eq 600 "$(stat -c %a "$d/vol.ext4")" "the volume file keeps its mode"
+  [[ -z $(ls "$d" | grep -v '^root$\|\.ext4$') ]] || fail "left files behind: $(ls "$d")"
+  rm -rf "$d"
+}

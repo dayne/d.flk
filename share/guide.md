@@ -112,10 +112,29 @@ also its own help page: {{TOPICS}}.
 
 ## Config (flk.toml / fly.toml subset)
 
+Every key below, with its type, default and a line of description, is
+also in `flk help --all --json` as `config_keys`:
+`{ key, table, name, type, default, flk_only, read, doc }`. `read` is
+false for the fly.toml keys flk accepts and ignores; a key that isn't
+listed gets an "unknown key" warning from `flk config show` and deploy.
+To ask whether this flk has a setting, look for its `key` (such as
+`mounts.seed` or `checks.NAME.command`).
+
 - `app`: name; lowercase letters, digits, dashes
 - `[build]`: `dockerfile` (default `Dockerfile`), `image` (prebuilt, skips the build), `args`
 - `[env]`: plain env vars
-- `[[mounts]]`: `source` (volume name), `destination` (path in the VM)
+- `[[mounts]]`: `source` (volume name), `destination` (path in the VM).
+  `seed = true` (flk only): a volume that's empty when its machine is
+  about to boot is first filled with what the image has at `destination`,
+  as Docker fills a new named volume: files, directories and symlinks with
+  their owners and modes, and the volume's root owned like the directory
+  itself. For a home directory on a volume, or a config directory the
+  program ships with. Only an empty volume is seeded, so the app's own
+  changes are never overwritten, and a later image's new files don't
+  arrive; `flk events` has a `volume.seeded`. Not copied: setuid bits,
+  hard links (they become separate files) and device files. If the files
+  don't fit, the machine boots with the volume still empty and a warning
+  that says so; the next start tries again.
 - `[http_service] internal_port`, or the first `[[services]] internal_port`:
   the port flk waits for after boot and prints as the app URL. `[http_service]`
   is reachable on the machine IP; to also serve it on a host port (and the
@@ -127,7 +146,7 @@ also its own help page: {{TOPICS}}.
 - `kill_timeout`: `30`, `"30s"` or `"2m"`. Default 10, at most {{MAX_KILL_TIMEOUT}} seconds.
 - `[[restart]]`: `policy` = `"on-failure"` (default: restart after a non-zero
   exit or a crash), `"always"` (after any exit) or `"never"`; `retries`
-  (default 10) restarts in a row, with 1, 2, 4... up to 60s between them,
+  (default 10; fly's `max_retries` is read too) restarts in a row, with 1, 2, 4... up to 60s between them,
   before giving up. A run of 10+ minutes resets the count, and so does
   starting the machine yourself. flk's own stops (`machine stop`,
   `stop-all`, deploys) are never restarted.

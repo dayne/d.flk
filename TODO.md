@@ -25,8 +25,8 @@ workflow in its header), and the app's owner confirms. Last checked
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed, on main since 7f0317f (history.md) |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1: fixed, on main since 7f0317f (history.md) |
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done, on main since 7f0317f (history.md) |
-| valheim #1 | A health check for UDP-only servers (udp / a2s) | M6: `type = "udp"` on branch m6-checks |
-| valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6: on branch m6-checks |
+| valheim #1 | A health check for UDP-only servers (udp / a2s) | M6: `type = "udp"`, on main since d49b4a8; valheim to confirm |
+| valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6: `[deploy] preflight`, on main since d49b4a8; valheim to confirm |
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
@@ -167,7 +167,7 @@ same review.
 - [ ] **Checks, designed as one piece.** Three new kinds share config,
   events, `Next:` lines and rollback, so design them together (decided
   2026-11-04):
-  - Done on branch m6-checks (2026-11-11): `type = "exec"` (`command`
+  - Done, on main (d49b4a8, 2026-11-11): `type = "exec"` (`command`
     list or `sh -c` string, `user`, `timeout`; through the agent, the
     command's last line in the failure; config warns when there's no
     agent), `type = "udp"` (`port`, `send`/`send_hex`, `expect` regex on
@@ -188,22 +188,21 @@ same review.
     last 256KB since the boot marker, too little for a chatty app); tcp,
     http, udp and exec re-run. The game repos' status tools would stop
     scraping logs.
-- [ ] **Seed a new volume from the image.** `[[mounts]] seed = true`
-  (flk only): when the volume is empty on first mount, copy what the image
-  has at `destination` into it first, as Docker does with a named volume.
-  This solves home directories on a volume (dev boxes) and config
-  directories the program ships with. Could be done host-side at
-  `volumes create`/first deploy (`--from-dir` from the rootfs), which
-  needs no guest change.
-- [ ] **flk.toml keys as JSON.** `flk help --all --json` lists commands
-  but not config keys. flkforge's `explain KEY`, its rules and its "does
-  this flk support X" checks need them: a `config_keys` array (key, type,
-  default, flk-only, one-line doc, the flk version it appeared in) built
-  from the same source as the Config section of `share/guide.md`. That
-  would also let `tests/cases/00-config.sh` check that the guide and the
-  parser agree.
+- [x] **Seed a new volume from the image** (M6, 2026-11-11; history.md).
+  `[[mounts]] seed = true`: a volume that's empty when its machine is
+  about to boot gets what the image has at `destination`, owners and
+  modes included, host-side (debugfs under fakeroot, then `mkfs.ext4 -d`).
+  flkforge's core/home-volume can drop its seeding script.
+- [x] **flk.toml keys as JSON** (M6, 2026-11-11; history.md).
+  `flk help --all --json` has `config_keys`: `{ key, table, name, type,
+  default, flk_only, read, doc }` for every key the parser knows, from the
+  table its unknown-key warnings use (`lib/flk/config_keys.rb`).
+  `00-config` checks the guide names every key flk reads and that the
+  listed defaults are the parser's. Not there: the flk version a key
+  appeared in (flk has one version, 0.1.0; a key's presence in the list
+  is the answer to "does this flk support X").
 - [x] **A `[[mounts]] source` that isn't a volume name passes config**
-  (M6 branch: a config warning; tell flkforge when it's on main).
+  (done, on main: a config warning).
   `flk volumes create` takes only `[a-z0-9_]{1,30}`
   (`lib/flk/cli/volumes.rb`), but `flk config show` accepts
   `source = "my-data"` with no warning, so the first sign is the deploy's

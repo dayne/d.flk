@@ -100,6 +100,46 @@ module Flk
       end
     end
 
+    # Fills the empty volume `vol` with what the image has in `dir`, as
+    # Docker does for a new named volume: files, directories and symlinks
+    # with their owners and modes, and the volume's root like `dir` itself.
+    # No root: debugfs copies the tree out under fakeroot, which remembers
+    # the owners, and mkfs.ext4 -d makes the volume again from it, next to
+    # the old file and then in its place (so a failure leaves the empty
+    # volume as it was). Not kept: setuid/setgid bits, hard links (they
+    # become copies), devices; a symlink gets its directory's owner.
+    def seed!(img, dir, vol, label:)
+      e = stat!(img, dir)
+      raise Error, "#{clean(dir)} isn't a directory in the image" unless e.dir?
+      fakeroot = Util.which("fakeroot") or raise Error, "fakeroot is needed (flk doctor)"
+      mkfs = Util.which("mkfs.ext4") || "/usr/sbin/mkfs.ext4"
+      new = "#{vol}.seed"
+      Dir.mktmpdir("flk-seed", File.dirname(vol)) do |t|
+        src = File.join(t, File.basename(clean(dir)))
+        File.open(new, "w", File.stat(vol).mode & 0o777) { _1.truncate(File.size(vol)) }
+        script = <<~'SH'
+          set -e
+          "$1" -R "rdump "$2" "$3"" "$4" >"$3/.rdump.out" 2>&1 || { cat "$3/.rdump.out" >&2; exit 1; }
+          if grep -v '^debugfs ' "$3/.rdump.out" | grep -q .; then grep -v '^debugfs ' "$3/.rdump.out" | head -5 >&2; exit 1; fi
+          find "$5" -type l -exec sh -c 'chown -h "$(stat -c %u:%g "$(dirname "$1")")" "$1"' _ {} \;
+          "$6" -F -q -L "$7" -d "$5" "$8"
+        SH
+        out, st = Open3.capture2e(fakeroot, "sh", "-c", script, "_", bin, clean(dir), t, img, src,
+                                  mkfs, label[0, 16], new)
+        unless st.success?
+          why = out.lines.map(&:strip).reject(&:empty?).last(3).join(" · ")
+          why = "it doesn't fit in the volume (#{File.size(vol) / 1024**2}MB): #{why}" if why.match?(/No space left|Could not allocate/i)
+          raise Error, why
+        end
+      end
+      # mkfs.ext4 -d leaves the root directory root's, mode 755
+      batch!(new, owner_cmds("/", e.uid, e.gid) + ["sif \"/\" mode 04#{e.mode}"])
+      fsck!(new)
+      File.rename(new, vol)
+    ensure
+      FileUtils.rm_f(new) if new
+    end
+
     # Runs write commands; any output besides the echo and "Allocated
     # inode" is an error. Commands are [cmd, args...] with paths quoted.
     def batch!(img, cmds)

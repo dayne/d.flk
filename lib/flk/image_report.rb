@@ -126,10 +126,10 @@ module Flk
                    "mount the volume at a directory")
           next
         end
-        if m["entries"].to_i.positive?
+        if m["entries"].to_i.positive? && !m["seed"]
           out << w("mount-hides-files", "the volume at #{m['destination']} hides the #{m['entries']} " \
                                         "entr#{m['entries'] == 1 ? 'y' : 'ies'} the image has there",
-                   "copy them in at first start (a wrapper script), or mount the volume elsewhere")
+                   "add seed = true to that [[mounts]] entry (a new volume starts with them), or mount the volume elsewhere")
         end
         next if u["root"] || u["uid"].nil? || m["uid"].zero? || m["uid"] == u["uid"]
         out << w("mount-owner-differs", "#{m['destination']} is owned by #{m['uid']}:#{m['gid']} in the image, so new volumes " \
@@ -166,6 +166,7 @@ module Flk
       dest = spec["destination"]
       _path, e = resolve(img, dest)
       h = { "source" => spec["source"], "destination" => dest, "in_image" => !e.nil? }
+      h["seed"] = true if spec["seed"]
       return h unless e
       entries = e.dir? ? VolFS.list(img, dest).reject { _1.name == "lost+found" }.size : nil
       h.merge("type" => e.type, "uid" => e.uid, "gid" => e.gid, "entries" => entries)
