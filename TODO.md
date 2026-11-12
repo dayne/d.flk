@@ -102,6 +102,16 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   `next_steps` and let `desired_state` speak. Until then a change to that
   sentence makes them Needs attention entries again (nothing breaks).
 
+- [ ] **A command that prints a build log** (lazyflk, 2026-11-11).
+  `releases --json` has `build_log` and `deploy.failed` events have
+  `log`, both paths under the state dir, which lazyflk doesn't read (the
+  CLI is its only interface). So today it can only show the path. Asked:
+  something like `flk releases log [vN]` (default: the latest build,
+  failed ones included; `--failed` or the failed log's name to pick one),
+  printing the file, exit 1 with `Error:` when it's pruned. lazyflk would
+  open it in its log viewer from a failed deploy's event, a failed job
+  and the Releases tab.
+
 ## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
 
 flkforge (past its M4 by 2026-11-10: the wizard, a CLI for agents,
