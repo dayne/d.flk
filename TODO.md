@@ -90,7 +90,8 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   Handed over: a note is in lazyflk's `TODO.md` ("From flk 21ffec9 and
   7cb3ddb"); close this when lazyflk has it.
 
-- [ ] **Say which next steps are only information** (lazyflk,
+- [x] **Say which next steps are only information** (done on branch
+  lazyflk-gaps: `next_steps_detail`, history.md) (lazyflk,
   2026-11-11). `context --json` lists "machine ID [NAME] is stopped;
   start it: flk machine start ID" for a machine the admin stopped
   (`desired_state` stopped), next to real problems. lazyflk now shows

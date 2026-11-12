@@ -46,7 +46,10 @@ module Flk
                ["--no-host", "Skip the host checks (flk doctor): cheap enough to poll; host is just lan_ip"]], json: true,
         summary: "What flk sees right now: host health, the current app, machines, ports, next steps",
         notes: ["Run this first. It resolves the app the same way other commands do (-a APP, or flk.toml / fly.toml in the current directory) and works even when there is none.",
-                "Also tidies machines that exited on their own, like status does."] },
+                "Also tidies machines that exited on their own, like status does.",
+                "--json: next_steps are plain strings; next_steps_detail has the same steps in the same order as " \
+                "{text, app, machine, kind}, kind one of problem, optional, stopped (a machine stopped on purpose), " \
+                "setup (what a new app still needs), info, ok."] },
       { name: "help", group: "Start here", args: "[COMMAND|TOPIC] [SUBCOMMAND]",
         opts: [["--all", "The full reference: concepts, every command, config, workflows, gotchas"],
                ["--json", "With --all: the command table as JSON"]],

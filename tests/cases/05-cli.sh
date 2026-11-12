@@ -82,6 +82,15 @@ test_context_for_a_fresh_app() {
   assert_eq true "$(json_get app.registered <<<"$c")" registered
   assert_contains "$(json_get next_steps <<<"$c")" "flk deploy" "next steps"
   assert_contains "$(flk context)" "## Next steps" "text context"
+  # next_steps_detail (lazyflk): the same steps, each with what it's about and its kind
+  ruby -rjson -e 'c = JSON.parse($stdin.read); d = c["next_steps_detail"]
+    abort "detail #{d.size} vs #{c["next_steps"].size}" unless d.map { _1["text"] } == c["next_steps"]
+    abort "kinds: #{d}" unless d.all? { %w[problem optional stopped setup info ok].include?(_1["kind"]) && _1.key?("app") && _1.key?("machine") }
+    abort "no setup step for #{ARGV[0]}: #{d}" unless d.any? { _1["kind"] == "setup" && _1["app"] == ARGV[0] }' "$APP" <<<"$c" ||
+    fail "next_steps_detail"
+  c=$(flk context --all --no-host --json)
+  ruby -rjson -e 'c = JSON.parse($stdin.read); d = c["next_steps_detail"]
+    abort "--all: detail texts differ from next_steps" unless d.map { _1["text"] } == c["next_steps"]' <<<"$c" || fail "--all detail"
 }
 
 test_context_without_an_app() {

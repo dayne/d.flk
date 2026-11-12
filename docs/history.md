@@ -252,6 +252,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### lazyflk gaps (G4–G14; G1–G3 are under Earlier, G15–G16 in git log)
 
+- [x] **`next_steps_detail` in `flk context --json`** (lazyflk, 2026-11-11).
+  Beside `next_steps` (the same strings, unchanged), the same steps in the
+  same order as `{text, app, machine, kind}`; kind is problem, optional,
+  stopped (desired_state stopped), setup, info or ok. Built from one list
+  (`CLI::Step`, a String that also carries them), so the two can't drift;
+  in `--all` the text has the `APP: ` prefix as before. lazyflk stops
+  matching " is stopped;". Tests: `05-cli` test_context_for_a_fresh_app,
+  `18-app-verbs`.
+
 - [x] **G5: context always runs doctor (cheap polling).** lazyflk polls
   `flk context --all --json` every 5s, and each call runs all 15 doctor
   checks (podman, `sudo -n -l`, systemctl...). Add `--no-host` to
