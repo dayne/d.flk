@@ -120,6 +120,65 @@ module Flk
       next_step("flk status", "flk logs", "flk context")
     end
 
+    def cmd_build(_args, o)
+      cfg = config
+      if @app_name && @app_name != cfg.app
+        raise Error, "-a #{@app_name} doesn't match app '#{cfg.app}' in #{File.basename(cfg.path)}"
+      end
+      config_warnings(cfg) unless o[:json]
+      t0 = Time.now
+      stdout = $stdout
+      $stdout = $stderr if o[:json] # the build's progress; stdout is the JSON
+      rep = begin
+        Image.trial_build(cfg, image_override: o[:image]) do |b|
+          r = ImageReport.report(b["rootfs"], cfg, b)
+          a = App.new(cfg.app)
+          r["warnings"] += ImageReport.volume_warnings(r, a.volumes) if a.exists?
+          r
+        end
+      rescue Error => e
+        raise unless o[:json]
+        $stdout = stdout
+        # stdout stays JSON for scripts; the words go to stderr as always
+        fail = { "ok" => false, "app" => cfg.app, "error" => e.message, "seconds" => (Time.now - t0).round(1) }
+        fail.merge!("said" => e.said, "step" => e.step, "build_log" => e.log) if e.is_a?(Image::BuildFailed)
+        puts JSON.pretty_generate(fail)
+        raise
+      ensure
+        $stdout = stdout
+      end
+      rep = { "ok" => true }.merge(rep)
+      rep["seconds"] = (Time.now - t0).round(1)
+      return puts(JSON.pretty_generate(rep)) if o[:json]
+      print_build_report(rep)
+      a = App.new(cfg.app)
+      a.exists? ? next_step("flk deploy") : next_step("flk launch --no-deploy", "flk launch")
+    end
+
+    def print_build_report(r)
+      mb = ->(b) { b ? "#{(b / 1024.0**2).round}MB" : "?" }
+      u = r["user"]
+      puts Util.green("\n✔ Built #{r['app']} from #{r['source']} in #{r['seconds']}s") +
+           " (not a release): image #{mb[r['image_bytes']]}, rootfs #{mb[r['rootfs_used_bytes']]} used of #{mb[r['rootfs_bytes']]}"
+      puts "  boots     #{r['init'] == 'static' ? "flk's static init (no /bin/sh in the image)" : '/flk/init (shell)'}"
+      puts "  runs      #{r['cmd'].map { _1.match?(/[\s"']/) || _1.empty? ? _1.inspect : _1 }.join(' ')}#{'   (no CMD: the default)' if r['cmd_from'] == 'default'}"
+      puts "  in        #{r['workdir']}"
+      who = u["root"] ? "root" : "#{u['name']} (#{u['uid'] || '?'}:#{u['gid'] || '?'})"
+      how = { "agent" => ", switched by flk-agent", "setpriv" => ", switched by setpriv", "chroot" => ", switched by chroot --userspec",
+              "none" => ", but the image can't switch to it: it runs as root" }[u["switch"]]
+      puts "  as        #{who}#{how}"
+      puts "  exec      #{r['agent'] ? 'flk exec and ssh console work' : 'no flk-agent (needs Go on the host): no flk exec or ssh console'}"
+      r["mounts"].each do |m|
+        what = if !m["in_image"] then "not in the image (flk makes it)"
+               elsif m["type"] != "dir" then "a #{m['type']} in the image, not a directory"
+               else "owned #{m['uid']}:#{m['gid']}#{m['entries'].to_i.positive? ? ", #{m['entries']} entr#{m['entries'] == 1 ? 'y' : 'ies'} the volume hides" : ', empty'}"
+               end
+        puts "  mount     #{m['destination']} (#{m['source']}): #{what}"
+      end
+      r["warnings"].each { warn Util.yellow("  ⚠ #{_1['message']}#{"\n    fix: #{_1['fix']}" if _1['fix']}") }
+      puts "  Build log: #{r['build_log']}"
+    end
+
     # A deploy that failed before it touched any machine (the build, or a
     # check before the roll): the cause, then a last line that says nothing
     # changed, for people who'd otherwise stop the machine to be safe.
@@ -146,15 +205,15 @@ module Flk
     # The same warnings as strings, for JSON ([] without a readable config).
     def warning_strings(cfg)
       return [] unless cfg
-      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" }
+      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" } + cfg.mount_problems
     rescue StandardError
       []
     end
 
     # Warnings about the config that don't stop anything: unknown keys.
     def config_warnings(cfg)
-      cfg.unknown_keys.each do |k|
-        warn Util.yellow("⚠ #{File.basename(cfg.path)}: unknown key #{k}; flk ignores it")
+      warning_strings(cfg).each do |w|
+        warn Util.yellow("⚠ #{File.basename(cfg.path)}: #{w}")
       end
     end
 

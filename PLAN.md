@@ -108,14 +108,26 @@ comes after R1. In order:
 flkforge's own order (2026-11-05): `flk build`, then `seed = true` (its
 core/home-volume seeds with a script today), then `exec` checks, then
 the keys in `--json` (`flkforge explain KEY` parses the help text today).
-Dayne decides between the two orders when M6 starts.
+Dayne chose the order above (2026-11-10).
+
+**Status (2026-11-11), steps 1-2 on main:** `flk build` (2ca82f0, aba8002), the busybox USER fix (91975bb),
+image warnings (8947c87) are done and tested (fast; VM cases 05, 10, 17,
+40, 41, 43; not the full suite). flkforge has adopted all of it.
+**Next, step 3 (checks), waits on Dayne:** what runs checks on an interval
+(enshrouded #3), since flk has no daemon: (1) a systemd user timer per
+app, (2) one `flk-health` service for all apps, installed by
+`--install-service` (recommended; also an M5 host-health role), or (3)
+the guest checks itself through flk-agent. The deploy-time kinds (`exec`,
+`udp`/`a2s`, `[deploy] preflight`) can be built first if he prefers.
+Then seed, then config keys as JSON. Send flkforge the TOML shapes of the
+new check kinds when they land.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.
 
 ### Alongside (any time)
 
-- A non-root USER silently runs as root on busybox images (TODO.md,
+- Done (M6 branch): a non-root USER silently ran as root on busybox images (TODO.md,
   Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
 - `flk logs --boot` (enshrouded #3; TODO.md, Machines): small, helps

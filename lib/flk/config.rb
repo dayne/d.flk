@@ -43,6 +43,20 @@ module Flk
       end
     end
 
+    # What's wrong with [[mounts]] that only shows later (at deploy, or as a
+    # volume that can't be made): strings, like unknown_keys'.
+    def mount_problems
+      mounts.flat_map do |m|
+        out = []
+        unless m["source"].match?(VOLUME_NAME)
+          out << "[[mounts]] source \"#{m['source']}\" isn't a volume name (lowercase letters, digits, underscores; " \
+                 "up to 30): flk volumes create can't make it"
+        end
+        out << "[[mounts]] source \"#{m['source']}\" has no destination" if m["destination"].empty?
+        out
+      end
+    end
+
     def internal_port
       data.dig("http_service", "internal_port") ||
         [data["services"]].flatten.compact.first&.dig("internal_port")

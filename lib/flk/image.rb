@@ -138,10 +138,33 @@ module Flk
     end
 
     def build_into(app, cfg, version, image_override, log)
-      eng = engine
       tag = "flk.local/#{app.name}:v#{version}"
-      src = image_override || cfg.image
+      out = File.join(app.dir, "images", "v#{version}.ext4")
+      src = make_image(app.name, cfg, tag, image_override, log, "flk.release" => version)
+      icfg = make_rootfs(cfg, tag, out, log)
+      rel = { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
+              "config" => cfg.machine_config }
+      rel["warnings"] = image_warnings(app, cfg, rel, icfg)
+      rel
+    end
 
+    # The image's warnings (flk build's), printed during a deploy and kept
+    # in the release. Never stops the deploy.
+    def image_warnings(app, cfg, rel, icfg)
+      r = ImageReport.report(rel["path"], cfg, { "image_config" => icfg, "tag" => rel["tag"] })
+      ws = r["warnings"] + ImageReport.volume_warnings(r, app.volumes)
+      ws.each { warn Util.yellow("⚠ #{_1['message']}\n  fix: #{_1['fix']}") }
+      ws
+    rescue StandardError => e # a warning must never stop a deploy
+      warn Util.yellow("⚠ couldn't check the image: #{e.message}")
+      []
+    end
+
+    # Pulls src (an image name) or builds cfg's Dockerfile, as tag. Returns
+    # src (nil for a Dockerfile).
+    def make_image(name, cfg, tag, src, log, labels = {})
+      eng = engine
+      src ||= cfg.image
       if src
         unless system(eng, "image", "inspect", src, out: File::NULL, err: File::NULL)
           puts "==> Pulling #{src}"
@@ -153,30 +176,82 @@ module Flk
         raise Error, "no [build] image and no #{cfg.dockerfile} in #{cfg.dir}" unless File.exist?(df)
         puts "==> Building #{tag} with #{eng}"
         args = cfg.build_args.flat_map { |k, v| ["--build-arg", "#{k}=#{v}"] }
+        # labels: `podman image prune -a --filter label!=flk.app` spares
+        # flk's images (../mud BUGS.flk.md #5)
+        labels = { "flk.app" => name }.merge(labels).flat_map { |k, v| ["--label", "#{k}=#{v}"] }
         before = storage_containers
         begin
-          # labels: `podman image prune -a --filter label!=flk.app` spares
-          # flk's images (../mud BUGS.flk.md #5)
-          engine_run!(eng, "build", "--force-rm", "--label", "flk.app=#{app.name}", "--label", "flk.release=#{version}",
-                      "-t", tag, "-f", df, *args, cfg.dir, log: log)
+          engine_run!(eng, "build", "--force-rm", *labels, "-t", tag, "-f", df, *args, cfg.dir, log: log)
         rescue Exception # rubocop:disable Lint/RescueException -- Ctrl-C too
           leftovers_note(storage_containers - before)
           raise
         end
       end
+      src
+    end
 
-      icfg = JSON.parse(Util.run!(eng, "image", "inspect", "--format", "{{json .Config}}", tag)) || {}
-      out = File.join(app.dir, "images", "v#{version}.ext4")
-
+    # Turns image tag into the bootable ext4 out, with flk's overlay (init,
+    # agent, the image's command and user). Returns the image's config.
+    def make_rootfs(cfg, tag, out, log)
+      icfg = JSON.parse(Util.run!(engine, "image", "inspect", "--format", "{{json .Config}}", tag)) || {}
       Dir.mktmpdir("flk-overlay") do |ov|
         write_overlay(File.join(ov, "flk"), cfg, icfg)
         puts "==> Converting image to rootfs"
-        engine_run!(File.join(LIBEXEC, "flk-build-rootfs"), eng, tag, ov, out, cfg.rootfs_extra_mb.to_s,
+        engine_run!(File.join(LIBEXEC, "flk-build-rootfs"), engine, tag, ov, out, cfg.rootfs_extra_mb.to_s,
                     log: log, what: "converting the image to a rootfs failed")
       end
+      icfg
+    end
 
-      { "version" => version, "tag" => tag, "path" => out, "source" => src || cfg.dockerfile, "created_at" => Util.now,
-        "config" => cfg.machine_config }
+    # flk build: the image and rootfs a deploy would make, outside any
+    # release (tag flk.local/APP:build, rootfs in ROOT/build/APP). One at a
+    # time per app. Yields { tag, rootfs, log, source, image_config } and
+    # removes the rootfs after; the log stays.
+    TRIAL_TAG = "build"
+
+    def trial_dir(name) = File.join(ROOT, "build", name)
+
+    # Every flk build's tag ("flk.local/APP:build"): disposable, so
+    # `flk images prune` takes them (their layers stay while a release
+    # shares them).
+    def trial_tags
+      out, st = Open3.capture2e(engine, "images", "--format", "{{.Repository}}:{{.Tag}}")
+      st.success? ? out.split.select { _1.start_with?("flk.local/") && _1.end_with?(":#{TRIAL_TAG}") }.uniq : []
+    rescue Error, SystemCallError
+      []
+    end
+
+    # Removes app's flk build (tag, log). For apps destroy.
+    def remove_trial(app_name)
+      system(engine, "rmi", "#{repo(app_name)}:#{TRIAL_TAG}", out: File::NULL, err: File::NULL)
+      FileUtils.rm_rf(trial_dir(app_name))
+    end
+
+    def trial_build(cfg, image_override: nil)
+      dir = trial_dir(cfg.app)
+      FileUtils.mkdir_p(dir)
+      File.open(File.join(dir, ".lock"), File::RDWR | File::CREAT, 0o644) do |lock|
+        raise Error, "a flk build of #{cfg.app} is already running" unless lock.flock(File::LOCK_EX | File::LOCK_NB)
+
+        path = File.join(dir, "build.log")
+        out = File.join(dir, "rootfs.ext4")
+        tag = "#{repo(cfg.app)}:#{TRIAL_TAG}"
+        src = icfg = nil
+        begin
+          File.open(path, "w") do |log|
+            log.sync = true
+            log.puts "# flk: build of #{cfg.app} (not a release), #{Util.now}"
+            src = make_image(cfg.app, cfg, tag, image_override, log, "flk.build" => "1")
+            icfg = make_rootfs(cfg, tag, out, log)
+          end
+          yield({ "tag" => tag, "rootfs" => out, "log" => path, "source" => src || cfg.dockerfile, "image_config" => icfg })
+        rescue Error => e
+          e.log = path if e.respond_to?(:log=)
+          raise
+        ensure
+          FileUtils.rm_f(out)
+        end
+      end
     end
 
     # The image's ENTRYPOINT/CMD/ENV/WORKDIR/USER, baked in as plain
@@ -189,10 +264,7 @@ module Flk
         File.chmod(0o755, File.join(fdir, "agent"))
       end
 
-      ep = cfg.entrypoint || Array(icfg["Entrypoint"])
-      cmd = cfg.cmd || (cfg.entrypoint ? [] : Array(icfg["Cmd"]))
-      argv = ep + cmd
-      argv = ["/bin/sh"] if argv.empty? # (an image with neither a CMD nor a shell can't boot)
+      argv = argv_for(cfg, icfg)
 
       File.write(File.join(fdir, "cmd"), "#!/bin/sh\nexec #{argv.shelljoin}\n")
       File.write(File.join(fdir, "cmd.json"), JSON.generate(argv)) # for the static init (no /bin/sh)
@@ -203,6 +275,15 @@ module Flk
       File.write(File.join(fdir, "workdir"), icfg["WorkingDir"].to_s.empty? ? "/" : icfg["WorkingDir"])
       File.write(File.join(fdir, "user"), icfg["User"].to_s)
       File.chmod(0o755, File.join(fdir, "init"), File.join(fdir, "cmd"))
+    end
+
+    # What /flk/cmd runs: [experimental] entrypoint/cmd over the image's.
+    # Neither: /bin/sh (an image with neither a CMD nor a shell can't boot).
+    def argv_for(cfg, icfg)
+      ep = cfg.entrypoint || Array(icfg["Entrypoint"])
+      cmd = cfg.cmd || (cfg.entrypoint ? [] : Array(icfg["Cmd"]))
+      argv = ep + cmd
+      argv.empty? ? ["/bin/sh"] : argv
     end
 
     def repo(app_name) = "flk.local/#{app_name}"
@@ -318,6 +399,7 @@ module Flk
       return [] unless st.success?
       out.split.filter_map { _1.delete_prefix("flk.local/") if _1.start_with?("flk.local/") }.uniq
          .reject { App::NAME_RE.match?(_1) && App.new(_1).exists? }
+         .select { tags(_1).any? } # a flk build's :build tag alone isn't a destroyed app's
     rescue Error, SystemCallError
       []
     end

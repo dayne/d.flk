@@ -435,6 +435,42 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   (pruned, a rollback, before flk kept logs). lazyflk only reads the CLI,
   so it couldn't open the paths. Tests: `05-cli`
   test_failed_build_shows_its_error_and_keeps_a_log, `10-hello`.
+- [x] **Image warnings** (PLAN M6, 2026-11-10). `ImageReport.warnings`,
+  each `{code, message, fix}`, from the built rootfs: `user-unknown` (a
+  USER the image's passwd/group don't resolve), `user-cant-switch` (no
+  setpriv, agent or chroot), `no-cmd` (and with the static init: can't
+  boot), `no-agent`, `mount-not-dir`, `mount-hides-files`,
+  `mount-owner-differs` (a non-root mount point owner other than the USER:
+  new volumes copy it). For a registered app, `volume-not-writable`: an
+  existing volume's root the USER can't write. Volumes still flagged
+  owner_from_image are left to machine start, which owns them if empty and
+  else warns there: at deploy the machine is still running, and debugfs
+  can't see what it hasn't flushed (the first try missed exactly that).
+  `flk build` reports them; a deploy prints them after the build and keeps
+  them in the release (`releases --json` "warnings"); `config show` has the
+  current release's as `image_warnings`. A failure in the checks only
+  prints "couldn't check the image": they run on the real apps' deploys.
+  Config warnings (strings, like unknown keys): a `[[mounts]] source` that
+  isn't a volume name (`VOLUME_NAME`, shared with `volumes create`), or no
+  destination. Checked on the real apps' current releases first: none
+  would warn. Tests: `41-build` (each code), `43-volume-owner`
+  (volume-not-writable at deploy), `41-build` config show.
+- [x] **`flk build`** (PLAN M6, 2026-11-10). Builds the image and rootfs
+  as a deploy would (the same code: `Image.make_image`/`make_rootfs`), with
+  no registered app and no machines, and reports what flk will do with
+  them, read from the rootfs (`ImageReport`): shell or static init, the
+  agent, the command and where it came from (flk.toml, image, default),
+  workdir, env names, the USER and how init switches to it (`setpriv` /
+  `chroot` when the image's own binary knows `--reuid` / `--userspec`,
+  `agent` for the static init, `none` for busybox applets: then the app
+  runs as root), each mount destination (in the image, owner, entries the
+  volume hides), sizes, and `warnings` (filled by the next M6 item).
+  The image is `flk.local/APP:build` (label `flk.build`), the rootfs is
+  removed after, the log stays in `ROOT/build/APP/build.log`; one build per
+  app at a time. `flk images` marks the tag `trial`, `images prune` takes
+  it, `apps destroy` removes it, and doctor's orphan check ignores it.
+  `image_user` moved to `ImageReport.user`. Tests: `41-build`, and
+  `05-cli` test_image_user_switch.
 
 - [x] **flk's images survive a general prune, and `flk images prune`**
   (R1, mud BUGS.flk.md #5, 2026-11-04). A `podman image prune -a` on mud
@@ -537,6 +573,19 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   `tests/apps/static` (FROM scratch + /busybox).
 
 ### Machines
+
+- [x] **A non-root USER runs as itself on busybox images** (TODO
+  Machines, 2026-11-10, before M6's warnings). Alpine's busybox has no
+  `setpriv --reuid` and no `chroot --userspec`, so init ran the app as root
+  with one line in the boot log. flk-agent 4 has `run-as USER CMD...`
+  (names from the image's passwd and group, groups cleared, setgid then
+  setuid, then exec; an unknown user runs as root with init's warning, so
+  a boot never breaks on it), and init.sh tries it after util-linux
+  setpriv and before chroot, when the agent says it's version 4 or later
+  (an old prebuilt agent ships when Go is gone). `flk build` reports
+  `switch: "agent"`. The real apps' images were checked: Ubuntu-based with
+  setpriv, or root; none changes. Tests: `43-volume-owner` (the app is up
+  as 1100), `41-build`, `05-cli` test_image_user_switch.
 
 - [x] **A missing root disk is made again at start** (R1, mud
   BUGS.flk.md #4, 2026-11-04). mud's restic backup skips machines'

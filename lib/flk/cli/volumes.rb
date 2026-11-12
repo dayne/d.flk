@@ -14,7 +14,7 @@ module Flk
     end
 
     def volume_name!(name)
-      raise Error, "volume names: lowercase letters, digits, underscores" unless name.match?(/\A[a-z0-9_]{1,30}\z/)
+      raise Error, "volume names: lowercase letters, digits, underscores" unless name.match?(VOLUME_NAME)
       name
     end
 

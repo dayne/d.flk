@@ -586,10 +586,10 @@ test_image_user_from_the_rootfs() {
   for u in "" ubuntu ubuntu:staff 1234 1000 ghost ubuntu:nogroup; do
     printf '%s' "$u" >"$d/root/flk/user"
     rm -f "$d/img"; truncate -s 8M "$d/img"; mkfs.ext4 -q -F -d "$d/root" "$d/img" 2>/dev/null || PATH=$PATH:/sbin mkfs.ext4 -q -F -d "$d/root" "$d/img"
-    got+="$u=$(ruby -I"$FLK_SRC/lib" -rflk -e 'u = Flk::CLI.allocate.send(:image_user, ARGV[0]); print "#{u[:uid].inspect}:#{u[:gid].inspect}:#{u[:root]}"' "$d/img") "
+    got+="$u=$(ruby -I"$FLK_SRC/lib" -rflk -e 'u = Flk::ImageReport.user(ARGV[0]); print "#{u[:uid].inspect}:#{u[:gid].inspect}:#{u[:root]}"' "$d/img") "
   done
   assert_eq "=0:0:true ubuntu=1000:1000:false ubuntu:staff=1000:50:false 1234=1234:1234:false 1000=1000:1000:false ghost=nil:nil:false ubuntu:nogroup=nil:nil:false " \
-    "$got" "image_user"
+    "$got" "ImageReport.user"
 }
 
 # d.flkforge BUGS #2: console lines end in \r\r\n, so a log check ending in
@@ -632,4 +632,30 @@ SH
   assert_eq "rmi $gone:v1
 rmi $gone:v2
 image prune -f" "$(grep -E '^(rmi|image prune)' "$bin/calls")" "what it removed"
+}
+
+# flk build: can init switch to the image's USER? Read from the rootfs as
+# /flk/init would try it: util-linux setpriv, coreutils chroot, or neither
+# (busybox applets know neither flag); the static init always can.
+test_image_user_switch() {
+  local d="$WORK/imgswitch-$RUN_ID" got="" c
+  for c in setpriv chroot busybox busybox+agent static root; do
+    rm -rf "$d"; mkdir -p "$d/root/flk" "$d/root/etc" "$d/root/bin" "$d/root/usr/bin"
+    printf 'app:x:1100:1100::/home/app:/bin/sh\n' >"$d/root/etc/passwd"
+    printf app >"$d/root/flk/user"
+    [[ $c == root ]] && printf '' >"$d/root/flk/user"
+    [[ $c == static ]] || printf 'stand-in shell\n' >"$d/root/bin/sh"
+    [[ $c == busybox+agent ]] && printf 'agent\n' >"$d/root/flk/agent"
+    printf 'busybox\n' >"$d/root/bin/busybox"
+    ln -s /bin/busybox "$d/root/usr/bin/setpriv"; ln -s /bin/busybox "$d/root/usr/bin/chroot"
+    case $c in
+      setpriv) rm "$d/root/usr/bin/setpriv"; printf 'usage: setpriv --reuid UID\n' >"$d/root/usr/bin/setpriv" ;;
+      chroot) rm "$d/root/usr/bin/chroot"; printf 'usage: chroot --userspec=USER:GROUP\n' >"$d/root/usr/bin/chroot" ;;
+    esac
+    truncate -s 8M "$d/img"; mkfs.ext4 -q -F -d "$d/root" "$d/img" 2>/dev/null || PATH=$PATH:/sbin mkfs.ext4 -q -F -d "$d/root" "$d/img"
+    got+="$c=$(ruby -I"$FLK_SRC/lib" -rflk -e 'i = ARGV[0]; s = Flk::VolFS.stat(i, "/bin/sh").nil?
+      print Flk::ImageReport.switch(i, Flk::ImageReport.user(i), s).inspect' "$d/img") "
+  done
+  assert_eq 'setpriv="setpriv" chroot="chroot" busybox="none" busybox+agent="agent" static="agent" root=nil ' \
+    "$got" "ImageReport.switch"
 }

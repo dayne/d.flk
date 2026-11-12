@@ -84,6 +84,9 @@ start_app() {
   if command -v setpriv >/dev/null 2>&1 && setpriv --help 2>&1 | grep -q -- --reuid; then
     [ -n "$grp" ] || grp=$(id -g "$usr" 2>/dev/null || echo "$usr")
     exec setpriv --reuid="$usr" --regid="$grp" --clear-groups /flk/cmd
+  elif [ -x /flk/agent ] && [ "$(/flk/agent --version 2>/dev/null | tr -dc 0-9)" -ge 4 ] 2>/dev/null; then
+    # flk-agent 4 and later: names from the image's /etc/passwd, groups cleared
+    exec /flk/agent run-as "$u" /flk/cmd
   elif chroot --help 2>&1 | grep -q userspec; then
     exec chroot --userspec="$u" / /flk/cmd
   else

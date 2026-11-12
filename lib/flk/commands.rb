@@ -92,6 +92,19 @@ module Flk
         summary: "Create flk.toml (if missing) in the current directory, register the app, deploy",
         notes: ["An existing flk.toml or fly.toml is used as-is; the options only shape a new one.",
                 "Deploys right away unless --no-deploy, or there's no Dockerfile / [build] image yet."] },
+      { name: "build", group: "Apps",
+        opts: [["--image IMAGE", "Inspect this image instead of building"], ["--json", "Print JSON"]], json: true,
+        summary: "Build the image and rootfs as a deploy would, and say what flk will do with them (no release, no machines)",
+        notes: ["Reads flk.toml / fly.toml like deploy, but needs no registered app: use it while writing a Dockerfile.",
+                "Reports how the machine will boot (shell init, or the static one for images without /bin/sh), the command, " \
+                "the user the app runs as and whether init can switch to it, whether flk exec will work, sizes, and what each " \
+                "[[mounts]] destination holds in the image. Then the config's warnings.",
+                "The image is tagged flk.local/APP:build (podman's layer cache makes the next deploy's build quick); the rootfs " \
+                "is removed after, and the build's output is kept in the log it names.",
+                "Exit 1 when the build fails, with the build's own error, as in deploy; with --json, stdout still gets an " \
+                "object: ok false, error, and for a build failure said (its error lines), step and build_log.",
+                "image_bytes is the image's unpacked size in the engine's store; rootfs_used_bytes what the disk holds.",
+                "Remove builds with flk images prune (flk apps destroy for a registered app)."] },
       { name: "deploy", group: "Apps",
         opts: [["--image IMAGE", "Deploy this image instead of building"],
                ["--no-rollback", "Leave a machine that fails its health checks on the new release (to debug it)"],
@@ -151,11 +164,11 @@ module Flk
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
             summary: "flk's container images (flk.local/APP:vN): size, whether a machine runs that release, orphans",
             notes: ["Read-only. Images of destroyed apps (orphan) go with flk images prune (or flk apps prune); " \
-                    "deploys keep the last two per app."] },
+                    "deploys keep the last two per app. flk.local/APP:build is the last flk build (trial in --json)."] },
           { name: "prune", opts: [["--dry-run", "Only say what would go"]],
             summary: "Free podman's (or docker's) store of what flk doesn't keep",
             notes: ["Removes the image tags a deploy would prune (past [flk] keep_releases, except releases a machine is on), " \
-                    "the images of destroyed apps, and dangling images (no tag, no child). Base images and build caches stay, " \
+                    "the images of destroyed apps, flk build's images (APP:build; and its logs, for apps that aren't registered), and dangling images (no tag, no child). Base images and build caches stay, " \
                     "so the next deploy doesn't download or rebuild everything.",
                     "Use it instead of podman image prune -a, which also removes flk's kept images (rollback) and every base " \
                     "image. To prune the rest of the store and spare flk's: podman image prune -a --filter label!=flk.app " \
@@ -176,7 +189,10 @@ module Flk
       { name: "config", group: "Apps", default_sub: "show", summary: "Inspect or set flk config",
         subs: [{ name: "show", opts: [["--json", "Accepted; the output is always JSON"],
                                       ["--host", "Show host settings (#{Host::PATH}) instead of app config"]], json: true,
-                 summary: "Print the parsed flk.toml / fly.toml (or host config with --host)" },
+                 summary: "Print the parsed flk.toml / fly.toml (or host config with --host)",
+                 notes: ["warnings: what's wrong with the file (unknown keys, [[mounts]] sources that aren't volume names). " \
+                         "image_warnings: what the deploy of the current release saw in its image ({code, message, fix}; " \
+                         "null before a deploy); flk build checks the image as it is now."] },
                { name: "set", args: "KEY=VALUE...",
                  summary: "Set host-level config values in #{Host::PATH}",
                  notes: ["Known keys: #{Host::KEYS.join(', ')}",

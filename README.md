@@ -69,7 +69,7 @@ flk context [--all]           # what flk sees now: host, app(s), machines, ports
 flk help [COMMAND|TOPIC]      # one command, or a guide: cheatsheet install first-app operate troubleshoot dockerfile host bugs uninstall
 flk help --all [--json]       # full reference: concepts, config, every command, the guides
 
-flk launch | deploy | status | releases [rollback [vN]] | config show
+flk launch | build | deploy | status | releases [rollback [vN]] | config show
 flk start | stop | restart     # every machine of the app
 flk machine list|start|stop|restart|destroy|stats|status|config ID...
 flk scale count N
