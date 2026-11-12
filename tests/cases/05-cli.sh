@@ -202,6 +202,33 @@ test_volume_from_dir() {
   assert_contains "$out" "too much for a 1GB volume"
 }
 
+# flk machine extend on a stopped machine's root disk: grows the file and
+# the filesystem, keeps its files, never shrinks. No VM: a made-up machine.
+test_machine_extend_grows_the_root_disk() {
+  local d="$FLK_HOME/apps/$APP/machines/fakeroot" out
+  mkdir -p "$d" "$WORK/root-$RUN_ID"
+  echo kept >"$WORK/root-$RUN_ID/installed"
+  printf '{"id":"fakeroot","name":"fakeroot","tap_index":98,"created_at":"2000-01-01T00:00:00Z","config":{"mounts":[]}}' >"$d/machine.json"
+  truncate -s 16M "$d/rootfs.ext4"
+  PATH=$PATH:/sbin:/usr/sbin mkfs.ext4 -q -F -d "$WORK/root-$RUN_ID" "$d/rootfs.ext4" 2>/dev/null
+  assert_eq 16 "$(flk machine list --json | json_get 0.root_disk_mb)" "root_disk_mb"
+  out=$(flk machine extend 2>&1) && fail "extended without an ID"
+  assert_contains "$out" "usage: flk machine extend ID"
+  out=$(flk machine extend fakeroot 2>&1) && fail "extended without --size"
+  assert_contains "$out" "--size GB is required"
+  out=$(flk machine extend fakeroot --size 1) || fail "extend failed: $out"
+  assert_contains "$out" "root disk 0GB -> 1GB"
+  assert_contains "$out" "rootfs_extra_mb"
+  assert_contains "$out" "Next: flk machine start fakeroot"
+  assert_eq $((1024 ** 3)) "$(stat -c %s "$d/rootfs.ext4")" "image size"
+  assert_eq 1024 "$(flk machine list --json | json_get 0.root_disk_mb)" "root_disk_mb after"
+  assert_eq $((1024 ** 3 / 4096)) "$(PATH=$PATH:/sbin:/usr/sbin dumpe2fs -h "$d/rootfs.ext4" 2>/dev/null | awk '/^Block count:/ {print $3 * 1}')" "filesystem blocks (4K)"
+  assert_eq kept "$(PATH=$PATH:/sbin:/usr/sbin debugfs -R 'cat /installed' "$d/rootfs.ext4" 2>/dev/null)" "files kept"
+  out=$(flk machine extend fakeroot --size 1 2>&1) && fail "extended to the size it has"
+  assert_contains "$out" "it only grows (--size 2 or more)"
+  rm -rf "$d"
+}
+
 test_help_topics() {
   local t out
   for t in cheatsheet install first-app operate troubleshoot uninstall dockerfile host bugs; do

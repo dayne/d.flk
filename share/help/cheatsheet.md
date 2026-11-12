@@ -48,6 +48,8 @@ Data
   flk files ls VOL[:PATH]            files in a volume (--backup B: in a backup); cat VOL:PATH
   flk files cp SRC DST               into/out of a volume, one side VOL:PATH (writes: machine stopped)
   flk volumes extend NAME --size GB  grow a volume (machine stopped)
+  flk machine extend ID --size GB    grow a machine's / (stopped, or --restart); until the next deploy
+  [flk] rootfs_extra_mb = N          MB free on / in every deploy (default 512)
 
 Clean up
   flk apps destroy APP --yes         machines, volumes, images (external volume files are kept)

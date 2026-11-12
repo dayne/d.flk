@@ -20,6 +20,8 @@ module Flk
         "cpus" => m.config["cpus"], "memory_mb" => m.config["memory_mb"], "huge_pages" => m.config["huge_pages"],
         "internal_port" => m.config["internal_port"], "ports" => Array(m.config["ports"]),
         "volumes" => Array(m.config["mounts"]),
+        # the size of / in the machine: the release image's, or what `machine extend` made it
+        "root_disk_mb" => (File.size(m.path("rootfs.ext4")) / 1024**2 rescue nil),
         # [flk] internal_hosts: the names on its /etc/hosts line ([] when off)
         "internal_names" => Hosts.wants?(m) ? Hosts.names(m) : [],
         "created_at" => m.created_at, "updated_at" => m.updated_at }
@@ -47,6 +49,54 @@ module Flk
       VM.stop(m)
       boot(m, "Machine #{m.id} [#{m.name}] restarted")
     end
+
+    # The root disk is a copy of the release image, sized for the image's
+    # files plus [flk] rootfs_extra_mb. Growing it in place keeps what the
+    # machine wrote on / since; the next deploy starts from the image again.
+    def machine_extend(args, o)
+      m = app.machine!(args.first)
+      size = o[:size] or raise Error, "--size GB is required"
+      disk = m.path("rootfs.ext4")
+      VM.restore_rootfs!(m) unless m.running?
+      now = File.size(disk)
+      want = size * 1024**3
+      unless want > now
+        raise Error, "#{m.id} [#{m.name}]'s root disk is #{root_gb(now)}GB; it only grows (--size #{(now / 1024.0**3).floor + 1} or more)"
+      end
+      if m.running? && !o[:restart]
+        raise Error.new("machine #{m.id} [#{m.name}] is running; its root disk grows while it's stopped",
+                        next_steps: ["flk machine extend #{m.id} --size #{size} --restart (stops it, grows the disk, starts it)",
+                                     "flk machine stop #{m.id}"])
+      end
+      restart = m.running?
+      if restart
+        puts "  #{m.id} [#{m.name}] stopping"
+        VM.stop(m, keep_desired: true)
+      end
+      begin
+        Util.with_lock do
+          raise Error, "machine #{m.id} [#{m.name}] was started meanwhile; stop it first" if m.running?
+          fsck = Util.which("e2fsck") || "/usr/sbin/e2fsck"
+          out, st = Open3.capture2e(fsck, "-fy", disk)
+          raise Error, "e2fsck found errors it couldn't fix in #{disk}:\n#{out}" if st.exitstatus.to_i > 2
+          File.open(disk, "r+") { _1.truncate(want) } # sparse: takes no space until used
+          Util.run!(Util.which("resize2fs") || "/usr/sbin/resize2fs", disk)
+        end
+      rescue Error => e
+        raise unless restart
+        raise Error.new("#{e.message}\nmachine #{m.id} [#{m.name}] was stopped for this and is still stopped",
+                        next_steps: ["flk machine start #{m.id}"])
+      end
+      puts "Machine #{m.id} [#{m.name}]: root disk #{root_gb(now)}GB -> #{size}GB"
+      img = m.app.release(m.release)&.dig("path").to_s
+      more = File.exist?(img) ? " by #{((want - File.size(img)) / 1024.0**2).ceil}" : ""
+      puts "  Until the next deploy, which starts from the release image again. For this much room on every deploy,",
+           "  raise [flk] rootfs_extra_mb#{more} in flk.toml; for data that should outlive deploys, use a volume."
+      return boot(m, "Machine #{m.id} [#{m.name}] started") if restart
+      next_step("flk machine start #{m.id}")
+    end
+
+    def root_gb(bytes) = (bytes / 1024.0**3).round(1).to_s.sub(/\.0\z/, "")
 
     # `machine stop` with no ID never guesses: it names the machines and
     # the app-wide command instead.

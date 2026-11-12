@@ -47,6 +47,23 @@ test_ssh_console() {
   assert_contains "$out" "/dev/pts/" "a real terminal in the machine"
 }
 
+# flk machine extend: / in the machine is bigger after, and what was
+# written there since the deploy is still there.
+test_machine_extend_grows_root_in_place() {
+  local m out before; m=$(machine_id)
+  flk exec -- sh -c 'echo installed >/root-marker'
+  before=$(flk exec -- df -m / | awk 'NR==2 {print $2}')
+  out=$(flk machine extend "$m" --size 2 2>&1) && fail "extended under a running machine"
+  assert_contains "$out" "--restart"
+  out=$(flk machine extend "$m" --size 2 --restart 2>&1) || fail "extend --restart failed: $out"
+  assert_contains "$out" "-> 2GB"
+  wait_mc 60
+  assert_eq installed "$(flk exec -- cat /root-marker)" "files on / kept"
+  local after; after=$(flk exec -- df -m / | awk 'NR==2 {print $2}')
+  (( after > 1800 && after > before )) || fail "/ is ${after}MB (was ${before}MB), expected about 2048"
+  assert_eq started "$(flk machine status "$m" | json_get desired_state)" "desired_state"
+}
+
 test_exec_needs_a_running_machine() {
   local m; m=$(machine_id)
   flk machine stop "$m" >/dev/null

@@ -64,6 +64,31 @@ problems show up there with the fix. Then find the symptom below.
   `internal_port`. Check `flk logs`, and that it listens on 0.0.0.0, not
   127.0.0.1.
 
+**The machine's disk is full** (`No space left on device`, `/` at 95%)
+- Which disk: `flk exec -- df -h`. `/` is the root disk (a copy of the
+  release image); each volume is its own line at its mount point.
+  `flk machine list --json` has the root disk's size as `root_disk_mb`.
+- `/` is full, and what's on it should stay (tools installed since the
+  deploy, say): `flk machine extend ID --size GB --restart` stops the
+  machine, grows the root disk and its filesystem to GB in all, and
+  starts it again; without `--restart`, stop it first. Files on `/` are
+  kept. The new room takes host disk only as it's used.
+- That lasts until the next deploy or rollback: both start from the
+  release image again, at its own size, without anything written to `/`
+  since. For more room on every deploy, set `[flk] rootfs_extra_mb` in
+  flk.toml (MB free on `/` beyond the image's files, default 512; the
+  extend prints how much to raise it by) and `flk deploy`.
+- What keeps filling `/`: `flk exec -- du -xm -d 2 / | sort -n | tail`
+  (MB per directory, biggest last).
+  Tools the app always needs belong in the Dockerfile (the root disk then
+  grows with the image); data it writes belongs on a volume
+  (`[[mounts]]`), which outlives deploys.
+- A volume is full: `flk machine stop ID`, `flk volumes extend NAME --size GB`,
+  `flk machine start ID`.
+- `flk machine extend` or `volumes extend` says `e2fsck found errors it
+  couldn't fix`: the filesystem is damaged and was left at its old size.
+  For a root disk, `flk deploy` makes a new one from the image.
+
 **Can't reach the app**
 - From the host: use the machine IP (`flk status`), `http://IP:PORT`.
 - Via a host port: `flk ports`. "blocked" says why (below 1024, or a

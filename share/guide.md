@@ -26,6 +26,14 @@ shows the live state with suggested next steps.
   (hex; any unique prefix works), a generated name, and a fixed IP on
   `172.30.0.0/24`, reachable from the host directly. The root filesystem is
   thrown away on every deploy, as on Fly.
+- **Root disk**: each machine's `/` is its own copy of the release's
+  filesystem, as big as the image's files plus a quarter plus
+  `[flk] rootfs_extra_mb` (512MB unless set). What the app writes or
+  installs on `/` survives stops, restarts and host reboots, but not a
+  deploy or rollback, which start from the release image again.
+  `flk machine extend ID --size GB` grows one machine's `/` in place
+  (kept until the next deploy); `rootfs_extra_mb` sets the room for every
+  deploy; data that must last belongs on a volume.
 - **Volume**: a persistent ext4 disk. `[[mounts]] source = "data"` needs one
   free volume named `data` *per machine*. A volume stays paired with its
   machine across deploys.
@@ -155,8 +163,17 @@ also its own help page: {{TOPICS}}.
   `"all"` overrides a host-wide `bind`. Apps can then share a port on
   different addresses. Needs the port helper from a current
   `sudo {{SRC}}/setup-host.sh`.
+- `[flk] rootfs_extra_mb` (flk only; default 512): free space on `/` beyond
+  the image's files, in MB. A release's root filesystem is made as big as
+  the files in the image, plus a quarter, plus this; that is all the room
+  the app has for what it writes outside its volumes (packages installed
+  at run time, caches, logs, `/tmp` when the image doesn't mount a tmpfs
+  there). It takes effect at the next `flk deploy`, for every machine. The
+  file is sparse, so a generous value costs host disk only as it's used.
+  `flk machine extend ID --size GB` grows a machine that's already full
+  without a deploy.
 - `[flk]` (flk only): `http_port` (host port for `[http_service]`), `kernel_args`,
-  `rootfs_extra_mb` (default 512), `stdin` (`"console"`, the default: the app
+  `stdin` (`"console"`, the default: the app
   reads what you type in `flk console`; `"null"`: /dev/null, like
   `docker run` without `-i`)
 - `[flk.backup]` (flk only): how `flk volumes backup` keeps the app from

@@ -90,6 +90,12 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   Handed over: a note is in lazyflk's `TODO.md` ("From flk 21ffec9 and
   7cb3ddb"); close this when lazyflk has it.
 
+- [ ] **Root disk size and `flk machine extend`** (flk, 2026-11-11;
+  nothing asked yet). New and additive: machines in `machine list --json`,
+  `status --json` and `context --json` have `root_disk_mb` (the size of
+  `/`, null when the disk file is missing), and
+  `flk machine extend ID --size GB [--restart]` grows it in place until
+  the next deploy. lazyflk could show the size and offer the extend.
 - [ ] **Say which next steps are only information** (lazyflk,
   2026-11-11). `context --json` lists "machine ID [NAME] is stopped;
   start it: flk machine start ID" for a machine the admin stopped
@@ -282,6 +288,14 @@ must be built in (`=y`).
 
 ## Machines
 
+- [ ] **Grow a root disk without stopping the machine.**
+  `flk machine extend` needs the machine stopped (`--restart` does both).
+  Firecracker can tell a running guest its drive grew (PATCH
+  `/drives/rootfs`), and ext4 grows while mounted, but something in the
+  guest has to ask for it: images rarely have `resize2fs`, so flk-agent
+  would do the `EXT4_IOC_RESIZE_FS` ioctl itself. Untested; only for
+  releases built with that agent. Related: nothing warns before `/`
+  fills up (`flk machine stats` could carry the guest's `df /`).
 - [ ] **A non-root USER runs as root on busybox images.**
   `share/init.sh` (`start_app`) switches to the image's USER with
   util-linux `setpriv`, else `chroot --userspec`, else it logs

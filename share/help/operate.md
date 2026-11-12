@@ -152,6 +152,14 @@ on backups with `--backup`; writing needs the machine stopped and ends
 with an e2fsck. Copied-in files get the target directory's owner (or
 `--owner UID:GID`), not your host user's.
 
+**Root disk.** A machine's `/` is a copy of the release image with
+`[flk] rootfs_extra_mb` (default 512) of free space, and it's replaced on
+every deploy. When it fills up (`flk exec -- df -h /`),
+`flk machine extend ID --size GB --restart` grows it in place and keeps
+its files until the next deploy; raise `rootfs_extra_mb` and deploy to
+have the room every time. See `flk help troubleshoot`, "The machine's
+disk is full".
+
 **Volume files.** `flk volumes extend NAME --size GB` grows a volume
 (machine stopped), and `flk volumes move NAME --dir DIR` moves its file to
 another disk (machine stopped). Backups are full copies on ext4; with the

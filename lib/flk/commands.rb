@@ -180,6 +180,14 @@ module Flk
           { name: "restart", args: "[ID...]", summary: "Stop, then boot" },
           { name: "destroy", aliases: %w[rm], args: "ID...", opts: [["-f", "--force", "Stop it first if running"]],
             summary: "Delete machines (their volumes are kept, unattached)" },
+          { name: "extend", args: "ID", opts: [["-s", "--size GB", Integer, "New size of the root disk in GB (required; grow only)"],
+                                               ["--restart", "Stop a running machine for it, and start it again after"]],
+            summary: "Grow a machine's root disk (/) and its filesystem; the machine must be stopped, or pass --restart",
+            notes: ["For a machine whose / filled up with things installed or written after it booted. Files on / are kept.",
+                    "It lasts until the next deploy or rollback, which start from the release image again. For room on " \
+                    "every deploy, raise [flk] rootfs_extra_mb in flk.toml (MB free on / beyond the image's files; default 512); " \
+                    "for data that should outlive deploys, use a volume ([[mounts]]).",
+                    "The disk file is sparse: the new room takes host disk space only as it's used (flk disk)."] },
           { name: "hosts-sync", hidden: true,
             summary: "Rewrite the internal hosts block in running machines that want it (run by flk itself)" },
           { name: "revive", args: "ID", hidden: true,
