@@ -412,6 +412,15 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **`flk releases log [VERSION|FILE] [--failed]`** (lazyflk, 2026-11-11).
+  Prints a kept build log: by default the newest build, failed or not (a
+  failed first deploy has only `v1-failed-*.log` and no release); `vN`,
+  `--failed`, or the file name from `build_log` / a `deploy.failed`
+  event's `log`. Exit 1 with `Error:` saying why when there's none
+  (pruned, a rollback, before flk kept logs). lazyflk only reads the CLI,
+  so it couldn't open the paths. Tests: `05-cli`
+  test_failed_build_shows_its_error_and_keeps_a_log, `10-hello`.
+
 - [x] **flk's images survive a general prune, and `flk images prune`**
   (R1, mud BUGS.flk.md #5, 2026-11-04). A `podman image prune -a` on mud
   removed every image, flk's kept releases included, so each next deploy

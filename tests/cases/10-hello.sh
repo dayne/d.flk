@@ -76,6 +76,7 @@ test_images_and_disk_see_the_release() {
   local log; log=$(flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).find { _1["current"] }["build_log"]')
   [[ $log == */builds/v*.log && -s $log ]] || fail "current release has no build log: $log"
   grep -q '^==> \|STEP\|rootfs:' "$log" || fail "build log has no build output: $(head -3 "$log")"
+  cmp -s "$log" <(flk releases log) || fail "flk releases log isn't the current release's build log"
   # labelled, so podman image prune -a --filter label!=flk.app spares it (mud BUGS #5)
   if [[ ${FLK_ENGINE:-podman} == podman ]]; then
     local tag; tag=$(json_get repo <<<"$img"):$(json_get tag <<<"$img")

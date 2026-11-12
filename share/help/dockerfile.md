@@ -12,7 +12,8 @@ are below.
 `flk exec`, and your image's CMD, USER, WORKDIR and ENV. Each machine
 boots a fresh copy of that disk, thrown away at the next deploy: anything
 that must last goes on a volume. A failed build prints what the build
-said and keeps its output in `APP/builds/` (`Build log: FILE`).
+said and keeps its output in `APP/builds/` (`Build log: FILE`;
+`flk releases log` prints it).
 
 **Name images in full.** `FROM docker.io/library/ubuntu:24.04`, not
 `FROM ubuntu:24.04`: podman on Ubuntu has no search registries, and short

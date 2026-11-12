@@ -102,7 +102,8 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   `next_steps` and let `desired_state` speak. Until then a change to that
   sentence makes them Needs attention entries again (nothing breaks).
 
-- [ ] **A command that prints a build log** (lazyflk, 2026-11-11).
+- [x] **A command that prints a build log** (lazyflk, 2026-11-11; done
+  on branch lazyflk-gaps: `flk releases log [VERSION|FILE] [--failed]`).
   `releases --json` has `build_log` and `deploy.failed` events have
   `log`, both paths under the state dir, which lazyflk doesn't read (the
   CLI is its only interface). So today it can only show the path. Asked:
@@ -111,6 +112,15 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   printing the file, exit 1 with `Error:` when it's pruned. lazyflk would
   open it in its log viewer from a failed deploy's event, a failed job
   and the Releases tab.
+
+- [ ] **`config set`: lists, and unsetting a key** (lazyflk, 2026-11-11).
+  lazyflk's host settings form (host menu c) runs `flk config set
+  KEY=VALUE...` for what changed. Two things it can't do: `bind` with
+  more than one address (config set writes one string, so the form
+  leaves a multi-address bind to the file), and removing a key (an
+  emptied field is skipped). Asked, additive: `bind=A,B` written as a
+  list, and `flk config unset KEY...` (or `KEY=` meaning unset), checked
+  like set is before the file is replaced.
 
 ## For flkforge (image wizard, ~/d.flkforge; PLAN.md M6)
 

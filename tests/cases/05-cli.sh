@@ -392,6 +392,12 @@ test_failed_build_shows_its_error_and_keeps_a_log() {
   [[ $log == */builds/v1-failed-*.log && -f $log ]] || fail "event's log isn't a kept failed-build log: $log"
   assert_eq 50 "$(grep -c '^noise' "$log")" "the whole output in the log"
   assert_contains "$out" "Build log: $log" "the error names the same file"
+  # lazyflk reads it through the CLI: no release yet, only the failed build
+  assert_eq 50 "$(flk releases log | grep -c '^noise')" "releases log: the newest build, a failed one"
+  assert_eq 50 "$(flk releases log --failed v1 | grep -c '^noise')" "releases log --failed v1"
+  assert_eq 50 "$(flk releases log "$(basename "$log")" | grep -c '^noise')" "releases log FILE (the event's)"
+  out=$(flk releases log v2 2>&1) && fail "releases log of a release that doesn't exist passed"
+  assert_contains "$out" "Error: no build log of v2"
 }
 
 test_explain_failure_reads_the_failing_step() {

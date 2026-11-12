@@ -118,6 +118,15 @@ module Flk
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
             summary: "Releases, newest first: current, failed (and why), kept for rollback, or pruned" },
+          { name: "log", args: "[VERSION|FILE]",
+            opts: [["--failed", "The newest failed build's log (of VERSION, if given)"]],
+            summary: "Print a build's output (default: the newest build, failed or not)",
+            notes: ["Every build's output is kept in APP/builds/: vN.log for each kept release, and the last 3 failed builds " \
+                    "as vN-failed-TIME.log (a failed build reuses its version, so a failed first deploy has v1 failed logs " \
+                    "and no release).",
+                    "VERSION is vN or N; FILE is a log's name as releases --json (build_log) or a deploy.failed event (log) gives it.",
+                    "Exit 1 with Error: when there's no such log (pruned with its release, a rollback, which builds nothing, " \
+                    "or a release from before flk kept logs)."] },
           { name: "rollback", args: "[VERSION]",
             opts: [["--no-rollback", "If the old release fails its health checks, leave the machine on it"],
                    ["--with-volumes", "Also put the volumes back as they were on that release (from the backups " \
