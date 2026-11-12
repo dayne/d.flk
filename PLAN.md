@@ -113,12 +113,10 @@ Dayne chose the order above (2026-11-10).
 **Status (2026-11-11), steps 1-2 on main:** `flk build` (2ca82f0, aba8002), the busybox USER fix (91975bb),
 image warnings (8947c87) are done and tested (fast; VM cases 05, 10, 17,
 40, 41, 43; not the full suite). flkforge has adopted all of it.
-**Next, step 3 (checks), waits on Dayne:** what runs checks on an interval
-(enshrouded #3), since flk has no daemon: (1) a systemd user timer per
-app, (2) one `flk-health` service for all apps, installed by
-`--install-service` (recommended; also an M5 host-health role), or (3)
-the guest checks itself through flk-agent. The deploy-time kinds (`exec`,
-`udp`/`a2s`, `[deploy] preflight`) can be built first if he prefers.
+**Next, step 3 (checks):** the deploy-time kinds (`exec`, `udp`/`a2s`,
+`[deploy] preflight`). Checks while running (enshrouded #3) are a later
+effort, drafted in `docs/health-design.md` (2026-11-11): `flk check`, then
+one host timer, with MQTT left to a bridge outside flk.
 Then seed, then config keys as JSON. Send flkforge the TOML shapes of the
 new check kinds when they land.
 

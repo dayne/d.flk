@@ -184,7 +184,8 @@ same review.
     machines unchanged` and the command's last line, before any build;
     `flk deploy --no-preflight` skips it (valheim #3: a stale Steam pin
     shouldn't cost a 2GB download).
-  - Health while running (enshrouded #3, 2026-11-08): checks run only
+  - Health while running (enshrouded #3, 2026-11-08; a later effort,
+    design draft in `docs/health-design.md`): checks run only
     during a deploy, so `flk status` can't say whether a machine is up now.
     An opt-in `interval = "5m"` per check, the last result per machine in
     `flk status --json` (`checks: {NAME: {ok, at, since}}`), and
