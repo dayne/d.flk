@@ -297,3 +297,39 @@ test_config_set_and_unset() {
   out=$(FLK_HOST_CONFIG="$h" flk config unset nope 2>&1) && fail "unset of an unknown key passed"
   assert_contains "$out" "unknown config key 'nope'"
 }
+
+# flk's exec and udp checks, and [deploy] preflight (M6 checks).
+test_exec_and_udp_checks() {
+  stage_app hello
+  toml_append '' '[deploy]' '  preflight = "test -f flk.toml"' \
+    '' '[checks.ready]' '  type = "exec"' '  command = "test -d /data"' \
+    '' '[checks.tool]' '  type = "exec"' '  command = ["app", "--health"]' '  user = "root"' '  timeout = "3s"' \
+    '' '[checks.query]' '  type = "udp"' '  port = 2457' '  send_hex = "FF FF FF FF 54"' '  expect = "^\\\\xFF"' \
+    '' '[checks.text]' '  type = "udp"' '  port = 5000' '  send = "ping"'
+  local cfg; cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq '["sh","-c","test -d /data"]' "$(json_get machine_config.checks.0.command <<<"$cfg")" "a command string runs with sh -c"
+  assert_eq "test -f flk.toml" "$(json_get preflight <<<"$cfg")" "[deploy] preflight"
+  assert_eq 10 "$(json_get machine_config.checks.0.timeout <<<"$cfg")" "exec timeout default"
+  assert_eq '["app","--health"]' "$(json_get machine_config.checks.1.command <<<"$cfg")" "a command list as is"
+  assert_eq root "$(json_get machine_config.checks.1.user <<<"$cfg")" "exec user"
+  assert_eq 3 "$(json_get machine_config.checks.1.timeout <<<"$cfg")" "exec timeout"
+  assert_eq ffffffff54 "$(json_get machine_config.checks.2.send_hex <<<"$cfg")" "send_hex, spaces dropped"
+  assert_eq 2 "$(json_get machine_config.checks.2.timeout <<<"$cfg")" "udp timeout default"
+  assert_eq 70696e67 "$(json_get machine_config.checks.3.send_hex <<<"$cfg")" "send as text"
+  [[ $cfg != *"unknown key"* ]] || fail "the new keys warn as unknown: $cfg"
+}
+
+test_bad_checks_rejected() {
+  local bad out
+  for bad in 'type = "exec"' 'type = "udp"|port = 1|send_hex = "zz"' 'type = "udp"|port = 1|send = "a"|send_hex = "61"' \
+             'type = "udp"|port = 1|expect = "("' 'type = "nope"'; do
+    stage_app hello
+    toml_append '' '[checks.c]' "${bad//|/$'\n'}"
+    out=$(config 2>&1) && fail "config show accepted check: $bad"
+    assert_contains "$out" "check c" "the error names the check ($bad)"
+  done
+  stage_app hello
+  toml_append '' '[deploy]' '  preflight = 3'
+  out=$(config 2>&1) && fail "config show accepted preflight = 3"
+  assert_contains "$out" "preflight must be a command string"
+}

@@ -139,12 +139,34 @@ also its own help page: {{TOPICS}}.
   guest uses it or not and is never swapped. Memory must be whole 2MB.
 - `[experimental]`: `cmd`, `entrypoint` (override the image's)
 - `[checks.NAME]`: health checks a deploy waits for: `type` = `"tcp"`
-  (`port`), `"http"` (`port`, `path`; 2xx/3xx passes) or flk's `"log"`
-  (`match` = a regex for a console line since boot; `^` and `$` match at
-  each line's start and end). Each must pass within
+  (`port`), `"http"` (`port`, `path`; 2xx/3xx passes), or flk's own:
+  - `"log"`: `match` = a regex for a console line since boot; `^` and `$`
+    match at each line's start and end.
+  - `"exec"`: `command` = `["PROG", "ARG"...]` or a string for `sh -c`,
+    run in the guest through flk-agent (as `flk exec`; `user`, default the
+    image's USER); exit 0 passes. `timeout` per try, default 10s. The
+    command's last output line is in the failure. Proves what a port
+    can't: the volume is mounted, the tool runs, the app's own health
+    command passes.
+  - `"udp"`: `port`, `send` (text) or `send_hex` (bytes as hex), and
+    `expect` (a regex the reply must match, bytes as `\xFF` in a
+    single-quoted TOML string; default any reply). `timeout`
+    per try, default 2s. For a Steam game's query port, A2S_INFO is
+    `send_hex = "FFFFFFFF54536F7572636520456E67696E6520517565727900"`;
+    any reply (the info, or the challenge newer servers send first)
+    means the server answers.
+
+  Checks run one after another, retried each second; each must pass within
   `grace_period` (default 60s) or the machine goes back to its previous
   release and the deploy stops. Also read: `[[services.tcp_checks]]`,
   `[[services.http_checks]]` (on that service's port), `[[http_service.checks]]`.
+- `[deploy] preflight = "CMD"` (flk only): a host command `flk deploy`
+  runs first, in the config's directory, with `FLK_APP` and `FLK_RELEASE`
+  (the version this deploy will make). A non-zero exit stops the deploy
+  before any backup or build (`preflight failed; machines unchanged`, with
+  the command's last line); `flk deploy --no-preflight` skips it. For
+  checks that would otherwise cost a long build: a stale download pin, a
+  missing secret file. `flk build` doesn't run it.
 - `[flk] internal_hosts = true` (flk only): fly's `.internal` names, from
   `/etc/hosts` rather than DNS. The app's machines get a line per machine
   on this host: `IP APP.internal ID.vm.APP.internal NAME.vm.APP.internal`

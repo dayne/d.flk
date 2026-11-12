@@ -78,8 +78,11 @@ downloads with sha256. Old releases come back only from flk's kept images
 (`[flk] keep_releases`, `flk releases rollback`).
 
 **Readiness.** `[checks.NAME]` decide when a deploy is done: `tcp` and
-`http` on a port, or `log`, a regex for a console line (`^` and `$` match
-line by line). A udp-only server needs a log check: flk can't tell when a
-udp port is ready.
+`http` on a port, `log`, a regex for a console line (`^` and `$` match
+line by line), `exec`, a command run in the guest that exits 0 (the volume
+is mounted, the tool runs), or `udp`, a datagram that gets a reply (a
+game's query port; Steam's A2S_INFO is in `flk help --all`). A
+`[deploy] preflight` command runs on the host before the build, for checks
+that would otherwise cost a long download.
 
 Every flk.toml key, annotated: `{{SRC}}/examples/reference/flk.toml`.

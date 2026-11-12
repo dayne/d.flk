@@ -25,8 +25,8 @@ workflow in its header), and the app's owner confirms. Last checked
 | enshrouded #2 | before_deploy backups aren't copied to backup_copy_to | R1: fixed, on main since 7f0317f (history.md) |
 | mud #4 | Recreate a missing rootfs.ext4 from the release image | R1: fixed, on main since 7f0317f (history.md) |
 | mud #5 | Protect flk's podman images from `podman image prune -a` | R1: done, on main since 7f0317f (history.md) |
-| valheim #1 | A health check for UDP-only servers (udp / a2s) | M6, checks |
-| valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6, checks |
+| valheim #1 | A health check for UDP-only servers (udp / a2s) | M6: `type = "udp"` on branch m6-checks |
+| valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6: on branch m6-checks |
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
@@ -167,23 +167,17 @@ same review.
 - [ ] **Checks, designed as one piece.** Three new kinds share config,
   events, `Next:` lines and rollback, so design them together (decided
   2026-11-04):
-  - `type = "exec"`: `command = ["sh", "-c", "..."]`, `user`: run a
-    command in the guest through the agent, and pass on exit 0. Deploy
-    checks today see only ports and log lines. This lets a release prove
-    the volume is mounted, the tool runs, or the app's own health command
-    passes, and roll back otherwise. Needs the agent (no Go, no exec
-    check: say so in config show). flkforge snippets would carry these as
-    their smoke tests.
-  - `type = "udp"` (`port`, optional `send`/`expect`) and the shorthand
-    `type = "a2s"` (Steam's A2S_INFO, handling the challenge reply) for
-    UDP-only game servers (valheim #1: first check that Valheim answers
-    A2S when `-public 0`).
-  - `[deploy] preflight = "CMD"`: a host command run in the flk.toml's
-    directory before the build (env `FLK_APP`, `FLK_RELEASE` = the next
-    version). A non-zero exit stops the deploy with `deploy failed;
-    machines unchanged` and the command's last line, before any build;
-    `flk deploy --no-preflight` skips it (valheim #3: a stale Steam pin
-    shouldn't cost a 2GB download).
+  - Done on branch m6-checks (2026-11-11): `type = "exec"` (`command`
+    list or `sh -c` string, `user`, `timeout`; through the agent, the
+    command's last line in the failure; config warns when there's no
+    agent), `type = "udp"` (`port`, `send`/`send_hex`, `expect` regex on
+    the reply bytes; a closed port fails at once), and `[deploy] preflight`
+    (before the backups and the build, `FLK_APP`/`FLK_RELEASE`, `deploy
+    --no-preflight`, `preflight` in `config show`). No `a2s` type: any
+    reply to A2S_INFO, the info or the challenge, means the server
+    answers, so it's a documented `send_hex` recipe for `udp` (core flk
+    stays protocol-neutral). valheim #1 still to confirm that Valheim
+    answers on 2457 with `-public 0`.
   - Health while running (enshrouded #3, 2026-11-08; a later effort,
     design draft in `docs/health-design.md`): checks run only
     during a deploy, so `flk status` can't say whether a machine is up now.
@@ -192,7 +186,7 @@ same review.
     `check.failed` / `check.recovered` events on a change. A `log` check
     that passed for this boot stays passed (a boot fact; today it reads the
     last 256KB since the boot marker, too little for a chatty app); tcp,
-    http, udp/a2s and exec re-run. The game repos' status tools would stop
+    http, udp and exec re-run. The game repos' status tools would stop
     scraping logs.
 - [ ] **Seed a new volume from the image.** `[[mounts]] seed = true`
   (flk only): when the volume is empty on first mount, copy what the image

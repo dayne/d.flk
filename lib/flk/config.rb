@@ -192,8 +192,10 @@ module Flk
     # Health checks a deploy waits for before moving on: fly's [checks]
     # (type "tcp" or "http"), [[services.tcp_checks]] / [[services.http_checks]]
     # (on that service's internal_port), [[http_service.checks]], and flk's
-    # own type = "log": a console line matching `match` (e.g. a game
-    # server's "Done ("). Each must pass within its grace_period (default
+    # own types: "log", a console line matching `match` (e.g. a game
+    # server's "Done ("); "exec", a command run in the guest through the
+    # agent that exits 0; "udp", a datagram to `port` that gets a reply
+    # (matching `expect`). Each must pass within its grace_period (default
     # 60s) after the machine boots.
     def checks
       list = []
@@ -215,30 +217,80 @@ module Flk
       list
     end
 
-    CHECK_TYPES = %w[tcp http log].freeze
+    CHECK_TYPES = %w[tcp http log exec udp].freeze
 
     def check_spec(name, h, default_port)
       raise Error, "check #{name} must be a table" unless h.is_a?(Hash)
       type = (h["type"] || "tcp").to_s
-      raise Error, "check #{name}: type must be tcp, http or log (got '#{type}')" unless CHECK_TYPES.include?(type)
+      raise Error, "check #{name}: type must be #{CHECK_TYPES.join(', ')} (got '#{type}')" unless CHECK_TYPES.include?(type)
       spec = { "name" => name.to_s, "type" => type,
                "grace_period" => AppConfig.seconds(h["grace_period"], 60, "check #{name} grace_period") }
-      if type == "log"
-        m = h["match"] or raise Error, "check #{name}: type = \"log\" needs match = \"REGEX\""
-        begin
-          Regexp.new(m.to_s)
-        rescue RegexpError => e
-          raise Error, "check #{name}: bad match regex: #{e.message}"
-        end
-        spec["match"] = m.to_s
+      case type
+      when "log"
+        spec["match"] = check_regex(name, h["match"] || raise(Error, "check #{name}: type = \"log\" needs match = \"REGEX\""))
+      when "exec"
+        spec.merge!(exec_check(name, h))
       else
         port = h["port"] || default_port or raise Error, "check #{name} needs a port"
         spec["port"] = Integer(port)
         spec["path"] = (h["path"] || "/").to_s if type == "http"
+        spec.merge!(udp_check(name, h)) if type == "udp"
       end
       spec
     rescue ArgumentError, TypeError
       raise Error, "check #{name}: port must be a number"
+    end
+
+    # bytes: matched against a udp reply, so \xFF means the byte.
+    def check_regex(name, m, bytes: false)
+      bytes ? Regexp.new(m.to_s.b, Regexp::NOENCODING) : Regexp.new(m.to_s)
+      m.to_s
+    rescue RegexpError => e
+      raise Error, "check #{name}: bad regex: #{e.message}"
+    end
+
+    # command: an argv list, or a string run with sh -c. user: who runs it
+    # (default the image's USER, as flk exec). timeout: per try, default 10s.
+    def exec_check(name, h)
+      cmd = h["command"]
+      argv = case cmd
+             when String then ["sh", "-c", cmd]
+             when Array then cmd.map(&:to_s)
+             end
+      if argv.nil? || argv.empty? || argv.first.empty?
+        raise Error, "check #{name}: type = \"exec\" needs command = [\"PROG\", \"ARG\"...] or a shell string"
+      end
+      spec = { "command" => argv, "timeout" => AppConfig.seconds(h["timeout"], 10, "check #{name} timeout") }
+      spec["user"] = h["user"].to_s if h["user"]
+      spec
+    end
+
+    # send: the datagram as text, or send_hex as hex digits (for binary
+    # queries such as Steam's A2S_INFO); expect: a regex the reply must
+    # match (default: any reply). timeout: per try, default 2s.
+    def udp_check(name, h)
+      raise Error, "check #{name}: give send or send_hex, not both" if h["send"] && h["send_hex"]
+      payload = if (x = h["send_hex"])
+                  hex = x.to_s.delete(" :")
+                  raise Error, "check #{name}: send_hex must be hex digits (got '#{x}')" unless hex.match?(/\A(\h\h)*\z/)
+                  [hex].pack("H*")
+                else
+                  h["send"].to_s.b
+                end
+      spec = { "send_hex" => payload.unpack1("H*"),
+               "timeout" => AppConfig.seconds(h["timeout"], 2, "check #{name} timeout") }
+      spec["expect"] = check_regex(name, h["expect"], bytes: true) if h["expect"]
+      spec
+    end
+
+    # [deploy] preflight (flk only): a host command a deploy runs first, in
+    # the config's directory, before any backup or build; nil when unset.
+    def preflight
+      d = data["deploy"]
+      return nil unless d.is_a?(Hash) && d["preflight"]
+      cmd = d["preflight"]
+      raise Error, "[deploy] preflight must be a command string" unless cmd.is_a?(String) && !cmd.strip.empty?
+      cmd
     end
 
     # [flk] keep_releases: release images kept for rollback (default 2).
@@ -268,7 +320,7 @@ module Flk
       "http_service" => %w[internal_port force_https auto_stop_machines auto_start_machines min_machines_running
                            processes concurrency checks http_options tls_options],
       "check" => %w[type port path method grace_period interval timeout headers protocol tls_skip_verify
-                    tls_server_name match processes],
+                    tls_server_name match command user send send_hex expect processes],
       "flk" => %w[http_port kernel_args rootfs_extra_mb stdin bind backup keep_releases internal_hosts],
       "flk.backup" => %w[mode pre post settle keep verify before_deploy]
     }.freeze

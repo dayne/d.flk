@@ -362,7 +362,7 @@ module Flk
       port = m.config["internal_port"] or return m
       if m.config["internal_protocol"] == "udp"
         if Array(m.config["checks"]).empty?
-          puts "    udp/#{port}: flk can't tell when it's ready; a [checks] type = \"log\" can (a line it prints when up)"
+          puts "    udp/#{port}: flk can't tell when it's ready; a [checks] type = \"udp\" (a query that gets a reply) or \"log\" (a line it prints when up) can"
         end
       elsif checks_follow
         nil

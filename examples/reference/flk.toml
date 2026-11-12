@@ -64,6 +64,22 @@ kill_timeout = "30s"        # 30, "30s" or "2m": stop request to kill (default 1
   match = "Server started"
   grace_period = "60s"
 
+[checks.data]
+  type = "exec"             # flk: a command in the guest (flk-agent); exit 0 passes
+  command = "test -w /data" # or ["PROG", "ARG"]; user = "root" to run as another user
+  timeout = "10s"           # per try (the default)
+
+[checks.query]
+  type = "udp"              # flk: a datagram that gets a reply (udp-only game servers)
+  port = 2457
+  send_hex = "FFFFFFFF54536F7572636520456E67696E6520517565727900"   # Steam A2S_INFO; or send = "text"
+  # expect = '\xFF\xFF\xFF\xFF[IA]'   # a regex on the reply (default: any reply)
+
+# flk: a host command run before any backup or build; a non-zero exit stops
+# the deploy (flk deploy --no-preflight skips it).
+[deploy]
+  preflight = "test -n \"$FLK_APP\""
+
 [flk]
   http_port = 18080         # host port for [http_service]
   bind = "all"              # host addresses for this app's ports; "all" overrides host.toml

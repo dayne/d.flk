@@ -6,6 +6,8 @@
 #   - logs "Done (...)!" once it's listening
 #   - keeps world state on /data (a flk volume), counting boots and saves
 #   - on SIGTERM, logs "Saving worlds", takes SAVE_SECONDS, then "Saved the game"
+#   - answers a Steam-style A2S_INFO query on $PORT/udp (flk's udp checks);
+#     other datagrams get no reply
 #
 # The status JSON carries an extra "flk" object with what the guest saw
 # (env, secret digest, boots, egress), which the tests assert against.
@@ -153,6 +155,17 @@ end
 log "Starting minecraft server version 1.21.1 (flk shadow)"
 log "Starting Minecraft server on *:#{PORT} (boot ##{$world['boots']})"
 server = TCPServer.new("0.0.0.0", PORT)
+Thread.new do
+  udp = UDPSocket.new
+  udp.bind("0.0.0.0", PORT)
+  loop do
+    msg, from = udp.recvfrom(1400)
+    next unless msg.b.start_with?("\xFF\xFF\xFF\xFFT".b)
+    udp.send("\xFF\xFF\xFF\xFFI".b + ENV.fetch("MOTD", "flk shadow").b + "\x00".b, 0, from[3], from[1])
+  end
+rescue IOError, SystemCallError
+  nil
+end
 log "Done (#{(Time.now - STARTED).round(3)}s)! For help, type \"help\""
 
 until $stopping

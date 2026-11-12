@@ -37,7 +37,8 @@ Change things
   flk scale count N                  new machines need their own volumes
   flk secrets set|unset ...          restarts machines (unless --stage)
   flk releases rollback [vN]         back to an older release (image + config)
-  [checks.NAME] type = "log"|"tcp"|"http"   deploys wait for these; failures roll back
+  [checks.NAME] type = ...           log|tcp|http|exec|udp: deploys wait for them; failures roll back
+  [deploy] preflight = "CMD"         a host check before the build; non-zero stops the deploy
 
 Data
   flk volumes backup [NAME]          copy to backup_dir (~/.config/flk/host.toml) or --to DIR

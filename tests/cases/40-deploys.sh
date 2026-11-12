@@ -111,3 +111,53 @@ test_rollback_after_no_rollback_returns_to_current() {
   assert_eq 6 "$(release_field 8 rollback_of)" "rollback_of the last good release"
   wait_mc 60
 }
+
+# flk's exec and udp checks (M6): a command in the guest, a datagram that
+# gets a reply. mcshadow answers A2S_INFO on its port over udp.
+A2S='FFFFFFFF54536F7572636520456E67696E6520517565727900'
+
+test_exec_and_udp_checks_pass() {
+  set_checks '' '[checks.world]' '  type = "exec"' '  command = "test -f /data/world/level.json"' \
+    '' '[checks.query]' '  type = "udp"' '  port = 25565' "  send_hex = \"$A2S\"" '  expect = '"'"'\A\xFF\xFF\xFF\xFFI'"'"''
+  local out
+  out=$(flk deploy 2>&1) || fail "deploy with passing exec and udp checks failed: $out"
+  assert_contains "$out" "check world (exec sh -c"
+  assert_contains "$out" "check query (udp :25565"
+  assert_contains "$(flk events --json -n 20)" "query (udp :25565) in"
+}
+
+test_failing_exec_check_says_why() {
+  set_checks '' '[checks.world]' '  type = "exec"' '  command = "echo no world here; exit 3"' '  grace_period = "3s"'
+  local out before; before=$(release_of_machine)
+  out=$(flk deploy 2>&1) && fail "deploy passed an exec check that exits 3"
+  assert_contains "$out" "check world (exec sh -c"
+  assert_contains "$out" "last try: exit 3: no world here"
+  assert_eq "$before" "$(release_of_machine)" "the machine went back"
+}
+
+test_udp_check_without_a_reply_fails() {
+  set_checks '' '[checks.query]' '  type = "udp"' '  port = 25565' '  send = "hello"' '  timeout = 1' '  grace_period = "3s"'
+  local out
+  out=$(flk deploy 2>&1) && fail "deploy passed a udp check nothing replies to"
+  assert_contains "$out" "last try: no reply within 1s"
+  set_checks '' '[checks.closed]' '  type = "udp"' '  port = 9' '  send = "x"' '  grace_period = "3s"'
+  out=$(flk deploy 2>&1) && fail "deploy passed a udp check on a closed port"
+  assert_contains "$out" "port 9/udp is closed"
+  wait_mc 60
+}
+
+test_preflight_stops_the_deploy_before_the_build() {
+  set_checks '' '[deploy]' '  preflight = "echo checking $FLK_APP v$FLK_RELEASE in $(basename $PWD); echo stale pin >&2; exit 4"'
+  local out n; n=$(flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).size')
+  out=$(flk deploy 2>&1) && fail "deploy went on after a failing preflight"
+  assert_contains "$out" "checking $APP v$((n + 1)) in $(basename "$APP_DIR")" "preflight env and directory"
+  assert_contains "$out" "preflight failed (exit 4): stale pin"
+  assert_contains "$out" "preflight failed; machines unchanged"
+  assert_contains "$out" "flk deploy --no-preflight"
+  [[ $out != *"Building"* ]] || fail "the deploy built after a failing preflight: $out"
+  assert_eq "$n" "$(flk releases --json | ruby -rjson -e 'puts JSON.parse($stdin.read).size')" "no release recorded"
+  assert_contains "$(flk events --json -n 5)" "preflight failed; machines unchanged"
+  out=$(flk deploy --no-preflight 2>&1) || fail "deploy --no-preflight failed: $out"
+  assert_contains "$out" "Skipping [deploy] preflight (--no-preflight)"
+  wait_mc 60
+}

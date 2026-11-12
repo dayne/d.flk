@@ -97,9 +97,11 @@ module Flk
     end
 
     # Runs req (argv, env, tty, user, cwd) in machine m. stdin: forward
-    # $stdin (else the command's stdin is closed at once). Returns the exit
-    # status (128+N for a signal; 124 for timeout).
-    def run(m, req, stdin: false, timeout: nil)
+    # $stdin (else the command's stdin is closed at once). out/err: where
+    # the command's output goes. Returns the exit status (128+N for a
+    # signal; 124 for timeout). signals: pass Ctrl-C and TERM on to the
+    # command (else they interrupt flk, as in a deploy's checks).
+    def run(m, req, stdin: false, timeout: nil, out: $stdout, err: $stderr, signals: true)
       io = connect(m)
       tty = req[:tty]
       if tty
@@ -115,7 +117,7 @@ module Flk
           r, c = IO.console.winsize
           send.call("W", JSON.generate("Rows" => r, "Cols" => c))
         end
-      else
+      elsif signals
         old["INT"] = trap("INT") { send.call("S", "2") }
         old["TERM"] = trap("TERM") { send.call("S", "15") }
       end
@@ -142,8 +144,8 @@ module Flk
         while (f = read_frame(io))
           t, data = f
           case t
-          when "O" then $stdout.write(data)
-          when "D" then $stderr.write(data)
+          when "O" then out.write(data)
+          when "D" then err.write(data)
           when "F" then raise Error, "in machine #{m.id}: #{data}"
           when "X"
             x = JSON.parse(data)
@@ -153,7 +155,7 @@ module Flk
         end
       end
       tty && $stdin.tty? ? $stdin.raw(&body) : body.call
-      $stdout.flush
+      out.flush
       raise Error, "the connection to machine #{m.id} closed before the command finished" if status.nil?
       timer && !timer.alive? && timer.value == :timed_out ? 124 : status
     ensure

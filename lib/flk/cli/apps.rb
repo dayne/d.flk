@@ -254,6 +254,7 @@ module Flk
       else
         rel = App.new(config.app).then { _1.exists? ? _1.current_release : nil }
         puts JSON.pretty_generate("file" => config.path, "parsed" => config.data, "machine_config" => config.machine_config,
+                                  "preflight" => config.preflight, # [deploy] preflight, run on the host
                                   "warnings" => warning_strings(config),
                                   # what the deploy of the release the machines are on saw in its image (flk build: now)
                                   "image_warnings" => rel ? Array(rel["warnings"]) : nil)

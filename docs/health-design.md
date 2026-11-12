@@ -3,7 +3,7 @@
 **Status: draft, 2026-11-11. A future effort, not scheduled.** Decided
 with Dayne the same day: checks report and don't act; the MQTT bridge
 waits until its purpose is clearer. M6 step 3
-builds the check kinds that run at deploy (`exec`, `udp`/`a2s`,
+builds the check kinds that run at deploy (`exec`, `udp`,
 `[deploy] preflight`); this is the part after that: who runs checks while
 the apps run, what else it watches, and how lazyflk, gamebus and MQTT
 read the results. Nothing here is built yet.
@@ -53,7 +53,7 @@ Why not the other runners:
 - The guest checks itself through flk-agent: no use when the guest is
   wedged, which is the case that matters most. It also needs every guest
   rebooted onto a new agent, and it can't do host-side kinds (tcp from
-  outside, a2s). Exec checks still run in the guest, but the host
+  outside, udp). Exec checks still run in the guest, but the host
   decides when.
 
 ### Decisions to make
@@ -64,7 +64,7 @@ Why not the other runners:
   once the reporting has run on the real apps for a while. Restarting a
   game server with players on it is not something to do by default.
 - **The log check stays a boot fact.** It passed once this boot, so it
-  stays passed. tcp, http, udp/a2s and exec run again each interval.
+  stays passed. tcp, http, udp and exec run again each interval.
 - **Grace after a start**: an interval check doesn't run until the
   machine has passed its deploy checks, or a set time after boot has
   passed for machines started without a deploy, so a slow game boot isn't
@@ -152,7 +152,7 @@ non-game consumer wants it.
 
 ## Order, when it's picked up
 
-1. M6 step 3 (deploy time): `exec`, `udp`/`a2s`, `[deploy] preflight`.
+1. M6 step 3 (deploy time): `exec`, `udp`, `[deploy] preflight`.
 2. `flk check` with `checks.json`, `status --json` `checks`, and the
    change events (`check.recovered` is new).
 3. The host timer with `--due` and `interval`, plus the doctor and

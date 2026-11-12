@@ -98,7 +98,7 @@ comes after R1. In order:
   base for the rest and useful on its own to anyone writing a Dockerfile.
 - Image warnings at build/deploy (no user switch, no CMD, a mount over
   image files, volume ownership).
-- Checks as one design: `exec` (through the agent), `udp`/`a2s`
+- Checks as one design: `exec` (through the agent), `udp`
   (valheim #1), a `[deploy] preflight` host hook (valheim #3), and
   checks on an interval while running, shown in `flk status`
   (enshrouded #3).
@@ -113,12 +113,14 @@ Dayne chose the order above (2026-11-10).
 **Status (2026-11-11), steps 1-2 on main:** `flk build` (2ca82f0, aba8002), the busybox USER fix (91975bb),
 image warnings (8947c87) are done and tested (fast; VM cases 05, 10, 17,
 40, 41, 43; not the full suite). flkforge has adopted all of it.
-**Next, step 3 (checks):** the deploy-time kinds (`exec`, `udp`/`a2s`,
-`[deploy] preflight`). Checks while running (enshrouded #3) are a later
-effort, drafted in `docs/health-design.md` (2026-11-11): `flk check`, then
-one host timer, with MQTT left to a bridge outside flk.
-Then seed, then config keys as JSON. Send flkforge the TOML shapes of the
-new check kinds when they land.
+**Step 3 (checks):** the deploy-time kinds are on branch m6-checks
+(2026-11-11): `exec`, `udp` (Steam's A2S as a `send_hex` recipe, no `a2s`
+type: core flk stays protocol-neutral) and `[deploy] preflight`. Tested:
+fast, VM cases 05, 16, 40. Send flkforge the TOML shapes when merged.
+Checks while running (enshrouded #3) are a later effort, drafted in
+`docs/health-design.md` (2026-11-11): `flk check`, then one host timer;
+checks report and don't act; an MQTT bridge waits for a clearer purpose.
+Then seed, then config keys as JSON.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.

@@ -78,9 +78,14 @@ module Flk
       mconfig = cfg.machine_config
 
       deploy_capacity!(a, mconfig) # before the slow build
+      version = (a.meta["releases"].last&.dig("version") || 0) + 1
+      if o[:no_preflight]
+        puts Util.yellow("Skipping [deploy] preflight (--no-preflight)") if cfg.preflight
+      else
+        preflight!(a, cfg, version)
+      end
       pre = o[:no_backup] ? nil : pre_deploy_backup(a, cfg)
       puts Util.yellow("Skipping the before_deploy backups (--no-backup)") if o[:no_backup] && cfg.backup["before_deploy"]
-      version = (a.meta["releases"].last&.dig("version") || 0) + 1
       puts "==> Release v#{version} of #{a.name}"
       recorded = rolling = false
       stage = "build"
@@ -182,6 +187,27 @@ module Flk
     # A deploy that failed before it touched any machine (the build, or a
     # check before the roll): the cause, then a last line that says nothing
     # changed, for people who'd otherwise stop the machine to be safe.
+    # [deploy] preflight: a host command run in the config's directory
+    # before any backup or build (env FLK_APP, FLK_RELEASE = the version
+    # this deploy will make). A non-zero exit stops the deploy.
+    def preflight!(a, cfg, version)
+      cmd = cfg.preflight or return
+      puts "==> Preflight: #{cmd}"
+      last = nil
+      env = { "FLK_APP" => a.name, "FLK_RELEASE" => version.to_s }
+      st = Open3.popen2e(env, "sh", "-c", cmd, chdir: cfg.dir, in: File::NULL) do |_i, out, t|
+        out.each_line do |l|
+          l = l.scrub.chomp
+          puts "    #{l}"
+          last = l.strip unless l.strip.empty?
+        end
+        t.value
+      end
+      return if st.success?
+      code = st.exitstatus ? "exit #{st.exitstatus}" : "signal #{st.termsig}"
+      stopped_before_machines!(a, "preflight", Error.new("preflight failed (#{code})#{": #{last}" if last}"))
+    end
+
     def stopped_before_machines!(a, stage, cause)
       warn cause.message
       note = unchanged_note(a)
@@ -194,7 +220,8 @@ module Flk
                                    detail: "#{stage} failed; machines unchanged (#{note}): #{why}",
                                    log: cause.respond_to?(:log) ? cause.log : nil)
       fix = stage == "build" ? "flk deploy (after fixing the build)" : "flk deploy (after fixing that)"
-      raise Error.new("#{stage} failed; machines unchanged (#{note})", next_steps: [fix, "flk status"])
+      steps = [fix, ("flk deploy --no-preflight (skip the check)" if stage == "preflight"), "flk status"].compact
+      raise Error.new("#{stage} failed; machines unchanged (#{note})", next_steps: steps)
     end
 
     def unchanged_note(a)
@@ -205,9 +232,17 @@ module Flk
     # The same warnings as strings, for JSON ([] without a readable config).
     def warning_strings(cfg)
       return [] unless cfg
-      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" } + cfg.mount_problems
+      cfg.unknown_keys.map { "unknown key #{_1}; flk ignores it" } + cfg.mount_problems + exec_check_problems(cfg)
     rescue StandardError
       []
+    end
+
+    # exec checks run through flk-agent, which a release has only when Go
+    # was here to build it.
+    def exec_check_problems(cfg)
+      names = cfg.checks.select { _1["type"] == "exec" }.map { _1["name"] }
+      return [] if names.empty? || File.exist?(Agent.path) || Agent.go
+      ["check #{names.join(', ')}: exec checks need flk-agent, and building it needs Go (flk doctor); they will fail"]
     end
 
     # Warnings about the config that don't stop anything: unknown keys.
@@ -392,7 +427,8 @@ module Flk
     # nil when every check passes within its grace_period, else why not.
     def health_failure(m, checks)
       checks.each do |c|
-        what = c["type"] == "log" ? "log /#{c['match']}/" : "#{c['type']} :#{c['port']}#{c['path']}"
+        what = check_what(c)
+        @check_detail = nil
         print "    check #{c['name']} (#{what}, up to #{c['grace_period']}s) "
         $stdout.flush
         t0 = Time.now
@@ -406,8 +442,10 @@ module Flk
         end
         unless passed
           puts Util.red("✘")
-          Events.machine("check.failed", m, "#{c['name']} (#{what}) didn't pass within #{c['grace_period']}s")
-          return "check #{c['name']} (#{what}) didn't pass within #{c['grace_period']}s"
+          why = "check #{c['name']} (#{what}) didn't pass within #{c['grace_period']}s"
+          why += " (last try: #{@check_detail})" if @check_detail
+          Events.machine("check.failed", m, why.delete_prefix("check "))
+          return why
         end
         Events.machine("check.passed", m, "#{c['name']} (#{what}) in #{(Time.now - t0).round}s")
         puts "#{Util.green('✔')} #{(Time.now - t0).round}s"
@@ -422,6 +460,8 @@ module Flk
       when "http"
         res = ::Net::HTTP.start(m.ip, c["port"], open_timeout: 2, read_timeout: 5) { _1.get(c["path"]) }
         res.code.to_i.between?(200, 399)
+      when "exec" then exec_check_passes?(m, c)
+      when "udp" then udp_check_passes?(m, c)
       when "log"
         log = m.path("console.log")
         tail = File.open(log, "rb") { |f| f.seek([f.size - 262_144, 0].max); f.read }.to_s
@@ -432,6 +472,59 @@ module Flk
       end
     rescue SystemCallError, IOError, ::Net::OpenTimeout, ::Net::ReadTimeout, ::Net::HTTPBadResponse, EOFError
       false
+    end
+
+    def check_what(c)
+      case c["type"]
+      when "log" then "log /#{c['match']}/"
+      when "exec" then "exec #{c['command'].shelljoin}".then { _1.size > 60 ? "#{_1[0, 57]}..." : _1 }
+      else "#{c['type']} :#{c['port']}#{c['path']}"
+      end
+    end
+
+    # Runs the command in the guest through flk-agent; passes on exit 0. A
+    # guest that doesn't answer within timeout (+5s to connect) fails the try.
+    def exec_check_passes?(m, c)
+      out = StringIO.new
+      st = Timeout.timeout(c["timeout"] + 5) do
+        Agent.run(m, { argv: c["command"], tty: false, user: c["user"].to_s },
+                  timeout: c["timeout"], out: out, err: out, signals: false)
+      end
+      return true if st.zero?
+      last = out.string.scrub.lines.map(&:strip).reject(&:empty?).last
+      @check_detail = st == 124 ? "timed out after #{c['timeout']}s" : "exit #{st}#{": #{last[0, 200]}" if last}"
+      false
+    rescue Timeout::Error
+      @check_detail = "the guest didn't answer within #{c['timeout'] + 5}s"
+      false
+    rescue Error => e
+      @check_detail = e.message
+      false
+    end
+
+    # Sends the datagram to the machine and waits for a reply (matching
+    # expect). A closed port (ICMP unreachable) fails at once.
+    def udp_check_passes?(m, c)
+      sock = UDPSocket.new
+      sock.connect(m.ip, c["port"])
+      sock.send([c["send_hex"]].pack("H*"), 0)
+      unless sock.wait_readable(c["timeout"])
+        @check_detail = "no reply within #{c['timeout']}s"
+        return false
+      end
+      reply = sock.recv(65_536).b
+      return true unless c["expect"]
+      ok = reply.match?(Regexp.new(c["expect"].b, Regexp::NOENCODING))
+      @check_detail = "the reply didn't match /#{c['expect']}/ (got #{reply[0, 40].inspect})" unless ok
+      ok
+    rescue Errno::ECONNREFUSED
+      @check_detail = "port #{c['port']}/udp is closed"
+      false
+    rescue SystemCallError, IOError, RegexpError, EncodingError => e
+      @check_detail = e.message
+      false
+    ensure
+      sock&.close
     end
 
     # Raises unless the deploy can create or update all its machines; returns
