@@ -275,3 +275,25 @@ test_huge_pages_option() {
   out=$(config 2>&1) && fail "accepted 127MB with huge pages"
   assert_contains "$out" "whole 2MB steps"
 }
+
+# flk config set / unset (lazyflk's host settings form): lists for bind,
+# removing a key, and nothing written when the result doesn't check out.
+test_config_set_and_unset() {
+  local h="$WORK/hostset-$RUN_ID.toml" out
+  rm -f "$h"
+  FLK_HOST_CONFIG="$h" flk config set backup_keep=4 bind=10.99.0.7,10.99.0.8 >/dev/null || fail "config set failed"
+  assert_eq '["10.99.0.7","10.99.0.8"]' "$(FLK_HOST_CONFIG="$h" flk config show --host | json_get settings.bind)" "bind=A,B is a list"
+  FLK_HOST_CONFIG="$h" flk config set bind=10.99.0.7 >/dev/null || fail "config set one bind failed"
+  grep -qx 'bind = "10.99.0.7"' "$h" || fail "one address stays a string: $(cat "$h")"
+  printf 'bind = [\n  "10.99.0.7",\n  "10.99.0.8",\n]\nbackup_keep = 4\n' >"$h"
+  FLK_HOST_CONFIG="$h" flk config set bind=all >/dev/null || fail "replacing a multi-line list failed"
+  assert_eq 'bind = "all"|backup_keep = 4' "$(paste -sd'|' "$h")" "the whole list replaced"
+  out=$(FLK_HOST_CONFIG="$h" flk config unset bind backup_dir) || fail "config unset failed"
+  assert_contains "$out" "bind removed"
+  assert_contains "$out" "backup_dir wasn't set"
+  assert_eq "backup_keep = 4" "$(cat "$h")" "bind gone, the rest kept"
+  out=$(FLK_HOST_CONFIG="$h" flk config set bind=127.0.0.1,10.99.0.7 2>&1) && fail "loopback bind accepted"
+  assert_eq "backup_keep = 4" "$(cat "$h")" "a rejected set leaves the file as it was"
+  out=$(FLK_HOST_CONFIG="$h" flk config unset nope 2>&1) && fail "unset of an unknown key passed"
+  assert_contains "$out" "unknown config key 'nope'"
+}

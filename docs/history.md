@@ -252,6 +252,12 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### lazyflk gaps (G4–G14; G1–G3 are under Earlier, G15–G16 in git log)
 
+- [x] **`flk config set bind=A,B` and `flk config unset KEY...`** (lazyflk,
+  2026-11-11). A comma in `bind`'s value writes a TOML list (one address
+  stays a string); `unset` removes keys (one not set is reported, not an
+  error). Both replace a list that spans several lines whole, and check the
+  result before replacing the file, as set did. Test: `00-config`
+  test_config_set_and_unset (set had no test before).
 - [x] **`next_steps_detail` in `flk context --json`** (lazyflk, 2026-11-11).
   Beside `next_steps` (the same strings, unchanged), the same steps in the
   same order as `{text, app, machine, kind}`; kind is problem, optional,

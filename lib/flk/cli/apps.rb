@@ -256,25 +256,69 @@ module Flk
       end
     end
 
+    # Keys whose value may be a list: KEY=A,B writes ["A", "B"].
+    LIST_KEYS = %w[bind].freeze
+
     def config_set(args, _o)
       updates = args.map do |arg|
         key, _, raw = arg.partition("=")
         raise Error, "expected KEY=VALUE, got: #{arg}" unless arg.include?("=")
-        raise Error, "unknown config key '#{key}' (known: #{Host::KEYS.join(', ')})" unless Host::KEYS.include?(key)
+        host_key!(key)
+        next [key, raw.split(",").map(&:strip)] if LIST_KEYS.include?(key) && raw.include?(",")
         next [key, raw] unless key.end_with?("_keep", "_days")
         [key, Integer(raw, 10)] rescue raise(Error, "#{key} must be a whole number, got: #{raw}")
       end.to_h
 
-      path = Host::PATH
-      lines = File.exist?(path) ? File.readlines(path) : []
+      lines = host_lines
       updates.each do |key, val|
-        toml_val = val.is_a?(Integer) ? val.to_s : "\"#{val.gsub(/["\\]/) { "\\#{_1}" }}\""
-        new_line = "#{key} = #{toml_val}\n"
-        idx = lines.index { |l| l.match?(/\A\s*#{Regexp.escape(key)}\s*=/) }
-        idx ? lines[idx] = new_line : lines << new_line
+        toml_val = case val
+                   when Integer then val.to_s
+                   when Array then "[#{val.map { toml_str(_1) }.join(', ')}]"
+                   else toml_str(val)
+                   end
+        range = key_lines(lines, key)
+        range ? lines[range] = ["#{key} = #{toml_val}\n"] : lines << "#{key} = #{toml_val}\n"
       end
+      write_host_lines!(lines)
+      updates.each { |k, v| puts "#{k} = #{v.inspect}  (#{Host::PATH})" }
+      next_step("flk doctor")
+    end
 
-      # Check the result (bind, address...) before it replaces the file
+    def config_unset(args, _o)
+      args.each { host_key!(_1) }
+      lines = host_lines
+      gone = args.select do |key|
+        range = key_lines(lines, key) or next false
+        lines.slice!(range)
+        true
+      end
+      write_host_lines!(lines) if gone.any?
+      (args - gone).each { puts "#{_1} wasn't set  (#{Host::PATH})" }
+      gone.each { puts "#{_1} removed: flk's default applies  (#{Host::PATH})" }
+      next_step("flk doctor")
+    end
+
+    def host_key!(key)
+      raise Error, "unknown config key '#{key}' (known: #{Host::KEYS.join(', ')})" unless Host::KEYS.include?(key)
+    end
+
+    def host_lines = File.exist?(Host::PATH) ? File.readlines(Host::PATH) : []
+    def toml_str(v) = "\"#{v.gsub(/["\\]/) { "\\#{_1}" }}\""
+
+    # The lines key's setting takes (a list may go on over several lines),
+    # or nil.
+    def key_lines(lines, key)
+      i = lines.index { |l| l.match?(/\A\s*#{Regexp.escape(key)}\s*=/) } or return nil
+      j = i
+      if lines[i].split("=", 2).last.lstrip.start_with?("[")
+        j += 1 while j < lines.size - 1 && !lines[j].sub(/#.*/, "").include?("]")
+      end
+      i..j
+    end
+
+    # Checks the result (bind, address...) before it replaces the file.
+    def write_host_lines!(lines)
+      path = Host::PATH
       FileUtils.mkdir_p(File.dirname(path))
       tmp = "#{path}.new"
       File.write(tmp, lines.join)
@@ -285,8 +329,6 @@ module Flk
         raise Error, e.message.gsub(tmp, path)
       end
       File.rename(tmp, path)
-      updates.each { |k, v| puts "#{k} = #{v.inspect}  (#{path})" }
-      next_step("flk doctor")
     end
   end
 end

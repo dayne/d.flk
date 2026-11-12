@@ -114,7 +114,8 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   open it in its log viewer from a failed deploy's event, a failed job
   and the Releases tab.
 
-- [ ] **`config set`: lists, and unsetting a key** (lazyflk, 2026-11-11).
+- [x] **`config set`: lists, and unsetting a key** (lazyflk, 2026-11-11;
+  done on branch lazyflk-gaps: `bind=A,B`, `flk config unset KEY...`).
   lazyflk's host settings form (host menu c) runs `flk config set
   KEY=VALUE...` for what changed. Two things it can't do: `bind` with
   more than one address (config set writes one string, so the form

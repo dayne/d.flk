@@ -180,8 +180,15 @@ module Flk
                { name: "set", args: "KEY=VALUE...",
                  summary: "Set host-level config values in #{Host::PATH}",
                  notes: ["Known keys: #{Host::KEYS.join(', ')}",
-                         "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5",
-                         "Values are written to #{Host::PATH} (created if missing). Run `flk doctor` to verify."] }] },
+                         "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5   " \
+                         "flk config set bind=10.0.0.5,10.0.0.6",
+                         "bind=A,B (a comma) writes a list; one address stays a string.",
+                         "Values are written to #{Host::PATH} (created if missing), and checked before the file is " \
+                         "replaced (a bad value leaves it unchanged). Run `flk doctor` to verify."] },
+               { name: "unset", args: "KEY...",
+                 summary: "Remove host-level config values from #{Host::PATH} (flk's defaults apply)",
+                 notes: ["Known keys: #{Host::KEYS.join(', ')}. A key that isn't set is reported, not an error.",
+                         "Checked like set before the file is replaced."] }] },
 
       { name: "machine", aliases: %w[machines m], group: "Machines", default_sub: "list",
         summary: "Manage machines (IDs accept a prefix or the machine name)",
