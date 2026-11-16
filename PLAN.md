@@ -77,7 +77,8 @@ after").
 ### M5: More than one host (design first)
 
 These items build on M1's copies and M3's events:
-- managed extra addresses
+- managed extra addresses, and with them a dedicated address for one
+  machine (enshrouded #5; notes in `docs/dedicated-address-notes.md`)
 - keepalived hooks (`flk host activate|deactivate|check`)
 - `flk volumes sync --to HOST`
 - fencing so an app never runs on two hosts

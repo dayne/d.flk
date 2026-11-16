@@ -32,7 +32,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
 | enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | M6, checks (interval health); `logs --boot` and `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
-| enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Reviewed 2026-11-15, not scheduled: LAN addresses (a dedicated address); test by hand first |
+| enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Reviewed 2026-11-15, not scheduled: `docs/dedicated-address-notes.md` (LAN addresses); a by-hand test first |
 
 ## Reliability (PLAN.md R1)
 
@@ -228,35 +228,17 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
   could add/remove listed LAN addresses (`ip addr add ... ` + gratuitous
   ARP) from a root-owned config; doctor checks nobody else answers ARP for
   them (`arping -D`) and that they're outside the DHCP pool (warn only).
-- [ ] **A dedicated address** (enshrouded #5, reviewed 2026-11-15; waits
-  on Dayne). A host address given to one machine as 1:1 NAT: everything
-  sent to it goes to the machine, and the machine's traffic leaves as it.
-  For servers whose ports can't be listed (Enshrouded's game traffic is
-  Steam networking on a random UDP port per start; only the query port
-  is fixed). Notes from the review:
-  - Not proven to fix enshrouded's symptom (a LAN player on a Steam relay
-    since Nov 13). The NAT rules were the same in the 9 direct sessions
-    before. What happened on Nov 13 06:25 was a VM restart: an unattended
-    libc6 upgrade restarted flk-tmux.service and flk resumed the machine
-    (no reboot, no network change). Test first with two hand-made nft
-    rules (a `snat to` before the masquerade, a `dnat to` after the map
-    rules), then build.
-  - The helper is the root boundary, so root names the addresses that may
-    be dedicated (baked in by setup-host.sh, like `FLK_MIN_PORT`); flk.toml
-    only claims one. Otherwise anything running as the flk user could
-    send all traffic for the host's main address, ssh included, into a VM.
-  - In: all protocols (the address is the machine's; `[[services.ports]]`
-    entries still win, for a port remap). Out: `snat` for the machine's
-    address, ahead of the masquerade. Rules in their own chains, replaced
-    in the same nft transaction as the port maps.
-  - One running machine per address (the ports' owner rule); refuse an
-    address that's the host's `address`, a `bind` of another app, or not
-    on the allow-list. `flk ports`, `flk doctor`, `port.*` events show it.
-    Needs a re-run of setup-host.sh (new helper and chains), as `bind`
-    did; apps without the key are unchanged.
-  - It's the same object as M5's service address: name and config should
-    fit "managed extra addresses" above (flk-net adding the address
-    itself comes with that, not here).
+- [ ] **A dedicated address** (enshrouded #5; reviewed 2026-11-15, not
+  scheduled). A host address given to one machine as 1:1 NAT: what's sent
+  to it goes to the machine, and the machine's traffic leaves as it. For
+  servers whose ports can't be listed (Enshrouded: Steam networking on a
+  random UDP port per start). Notes for the planning session, with the
+  by-hand test to run first, the security questions of forwarding
+  everything, and other shapes (a routed address, a bridged tap):
+  `docs/dedicated-address-notes.md`. Decided: root names the addresses
+  that may be dedicated (baked into the helper). Open: what's forwarded
+  in, and whether it fixes enshrouded's relay problem at all (the same
+  rules gave direct connections before Nov 13).
 - [ ] **keepalived (VRRP) hooks.** A floating address held by the active
   host: `flk host activate` / `flk host deactivate` (resume or stop-all
   the apps tied to that address) for keepalived's notify scripts, and
