@@ -152,6 +152,13 @@ flk changes, all additive and opt-in. flkforge records what it needs in
 its own `BUGS.flk.md`. The setpriv entry under Machines came out of the
 same review.
 
+- [ ] **Asked of flkforge (2026-11-17): an image that `flk ssh mount`
+  can mount.** Its dev-box snippets could add the SFTP server package
+  (Alpine `openssh-sftp-server`, Debian/Ubuntu `openssh-sftp-server`,
+  Fedora `openssh-server`; no sshd needed) so a home directory can be
+  mounted on the host. Sent to its session; the feature is on branch
+  ssh-mount until merged (`ssh mount` in `help --all --json` says a flk
+  has it).
 - [x] **`flk build`: build and inspect without deploying** (M6, on
   main; history.md). Was: Today an image
   is only built by `deploy`, which needs a registered app and touches
@@ -320,12 +327,12 @@ must be built in (`=y`).
 - [x] **`flk ssh mount`: a running machine's directory mounted on the
   host** (Dayne's idea, 2026-11-17; on branch ssh-mount; history.md).
   Follow-ups, none asked for yet:
-  - An SFTP server in flk-agent, so every image works (today the image
-    needs `sftp-server` and `sh`; checked 2026-11-17: all 7 real apps'
-    images have `sh`, none has `sftp-server`, so each needs the package
-    in its Dockerfile and a deploy first). It would be the agent's first Go dependency
-    (`github.com/pkg/sftp`) or a few hundred lines of its own, and apps
-    get it at their next deploy.
+  - Decided 2026-11-17 (Dayne): no SFTP server in flk-agent; the agent
+    stays small. The image brings `sftp-server` (one package) and `sh`.
+    Checked that day: all 7 real apps' images have `sh`, none has
+    `sftp-server`; none of them needs mounting (the feature is for
+    another person's flk host, one app). flkforge was asked to offer the
+    package in its dev-box snippets (For flkforge).
   - The stand-in as a public command, an ssh-shaped `flk ssh run HOST
     CMD...`: `rsync -e`, `sftp -S` and `scp -S` then work against a
     running machine with nothing new in flk (tried by hand 2026-11-17:
