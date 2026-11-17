@@ -376,6 +376,7 @@ module Flk
     def destroy_machine(m, force: false)
       raise Error, "machine #{m.id} is running; stop it or pass --force" if m.running? && !force
       VM.stop(m)
+      SshMount.unmount_for(m.app.name, m.id).each { puts "  unmounted #{_1} (flk ssh mount)" }
       vols = m.app.volumes
       vols.each { _1["attached_machine"] = nil if _1["attached_machine"] == m.id }
       m.app.save_volumes(vols)

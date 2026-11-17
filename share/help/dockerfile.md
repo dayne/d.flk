@@ -65,6 +65,12 @@ by the app's user (`RUN install -d -o app -g app /data`) and both are
 right. Fix one that isn't, with the machine stopped:
 `flk files chown UID:GID VOL:/`.
 
+**Files from the host.** `flk ssh mount` (a directory of the running
+machine, mounted on the host) needs an SFTP server and `sh` in the image:
+`apk add openssh-sftp-server` (Alpine) or `apt-get install -y
+openssh-sftp-server` (Debian/Ubuntu). No sshd: flk starts it through its
+agent.
+
 **Stopping cleanly.** `flk machine stop` sends the app SIGTERM, then kills
 the VM after `kill_timeout` (default 10s, at most 300s). A server that
 saves on a console command or another signal needs a small wrapper that

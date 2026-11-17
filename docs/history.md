@@ -608,6 +608,28 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Machines
 
+- [x] **`flk ssh mount PATH DIR`: a running machine's directory on the
+  host** (Dayne's idea, 2026-11-17). sshfs, with nothing listening in
+  the guest: sshfs runs `libexec/flk-sftp` in place of ssh (by name, its
+  directory put on sshfs's PATH, because sshfs 3.7 can't take a command
+  path with a space), which is `flk ssh sftp-stdio`: the image's
+  `sftp-server` started through flk-agent as `--user`, in that user's
+  home (sshfs takes the home's owner for the remote user, so `idmap=user`
+  shows the guest user's files as the host user's). The mount's source,
+  `USER@MACHINE.APP.flk`, carries everything the stand-in needs, so flk
+  keeps no list: `flk ssh mounts` reads the kernel's mount table, and
+  sshfs's `reconnect` brings a mount back after a restart or deploy.
+  Before mounting, flk checks sshfs and fuse on the host, and in the
+  guest the server, `sh`, the directory and that the user can enter it,
+  each with its own message (the missing-server one names the packages).
+  `--read-only` is both sshfs's `ro` and the server's `-R`. `flk ssh
+  unmount DIR|--all [--force]`; destroying a machine or app detaches its
+  mounts; `flk status` lists them (`ssh_mounts` in `--json`). Directory
+  cache 5s (sshfs's 20s kept listing a stopped machine's files). Known
+  limits, in the command's help: an absolute symlink to outside the
+  mounted directory names a host file; slow for builds; gone after a
+  host reboot. Tests: `46-ssh-mount` (8, skipped without sshfs); by hand:
+  an image without `sh`, flk under a path with a space and a comma.
 - [x] **A non-root USER runs as itself on busybox images** (TODO
   Machines, 2026-11-10, before M6's warnings). Alpine's busybox has no
   `setpriv --reuid` and no `chroot --userspec`, so init ran the app as root

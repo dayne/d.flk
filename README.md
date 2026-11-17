@@ -37,6 +37,7 @@ sudo apt install -y ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl
 sudo pacman -S --needed ruby tmux e2fsprogs fakeroot podman iproute2 nftables curl procps-ng
 sudo dnf install -y ruby tmux e2fsprogs fakeroot podman iproute nftables procps-ng
 # Optional, for flk exec, flk ssh console and images without /bin/sh: Go (golang-go / go), or set FLK_GO
+# Optional, for flk ssh mount: sshfs (fuse-sshfs on Fedora)
 
 # 2. Root setup: kvm group, bridge, user-owned tap pool, NAT, port forwarding, and the
 #    boot units (networking, flk's tmux server, machines). Re-run after updating flk.
@@ -76,6 +77,7 @@ flk scale count N
 flk logs [-i ID] [-n N] [-f] | events [-f]
 flk console [ID] [--send TEXT --wait-log REGEX]
 flk exec [-i ID] CMD... | ssh console [ID] [-C CMD]
+flk ssh mount PATH DIR [--user U] | ssh unmount DIR | ssh mounts   # a running machine's files, via sshfs
 flk proxy 8080[:80] [ID] | ports [list|sync]
 flk secrets list|set|unset|import
 flk volumes list|create [--owner UID:GID]|import|destroy|extend|move

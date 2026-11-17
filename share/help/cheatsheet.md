@@ -49,6 +49,7 @@ Data
   flk volumes move NAME --dir DIR    move a volume's file to another disk (machine stopped)
   flk files ls VOL[:PATH]            files in a volume (--backup B: in a backup); cat VOL:PATH
   flk files cp SRC DST               into/out of a volume, one side VOL:PATH (writes: machine stopped)
+  flk ssh mount PATH DIR --user U    a running machine's directory, mounted here (sshfs); ssh unmount DIR
   flk volumes extend NAME --size GB  grow a volume (machine stopped)
   flk machine extend ID --size GB    grow a machine's / (stopped, or --restart); until the next deploy
   [flk] rootfs_extra_mb = N          MB free on / in every deploy (default 512)
