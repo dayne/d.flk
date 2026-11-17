@@ -7,10 +7,13 @@ module Flk
       reap_exited
       a = app
       rel = a.current_release
+      mounted = SshMount.list.select { _1["app"] == a.name }
       if o[:json]
         return puts(JSON.pretty_generate("app" => { "name" => a.name, "release" => rel, "home" => a.dir,
                                                     "config_path" => a.meta["config_path"] },
-                                         "machines" => a.machines.map { machine_json(_1) }))
+                                         "machines" => a.machines.map { machine_json(_1) },
+                                         # flk ssh mount: directories of its machines mounted on this host
+                                         "ssh_mounts" => mounted))
       end
       puts "App"
       puts "  Name     = #{a.name}"
@@ -19,6 +22,12 @@ module Flk
       puts "  Config   = #{a.meta['config_path'] || 'unknown (run flk deploy in the app directory once)'}"
       puts
       machine_table(a)
+      return if mounted.empty?
+      puts "\nMounted on this host (flk ssh mount)"
+      mounted.each do |r|
+        note = [r["user"], ("read-only" if r["read_only"]), (r["state"] unless r["state"] == "ok")].compact.join(", ")
+        puts "  #{r['machine']}:#{r['path']} at #{r['dir']} (#{note})"
+      end
     end
 
     def releases_list(_args, o)

@@ -1,0 +1,9 @@
+# A machine to mount with flk ssh mount (tests/cases/46-ssh-mount.sh).
+app = "sftp"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpus = 1
+  memory_mb = 128

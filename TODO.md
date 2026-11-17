@@ -81,6 +81,14 @@ JSON field is additive: lazyflk ignores unknown fields and treats missing
 ones as "not supported by this flk", so nothing existing may change
 shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
+- [ ] **Mounted directories** (flk, 2026-11-17, on branch ssh-mount;
+  nothing asked yet). New and additive: `flk ssh mount PATH DIR [--user
+  U] [--read-only]`, `flk ssh unmount DIR|--all [--force]`, `flk ssh
+  mounts --json` (`[{ app, machine, user, path, dir, read_only, state }]`,
+  state `ok`, `machine stopped` or `machine gone`; every app's), and
+  `ssh_mounts` (the same rows, this app's) in `flk status --json`.
+  lazyflk could list an app's mounts and offer unmount. Tell lazyflk when
+  it's on main.
 - [ ] **Host settings from the CLI** (flk, 2026-10-15; nothing asked yet).
   New and additive: `flk config set KEY=VALUE...` writes
   `~/.config/flk/host.toml` (keys checked; bind/address validated before
@@ -144,6 +152,13 @@ flk changes, all additive and opt-in. flkforge records what it needs in
 its own `BUGS.flk.md`. The setpriv entry under Machines came out of the
 same review.
 
+- [ ] **Asked of flkforge (2026-11-17): an image that `flk ssh mount`
+  can mount.** Its dev-box snippets could add the SFTP server package
+  (Alpine `openssh-sftp-server`, Debian/Ubuntu `openssh-sftp-server`,
+  Fedora `openssh-server`; no sshd needed) so a home directory can be
+  mounted on the host. Sent to its session; the feature is on branch
+  ssh-mount until merged (`ssh mount` in `help --all --json` says a flk
+  has it).
 - [x] **`flk build`: build and inspect without deploying** (M6, on
   main; history.md). Was: Today an image
   is only built by `deploy`, which needs a registered app and touches
@@ -309,6 +324,24 @@ must be built in (`=y`).
 
 ## Machines
 
+- [x] **`flk ssh mount`: a running machine's directory mounted on the
+  host** (Dayne's idea, 2026-11-17; on branch ssh-mount; history.md).
+  Follow-ups, none asked for yet:
+  - Decided 2026-11-17 (Dayne): no SFTP server in flk-agent; the agent
+    stays small. The image brings `sftp-server` (one package) and `sh`.
+    Checked that day: all 7 real apps' images have `sh`, none has
+    `sftp-server`; none of them needs mounting (the feature is for
+    another person's flk host, one app). flkforge was asked to offer the
+    package in its dev-box snippets (For flkforge).
+  - The stand-in as a public command, an ssh-shaped `flk ssh run HOST
+    CMD...`: `rsync -e`, `sftp -S` and `scp -S` then work against a
+    running machine with nothing new in flk (tried by hand 2026-11-17:
+    rsync both ways and an sftp session through `flk exec --stdin`). fly's
+    `ssh sftp get|put|shell` could follow.
+  - Mounts are gone after a host reboot (nothing remounts them). If that
+    matters: a list to remount from at `flk resume`.
+  - sshfs's upstream is in maintenance mode; it's packaged everywhere
+    and nothing else mounts SFTP without root.
 - [ ] **Grow a root disk without stopping the machine.**
   `flk machine extend` needs the machine stopped (`--restart` does both).
   Firecracker can tell a running guest its drive grew (PATCH

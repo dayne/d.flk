@@ -1,0 +1,7 @@
+#!/bin/sh
+# flk-sftp: what sshfs runs in place of ssh for `flk ssh mount`
+# (lib/flk/sshmount.rb puts this directory on sshfs's PATH, so the command
+# it's given has no path in it: sshfs can't take one with a space).
+# sshfs's own arguments follow, among them the mount's source,
+# USER@MACHINE.APP.flk, which tells flk where to go.
+exec "$(dirname "$(readlink -f "$0")")/../bin/flk" ssh sftp-stdio "$@"

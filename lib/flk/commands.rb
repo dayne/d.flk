@@ -272,8 +272,34 @@ module Flk
                 "It runs beside the app (not as its child), with the app's environment, as root unless --user. " \
                 "Ctrl-C is passed on to the command.",
                 "Needs the flk agent in the machine: releases built since flk had exec include it (building it needs Go; see flk doctor)."] },
-      { name: "ssh", group: "Machines", summary: "A shell in a running machine: flk ssh console",
-        subs: [{ name: "console", args: "[ID]", run: :ssh_console,
+      { name: "ssh", group: "Machines", summary: "A shell in a running machine (flk ssh console), or its files mounted here (flk ssh mount)",
+        subs: [{ name: "mount", args: "PATH DIR", run: :ssh_mount,
+                 opts: [["-i", "--instance ID", "Which machine (default: the app's first running one)"],
+                        ["--user USER", "Read and write as this user in the machine: a name, UID or UID:GID (default: root)"],
+                        ["--read-only", "Nothing can be changed through the mount"],
+                        ["-o", "--option OPTS", "More sshfs options, comma-separated (e.g. cache=no)"]],
+                 summary: "Mount a directory of a running machine at DIR on this host (sshfs); no sshd, keys or network needed",
+                 notes: ["PATH is absolute in the machine: any directory, on a volume or not (what isn't on a volume is lost at the next deploy). " \
+                         "DIR is made if missing and must be empty. Files are read and written as --user in the machine, and show here as yours.",
+                         "The mount follows the machine through restarts and deploys by itself. While the machine is stopped, files there " \
+                         "fail with I/O errors; it stays until flk ssh unmount (or the machine is destroyed, or this host reboots).",
+                         "Needs sshfs on this host, and an SFTP server and sh in the image (flk says how to add one). It runs through " \
+                         "flk-agent, like flk exec.",
+                         "For editing and copying; a build or a database on it would be slow. To copy without mounting: " \
+                         "flk files (a stopped machine's volume) or flk exec.",
+                         "A symlink in the machine to an absolute path outside PATH is followed on this host (it names a host file). " \
+                         "Don't mount a machine you don't trust and then follow its links."] },
+               { name: "unmount", aliases: %w[umount], args: "[DIR]", run: :ssh_unmount,
+                 opts: [["--all", "Every flk ssh mount of this app"],
+                        ["--force", "Detach now even when something has files open there"]],
+                 summary: "Take a flk ssh mount away (the directory stays, empty)" },
+               { name: "mounts", opts: [JSON_OPT], json: true, run: :ssh_mounts,
+                 summary: "The flk ssh mounts on this host, every app's",
+                 notes: ["--json: [{ app, machine, user, path, dir, read_only, state }]; state is ok, \"machine stopped\" " \
+                         "(files fail until it starts) or \"machine gone\" (unmount it). Read from the kernel's mount table: flk keeps no list."] },
+               { name: "sftp-stdio", hidden: true, args: "[SSH_ARGS...]", run: :ssh_sftp_stdio, opts: [["--read-only", "Serve read-only"]],
+                 summary: "What sshfs runs in place of ssh for flk ssh mount: the machine's SFTP server on stdin/stdout" },
+               { name: "console", args: "[ID]", run: :ssh_console,
                  opts: [["-C", "--command CMD", "Run CMD (through sh -c) instead of an interactive shell"],
                         ["--user USER", "As this user (default: root)"]] + CONSOLE_OPTS,
                  summary: "An interactive shell in a machine (like fly ssh console); -C runs one command",

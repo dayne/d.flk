@@ -86,6 +86,60 @@ module Flk
       exit Agent.run(m, { argv: [], tty: true, user: o[:user].to_s })
     end
 
+    def ssh_mount(argv, o)
+      raise Error, "usage: flk ssh mount PATH DIR (PATH in the machine, DIR here), e.g. flk ssh mount /data ./data" unless argv.size == 2
+      path, dir = argv
+      a = app
+      m = console_machine([o[:instance]].compact)
+      opts = o[:option].to_s.split(",").map(&:strip).reject(&:empty?)
+      dir = SshMount.mount!(m, path, dir, user: o[:user], read_only: o[:read_only], options: opts)
+      how = ["as #{o[:user] || 'root'}", ("read-only" if o[:read_only])].compact.join(", ")
+      puts "#{Util.green('✔')} #{a.name}:#{path} is mounted at #{dir} (#{how}; machine #{m.id} [#{m.name}])"
+      puts "  It follows the machine through restarts and deploys. While the machine is stopped, files there fail with I/O errors."
+      next_step("flk ssh unmount #{dir.shellescape}", "flk ssh mounts")
+    end
+
+    def ssh_unmount(argv, o)
+      raise Error, "give one directory, or --all for every mount of the app" if argv.size > 1 || (argv.empty? && !o[:all]) || (argv.any? && o[:all])
+      rows = SshMount.list
+      if o[:all]
+        name = app.name
+        mine = rows.select { _1["app"] == name }
+        return puts("No flk ssh mounts of #{name}") if mine.empty?
+        mine.each { |r| unmount_row(r, o[:force]) }
+      else
+        dir = File.expand_path(argv.first)
+        row = rows.find { _1["dir"] == dir } or
+          raise Error.new("#{dir} isn't a flk ssh mount", next_steps: ["flk ssh mounts"])
+        unmount_row(row, o[:force])
+      end
+    end
+
+    def unmount_row(row, force)
+      SshMount.unmount!(row["dir"], lazy: force)
+      puts "Unmounted #{row['dir']} (#{row['app']}:#{row['path']})"
+    end
+
+    def ssh_mounts(_argv, o)
+      rows = SshMount.list
+      return puts(JSON.pretty_generate(rows)) if o[:json]
+      return puts("No flk ssh mounts. Make one: flk ssh mount PATH DIR") if rows.empty?
+      Util.table(%w[APP MACHINE PATH DIR USER MODE STATE],
+                 rows.map { [_1["app"], _1["machine"], _1["path"], _1["dir"], _1["user"], _1["read_only"] ? "ro" : "rw", _1["state"]] })
+    end
+
+    # sshfs runs this in place of ssh, with ssh's arguments after "--":
+    # among them the mount's source, USER@MACHINE.APP.flk, which says where
+    # to go. Its stdin and stdout become the machine's SFTP server's.
+    def ssh_sftp_stdio(argv, o)
+      user, id, name = argv.lazy.filter_map { SshMount.parse_source(_1) }.first ||
+                       raise(Error, "flk ssh sftp-stdio is run by sshfs for flk ssh mount; it isn't a command to use by hand")
+      a = App.new(name)
+      m = (a.exists? && a.machines.find { _1.id == id }) or raise Error, "no machine #{id} in app #{name}"
+      req = { argv: SshMount.argv("serve", *("-R" if o[:read_only])), tty: false, user: user == "root" ? "" : user }
+      exit Agent.run(m, req, stdin: true)
+    end
+
     def console_machine(argv)
       m = argv.first ? app.machine!(argv.first) : (app.machines.find(&:running?) || raise(Error, "no running machines"))
       raise Error, "machine #{m.id} isn't running; start it: flk machine start #{m.id}" unless m.running?
