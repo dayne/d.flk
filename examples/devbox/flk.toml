@@ -1,0 +1,27 @@
+# A dev box whose home directory you can open from the host.
+#
+#   flk launch --no-deploy
+#   flk volumes create home --size 2
+#   flk deploy
+#
+#   flk ssh console --user dev                     # a shell in it
+#   flk ssh mount /home/dev ./home --user dev      # its home, here (needs sshfs on this host)
+#   flk ssh mounts                                 # what's mounted
+#   flk ssh unmount ./home
+#
+# The mount comes back by itself after a restart or deploy.
+app = "devbox"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[[vm]]
+  cpus = 2
+  memory = "1gb"
+
+# /home/dev is a volume, so work survives deploys. seed = true copies what
+# the image has there (.bashrc, README.txt) into the volume while it's new.
+[[mounts]]
+  source = "home"
+  destination = "/home/dev"
+  seed = true

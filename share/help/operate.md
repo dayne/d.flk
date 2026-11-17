@@ -152,19 +152,36 @@ on backups with `--backup`; writing needs the machine stopped and ends
 with an e2fsck. Copied-in files get the target directory's owner (or
 `--owner UID:GID`), not your host user's.
 
-**A running machine's files, mounted here.** `flk ssh mount /home/dev
-./dev-home --user dev` mounts a directory of a running machine on this
-host with sshfs: edit with your own tools, as that user in the machine.
-Nothing listens in the guest (no sshd, keys or network); it runs the
-image's SFTP server through flk-agent, like `flk exec`. So the image
-needs one (Alpine `apk add openssh-sftp-server`, Debian/Ubuntu
-`apt-get install -y openssh-sftp-server`) and a shell, and this host
-needs sshfs. The mount comes back by itself after a restart or deploy;
-while the machine is stopped, files there fail with I/O errors.
-`flk ssh mounts` lists them (also in `flk status`), `flk ssh unmount DIR`
-takes one away, and destroying the machine does too; a host reboot drops
-them all. `--read-only` for looking only. It's for editing and copying,
-not for a build or a database. `flk files` is the other half: a stopped
+**A running machine's files, mounted here.** `flk ssh mount` puts a
+directory of a running machine on this host, to edit with your own tools
+as a user of the machine. Nothing listens in the guest (no sshd, keys or
+port): flk starts the image's SFTP server through flk-agent, like
+`flk exec`. Once per image, add that program to the Dockerfile and deploy:
+
+    # Ubuntu, Debian
+    RUN apt-get update \
+     && apt-get install -y --no-install-recommends openssh-sftp-server \
+     && rm -rf /var/lib/apt/lists/*
+    # Alpine:  RUN apk add --no-cache openssh-sftp-server
+    # Fedora:  RUN dnf install -y openssh-server
+
+Once per host, install sshfs (`sudo apt install sshfs`; Arch `sshfs`,
+Fedora `fuse-sshfs`). Then:
+
+    flk ssh mount /home/dev ./dev-home --user dev   # PATH in the machine, DIR here
+    ls ./dev-home                                   # its files, as yours
+    flk ssh mounts                                  # every mount, and its state
+    flk ssh unmount ./dev-home
+
+`--user` is who reads and writes in the machine (a name from its
+`/etc/passwd`, or a UID; default root); the files show as yours here.
+`--read-only` for looking only. DIR is made if missing and must be empty.
+The mount comes back by itself after a restart or deploy; while the
+machine is stopped, files there fail with I/O errors. Destroying the
+machine unmounts it, and a host reboot drops every mount (mount again).
+`flk status` lists an app's mounts. It's for editing and copying, not
+for a build or a database. A whole app to try it with:
+`{{SRC}}/examples/devbox`. `flk files` is the other half: a stopped
 machine's volume, without the guest.
 
 **Root disk.** A machine's `/` is a copy of the release image with

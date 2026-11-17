@@ -35,9 +35,10 @@ module Flk
       exit 127
     SH
 
-    NO_SERVER = "has no SFTP server. Add one to the image and deploy: " \
-                "Alpine `apk add openssh-sftp-server`, Debian/Ubuntu `apt-get install -y openssh-sftp-server`, " \
-                "Fedora `dnf install -y openssh-server`".freeze
+    NO_SERVER = "has no SFTP server. Add it in the Dockerfile and deploy: " \
+                "Ubuntu/Debian `RUN apt-get update && apt-get install -y --no-install-recommends openssh-sftp-server`, " \
+                "Alpine `RUN apk add --no-cache openssh-sftp-server`, Fedora `RUN dnf install -y openssh-server` " \
+                "(no sshd needed)".freeze
     INSTALL = "install sshfs (Debian/Ubuntu: sudo apt install sshfs; Arch: sudo pacman -S sshfs; " \
               "Fedora: sudo dnf install fuse-sshfs)".freeze
 
@@ -79,7 +80,8 @@ module Flk
       when 0 then out.string.strip
       when 127
         if err.string.include?("no sftp-server")
-          raise Error, "the image of #{m.app.name} #{NO_SERVER}"
+          raise Error.new("the image of #{m.app.name} #{NO_SERVER}",
+                          next_steps: ["flk deploy (after adding it to the Dockerfile)", "flk help dockerfile"])
         end
         raise Error, "the image of #{m.app.name} has no sh, which flk ssh mount needs to start the SFTP server"
       when 66 then raise Error, "#{path} isn't a directory in machine #{m.id}"

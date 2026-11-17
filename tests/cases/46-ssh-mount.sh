@@ -105,7 +105,8 @@ test_image_without_an_sftp_server_says_how_to_add_one() {
   out=$(flk ssh mount /home/dev "$MNT/x" 2>&1) && fail "mounted without an sftp-server"
   flk exec -- mv /tmp/sftp-server.away /usr/lib/ssh/sftp-server
   assert_contains "$out" "has no SFTP server"
-  assert_contains "$out" "apk add openssh-sftp-server"
+  assert_contains "$out" "apk add --no-cache openssh-sftp-server"
+  assert_contains "$out" "Next: flk deploy (after adding it to the Dockerfile)"
 }
 
 test_unmount_busy_force_and_all() {

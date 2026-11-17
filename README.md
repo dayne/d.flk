@@ -111,8 +111,10 @@ nobody knows gets a "did you mean" warning.
 - **Every key, annotated:** [examples/reference/flk.toml](examples/reference/flk.toml).
 - **The rules** (defaults, limits, what's refused): the Config section of
   `flk help --all` ([share/guide.md](share/guide.md)).
-- **Working apps:** [examples/hello](examples/hello) and
-  [examples/minecraft](examples/minecraft).
+- **Working apps:** [examples/hello](examples/hello),
+  [examples/minecraft](examples/minecraft) and
+  [examples/devbox](examples/devbox) (a machine to work in, its home
+  directory mounted on the host with `flk ssh mount`).
 - `flk config show` prints what flk understood, with warnings.
 
 Host ports: `[[services.ports]]` are forwarded from every host address (or

@@ -279,12 +279,15 @@ module Flk
                         ["--read-only", "Nothing can be changed through the mount"],
                         ["-o", "--option OPTS", "More sshfs options, comma-separated (e.g. cache=no)"]],
                  summary: "Mount a directory of a running machine at DIR on this host (sshfs); no sshd, keys or network needed",
-                 notes: ["PATH is absolute in the machine: any directory, on a volume or not (what isn't on a volume is lost at the next deploy). " \
+                 notes: ["Example: flk ssh mount /home/dev ./dev-home --user dev, then edit ./dev-home with your own tools; flk ssh unmount ./dev-home when done.",
+                         "PATH is absolute in the machine: any directory, on a volume or not (what isn't on a volume is lost at the next deploy). " \
                          "DIR is made if missing and must be empty. Files are read and written as --user in the machine, and show here as yours.",
                          "The mount follows the machine through restarts and deploys by itself. While the machine is stopped, files there " \
                          "fail with I/O errors; it stays until flk ssh unmount (or the machine is destroyed, or this host reboots).",
-                         "Needs sshfs on this host, and an SFTP server and sh in the image (flk says how to add one). It runs through " \
-                         "flk-agent, like flk exec.",
+                         "Needs sshfs on this host (sudo apt install sshfs), and the SFTP server program and sh in the image: " \
+                         "in the Dockerfile, Ubuntu/Debian `RUN apt-get update && apt-get install -y --no-install-recommends openssh-sftp-server`, " \
+                         "Alpine `RUN apk add --no-cache openssh-sftp-server`, Fedora `RUN dnf install -y openssh-server`; then flk deploy. " \
+                         "No sshd: flk starts it through flk-agent, like flk exec. A whole example: #{File.join(File.dirname(SHARE), 'examples/devbox')}.",
                          "For editing and copying; a build or a database on it would be slow. To copy without mounting: " \
                          "flk files (a stopped machine's volume) or flk exec.",
                          "A symlink in the machine to an absolute path outside PATH is followed on this host (it names a host file). " \

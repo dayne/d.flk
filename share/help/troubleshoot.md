@@ -90,6 +90,24 @@ problems show up there with the fix. Then find the symptom below.
   couldn't fix`: the filesystem is damaged and was left at its old size.
   For a root disk, `flk deploy` makes a new one from the image.
 
+**`flk ssh mount` fails, or a mounted directory gives errors**
+- `has no SFTP server`: add the package to the image and deploy.
+  Ubuntu/Debian `apt-get install -y --no-install-recommends
+  openssh-sftp-server`, Alpine `apk add --no-cache openssh-sftp-server`,
+  Fedora `dnf install -y openssh-server` (`flk help dockerfile`).
+- `sshfs isn't installed`: `sudo apt install sshfs` (Arch `sshfs`,
+  Fedora `fuse-sshfs`).
+- `no user "X" in the machine`: `--user` takes a name from the image's
+  `/etc/passwd` or a UID; `flk exec -- cat /etc/passwd` shows them.
+- `Input/output error` on files there: the machine is stopped (`flk ssh
+  mounts` says so). `flk start`, and the mount works again by itself.
+- The directory is empty after a host reboot: mounts don't survive one.
+  `flk ssh mount` again.
+- `couldn't unmount`: a program or a shell is still in the directory.
+  Leave it, or `flk ssh unmount DIR --force`.
+- The machine is gone but the mount is listed (`machine gone`):
+  `flk ssh unmount DIR`.
+
 **Can't reach the app**
 - From the host: use the machine IP (`flk status`), `http://IP:PORT`.
 - Via a host port: `flk ports`. "blocked" says why (below 1024, or a

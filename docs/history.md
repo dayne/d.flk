@@ -630,6 +630,12 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   mounted directory names a host file; slow for builds; gone after a
   host reboot. Tests: `46-ssh-mount` (8, skipped without sshfs); by hand:
   an image without `sh`, flk under a path with a space and a comma.
+  Examples for others (2026-11-17, after it worked on another person's
+  host): `examples/devbox` (Ubuntu 26.04, a user, its home on a seeded
+  volume; tried as a `flkt-*` app: mount, write, deploy, still there),
+  the Dockerfile lines for Ubuntu/Debian, Alpine and Fedora (each
+  installed in a container to check the server's path) in `flk help
+  operate`, `dockerfile`, `troubleshoot` and the command's own help.
 - [x] **A non-root USER runs as itself on busybox images** (TODO
   Machines, 2026-11-10, before M6's warnings). Alpine's busybox has no
   `setpriv --reuid` and no `chroot --userspec`, so init ran the app as root

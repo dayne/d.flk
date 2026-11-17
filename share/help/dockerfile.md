@@ -65,11 +65,22 @@ by the app's user (`RUN install -d -o app -g app /data`) and both are
 right. Fix one that isn't, with the machine stopped:
 `flk files chown UID:GID VOL:/`.
 
-**Files from the host.** `flk ssh mount` (a directory of the running
-machine, mounted on the host) needs an SFTP server and `sh` in the image:
-`apk add openssh-sftp-server` (Alpine) or `apt-get install -y
-openssh-sftp-server` (Debian/Ubuntu). No sshd: flk starts it through its
-agent.
+**Files from the host.** `flk ssh mount /home/dev ./dev-home --user dev`
+mounts a directory of the running machine on the host. The image needs
+the SFTP server program (and `sh`); no sshd, flk starts it through its
+agent:
+
+    # Ubuntu, Debian
+    RUN apt-get update \
+     && apt-get install -y --no-install-recommends openssh-sftp-server \
+     && rm -rf /var/lib/apt/lists/*
+    # Alpine:  RUN apk add --no-cache openssh-sftp-server
+    # Fedora:  RUN dnf install -y openssh-server
+
+The user you mount as must be in the image (`RUN useradd -m dev`; Ubuntu
+images have `ubuntu`). Put what should last on a volume, e.g. the home
+directory with `seed = true`. A complete example:
+`{{SRC}}/examples/devbox`; the host side is in `flk help operate`.
 
 **Stopping cleanly.** `flk machine stop` sends the app SIGTERM, then kills
 the VM after `kill_timeout` (default 10s, at most 300s). A server that
