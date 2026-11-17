@@ -87,8 +87,9 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   mounts --json` (`[{ app, machine, user, path, dir, read_only, state }]`,
   state `ok`, `machine stopped` or `machine gone`; every app's), and
   `ssh_mounts` (the same rows, this app's) in `flk status --json`.
-  lazyflk could list an app's mounts and offer unmount. Handed over: its
-  session was told (2026-11-17), and a note is in lazyflk's `TODO.md`.
+  lazyflk could list an app's mounts and offer unmount. Handed over
+  (2026-11-17): a note is in lazyflk's `TODO.md` ("From flk ed47eab");
+  its session wasn't running, so nothing was sent.
 - [ ] **Host settings from the CLI** (flk, 2026-10-15; nothing asked yet).
   New and additive: `flk config set KEY=VALUE...` writes
   `~/.config/flk/host.toml` (keys checked; bind/address validated before
