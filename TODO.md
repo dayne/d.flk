@@ -158,8 +158,10 @@ same review.
   ca7daa6), an opt-in snippet that adds only the SFTP server package
   (apt and apk `openssh-sftp-server`, dnf `openssh-server`; no sshd, no
   port), refuses a base without `/bin/sh`, and adds the `flk ssh mount`
-  step after the deploy. Not part of its dev-sandbox by default. It will
-  try a real mount on a `flkt-*` app now that flk has it (ed47eab).
+  step after the deploy. Not part of its dev-sandbox by default. It
+  tried a real mount with flk ed47eab (d.flkforge 5ef8c80): an Ubuntu
+  base, write from the host, a restart, unmount, destroy; nothing to
+  file. Debian and Alpine bases were only built.
 - [x] **`flk build`: build and inspect without deploying** (M6, on
   main; history.md). Was: Today an image
   is only built by `deploy`, which needs a registered app and touches
