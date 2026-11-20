@@ -7,6 +7,13 @@ needs its security questions answered first; plan it with the later
 network work (PLAN M5, managed extra addresses), not now. This file is
 what that planning session should start from.
 
+**Later on 2026-11-15 (enshrouded.flk 3046dad):** the relay was the
+player's own firewall (ufw on the client PC, default deny in, so the
+server's direct-path probes went unanswered). Fixed on the PC: direct
+again, 11-13ms, under today's rules. So no app needs this now, and the
+by-hand test below doesn't have to be run for enshrouded. It stays a
+low-priority idea for a server whose players can't be reached direct.
+
 ## The request
 
 `[flk] own_address = "10.47.11.7"` (the report's name): give one host

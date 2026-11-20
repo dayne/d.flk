@@ -12,7 +12,7 @@ there). This index keeps them in view. At the start of a flk session, read
 every `~/*/BUGS.flk.md` "Open" section and update this list. When one is
 fixed, set its `Status: fixed in <commit>: ...` line in the app's file (the
 workflow in its header), and the app's owner confirms. Last checked
-2026-11-15.
+2026-11-20.
 
 | Report | Title | Where it's planned |
 |---|---|---|
@@ -32,7 +32,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
 | enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | M6, checks (interval health); `logs --boot` and `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
-| enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Reviewed 2026-11-15, not scheduled: `docs/dedicated-address-notes.md` (LAN addresses); a by-hand test first |
+| enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Not needed now (enshrouded, 2026-11-15: the relay was the player's own firewall); a low-priority idea, notes in `docs/dedicated-address-notes.md` (LAN addresses) |
 
 ## Reliability (PLAN.md R1)
 
@@ -250,13 +250,15 @@ matches `fib daddr type local`), or only on `bind` addresses (host.toml,
   scheduled). A host address given to one machine as 1:1 NAT: what's sent
   to it goes to the machine, and the machine's traffic leaves as it. For
   servers whose ports can't be listed (Enshrouded: Steam networking on a
-  random UDP port per start). Notes for the planning session, with the
-  by-hand test to run first, the security questions of forwarding
-  everything, and other shapes (a routed address, a bridged tap):
+  random UDP port per start). Notes for the planning session, with a
+  by-hand test, the security questions of forwarding everything, and
+  other shapes (a routed address, a bridged tap):
   `docs/dedicated-address-notes.md`. Decided: root names the addresses
   that may be dedicated (baked into the helper). Open: what's forwarded
-  in, and whether it fixes enshrouded's relay problem at all (the same
-  rules gave direct connections before Nov 13).
+  in. Nobody needs it now: enshrouded found its relay problem was the
+  player's own firewall (ufw on the PC, 2026-11-15), and Steam connects
+  direct again under today's rules. A low-priority idea until an app
+  asks again.
 - [ ] **keepalived (VRRP) hooks.** A floating address held by the active
   host: `flk host activate` / `flk host deactivate` (resume or stop-all
   the apps tied to that address) for keepalived's notify scripts, and
