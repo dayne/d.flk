@@ -478,11 +478,15 @@ module Flk
         since = tail.rindex("--- flk: booting") || 0
         # serial console lines end in "\r\r\n": without the \r, `$` works
         # (d.flkforge BUGS.flk.md #2), as in console --wait-log
-        tail[since..].scrub.delete("\r").match?(Regexp.new(c["match"]))
+        console_text(tail[since..]).match?(Regexp.new(c["match"]))
       end
     rescue SystemCallError, IOError, ::Net::OpenTimeout, ::Net::ReadTimeout, ::Net::HTTPBadResponse, EOFError
       false
     end
+
+    # Console bytes as text a check's regex can run on: UTF-8 (a regex with
+    # "é" raised on a log that had any such byte), bad bytes replaced, no \r.
+    def console_text(bytes) = bytes.dup.force_encoding(Encoding::UTF_8).scrub.delete("\r")
 
     def check_what(c)
       case c["type"]

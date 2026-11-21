@@ -221,6 +221,13 @@ To ask whether this flk has a setting, look for its `key` (such as
   file is sparse, so a generous value costs host disk only as it's used.
   `flk machine extend ID --size GB` grows a machine that's already full
   without a deploy.
+- `[flk] log_max_mb` (flk only): the size, in MB, at which each of this
+  app's machines moves `console.log` to `console.log.1` and starts a new
+  one. Without it the host's `FLK_LOG_MAX_MB` applies (default 10). A
+  machine keeps up to twice the limit on disk, and `flk logs --boot` can
+  show a boot's start only while it is in one of the two files, so raise
+  it for an app that writes a lot between restarts. It takes effect at
+  the next `flk deploy`.
 - `[flk]` (flk only): `http_port` (host port for `[http_service]`), `kernel_args`,
   `stdin` (`"console"`, the default: the app
   reads what you type in `flk console`; `"null"`: /dev/null, like
@@ -301,7 +308,7 @@ everywhere.
 - `FLK_BRIDGE`, `FLK_SUBNET`, `FLK_TAPS`: must match what `setup-host.sh` used
 - `FLK_DNS`: resolvers handed to machines (default `1.1.1.1 9.9.9.9`)
 - `FLK_TMUX_SOCKET`: name of flk's own tmux server (default `flk`)
-- `FLK_LOG_MAX_MB`: size at which a machine's `console.log` rotates to `console.log.1` (default 10)
+- `FLK_LOG_MAX_MB`: size at which a machine's `console.log` rotates to `console.log.1` (default 10); an app sets its own with `[flk] log_max_mb`
 - `NO_COLOR`: plain output
 
 ## Files

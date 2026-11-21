@@ -663,6 +663,29 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
   `tests/cases/05-cli.sh` test_logs_boot (fast: written log files, no
   VM). Tried read-only on mud's five game and service logs (enshrouded's
   boot was in `console.log.1`: 21,529 lines from the marker, 0.16s).
+- [x] **`[flk] log_max_mb`: an app's own console.log limit** (enshrouded
+  #3, its last part; 2026-11-21). `FLK_LOG_MAX_MB` is one limit for the
+  whole host, and it comes from the environment of whichever flk starts
+  the machine. A chatty server passes 2 x 10MB between restarts, and
+  then `flk logs --boot` and a `log` check have lost the boot's start.
+  `log_max_mb = N` (a whole number, at least 1) is kept in the machine's
+  config at deploy, and `VM.launch` gives `flk-logpipe` that limit when
+  the machine boots (`VM.log_max_bytes`); unset, the host's limit as
+  before. No upper bound: the cost is disk, up to twice the limit per
+  machine. To keep a big log from costing memory, `flk check`'s `log`
+  check no longer reads the whole boot at once: it reads 1MB at a time
+  (`boot_log_match?`), tries whole lines only until the end, and starts
+  each piece with the last 64KB of lines of the one before, so `$`
+  never matches where a read stopped and a match across two reads is
+  found. Found on the way: console bytes were matched as binary, so a
+  check or `console --wait-log` whose regex has a character outside
+  ASCII raised (`Encoding::CompatibilityError`) on a log with any such
+  byte; they are now read as UTF-8 with bad bytes replaced
+  (`console_text`). The `logs --boot` note about lost lines names the
+  key. Tests: `00-config` test_log_max_mb, `05-cli`
+  test_log_check_reads_a_big_boot (fast), and `16-exec`
+  test_console_log_rotates_at_the_apps_limit (a machine with
+  `log_max_mb = 1` writes 1.2MB to its console and rotates).
 - [x] **`flk ssh mount PATH DIR`: a running machine's directory on the
   host** (Dayne's idea, 2026-11-17). sshfs, with nothing listening in
   the guest: sshfs runs `libexec/flk-sftp` in place of ssh (by name, its

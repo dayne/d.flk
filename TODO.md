@@ -30,7 +30,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
-| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `log_max_mb` under Machines |
+| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `[flk] log_max_mb` built 2026-11-21 (branch `log-max-mb`) |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 | enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Not needed now (enshrouded, 2026-11-15: the relay was the player's own firewall); a low-priority idea, notes in `docs/dedicated-address-notes.md` (LAN addresses) |
 
@@ -109,6 +109,13 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   start is older than both log files, flk prints what's kept, with a
   note on stderr. lazyflk's log viewer could open at the boot, or offer
   "this boot" next to the last lines.
+- [ ] **`[flk] log_max_mb`** (flk, 2026-11-21, branch `log-max-mb`;
+  nothing asked, nothing to do). A new flk.toml key: the app's own size
+  limit for `console.log`. Additive: `config show --json` has
+  `machine_config.log_max_mb` and `machine status ID` has
+  `config.log_max_mb` (a number, or null for the host's limit). The log
+  files and `flk logs` are as before; a machine can now keep more than
+  20MB of log, so read it through `flk logs`, not whole into memory.
 - [ ] **Mounted directories** (flk, 2026-11-17, on main since ed47eab;
   nothing asked yet). New and additive: `flk ssh mount PATH DIR [--user
   U] [--read-only]`, `flk ssh unmount DIR|--all [--force]`, `flk ssh
@@ -235,6 +242,9 @@ same review.
     status snippets could read `checks` in place of scraping logs.
     Still open: host checks (disk, backups, units) on the same timer;
     `on_failure = "restart"`; a notify hook (health-design.md).
+  - `[flk] log_max_mb` (2026-11-21, branch `log-max-mb`; history.md):
+    a new key in `help --all --json`'s `config_keys`. A game-server
+    recipe could set it when the server logs a lot between restarts.
 - [x] **Seed a new volume from the image** (M6, 2026-11-11; history.md).
   `[[mounts]] seed = true`: a volume that's empty when its machine is
   about to boot gets what the image has at `destination`, owners and
@@ -416,13 +426,6 @@ must be built in (`=y`).
   (for the exit hook). If it lacks `kvm` and no machines run, flk restarts it
   by itself; with machines running it still says to stop them and run
   `tmux -L flk kill-server`.
-- [ ] **`[flk] log_max_mb` per app** (enshrouded #3, its lowest-value
-  part): FLK_LOG_MAX_MB is host-wide. `flk logs --boot` is done (main
-  2f5f00f, history.md); what it can't bring back is a boot older than
-  both log files, which a bigger limit for a chatty app would keep. The
-  deploy-time `log` check and `last_exit_status` still read only the end
-  of `console.log` (256KB, 64KB), which is right at deploy time;
-  `flk check` reads the whole boot.
 - [ ] **Huge pages on a real pool.** `[[vm]] huge_pages = "2M"` is built
   and tested without a pool; booting on one needs root to reserve it
   (`tests/cases/45-hugepages.sh` runs when a pool exists).

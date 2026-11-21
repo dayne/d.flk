@@ -339,6 +339,29 @@ test_check_interval() {
   done
 }
 
+# [flk] log_max_mb (enshrouded BUGS #3): an app's own limit for its
+# machines' console.log, kept in each machine's config. Without it the
+# host's FLK_LOG_MAX_MB applies (default 10).
+test_log_max_mb() {
+  stage_app hello
+  local cfg; cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq null "$(json_get machine_config.log_max_mb <<<"$cfg")" "unset: the host's limit"
+  toml_append '[flk]' '  log_max_mb = 200'
+  cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq 200 "$(json_get machine_config.log_max_mb <<<"$cfg")" "the app's limit"
+  [[ $cfg != *"unknown key"* ]] || fail "log_max_mb warns: $cfg"
+  local bad out
+  for bad in 0 -5 1.5 '"20"' true; do
+    stage_app hello
+    toml_append '[flk]' "  log_max_mb = $bad"
+    out=$(config 2>&1) && fail "config show accepted log_max_mb = $bad"
+    assert_contains "$out" "log_max_mb must be a whole number of MB" "log_max_mb = $bad"
+  done
+  local bytes='m = Struct.new(:config); puts [{ "log_max_mb" => 3 }, {}].map { Flk::VM.log_max_bytes(m.new(_1)) }.join(" ")'
+  assert_eq "3145728 10485760" "$(env -u FLK_LOG_MAX_MB ruby -I"$FLK_SRC/lib" -rflk -e "$bytes")" "bytes at boot"
+  assert_eq "3145728 2097152" "$(FLK_LOG_MAX_MB=2 ruby -I"$FLK_SRC/lib" -rflk -e "$bytes")" "the host's own limit"
+}
+
 test_bad_checks_rejected() {
   local bad out
   for bad in 'type = "exec"' 'type = "udp"|port = 1|send_hex = "zz"' 'type = "udp"|port = 1|send = "a"|send_hex = "61"' \
