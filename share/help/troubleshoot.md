@@ -5,7 +5,8 @@ problems show up there with the fix. Then find the symptom below.
 
 **A machine is stopped but should be running**
 - Why it stopped: `flk logs -i ID -n 200`. The last `[flk-init]` line has
-  the app's exit status.
+  the app's exit status. `flk logs -i ID --boot` is its whole last boot,
+  and nothing from the boots before.
 - Bring it back: `flk machine start ID` (or `flk resume` for all of them).
 - It stops right away again: the app itself is exiting. Check its command
   (`flk config show`, `[experimental] cmd`) and its env/secrets.

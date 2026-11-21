@@ -244,12 +244,18 @@ module Flk
                          "Before the first deploy this just records N."] }] },
       { name: "logs", group: "Machines",
         opts: [["-i", "--instance ID", "One machine (default: all)"],
-               ["-n", "--lines N", Integer, "Lines of history (default 50)"],
+               ["-n", "--lines N", Integer, "Lines of history (default 50; with --boot: all)"],
+               ["--boot", "Only the latest boot, from its \"--- flk: booting\" line on"],
                ["-f", "--follow", "Keep following, even without a terminal"],
                ["--no-tail", "Print and exit, even in a terminal"]],
         summary: "Serial console output (app stdout/stderr and boot messages)",
         notes: ["Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits.",
-                "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB."] },
+                "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB.",
+                "--boot prints everything since the machine last booted (a start, a restart, a deploy), however much " \
+                "the app has written since; -n N keeps the last N of those lines. " \
+                "How this boot began: flk logs --boot | head -n 100. Whether it got ready: flk logs --boot | grep -m1 'Server ready'.",
+                "--boot reads console.log.1 too when the boot began before the last rotation. " \
+                "A boot older than both files has lost its first lines: flk prints what's kept and says so on stderr."] },
       { name: "console", group: "Machines", args: "[ID]", opts: CONSOLE_OPTS,
         blocks: "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`",
         summary: "Attach to a machine's serial console, or --send one line to the app's stdin",
