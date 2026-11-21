@@ -10,8 +10,9 @@ module Flk
     # firecracker without the kvm group even after the user logs back in.
     SOCKET = ENV.fetch("FLK_TMUX_SOCKET", "flk")
     TMUX = ["tmux", "-L", SOCKET].freeze
-    # console.log rotates to console.log.1 past this (see libexec/flk-logpipe)
-    LOG_MAX_BYTES = Integer(ENV.fetch("FLK_LOG_MAX_MB", "10")) * 1024 * 1024
+    # console.log rotates to console.log.1 past this many MB (see
+    # libexec/flk-logpipe), unless the app sets its own [flk] log_max_mb
+    LOG_MAX_MB = Integer(ENV.fetch("FLK_LOG_MAX_MB", "10"))
 
     def firecracker_bin
       ENV["FLK_FIRECRACKER"] ||
@@ -21,6 +22,9 @@ module Flk
     end
 
     def kernel = ENV["FLK_KERNEL"] || File.join(ROOT, "kernel/vmlinux")
+
+    # Where this machine's console.log rotates, in bytes.
+    def log_max_bytes(m) = (m.config["log_max_mb"] || LOG_MAX_MB).to_i * 1024 * 1024
 
     def boot_args(m)
       ["console=ttyS0", "reboot=k", "panic=1", "pci=off", "init=/flk/init",
@@ -182,7 +186,7 @@ module Flk
       Util.run!(*TMUX, "new-session", "-d", "-s", m.session, "-x", "200", "-y", "50",
                 "exec #{[bin, '--api-sock', sock, '--log-path', fclog, '--level', 'Warning'].shelljoin}")
       Util.run!(*TMUX, "pipe-pane", "-t", m.session, "-o",
-                [File.join(LIBEXEC, "flk-logpipe"), m.path("console.log"), LOG_MAX_BYTES.to_s].shelljoin)
+                [File.join(LIBEXEC, "flk-logpipe"), m.path("console.log"), log_max_bytes(m).to_s].shelljoin)
       File.write(m.path("pid"), Util.run!(*TMUX, "display-message", "-p", "-t", m.session, '#{pane_pid}').strip)
 
       Util.wait_for(5) { File.socket?(sock) } or

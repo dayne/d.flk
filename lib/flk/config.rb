@@ -113,6 +113,17 @@ module Flk
 
     def rootfs_extra_mb = (data.dig("flk", "rootfs_extra_mb") || 512).to_i
 
+    # [flk] log_max_mb: the size at which this app's machines rotate
+    # console.log to console.log.1 (nil: the host's FLK_LOG_MAX_MB).
+    def log_max_mb
+      v = data.dig("flk", "log_max_mb")
+      return nil if v.nil?
+      unless v.is_a?(Integer) && v >= 1
+        raise Error, "[flk] log_max_mb must be a whole number of MB, at least 1 (got '#{v}')"
+      end
+      v
+    end
+
     # fly's [[restart]]: what happens when the app exits on its own (not
     # when flk stops it). "on-failure" (default): restart after a non-zero
     # exit or a crash; "always": after any exit; "never" (or "no"): stay
@@ -399,7 +410,8 @@ module Flk
         "bind" => bind,
         "checks" => checks,
         "huge_pages" => huge_pages,
-        "internal_hosts" => internal_hosts
+        "internal_hosts" => internal_hosts,
+        "log_max_mb" => log_max_mb
       }
     end
 

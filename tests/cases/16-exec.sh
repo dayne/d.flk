@@ -4,6 +4,7 @@ TIER=vm
 
 setup_file() {
   stage_app mcshadow
+  toml_append '' '[flk]' '  log_max_mb = 1' # for the last test
   flk launch --no-deploy
   flk volumes create world --size 1
   flk deploy
@@ -81,4 +82,17 @@ test_exec_waits_for_a_freshly_booted_agent() {
   local m; m=$(machine_id)
   flk machine restart "$m" >/dev/null
   assert_eq ok "$(flk exec -- echo ok)" "exec right after a boot"
+}
+
+# [flk] log_max_mb = 1 (enshrouded BUGS #3): this app's console.log rotates
+# at 1MB, not the host's 10, and flk logs --boot still finds the boot's start.
+test_console_log_rotates_at_the_apps_limit() {
+  local md; md="$FLK_HOME/apps/$APP/machines/$(machine_id)"
+  [[ ! -e $md/console.log.1 ]] || fail "console.log rotated before the test wrote anything"
+  flk exec --user root -- sh -c 'yes "$(printf %099d 0)" | head -n 12000 >/dev/console' # 1.2MB
+  wait_until 60 test -s "$md/console.log.1" || fail "no console.log.1 after 1.2MB (console.log: $(stat -c %s "$md/console.log") bytes)"
+  local size; size=$(stat -c %s "$md/console.log.1")
+  ((size > 1048576 && size < 1100000)) || fail "console.log.1 is $size bytes, expected just over 1MB"
+  local out; out=$(flk logs --boot 2>&1 | grep -c -e "--- flk: booting" -e "rotated out") || true
+  assert_eq 1 "$out" "logs --boot starts at the boot marker in console.log.1"
 }

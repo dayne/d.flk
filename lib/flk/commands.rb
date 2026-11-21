@@ -254,12 +254,14 @@ module Flk
                ["--no-tail", "Print and exit, even in a terminal"]],
         summary: "Serial console output (app stdout/stderr and boot messages)",
         notes: ["Follows new output only when stdout is a terminal; piped or run by an agent it prints the last lines and exits.",
-                "Each machine keeps console.log, rotated to console.log.1 past FLK_LOG_MAX_MB (default 10) MB.",
+                "Each machine keeps console.log and moves it to console.log.1 when it passes a size limit: " \
+                "the app's [flk] log_max_mb, else the host's FLK_LOG_MAX_MB (default 10MB).",
                 "--boot prints everything since the machine last booted (a start, a restart, a deploy), however much " \
                 "the app has written since; -n N keeps the last N of those lines. " \
                 "How this boot began: flk logs --boot | head -n 100. Whether it got ready: flk logs --boot | grep -m1 'Server ready'.",
                 "--boot reads console.log.1 too when the boot began before the last rotation. " \
-                "A boot older than both files has lost its first lines: flk prints what's kept and says so on stderr."] },
+                "A boot older than both files has lost its first lines: flk prints what's kept and says so on stderr; " \
+                "to keep more, raise [flk] log_max_mb in flk.toml and deploy."] },
       { name: "check", group: "Machines",
         opts: [["--all", "Every app's machines"],
                ["-i", "--instance ID", "One machine (default: all of the app's)"],

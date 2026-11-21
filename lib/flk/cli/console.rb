@@ -61,7 +61,8 @@ module Flk
         puts "#{"\n" unless log == files.first}==> #{log} <==" if files.size > 1
         out = n ? IO.popen(["tail", "-n", n.to_s], "w") : $stdout
         pos = 0
-        lost = -> { warn "flk: this boot's first lines have rotated out of #{log} (and .1); showing what's kept" }
+        lost = -> { warn "flk: this boot's first lines have rotated out of #{log} (and .1); showing what's kept " \
+                          "(to keep more: [flk] log_max_mb in flk.toml, then deploy)" }
         boot_parts(log, &lost).each do |file, from|
           pos = from + File.open(file, "rb") { |f| f.seek(from); IO.copy_stream(f, out) }
         rescue Errno::ENOENT # rotated away just now
@@ -240,7 +241,7 @@ module Flk
           lines = (partial + chunk).split("\n", -1)
           partial = lines.pop.to_s
           lines.each do |l|
-            l = l.delete("\r")
+            l = console_text(l)
             next if l.strip == typed.strip # the console's echo
             puts l
             return if l.match?(re)

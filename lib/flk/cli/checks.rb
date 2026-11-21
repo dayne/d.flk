@@ -90,7 +90,7 @@ module Flk
     def check_once(m, c)
       if c["type"] == "log"
         @check_detail = nil
-        return true if boot_log_text(m).match?(Regexp.new(c["match"]))
+        return true if boot_log_match?(m, Regexp.new(c["match"]))
         @check_detail = "no console line since boot matches /#{c['match']}/"
         return false
       end
@@ -103,11 +103,31 @@ module Flk
       false
     end
 
-    def boot_log_text(m)
-      boot_parts(m.path("console.log")).map { |file, from| File.open(file, "rb") { |f| f.seek(from); f.read }.to_s }
-                                       .join.scrub.delete("\r")
+    # Does this boot's console log match re? Read 1MB at a time, so a big
+    # [flk] log_max_mb costs time and not memory. Only whole lines are
+    # tried until the end (`$` is a line's end, not where a read stopped),
+    # and each piece starts with the last lines of the one before, so a
+    # match across two reads is found.
+    LOG_PIECE = 1_048_576
+    LOG_OVERLAP = 65_536
+
+    def boot_log_match?(m, re)
+      held = "".b
+      boot_parts(m.path("console.log")).each do |file, from|
+        File.open(file, "rb") do |f|
+          f.seek(from)
+          while (piece = f.read(LOG_PIECE))
+            held << piece
+            done = held.rindex("\n") or next
+            return true if console_text(held[0..done]).match?(re)
+            keep = done > LOG_OVERLAP ? held.index("\n", done - LOG_OVERLAP) + 1 : 0
+            held = held[keep..]
+          end
+        end
+      end
+      console_text(held).match?(re)
     rescue SystemCallError
-      ""
+      false
     end
 
     # Why a failed try says nothing about the app: nil when it does.

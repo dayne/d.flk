@@ -70,7 +70,9 @@ them later (after backing up what's there now).
 
 **Logs.** `flk logs` shows the last 50 lines of every machine (`-n 500`
 for more, `-i ID` for one, `-f` to follow). Logs rotate at 10MB
-(`console.log.1` keeps the previous part) and survive restarts.
+(`console.log.1` keeps the previous part) and survive restarts; an app
+that writes more than that between restarts sets its own limit with
+`[flk] log_max_mb` in flk.toml (applies at the next deploy).
 `flk logs --boot` prints everything since the machine last booted, from
 flk's `--- flk: booting` line on, so a server that has written for days
 still shows how it started: `flk logs --boot | head -n 100`, or

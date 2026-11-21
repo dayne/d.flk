@@ -90,6 +90,7 @@ module Flk
       ["flk", "http_port", "integer", nil, "A host port forwarded to [http_service] internal_port.", :flk],
       ["flk", "bind", "list", nil, "Forward this app's host ports only on these host addresses (one, a list, or \"all\").", :flk],
       ["flk", "rootfs_extra_mb", "integer", 512, "Free space on / beyond the image's files, in MB; applies at the next deploy.", :flk],
+      ["flk", "log_max_mb", "integer", nil, "Size in MB at which each machine's console.log rotates to console.log.1 (default: the host's FLK_LOG_MAX_MB, 10); a machine keeps up to twice this. Applies at the next deploy.", :flk],
       ["flk", "keep_releases", "integer", 2, "Release images kept for flk releases rollback.", :flk],
       ["flk", "internal_hosts", "boolean", false, "APP.internal names for this host's machines, in /etc/hosts.", :flk],
       ["flk", "stdin", "string", "console", "The app's stdin: console (what flk console types) or null (/dev/null).", :flk],

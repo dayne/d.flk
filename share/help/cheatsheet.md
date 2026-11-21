@@ -16,6 +16,7 @@ Run an app (in its directory, with a Dockerfile, flk.toml or fly.toml)
 Look inside
   flk logs [-i ID] [-n 200] [-f]     app output and boot messages
   flk logs --boot | head -n 100      how the latest boot began, however much came after
+  [flk] log_max_mb = N               MB of console.log a machine keeps before rotating (default 10)
   flk check [--all]                  run the [checks] now: does the app still answer? (exit 2: one fails)
   flk console [ID]                   type to the app (server consoles); leave: Ctrl-b d
   flk console --send "say hi"        one line to the app, no attaching (--wait-log REGEX: see the answer)

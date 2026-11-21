@@ -683,6 +683,42 @@ test_log_check_regex_anchors() {
   assert_eq "true true true false false" "$got" "anchored log checks"
 }
 
+# [flk] log_max_mb can keep a boot of hundreds of MB, so flk check reads it
+# 1MB at a time: a line is found wherever it is, `$` is a line's end and
+# never where a read stopped, and a match across two reads counts. Console
+# bytes are UTF-8: a regex with "é" raised on a log that had such a byte.
+test_log_check_reads_a_big_boot() {
+  local d="$WORK/biglog-$RUN_ID"; mkdir -p "$d"
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e '
+    m = Struct.new(:dir) { def path(n) = File.join(dir, n) }.new(ARGV[0])
+    cli = Flk::CLI.allocate
+    log = m.path("console.log")
+    match = ->(re) { cli.send(:boot_log_match?, m, Regexp.new(re)) }
+    filler = ("x" * 98 + "\r\n") * 30_000 # 3MB
+    out = []
+
+    # the boot began in console.log.1 and goes on in console.log
+    File.binwrite("#{log}.1", "the old boot\n\n--- flk: booting m (release v2) at T ---\nearly line\r\n" + filler)
+    File.binwrite(log, filler + "late line\r\n" + filler)
+    out << %w[^early\ line$ ^late\ line$ old\ boot ^nope$].map(&match).join(" ")
+
+    # a read stops right after "Done", in the middle of a line
+    piece = Flk::CLI::LOG_PIECE
+    File.delete("#{log}.1")
+    File.binwrite(log, "a" * (piece - 5) + "\n" + "Done loading\r\nnext\r\n" + filler)
+    out << %w[Done$ ^Done\ loading$ loading\nnext].map(&match).join(" ")
+
+    # a match over two lines, one in each read
+    File.binwrite(log, "a" * (piece - 7) + "\n" + "lineA\n" + "lineB\n" + filler)
+    out << match.call("lineA\nlineB").to_s
+
+    # a regex and a log outside ASCII, and a byte that is no text at all
+    File.binwrite(log, "\n--- flk: booting m ---\ncaf\xC3\xA9 ready \xFF\r\n")
+    out << [match.call("^café ready"), cli.send(:check_passes?, m, { "type" => "log", "match" => "^café ready" })].join(" ")
+    puts out' "$d" 2>&1)
+  assert_eq $'true true false false\nfalse true true\ntrue\ntrue true' "$got" "log checks over a big boot"
+}
+
 # Health while running (enshrouded #3): what flk check keeps per machine,
 # what counts as a change, and when --due tries a check. No VM: the store
 # and the clock, with a stand-in machine.
