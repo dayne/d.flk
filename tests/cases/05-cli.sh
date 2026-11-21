@@ -119,6 +119,79 @@ test_no_hangs_without_a_terminal() {
   assert_contains "$out" "boot line" "logs output"
 }
 
+# enshrouded BUGS #3: flk logs --boot prints from the latest boot marker,
+# from console.log.1 when the log rotated since, whatever the app wrote.
+test_logs_boot() {
+  local md="$FLK_HOME/apps/$APP/machines" out err
+  fake_machine() { # ID
+    mkdir -p "$md/$1"
+    printf '{"id":"%s","name":"%s","tap_index":99,"created_at":"2000-01-01T00:00:0%sZ","config":{"mounts":[]}}' \
+      "$1" "$1" "${1#fake}" >"$md/$1/machine.json"
+  }
+  trap "rm -rf '$md'/fake[12]" EXIT
+  fake_machine fake1
+  local log="$md/fake1/console.log"
+  printf 'first boot\n\n--- flk: booting fake1 (release v1) at T1 ---\nold line\n\n--- flk: booting fake1 (release v2) at T2 ---\nnew 1\nnew 2\nnew 3\n' >"$log"
+  out=$(flk logs --boot)
+  assert_eq "--- flk: booting fake1 (release v2) at T2 ---" "$(head -n 1 <<<"$out")" "starts at the latest marker"
+  assert_eq 4 "$(wc -l <<<"$out")" "lines since the boot"
+  assert_eq $'new 2\nnew 3' "$(flk logs --boot -n 2)" "--boot -n 2"
+  assert_eq 4 "$(flk logs --boot -n 50 | wc -l)" "-n never reaches before the boot"
+
+  # the boot began before the rotation
+  printf 'older\n\n--- flk: booting fake1 (release v3) at T3 ---\nin dot one\n' >"$log.1"
+  printf 'after the rotation\nlast\n' >"$log"
+  assert_eq $'--- flk: booting fake1 (release v3) at T3 ---\nin dot one\nafter the rotation\nlast' "$(flk logs --boot 2>&1)" "from console.log.1"
+  assert_eq $'after the rotation\nlast' "$(flk logs --boot -n 2)" "-n 2 across the rotation"
+  assert_eq $'in dot one\nafter the rotation\nlast' "$(flk logs --boot -n 3)" "-n 3 across the rotation"
+
+  # its start is in neither file: all that's kept, and a note on stderr
+  printf 'older\nstill older\n' >"$log.1"
+  out=$(flk logs --boot 2>"$WORK/logs-boot.err")
+  assert_eq $'older\nstill older\nafter the rotation\nlast' "$out" "both files when the marker is gone"
+  assert_contains "$(cat "$WORK/logs-boot.err")" "first lines have rotated out"
+  rm "$log.1"
+  out=$(flk logs --boot 2>&1)
+  assert_eq $'after the rotation\nlast' "$out" "no marker, no console.log.1: the log, no note"
+
+  # a marker across the edge of a 1MB read, and more than one read back
+  ruby -e 'mark = "--- flk: booting fake1 (release v4) at T4 ---\n"
+    line = "noise noise noise noise noise\n"
+    body = line * ((1_048_576 + 5 - mark.size) / line.size)
+    body += "x" * (1_048_576 + 5 - mark.size - body.size - 1) + "\n"
+    File.write(ARGV[0], "before\n\n" + mark + body)
+    File.write(ARGV[1], "--- flk: booting fake1 (release v5) at T5 ---\n" + line * 80_000)' "$log" "$log.big"
+  assert_eq "--- flk: booting fake1 (release v4) at T4 ---" "$(flk logs --boot | sed -n 1p)" "marker across a read's edge"
+  mv "$log.big" "$log"
+  assert_eq 80001 "$(flk logs --boot | wc -l)" "marker 2MB back"
+  assert_eq 0 "$(flk logs --boot | grep -c before || true)" "nothing from before the boot"
+  out=$(set +o pipefail; flk logs --boot 2>&1 | head -n 2)
+  assert_eq $'--- flk: booting fake1 (release v5) at T5 ---\nnoise noise noise noise noise' "$out" "a closed pipe ends it quietly"
+
+  # following goes on from where the printing stopped
+  printf 'x\n\n--- flk: booting fake1 (release v6) at T6 ---\nbooted\n' >"$log"
+  (sleep 1; echo "written later" >>"$log") &
+  local rc=0
+  out=$(timeout 3 "$FLK_BIN" -a "$APP" logs --boot -f 2>&1) || rc=$?
+  wait
+  assert_eq 124 "$rc" "--boot -f keeps following"
+  assert_eq $'--- flk: booting fake1 (release v6) at T6 ---\nbooted\nwritten later' "$out" "--boot -f"
+
+  # two machines: each one's boot under its own header, as tail prints them
+  fake_machine fake2
+  printf 'gone\n\n--- flk: booting fake2 (release v1) at T7 ---\nsecond machine\n' >"$md/fake2/console.log"
+  out=$(flk logs --boot)
+  assert_eq "==> $log <==
+--- flk: booting fake1 (release v6) at T6 ---
+booted
+written later
+
+==> $md/fake2/console.log <==
+--- flk: booting fake2 (release v1) at T7 ---
+second machine" "$out" "two machines"
+  assert_eq $'--- flk: booting fake2 (release v1) at T7 ---\nsecond machine' "$(flk logs --boot -i fake2)" "-i with --boot"
+}
+
 # A deploy that can't place its machines fails before the (slow) build and
 # records no release, so the next deploy doesn't inherit an empty vN.
 test_deploy_checks_volumes_before_building() {

@@ -46,7 +46,65 @@ module Flk
       files = ms.map { _1.path("console.log") }.select { File.exist?(_1) }
       raise Error, "no logs yet" if files.empty?
       follow = o[:follow] || (!o[:no_tail] && $stdout.tty?)
+      return logs_since_boot(files, o[:lines], follow) if o[:boot]
       exec("tail", "-n", (o[:lines] || 50).to_s, *(follow ? ["-F"] : []), *files)
+    end
+
+    BOOT_MARK = "--- flk: booting".freeze # VM.start writes it to console.log
+
+    # flk logs --boot: each machine's lines from its latest boot marker on,
+    # all of them or the last n. Then tail takes over to follow: from the
+    # byte we stopped at for one log, from the end for several.
+    def logs_since_boot(files, n, follow)
+      Signal.trap("PIPE", "SYSTEM_DEFAULT") # `| head` ends it quietly, as it does tail, even where SIGPIPE came ignored
+      ends = files.map do |log|
+        puts "#{"\n" unless log == files.first}==> #{log} <==" if files.size > 1
+        out = n ? IO.popen(["tail", "-n", n.to_s], "w") : $stdout
+        pos = 0
+        boot_parts(log).each do |file, from|
+          pos = from + File.open(file, "rb") { |f| f.seek(from); IO.copy_stream(f, out) }
+        rescue Errno::ENOENT # rotated away just now
+          pos = 0
+        end
+        out.close if n # waits for tail
+        pos
+      end
+      return unless follow
+      exec("tail", *(files.size == 1 ? ["-c", "+#{ends[0] + 1}"] : ["-n", "0"]), "-F", *files)
+    end
+
+    # Where the latest boot's lines are: [[file, offset], ...], oldest first.
+    # flk-logpipe keeps one rotated file, so a boot that began before the
+    # last rotation starts in console.log.1. A boot older than that has lost
+    # its start: everything kept belongs to it.
+    def boot_parts(log)
+      if (at = boot_offset(log))
+        return [[log, at]]
+      end
+      old = "#{log}.1"
+      return [[log, 0]] unless File.exist?(old)
+      at = boot_offset(old)
+      warn "flk: this boot's first lines have rotated out of #{log} (and .1); showing what's kept" unless at
+      [[old, at || 0], [log, 0]]
+    end
+
+    # Byte offset of the last boot marker in file, nil if it has none. Reads
+    # backwards 1MB at a time, each read reaching a marker's length into the
+    # next so one across the edge is found.
+    def boot_offset(file)
+      File.open(file, "rb") do |f|
+        pos = f.size
+        while pos > 0
+          from = [pos - 1_048_576, 0].max
+          f.seek(from)
+          at = f.read(pos - from + BOOT_MARK.size).rindex(BOOT_MARK)
+          return from + at if at
+          pos = from
+        end
+        nil
+      end
+    rescue Errno::ENOENT
+      nil
     end
 
     def cmd_console(argv, o)

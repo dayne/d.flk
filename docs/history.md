@@ -608,6 +608,23 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Machines
 
+- [x] **`flk logs --boot`: the log since the latest boot** (enshrouded
+  #3, part 2; 2026-11-20). `flk logs` is `tail -n N` of `console.log`,
+  so a chatty server's boot scrolls out of reach (enshrouded: 51k lines
+  in four days) and its tools couldn't tell whether this boot ever
+  printed its ready line. `--boot` prints from the last `--- flk:
+  booting` marker on: found by reading backwards 1MB at a time, in
+  `console.log.1` when `console.log` has none (the boot began before
+  the rotation). All of it by default, so `| head` shows the start and
+  `| grep` finds the ready line; `-n N` keeps the last N (through
+  `tail`, so no line counting in flk). Following goes on with `tail -c
+  +BYTE -F` from where the printing stopped (no gap); with several
+  machines, each under tail's own header, then `tail -n 0 -F`. A boot
+  older than both files: what's kept, and a note on stderr. Decided:
+  `-n` keeps meaning "the last N", with or without `--boot`. Test:
+  `tests/cases/05-cli.sh` test_logs_boot (fast: written log files, no
+  VM). Tried read-only on mud's five game and service logs (enshrouded's
+  boot was in `console.log.1`: 21,529 lines from the marker, 0.16s).
 - [x] **`flk ssh mount PATH DIR`: a running machine's directory on the
   host** (Dayne's idea, 2026-11-17). sshfs, with nothing listening in
   the guest: sshfs runs `libexec/flk-sftp` in place of ssh (by name, its
