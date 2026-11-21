@@ -97,6 +97,23 @@ start_app() {
 
 child=0
 status=0
+# Sets status to the app's exit status. `wait` returns early when a trapped
+# signal arrives, so loop until the app is gone. Wait first, look after: an
+# app that has exited already by the time we get here still has its status
+# to give, and asking whether it's alive before waiting lost it (logged as
+# status 0, a clean exit; about 1 boot in 60 for an app that exits at once).
+# A wait cut short by a signal gives the signal's number: if the app went
+# just then, the last wait fetches its own status (127: already fetched).
+wait_app() {
+  while :; do
+    wait "$child"
+    status=$?
+    kill -0 "$child" 2>/dev/null || break
+  done
+  wait "$child" 2>/dev/null
+  last=$?
+  [ "$last" = 127 ] || status=$last
+}
 on_stop() {
   log "shutdown requested, sending SIGTERM to app"
   [ "$child" -gt 0 ] && kill -TERM "$child" 2>/dev/null
@@ -115,12 +132,7 @@ else
   start_app </dev/console &
 fi
 child=$!
-# `wait` returns early when a trapped signal arrives, so loop until the app is gone.
-while kill -0 "$child" 2>/dev/null; do
-  wait "$child"
-  status=$?
-done
-
+wait_app
 log "app exited with status $status; powering off"
 
 # Leave every filesystem clean, so a stop never looks like a crash (no

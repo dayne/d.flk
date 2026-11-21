@@ -136,6 +136,23 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Reliability
 
+- [x] **The guest init lost a quick app's exit status** (found
+  2026-11-20 by a flaky test, 10-hello
+  test_experimental_cmd_and_exit_status). `share/init.sh` asked whether
+  the app was alive before waiting for it; an app that had already
+  exited and been collected by the shell was never waited for, and init
+  logged `app exited with status 0`. Measured on mud: 1 of 60 boots of
+  an app that runs `exit 3`. flk reads that line (`last_exit_status`),
+  so a crash at start could count as a clean exit, which
+  `[[restart]] policy = "on-failure"` doesn't restart. Now `wait_app`
+  waits first and looks after, and when a stop signal cut the wait
+  short just as the app went, fetches the app's own status. 200 of 200
+  boots correct with the first form, 120 of 120 with the final one.
+  Test: 05-cli test_init_reports_the_apps_exit_status
+  (`tests/lib/waitapp.sh`: the function under dash, bash and busybox,
+  with the cases the old loop got wrong). The static init
+  (`agent/init.go`) was never affected. A guest change: machines get it
+  at their next deploy.
 - [x] **Three help topics** (R1, 2026-11-05): `flk help dockerfile`
   (writing a Dockerfile for flk: what a deploy does with it, the guest is
   a VM, the exact env inside, USER and setpriv, volume owners, stopping,

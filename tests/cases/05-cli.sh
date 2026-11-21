@@ -723,6 +723,21 @@ test_check_results_and_due() {
   assert_eq "false false true false true true false true" "$(sed -n 2p <<<"$got")" "due?"
 }
 
+# The guest init's wait for the app (share/init.sh wait_app) gives the app's
+# own exit status however it went: at once, before init looked (this was
+# logged as status 0, about 1 quick-exit boot in 60), or just as a stop
+# signal arrived. Run in every shell an image might bring as /bin/sh.
+test_init_reports_the_apps_exit_status() {
+  local want="plain=5 gone_before_we_wait=3 status_127=127 not_there_when_asked=3 signal_then_later=7 signal_then_gone=5 "
+  local sh ran=0
+  for sh in dash bash "busybox sh"; do
+    command -v "${sh%% *}" >/dev/null || continue
+    assert_eq "$want" "$($sh "$TESTS/lib/waitapp.sh" "$FLK_SRC/share/init.sh")" "wait_app under $sh"
+    ran=$((ran + 1))
+  done
+  ((ran > 0)) || skip_test "no dash, bash or busybox here"
+}
+
 # mud BUGS #5: flk images prune removes only what flk doesn't keep. A fake
 # engine stands in (the host's real store is left alone): one destroyed
 # app's tags and a dangling image go; nothing else is touched.
