@@ -133,7 +133,7 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - Done (on main): a non-root USER silently ran as root on busybox images (TODO.md,
   Machines): small, and do it before M6's image warnings.
 - flk's tmux server keeps its groups (TODO.md, Machines).
-- Done (branch logs-boot, 2026-11-20): `flk logs --boot` (enshrouded #3):
+- Done (on main since 2f5f00f, 2026-11-20): `flk logs --boot` (enshrouded #3):
   a machine's log since its latest boot, across the rotation.
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Recording the kernel each release and boot used (TODO.md, Guest
