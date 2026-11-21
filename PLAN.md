@@ -120,10 +120,15 @@ type: core flk stays protocol-neutral) and `[deploy] preflight`. Tested:
 fast, VM cases 05, 16, 40, then the full suite on main.
 **Steps 4-5 (2026-11-11):** `[[mounts]] seed = true` and `config_keys`
 in `flk help --all --json` are done (history.md, Builds).
-**What's left of M6:** checks while running (enshrouded #3), a later
-effort drafted in `docs/health-design.md` (2026-11-11): `flk check`, then
-one host timer; checks report and don't act; an MQTT bridge waits for a
-clearer purpose.
+**Checks while running (enshrouded #3), 2026-11-20, branch
+health-checks:** built as drafted in `docs/health-design.md`: `flk
+check`, results in `flk status`, change events, `interval` and
+`flk-check.timer`. Checks report and don't act. Tested: fast, VM case
+47, then the full suite. On a host, the timer needs `sudo setup-host.sh
+--install-service` once more, and an app gets an interval at its next
+deploy. **What's left of that design:** host checks on the same timer,
+`on_failure = "restart"`, a notify hook, the MQTT bridge: none
+scheduled.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.

@@ -179,6 +179,14 @@ To ask whether this flk has a setting, look for its `key` (such as
   `grace_period` (default 60s) or the machine goes back to its previous
   release and the deploy stops. Also read: `[[services.tcp_checks]]`,
   `[[services.http_checks]]` (on that service's port), `[[http_service.checks]]`.
+
+  `interval` (`"5m"`, `90`): also try the check that often while the
+  machine runs. `flk check` runs every check by hand; `flk-check.timer`
+  (`--install-service`) runs the ones with an interval, at most once a
+  minute. Each machine keeps its last results (`flk status`, `checks` in
+  `status --json`), and a change is an event (`check.failed`,
+  `check.recovered`). Checks report and never restart anything. A `log`
+  check that has passed stays passed until the next boot.
 - `[deploy] preflight = "CMD"` (flk only): a host command `flk deploy`
   runs first, in the config's directory, with `FLK_APP` and `FLK_RELEASE`
   (the version this deploy will make). A non-zero exit stops the deploy

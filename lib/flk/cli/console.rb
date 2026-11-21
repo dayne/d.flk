@@ -61,7 +61,8 @@ module Flk
         puts "#{"\n" unless log == files.first}==> #{log} <==" if files.size > 1
         out = n ? IO.popen(["tail", "-n", n.to_s], "w") : $stdout
         pos = 0
-        boot_parts(log).each do |file, from|
+        lost = -> { warn "flk: this boot's first lines have rotated out of #{log} (and .1); showing what's kept" }
+        boot_parts(log, &lost).each do |file, from|
           pos = from + File.open(file, "rb") { |f| f.seek(from); IO.copy_stream(f, out) }
         rescue Errno::ENOENT # rotated away just now
           pos = 0
@@ -76,7 +77,7 @@ module Flk
     # Where the latest boot's lines are: [[file, offset], ...], oldest first.
     # flk-logpipe keeps one rotated file, so a boot that began before the
     # last rotation starts in console.log.1. A boot older than that has lost
-    # its start: everything kept belongs to it.
+    # its start: everything kept belongs to it (the block hears of it).
     def boot_parts(log)
       if (at = boot_offset(log))
         return [[log, at]]
@@ -84,7 +85,7 @@ module Flk
       old = "#{log}.1"
       return [[log, 0]] unless File.exist?(old)
       at = boot_offset(old)
-      warn "flk: this boot's first lines have rotated out of #{log} (and .1); showing what's kept" unless at
+      yield if at.nil? && block_given?
       [[old, at || 0], [log, 0]]
     end
 

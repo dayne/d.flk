@@ -24,6 +24,8 @@ module Flk
         "root_disk_mb" => (File.size(m.path("rootfs.ext4")) / 1024**2 rescue nil),
         # [flk] internal_hosts: the names on its /etc/hosts line ([] when off)
         "internal_names" => Hosts.wants?(m) ? Hosts.names(m) : [],
+        # its [checks] with each one's last result this boot (flk check): ok is null until one ran
+        "checks" => Checks.summary(m),
         "created_at" => m.created_at, "updated_at" => m.updated_at }
     end
 

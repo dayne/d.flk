@@ -2,7 +2,7 @@
 
 What's safe to do on the host, and what stops machines.
 
-**flk's services.** Three systemd units, from
+**flk's services.** Three systemd units and a timer, from
 `sudo {{SRC}}/setup-host.sh --install-service`:
 - `flk-net.service`: the bridge, the tap pool and the nft rules. Its stop
   removes them (`setup-host.sh --down`) from under running machines:
@@ -14,6 +14,10 @@ What's safe to do on the host, and what stops machines.
   `flk resume` brings the machines back.
 - `flk-machines.service`: `flk resume` at boot, `flk stop-all` at
   shutdown. Restarting it does the same: stop all, start all.
+- `flk-check.timer`: every minute, `flk-check.service` runs
+  `flk check --all --due`: the health checks that have an `interval` and
+  are due. It does nothing when no app has one, and never touches a
+  machine: checks only report (`flk help operate`).
 
 `flk doctor` checks they're installed and current; after updating flk,
 re-run `--install-service` when it says so (it doesn't stop machines).

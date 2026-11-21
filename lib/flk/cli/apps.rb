@@ -22,12 +22,32 @@ module Flk
       puts "  Config   = #{a.meta['config_path'] || 'unknown (run flk deploy in the app directory once)'}"
       puts
       machine_table(a)
+      checks_section(a)
       return if mounted.empty?
       puts "\nMounted on this host (flk ssh mount)"
       mounted.each do |r|
         note = [r["user"], ("read-only" if r["read_only"]), (r["state"] unless r["state"] == "ok")].compact.join(", ")
         puts "  #{r['machine']}:#{r['path']} at #{r['dir']} (#{note})"
       end
+    end
+
+    # Each running machine's [checks] as last seen (flk check, a deploy).
+    def checks_section(a)
+      rows = a.machines.select(&:running?).flat_map do |m|
+        Checks.summary(m).map do |name, r|
+          c = m.config["checks"].find { _1["name"] == name }
+          result = if r["ok"].nil? then "– not checked since this boot (flk check)"
+                   else "#{check_result_text(r)}#{", checked #{Util.ago(r['at'])}" unless r['type'] == 'log' && r['ok']}"
+                   end
+          every = r["interval"] && ((r["interval"] % 60).zero? ? "#{r['interval'] / 60}m" : "#{r['interval']}s")
+          [m.id, name, check_what(c), every || "deploys only", result]
+        end
+      end
+      return if rows.empty?
+      puts "\nChecks"
+      Util.table(%w[MACHINE CHECK WHAT EVERY RESULT], rows)
+      problem, fix = Checks.runner_problem
+      puts Util.yellow("  ⚠ #{problem}: #{fix}") if problem
     end
 
     def releases_list(_args, o)

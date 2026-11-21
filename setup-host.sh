@@ -109,6 +109,10 @@ install_port_helper() {
 
 uninstall() {
   local unit
+  if [[ -f /etc/systemd/system/flk-check.timer ]]; then
+    systemctl disable --now flk-check.timer 2>/dev/null || true
+    rm -f /etc/systemd/system/flk-check.timer /etc/systemd/system/flk-check.service
+  fi
   for unit in flk-machines flk-tmux flk-net; do # machines first: they stop gracefully while the network is still up
     if [[ -f /etc/systemd/system/$unit.service ]]; then
       systemctl disable --now "$unit.service" 2>/dev/null || true
@@ -227,11 +231,45 @@ TimeoutStopSec=330
 [Install]
 WantedBy=multi-user.target
 UNIT
+
+  # Health while running: every minute, the [checks] that have an interval
+  # and are due (flk help check). A oneshot, not a daemon: it reads every
+  # app's machines each time, and does nothing when no check has an
+  # interval. Checks only report (flk status, events); exit 2 means a check
+  # is failing, which isn't the unit failing.
+  cat > /etc/systemd/system/flk-check.service <<UNIT
+[Unit]
+Description=flk health checks that are due (flk check --all --due)
+After=flk-machines.service
+
+[Service]
+Type=oneshot
+User=$user
+Environment=$path_env
+Environment=FLK_BRIDGE=$bridge FLK_SUBNET=$subnet FLK_TAPS=$taps
+ExecStart=$ruby_bin $src/bin/flk check --all --due --json
+StandardOutput=null
+SuccessExitStatus=2
+TimeoutStartSec=5min
+Nice=5
+UNIT
+  cat > /etc/systemd/system/flk-check.timer <<UNIT
+[Unit]
+Description=flk health checks, every minute
+
+[Timer]
+OnCalendar=minutely
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
+UNIT
   systemctl daemon-reload
   systemctl enable --now flk-net.service
   systemctl enable --now flk-tmux.service
   systemctl enable --now flk-machines.service
-  echo "installed and started flk-net.service, flk-tmux.service and flk-machines.service"
+  systemctl enable --now flk-check.timer
+  echo "installed and started flk-net.service, flk-tmux.service, flk-machines.service and flk-check.timer"
 }
 
 service=0

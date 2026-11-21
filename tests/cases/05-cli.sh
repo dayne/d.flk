@@ -591,9 +591,14 @@ test_install_service_units_verify() {
   (user=$USER bridge=flkbr0 subnet=172.30.0 taps=16 min_port=1024 src=$FLK_SRC self=$FLK_SRC/setup-host.sh
    sudo() { shift 3; "$@"; } # sudo -u USER -H CMD...
    source "$d/fn.sh"; install_service >/dev/null) || fail "install_service failed"
-  local out; out=$(cd "$d" && systemd-analyze verify ./flk-tmux.service ./flk-machines.service 2>&1 |
+  local out; out=$(cd "$d" && systemd-analyze verify ./flk-tmux.service ./flk-machines.service ./flk-check.service ./flk-check.timer 2>&1 |
     grep -v -e CPUAccounting -e 'flk-net.service' || true)
   [[ -z $out ]] || fail "systemd-analyze verify: $out"
+  # health checks: a oneshot each minute; a failing check (exit 2) isn't a failed unit
+  grep -qF "$FLK_SRC/bin/flk check --all --due" "$d/flk-check.service" || fail "flk-check.service: $(grep ExecStart "$d/flk-check.service")"
+  grep -q '^SuccessExitStatus=2' "$d/flk-check.service" || fail "flk-check.service would fail whenever a check fails"
+  grep -q '^OnCalendar=minutely' "$d/flk-check.timer" || fail "flk-check.timer isn't every minute"
+  grep -q 'flk-check.timer' <(awk '/^uninstall\(\) \{/,/^}/' "$FLK_SRC/setup-host.sh") || fail "--uninstall leaves flk-check.timer"
   grep -q '^After=.*flk-tmux.service' "$d/flk-machines.service" || fail "flk-machines isn't ordered after flk-tmux"
   grep -qF ' start-server \; set-option -g exit-empty off' "$d/flk-tmux.service" ||
     fail "flk-tmux ExecStart: $(grep ExecStart "$d/flk-tmux.service")"
@@ -676,6 +681,46 @@ test_log_check_regex_anchors() {
     puts ARGV[1..].map { cli.send(:check_passes?, m, { "type" => "log", "match" => _1 }) }.join(" ")' \
     "$d" '^fake: Server ready$' 'Server ready$' '^fake: starting$' 'ready\z' '^nope$')
   assert_eq "true true true false false" "$got" "anchored log checks"
+}
+
+# Health while running (enshrouded #3): what flk check keeps per machine,
+# what counts as a change, and when --due tries a check. No VM: the store
+# and the clock, with a stand-in machine.
+test_check_results_and_due() {
+  local d="$WORK/checks-$RUN_ID"; mkdir -p "$d"
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e '
+    C = Flk::Checks
+    m = Struct.new(:dir, :h) { def path(n) = File.join(dir, n) }.new(ARGV[0], { "started_at" => "2026-11-20T10:00:00Z" })
+    tcp = { "name" => "port", "type" => "tcp", "grace_period" => 60, "interval" => 300 }
+    t = Time.utc(2026, 11, 20, 10, 5)
+    out = []
+    out << C.record(m, tcp, true, now: t).inspect                 # first pass of the boot
+    out << C.record(m, tcp, true, now: t + 60).inspect            # still passing: no change
+    out << C.record(m, tcp, false, "refused", now: t + 120).inspect
+    out << C.record(m, tcp, false, "refused", now: t + 180).inspect # still failing: said once
+    r = C.results(m)["port"]
+    out << [r["ok"], r["at"], r["since"], r["detail"]].join(",")
+    out << C.record(m, tcp, true, now: t + 240).inspect
+    out << C.results(m)["port"].key?("detail").to_s
+    m.h["started_at"] = "2026-11-20T11:00:00Z"                    # it booted again
+    out << C.results(m).size.to_s
+    out << C.record(m, tcp, false, "refused", now: t + 4000).inspect # a first result can be a failure
+    puts out.join(" ")
+
+    boot = Time.utc(2026, 11, 20, 10)
+    ok = ->(at) { { "ok" => true, "at" => at.utc.iso8601 } }
+    log = tcp.merge("type" => "log")
+    puts [C.due?(tcp.merge("interval" => nil), nil, boot, boot + 900),   # no interval: never
+          C.due?(tcp, nil, boot, boot + 30),                              # no result yet, in its grace period
+          C.due?(tcp, nil, boot, boot + 61),                              # grace over
+          C.due?(tcp, ok[boot + 100], boot, boot + 200),                  # checked 100s ago, every 300s
+          C.due?(tcp, ok[boot + 100], boot, boot + 390),                  # 290s ago: within the slack
+          C.due?(tcp, { "ok" => false, "at" => (boot + 100).iso8601 }, boot, boot + 130), # failing: every run
+          C.due?(log, ok[boot + 100], boot, boot + 9000),                 # a log check that passed stays passed
+          C.due?(log, { "ok" => false, "at" => (boot + 100).iso8601 }, boot, boot + 130)].join(" ")' "$d")
+  assert_eq ":passed nil :failed nil false,2026-11-20T10:08:00Z,2026-11-20T10:07:00Z,refused :recovered false 0 :failed" \
+    "$(sed -n 1p <<<"$got")" "results and changes"
+  assert_eq "false false true false true true false true" "$(sed -n 2p <<<"$got")" "due?"
 }
 
 # mud BUGS #5: flk images prune removes only what flk doesn't keep. A fake

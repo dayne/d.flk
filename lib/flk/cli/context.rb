@@ -190,6 +190,13 @@ module Flk
           st["machine #{m.id} [#{m.name}] is stopped; start it: flk machine start #{m.id}", "stopped", machine: m.id]
         end
       end
+      ms.select(&:running?).each do |m|
+        Checks.results(m).each do |name, r|
+          next if r["ok"] || Array(m.config["checks"]).none? { _1["name"] == name }
+          st["machine #{m.id} [#{m.name}]: check #{name} has been failing for #{Util.ago(r['since']).delete_suffix(' ago')}" \
+             "#{" (#{r['detail']})" if r['detail']}; see flk logs -i #{m.id} --no-tail, then check again: flk check", "problem", machine: m.id]
+        end
+      end
       h["ports"]["blocked"].each { st["host port #{_1['key']} not forwarded: #{_1['blocked']}", "problem"] }
       h["ports"]["waiting"].each { st["host port #{_1['key']} is held by another machine; this one gets it when that stops", "info"] }
       if rel && rel["version"]

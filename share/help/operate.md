@@ -30,6 +30,32 @@ a failed release, the last good one), as a new release with the same checks.
 The last two images are kept; `[flk] keep_releases = N` keeps more.
 Deploys and rollbacks boot the machines they update, stopped ones too.
 
+**Health while running.** `started` only means the VM is alive. To know
+whether the app still answers, give its checks an `interval`:
+
+    [checks.port]
+      type = "tcp"
+      port = 25565
+      interval = "5m"            # also try it every 5 minutes while it runs
+
+`flk check` runs an app's checks now (`--all`: every app) and keeps each
+result per machine; `flk status` shows them with how long each has been
+passing or failing (`checks` in `status --json`), and `flk context` lists
+a failing one under Next steps. With the boot units installed
+(`sudo {{SRC}}/setup-host.sh --install-service`), `flk-check.timer` runs
+the checks that have an interval, once a minute at most; a failing check
+is tried every minute until it passes. `flk events` gets `check.failed`
+when a check that passed stops passing and `check.recovered` when it's
+back, once each, so a follower (`flk events -f --json`) can notify.
+
+Checks only report: flk never restarts a machine over one. A check that
+hasn't passed yet within its `grace_period` after a boot is "starting",
+not failed, and machines that are stopped, stopping or paused for a
+backup are left alone. A `log` check is a fact of the boot (found once,
+it stays passed until the next boot); `tcp`, `http`, `udp` and `exec` are
+tried again each time. `flk doctor` warns when checks have an interval
+and the timer isn't installed or hasn't run for 5 minutes.
+
 By default volumes aren't rolled back, by a failed deploy or by `releases
 rollback`: only the image and config are. That matters when data on the
 volume must match the image (game mods or server jars kept on the

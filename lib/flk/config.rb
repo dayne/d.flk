@@ -201,7 +201,8 @@ module Flk
     # server's "Done ("); "exec", a command run in the guest through the
     # agent that exits 0; "udp", a datagram to `port` that gets a reply
     # (matching `expect`). Each must pass within its grace_period (default
-    # 60s) after the machine boots.
+    # 60s) after the machine boots. One with an `interval` is also tried
+    # that often while the machine runs (flk check, lib/flk/checks.rb).
     def checks
       list = []
       c = data["checks"]
@@ -230,6 +231,11 @@ module Flk
       raise Error, "check #{name}: type must be #{CHECK_TYPES.join(', ')} (got '#{type}')" unless CHECK_TYPES.include?(type)
       spec = { "name" => name.to_s, "type" => type,
                "grace_period" => AppConfig.seconds(h["grace_period"], 60, "check #{name} grace_period") }
+      # also while the machine runs: flk check --due (flk-check.timer) tries it this often
+      if (every = AppConfig.seconds(h["interval"], nil, "check #{name} interval"))
+        raise Error, "check #{name}: interval must be at least 1s" unless every.positive?
+        spec["interval"] = every
+      end
       case type
       when "log"
         spec["match"] = check_regex(name, h["match"] || raise(Error, "check #{name}: type = \"log\" needs match = \"REGEX\""))

@@ -16,6 +16,7 @@ Run an app (in its directory, with a Dockerfile, flk.toml or fly.toml)
 Look inside
   flk logs [-i ID] [-n 200] [-f]     app output and boot messages
   flk logs --boot | head -n 100      how the latest boot began, however much came after
+  flk check [--all]                  run the [checks] now: does the app still answer? (exit 2: one fails)
   flk console [ID]                   type to the app (server consoles); leave: Ctrl-b d
   flk console --send "say hi"        one line to the app, no attaching (--wait-log REGEX: see the answer)
   flk machine status ID              everything flk knows about a machine
@@ -39,6 +40,7 @@ Change things
   flk secrets set|unset ...          restarts machines (unless --stage)
   flk releases rollback [vN]         back to an older release (image + config)
   [checks.NAME] type = ...           log|tcp|http|exec|udp: deploys wait for them; failures roll back
+  [checks.NAME] interval = "5m"      also while it runs (flk-check.timer); flk status shows the results
   [deploy] preflight = "CMD"         a host check before the build; non-zero stops the deploy
 
 Data

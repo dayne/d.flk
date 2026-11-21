@@ -427,6 +427,27 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **Health while running: `flk check`, `interval`, `flk-check.timer`**
+  (enshrouded #3, part 1; PLAN M6's last piece; 2026-11-20). Checks ran
+  only during a deploy, so `started` said the VM was alive and nothing
+  said whether the app answered; the game repos scraped logs for it.
+  Now a check with `interval = "5m"` is tried while the machine runs,
+  each machine keeps its last results (`flk status`, `checks` in
+  `status --json`), and `check.failed` / `check.recovered` go out once
+  per change. `flk check [--all] [--due]` is the whole engine;
+  `flk-check.timer` runs it every minute. Decided before: checks report
+  and never act (Dayne, 2026-11-11). Decided in the build, all listed
+  in `docs/health-design.md` ("As built"): results belong to a boot; a
+  failed try is confirmed once after 2s; a failing check is tried every
+  minute; "starting" inside the grace period and machines that are
+  stopping or paused aren't failures; the log check reads the whole
+  boot and stays passed; exit code 2 for a failing check; doctor warns
+  only when some check has an interval and nothing runs it. Opt-in
+  twice over: an app needs `interval` and a deploy, a host needs the
+  timer installed. Tests: `tests/cases/47-checks.sh` (VM: fail, report
+  once, recover, a new boot, a stopped machine, the runner's mark),
+  00-config test_check_interval, 05-cli test_check_results_and_due and
+  the units in test_install_service_units_verify.
 - [x] **`[[mounts]] seed = true`** (PLAN M6, 2026-11-11). A volume that's
   empty (nothing but lost+found) when its machine is about to boot is
   filled with what the release's image has at the mount point, as Docker
