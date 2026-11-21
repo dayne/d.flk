@@ -319,6 +319,26 @@ test_exec_and_udp_checks() {
   [[ $cfg != *"unknown key"* ]] || fail "the new keys warn as unknown: $cfg"
 }
 
+# Health while running: a check's interval (seconds in machine_config).
+test_check_interval() {
+  stage_app hello
+  toml_append '' '[checks.up]' '  port = 80' '  interval = "5m"' \
+    '' '[checks.ready]' '  type = "log"' '  match = "ready"' '  interval = 90' \
+    '' '[checks.once]' '  port = 81'
+  local cfg; cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq 300 "$(json_get machine_config.checks.0.interval <<<"$cfg")" "5m"
+  assert_eq 90 "$(json_get machine_config.checks.1.interval <<<"$cfg")" "a number is seconds"
+  assert_eq null "$(json_get machine_config.checks.2.interval <<<"$cfg")" "no interval: deploys only"
+  [[ $cfg != *"unknown key"* && $cfg != *"interval"*"ignores"* ]] || fail "interval warns: $cfg"
+  local bad out
+  for bad in '"0s"' '"soon"' '"1h30m"'; do
+    stage_app hello
+    toml_append '' '[checks.c]' '  port = 80' "  interval = $bad"
+    out=$(config 2>&1) && fail "config show accepted interval = $bad"
+    assert_contains "$out" "check c" "the error names the check (interval = $bad)"
+  done
+}
+
 test_bad_checks_rejected() {
   local bad out
   for bad in 'type = "exec"' 'type = "udp"|port = 1|send_hex = "zz"' 'type = "udp"|port = 1|send = "a"|send_hex = "61"' \

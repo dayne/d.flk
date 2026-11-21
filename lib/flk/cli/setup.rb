@@ -193,6 +193,7 @@ module Flk
       address_check(record)
       huge_pages_check(record)
       agent_check(record)
+      check_runner_check(record)
       results
     end
 
@@ -326,7 +327,7 @@ module Flk
       end
     end
 
-    FLK_UNITS = %w[flk-net.service flk-machines.service flk-tmux.service].freeze
+    FLK_UNITS = %w[flk-net.service flk-machines.service flk-tmux.service flk-check.timer flk-check.service].freeze
 
     # flk's systemd units as systemd sees them (no root needed). Units that
     # aren't installed have installed: false and nothing else to say.
@@ -429,6 +430,14 @@ module Flk
         record["no flk-agent and no Go to build it: releases get no flk exec / flk ssh console", "warn",
                "install Go (or set FLK_GO), then flk setup"]
       end
+    end
+
+    # Only when some machine's checks have an interval: they need the timer.
+    def check_runner_check(record)
+      ms = Checks.interval_machines
+      return if ms.empty?
+      problem, fix = Checks.runner_problem(ms)
+      problem ? record[problem, "warn", fix] : record["checks with an interval run every minute (#{Checks::TIMER})", "pass", nil]
     end
 
     # Optional: without it nothing comes back after a reboot.

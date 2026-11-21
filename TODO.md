@@ -30,7 +30,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
-| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | M6, checks (interval health); `flk logs --boot` on main since 2f5f00f; `log_max_mb` under Machines |
+| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: built on branch health-checks (`interval`, `flk check`, `checks` in status, `flk-check.timer`); `flk logs --boot` on main since 2f5f00f; `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 | enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Not needed now (enshrouded, 2026-11-15: the relay was the player's own firewall); a low-priority idea, notes in `docs/dedicated-address-notes.md` (LAN addresses) |
 
@@ -81,6 +81,25 @@ JSON field is additive: lazyflk ignores unknown fields and treats missing
 ones as "not supported by this flk", so nothing existing may change
 shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
+- [ ] **Health while running** (flk, 2026-11-20, branch health-checks;
+  lazyflk's planned "Health while running"). New and additive:
+  - `flk status --json` and `flk machine list --json`: every machine has
+    `checks: { NAME: { type, interval, ok, at, since, detail } }`, one
+    entry per `[checks.NAME]`. `ok` is true, false, or null (not run
+    since this boot, or the machine is stopped); `since` is when it began
+    passing or failing; `interval` is seconds, null for a check only
+    deploys run. Absent on an older flk.
+  - `flk check [-i ID] [--all] [--due] --json` runs them now ("Check
+    now"): `[{ app, machine, name, type, what, interval, ok, at, since,
+    detail?, changed?, skipped? }]`; exit 2 when one fails, so don't
+    treat 2 as an error.
+  - Events: `check.failed` and `check.passed` now also come from
+    `flk check` (not only deploys), and `check.recovered` is new.
+  - `flk context --json`: a failing check is a next step of kind
+    `problem` with its `machine`; the "timer not installed / not running"
+    note comes with the host checks (`flk doctor --json` has the same
+    label, and `services` lists `flk-check.timer` and
+    `flk-check.service`).
 - [ ] **`flk logs --boot`** (flk, 2026-11-20, on main since 2f5f00f;
   nothing asked yet). New and additive: `flk logs [-i ID] --boot [-n N]
   [--no-tail|-f]` prints a machine's log from its latest `--- flk:
@@ -206,16 +225,16 @@ same review.
     answers, so it's a documented `send_hex` recipe for `udp` (core flk
     stays protocol-neutral). valheim #1 still to confirm that Valheim
     answers on 2457 with `-public 0`.
-  - Health while running (enshrouded #3, 2026-11-08; a later effort,
-    design draft in `docs/health-design.md`): checks run only
-    during a deploy, so `flk status` can't say whether a machine is up now.
-    An opt-in `interval = "5m"` per check, the last result per machine in
-    `flk status --json` (`checks: {NAME: {ok, at, since}}`), and
-    `check.failed` / `check.recovered` events on a change. A `log` check
-    that passed for this boot stays passed (a boot fact; today it reads the
-    last 256KB since the boot marker, too little for a chatty app); tcp,
-    http, udp and exec re-run. The game repos' status tools would stop
-    scraping logs.
+  - Health while running (enshrouded #3; built 2026-11-20, branch
+    health-checks; history.md and `docs/health-design.md`, "As built"):
+    `interval = "5m"` per check, `flk check [--all] [--due]`, the last
+    result per machine in `flk status` and `status --json` (`checks:
+    {NAME: {type, interval, ok, at, since, detail}}`), `check.failed` /
+    `check.recovered` events on a change, and `flk-check.timer` to run
+    them. flkforge could offer an interval with its checks, and its
+    status snippets could read `checks` in place of scraping logs.
+    Still open: host checks (disk, backups, units) on the same timer;
+    `on_failure = "restart"`; a notify hook (health-design.md).
 - [x] **Seed a new volume from the image** (M6, 2026-11-11; history.md).
   `[[mounts]] seed = true`: a volume that's empty when its machine is
   about to boot gets what the image has at `destination`, owners and
@@ -402,8 +421,8 @@ must be built in (`=y`).
   2f5f00f, history.md); what it can't bring back is a boot older than
   both log files, which a bigger limit for a chatty app would keep. The
   deploy-time `log` check and `last_exit_status` still read only the end
-  of `console.log` (256KB, 64KB): right at deploy time, and for the
-  interval checks to settle (docs/health-design.md).
+  of `console.log` (256KB, 64KB), which is right at deploy time;
+  `flk check` reads the whole boot.
 - [ ] **Huge pages on a real pool.** `[[vm]] huge_pages = "2M"` is built
   and tested without a pool; booting on one needs root to reserve it
   (`tests/cases/45-hugepages.sh` runs when a pool exists).

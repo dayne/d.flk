@@ -79,6 +79,7 @@ module Flk
       ["check", "path", "string", "/", "http: the path to GET; 2xx and 3xx pass."],
       ["check", "grace_period", "duration", 60, "How long after boot the check has to pass."],
       ["check", "timeout", "duration", nil, "exec (default 10) and udp (default 2): seconds per try."],
+      ["check", "interval", "duration", nil, "Also try it this often while the machine runs (the flk-check timer, once a minute at most); results in flk status. Unset: only deploys run it."],
       ["check", "match", "regex", nil, "log: a console line since boot must match.", :flk],
       ["check", "command", "command", nil, "exec: run in the machine through flk-agent; exit 0 passes.", :flk],
       ["check", "user", "string", nil, "exec: who runs the command (default: the image's USER).", :flk],
@@ -116,7 +117,7 @@ module Flk
       "restart" => %w[processes],
       "http_service" => %w[force_https auto_stop_machines auto_start_machines min_machines_running processes concurrency
                            http_options tls_options],
-      "check" => %w[method interval headers protocol tls_skip_verify tls_server_name processes]
+      "check" => %w[method headers protocol tls_skip_verify tls_server_name processes]
     }.freeze
 
     def key(section, name)

@@ -445,11 +445,21 @@ module Flk
           why = "check #{c['name']} (#{what}) didn't pass within #{c['grace_period']}s"
           why += " (last try: #{@check_detail})" if @check_detail
           Events.machine("check.failed", m, why.delete_prefix("check "))
+          keep_check_result(m, c, false, @check_detail || "didn't pass within #{c['grace_period']}s of the deploy")
           return why
         end
         Events.machine("check.passed", m, "#{c['name']} (#{what}) in #{(Time.now - t0).round}s")
+        keep_check_result(m, c, true)
         puts "#{Util.green('✔')} #{(Time.now - t0).round}s"
       end
+      nil
+    end
+
+    # For flk status and flk check; the deploy has sent its own events, and
+    # never fails over this.
+    def keep_check_result(m, c, ok, detail = nil)
+      Checks.record(m, c, ok, detail)
+    rescue StandardError
       nil
     end
 

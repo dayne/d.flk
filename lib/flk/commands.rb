@@ -19,6 +19,7 @@ module Flk
   #   hidden         left out of the short `flk help`
   module Commands
     JSON_OPT = ["--json", "Print JSON instead of a table"].freeze
+    CLI_CHECK_FAILED = 2 # flk check's exit code when a check fails
     BACKUP_TO_OPT = ["--to DIR", "Backup dir (default: backup_dir in ~/.config/flk/host.toml)"].freeze
 
     CONSOLE_OPTS = [["--send TEXT", "Type one line into the app's stdin, then return (no terminal needed)"],
@@ -125,7 +126,10 @@ module Flk
                 "health checks, a failed verify only warns: there's nothing good on the volume to protect."] },
       { name: "status", group: "Apps", opts: [JSON_OPT], json: true,
         summary: "App and machine overview",
-        notes: ["Also tidies machines that exited on their own and hands their host ports on."] },
+        notes: ["Also tidies machines that exited on their own and hands their host ports on.",
+                "Checks: each running machine's [checks] as last seen by a deploy or flk check. In --json every machine has " \
+                "checks: { NAME: { type, interval, ok, at, since, detail } }; ok is null until the check has run since the " \
+                "machine booted (and for a stopped machine), since is when it began passing or failing."] },
       { name: "start", group: "Apps", summary: "Boot every stopped machine of the app",
         notes: ["One machine: flk machine start ID."] },
       { name: "stop", group: "Apps",
@@ -256,6 +260,26 @@ module Flk
                 "How this boot began: flk logs --boot | head -n 100. Whether it got ready: flk logs --boot | grep -m1 'Server ready'.",
                 "--boot reads console.log.1 too when the boot began before the last rotation. " \
                 "A boot older than both files has lost its first lines: flk prints what's kept and says so on stderr."] },
+      { name: "check", group: "Machines",
+        opts: [["--all", "Every app's machines"],
+               ["-i", "--instance ID", "One machine (default: all of the app's)"],
+               ["--due", "Only checks with an interval, when their time has come (what #{Checks::TIMER} runs)"], JSON_OPT],
+        json: true, summary: "Run the [checks] of running machines now and keep what they find (flk status shows it)",
+        notes: ["A deploy runs an app's [checks] once. flk check runs them again on the machines that are running, one try each " \
+                "(a failed try is repeated once after 2s), and stores each result per machine: flk status and status --json " \
+                "(checks) show it, with since when. Checks only report: nothing is restarted.",
+                "Events go out when a result changes: check.failed (it passed before), check.recovered, and check.passed for " \
+                "the first pass since a boot. A check that keeps failing says so once.",
+                "A check with interval = \"5m\" in flk.toml is run on its own: #{Checks::TIMER} " \
+                "(sudo #{SETUP_HOST} --install-service) runs flk check --all --due every minute. A failing check is tried " \
+                "every minute until it passes again. flk doctor says when checks have an interval and the timer isn't running.",
+                "Not counted as failures: a check that hasn't passed yet within its grace_period after a boot (starting), " \
+                "and a machine flk is stopping, restarting or has paused for a backup. Stopped machines are skipped.",
+                "A log check is a fact of the boot: once its line is found it stays passed until the next boot. " \
+                "It reads the whole boot's console output, like flk logs --boot.",
+                "--json prints [{ app, machine, name, type, what, interval, ok, at, since, detail?, changed?, skipped? }]: " \
+                "ok is null with skipped (why it wasn't run or counted); changed is failed, recovered or passed when this run " \
+                "changed the result. Exit code #{CLI_CHECK_FAILED} when a check it ran is failing."] },
       { name: "console", group: "Machines", args: "[ID]", opts: CONSOLE_OPTS,
         blocks: "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`",
         summary: "Attach to a machine's serial console, or --send one line to the app's stdin",
@@ -465,7 +489,8 @@ module Flk
 
     GLOBAL_OPTS = [["-a", "--app APP", "Act on this app instead of the one in ./flk.toml (any command)"]].freeze
 
-    EXIT_CODES = { 0 => "success", 1 => "error (message on stderr, starting with 'Error:')", 130 => "interrupted (Ctrl-C)" }.freeze
+    EXIT_CODES = { 0 => "success", 1 => "error (message on stderr, starting with 'Error:')",
+                   CLI_CHECK_FAILED => "flk check: it ran, and a health check is failing", 130 => "interrupted (Ctrl-C)" }.freeze
 
     module_function
 

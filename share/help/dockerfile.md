@@ -100,6 +100,8 @@ line by line), `exec`, a command run in the guest that exits 0 (the volume
 is mounted, the tool runs), or `udp`, a datagram that gets a reply (a
 game's query port; Steam's A2S_INFO is in `flk help --all`). A
 `[deploy] preflight` command runs on the host before the build, for checks
-that would otherwise cost a long download.
+that would otherwise cost a long download. A check with `interval = "5m"`
+is also tried while the machine runs, and `flk status` shows how it's
+doing (`flk help operate`, Health while running).
 
 Every flk.toml key, annotated: `{{SRC}}/examples/reference/flk.toml`.

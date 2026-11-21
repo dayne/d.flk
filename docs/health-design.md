@@ -1,12 +1,57 @@
 # Health while running (design draft)
 
-**Status: draft, 2026-11-11. A future effort, not scheduled.** Decided
-with Dayne the same day: checks report and don't act; the MQTT bridge
-waits until its purpose is clearer. M6 step 3
-builds the check kinds that run at deploy (`exec`, `udp`,
+**Status: steps 1 and 2 of the proposal are built (2026-11-20, branch
+health-checks): `flk check`, the results in `flk status`, the change
+events, `interval` with `--due`, and `flk-check.timer`. What was built
+and what was decided on the way is under "As built" below. Not built:
+host checks (step 3), acting on a failure, a notify hook, the MQTT
+bridge.** Drafted 2026-11-11. Decided with Dayne that day: checks report
+and don't act; the MQTT bridge waits until its purpose is clearer. M6
+step 3 built the check kinds that run at deploy (`exec`, `udp`,
 `[deploy] preflight`); this is the part after that: who runs checks while
 the apps run, what else it watches, and how lazyflk, gamebus and MQTT
-read the results. Nothing here is built yet.
+read the results.
+
+## As built (2026-11-20)
+
+- **Results** live in `machines/ID/checks.json`: `{ "boot": the
+  machine's started_at, "checks": { NAME: { ok, at, since, detail } } }`.
+  They belong to one boot: after another boot the file no longer matches
+  and counts as empty, so `VM.start` didn't have to change. A deploy
+  writes what its own checks found; `flk check` writes the rest.
+- **One try, confirmed once.** `flk check` tries each check once; a
+  failed try is repeated after 2s before it counts, so one slow answer
+  from a busy game server isn't an event.
+- **Events only on a change**, and once even when two flk processes see
+  it (the store is locked per machine): `check.failed` (it passed before,
+  or it's the boot's first result), `check.recovered` (new), and
+  `check.passed` for the first pass since a boot, so a follower hears
+  "ready" after a host reboot too, not only after a deploy.
+- **Due** (`--due`): only checks with an `interval`. The first try of a
+  boot waits for the check's own `grace_period`; after that, every
+  `interval` (15s early rather than a minute late). A failing check is
+  tried at every run, so recovery shows within a minute whatever the
+  interval. A `log` check that passed isn't read again this boot.
+- **Not a failure**: a check that hasn't passed yet inside its
+  `grace_period` after a boot ("starting"); a machine that stopped or
+  booted again during the try; one flk is stopping (`stopping` marker);
+  one paused for a backup (Firecracker says `Paused`). None is stored.
+- **The log check reads the whole boot** (as `flk logs --boot`), not the
+  deploy's last 256KB, so a chatty server's ready line is still found.
+  The deploy-time check is unchanged.
+- **The runner** is `flk-check.service` (oneshot, `flk check --all
+  --due`) on `flk-check.timer` (`OnCalendar=minutely`), installed by
+  `--install-service`. It writes `STATE/check-run.json` each run.
+  `flk doctor` (and so `flk context`) warns when some machine's checks
+  have an interval and the timer isn't installed or hasn't run for 5
+  minutes; with no interval anywhere it says nothing.
+- **Exit code 2** from `flk check` when a check it ran is failing (the
+  unit counts 2 as success). `flk context` lists a failing check as a
+  `problem` step.
+- **`interval` was a fly key flk ignored**; it now means what it means
+  on fly. No real app had it, so nothing started running on its own.
+  The timer's shortest period is a minute: a shorter interval runs every
+  minute.
 
 ## The problem
 

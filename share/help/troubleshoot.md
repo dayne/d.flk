@@ -3,6 +3,16 @@
 Start with `flk context` (or `flk context --all`) and `flk doctor`: most
 problems show up there with the fix. Then find the symptom below.
 
+**A machine is started but the app doesn't answer**
+- `flk check` runs its `[checks]` now and says which fail and why;
+  `flk status` shows the last results. No checks yet: add one
+  (`flk help operate`), with an `interval` to have it watched.
+- A check shows "not checked since this boot": nothing has run it since
+  the machine booted. `flk check` does; a check with an `interval` needs
+  `flk-check.timer` (`flk doctor` says when it's missing).
+- flk doesn't restart it for you: `flk logs -i ID --boot`, then
+  `flk machine restart ID` when you decide to.
+
 **A machine is stopped but should be running**
 - Why it stopped: `flk logs -i ID -n 200`. The last `[flk-init]` line has
   the app's exit status. `flk logs -i ID --boot` is its whole last boot,
