@@ -30,7 +30,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
-| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: built on branch health-checks (`interval`, `flk check`, `checks` in status, `flk-check.timer`); `flk logs --boot` on main since 2f5f00f; `log_max_mb` under Machines |
+| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `log_max_mb` under Machines |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 | enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Not needed now (enshrouded, 2026-11-15: the relay was the player's own firewall); a low-priority idea, notes in `docs/dedicated-address-notes.md` (LAN addresses) |
 
@@ -81,7 +81,7 @@ JSON field is additive: lazyflk ignores unknown fields and treats missing
 ones as "not supported by this flk", so nothing existing may change
 shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
-- [ ] **Health while running** (flk, 2026-11-20, branch health-checks;
+- [ ] **Health while running** (flk, 2026-11-20, on main since a4654bc;
   lazyflk's planned "Health while running"). New and additive:
   - `flk status --json` and `flk machine list --json`: every machine has
     `checks: { NAME: { type, interval, ok, at, since, detail } }`, one
@@ -225,8 +225,8 @@ same review.
     answers, so it's a documented `send_hex` recipe for `udp` (core flk
     stays protocol-neutral). valheim #1 still to confirm that Valheim
     answers on 2457 with `-public 0`.
-  - Health while running (enshrouded #3; built 2026-11-20, branch
-    health-checks; history.md and `docs/health-design.md`, "As built"):
+  - Health while running (enshrouded #3; built 2026-11-20, on main
+    since a4654bc; history.md and `docs/health-design.md`, "As built"):
     `interval = "5m"` per check, `flk check [--all] [--due]`, the last
     result per machine in `flk status` and `status --json` (`checks:
     {NAME: {type, interval, ok, at, since, detail}}`), `check.failed` /

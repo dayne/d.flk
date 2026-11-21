@@ -1,7 +1,7 @@
 # Health while running (design draft)
 
-**Status: steps 1 and 2 of the proposal are built (2026-11-20, branch
-health-checks): `flk check`, the results in `flk status`, the change
+**Status: steps 1 and 2 of the proposal are built (2026-11-20, on main
+since a4654bc): `flk check`, the results in `flk status`, the change
 events, `interval` with `--due`, and `flk-check.timer`. What was built
 and what was decided on the way is under "As built" below. Not built:
 host checks (step 3), acting on a failure, a notify hook, the MQTT

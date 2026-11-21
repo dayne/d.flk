@@ -120,8 +120,8 @@ type: core flk stays protocol-neutral) and `[deploy] preflight`. Tested:
 fast, VM cases 05, 16, 40, then the full suite on main.
 **Steps 4-5 (2026-11-11):** `[[mounts]] seed = true` and `config_keys`
 in `flk help --all --json` are done (history.md, Builds).
-**Checks while running (enshrouded #3), 2026-11-20, branch
-health-checks:** built as drafted in `docs/health-design.md`: `flk
+**Checks while running (enshrouded #3), 2026-11-20, on main since
+a4654bc:** built as drafted in `docs/health-design.md`: `flk
 check`, results in `flk status`, change events, `interval` and
 `flk-check.timer`. Checks report and don't act. Tested: fast, VM case
 47, then the full suite. On a host, the timer needs `sudo setup-host.sh
