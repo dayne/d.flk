@@ -48,6 +48,18 @@ is tried every minute until it passes. `flk events` gets `check.failed`
 when a check that passed stops passing and `check.recovered` when it's
 back, once each, so a follower (`flk events -f --json`) can notify.
 
+The same timer watches the host: every 5 minutes it runs what
+`flk doctor` checks (the bridge and units, the port helper, room on the
+disks under flk's state and volumes, backups and their copies) and keeps
+each result. `flk events --all` gets `host.problem` when one starts to
+warn or fail and `host.recovered` when it passes again, once each.
+`flk check --host` runs them by hand and shows since when each has been
+failing. Two of them have a host setting (`flk config set`):
+`disk_warn_percent` (90: warn when a disk is that full) and
+`backup_warn_days` (unset: when set, warn when a volume that is being
+backed up has no backup that recent, which is how a backup job that
+silently stopped shows).
+
 Checks only report: flk never restarts a machine over one. A check that
 hasn't passed yet within its `grace_period` after a boot is "starting",
 not failed, and machines that are stopped, stopping or paused for a

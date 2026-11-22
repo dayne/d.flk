@@ -23,6 +23,8 @@ module Flk
       "check.passed" => "a health check passed: during a deploy, or the first time since a boot (flk check)",
       "check.failed" => "a health check failed: during a deploy, or one that passed before (flk check)",
       "check.recovered" => "a health check that was failing passes again (flk check)",
+      "host.problem" => "a host check (what flk doctor checks) began to warn or fail (flk check --host, flk-check.timer); app is null",
+      "host.recovered" => "a host check that warned or failed passes again; app is null",
       "deploy.started" => "a deploy or rollback began rolling a release",
       "deploy.succeeded" => "every machine is on the new release",
       "deploy.failed" => "a deploy or rollback stopped (detail: why)",

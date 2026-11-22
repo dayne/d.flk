@@ -30,7 +30,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
-| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `[flk] log_max_mb` on main since 53483cd |
+| enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `[flk] log_max_mb` on main since 53483cd; all in 0.6.0 |
 | minecraft #8 | Huge pages: fixed in 553b1a3; move to Resolved once a pool is tested | Machines |
 | enshrouded #5 | Dedicate a host address to one machine (all its traffic in, its traffic out as that address) | Not needed now (enshrouded, 2026-11-15: the relay was the player's own firewall); a low-priority idea, notes in `docs/dedicated-address-notes.md` (LAN addresses) |
 
@@ -100,6 +100,22 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
     note comes with the host checks (`flk doctor --json` has the same
     label, and `services` lists `flk-check.timer` and
     `flk-check.service`).
+- [ ] **Host checks while the host runs** (flk, 2026-11-22, branch
+  `host-checks`; nothing asked yet). New and additive:
+  - Events `host.problem` and `host.recovered` on `flk events --all`
+    (`-f --json` too): a host check began to warn or fail, or passes
+    again. Their `app` and `machine` are null (the first events without
+    an app), and `detail` is `ID: STATUS: label -> fix`. Good for Needs
+    attention.
+  - `flk doctor --json` and `flk context --json` (`host.problems`):
+    every check has an `id` (`bridge`, `port_helper`, `disk:/data`...)
+    that stays the same while the label changes; key on it, not on the
+    label.
+  - `flk check --host [--json]` runs them now: rows like a machine
+    check's, with `type: "host"`, `name` the id, `status` pass, warn or
+    fail, `since`; exit 2 only when one fails.
+  - Host settings `disk_warn_percent` and `backup_warn_days`
+    (`flk config set`, `config show --host`).
 - [ ] **`flk logs --boot`** (flk, 2026-11-20, on main since 2f5f00f;
   nothing asked yet). New and additive: `flk logs [-i ID] --boot [-n N]
   [--no-tail|-f]` prints a machine's log from its latest `--- flk:

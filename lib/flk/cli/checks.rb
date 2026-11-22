@@ -4,11 +4,16 @@ module Flk
   class CLI
     private
 
+    # --host: the host's own checks (doctor's), and only those. The
+    # scheduled run (--all --due) does both: the machines' due checks and,
+    # every HostChecks::EVERY seconds, the host's.
     def cmd_check(_args, o)
       raise Error, "--all and -a don't go together" if o[:all] && @app_name
       raise Error, "-i names one app's machine: leave out --all" if o[:all] && o[:instance]
+      raise Error, "--host checks the host, not machines: leave out -a, -i and --all" if o[:host] && (@app_name || o[:instance] || o[:all])
       started = Time.now
-      ms = if o[:all] then App.all.flat_map(&:machines)
+      ms = if o[:host] then []
+           elsif o[:all] then App.all.flat_map(&:machines)
            else o[:instance] ? [app.machine!(o[:instance])] : app.machines
            end
       rows = ms.flat_map do |m|
@@ -16,18 +21,67 @@ module Flk
       rescue SystemCallError, JSON::ParserError
         [] # destroyed while we looked: nothing to say about it
       end
+      host = o[:host] || (o[:all] && o[:due]) ? check_host(due: o[:due]) : []
       Checks.mark_run(started, rows) if o[:all] && o[:due]
+      # a scheduled run prints the host checks that have something to say
+      host = host.select { _1["status"] != "pass" || _1["changed"] } unless o[:host]
       if o[:json]
-        puts JSON.pretty_generate(rows)
-      elsif rows.empty?
+        puts JSON.pretty_generate(rows + host)
+      elsif rows.empty? && host.empty?
         puts check_nothing_to_do(o)
       else
         show_app = o[:all]
-        Util.table([("APP" if show_app), "MACHINE", "CHECK", "WHAT", "RESULT"].compact, rows.map do |r|
-          [(r["app"] if show_app), r["machine"], r["name"], r["what"], check_result_text(r)].compact
-        end)
+        unless rows.empty?
+          Util.table([("APP" if show_app), "MACHINE", "CHECK", "WHAT", "RESULT"].compact, rows.map do |r|
+            [(r["app"] if show_app), r["machine"], r["name"], r["what"], check_result_text(r)].compact
+          end)
+        end
+        unless host.empty?
+          puts unless rows.empty?
+          Util.table(["HOST CHECK", "RESULT"], host.map { [_1["name"], host_result_text(_1)] })
+        end
       end
-      exit Commands::CLI_CHECK_FAILED if rows.any? { _1["ok"] == false }
+      exit Commands::CLI_CHECK_FAILED if (rows + host).any? { _1["ok"] == false }
+    end
+
+    # The host's checks as rows shaped like a machine's: name is the
+    # check's id, what its label, detail the fix; ok is false only for a
+    # failure (a warning is something optional that's off, as in flk
+    # doctor), status says which. Stores them and sends host.problem /
+    # host.recovered when one changed. due: nothing unless their time
+    # has come.
+    HOST_CONFIRM = Float(ENV.fetch("FLK_HOST_CONFIRM", "3")) # seconds; tests shorten it
+
+    def check_host(due: false)
+      return [] if due && !HostChecks.due?
+      found = doctor_checks
+      if HostChecks.new_problem?(found)
+        # a problem that wasn't there last time: look once more, as a
+        # machine's failed check is tried twice
+        sleep HOST_CONFIRM
+        @services_status = nil
+        found = HostChecks.better(found, doctor_checks)
+      end
+      HostChecks.record(found).map do |r|
+        if r["changed"]
+          Events.emit(r["changed"] == "recovered" ? "host.recovered" : "host.problem",
+                      detail: "#{r['id']}: #{"#{r['status']}: " unless r['status'] == 'pass'}#{r['label']}#{" -> #{r['hint']}" if r['hint']}")
+        end
+        { "app" => nil, "machine" => nil, "name" => r["id"], "type" => "host", "what" => r["label"],
+          "interval" => HostChecks::EVERY, "ok" => r["status"] != "fail", "status" => r["status"],
+          "at" => Time.now.utc.iso8601, "since" => r["since"], "detail" => r["hint"], "changed" => r["changed"] }.compact
+          .merge("app" => nil, "machine" => nil)
+      end
+    end
+
+    def host_result_text(r)
+      for_how_long = Util.ago(r["since"]).delete_suffix(" ago")
+      case r["status"]
+      when "pass" then "#{Util.green('✔')} #{r['what']}#{' (again)' if r['changed'] == 'recovered'}"
+      else
+        "#{r['status'] == 'fail' ? Util.red('✘') : Util.yellow('!')} #{r['what']}" \
+        "#{" (for #{for_how_long})" unless r['changed']}#{"  -> #{r['detail']}" if r['detail']}"
+      end
     end
 
     def check_nothing_to_do(o)

@@ -70,7 +70,7 @@ module Flk
                 "--fix also creates ~/.local/bin/flk and configures podman short image names (FROM ruby:3.3) if either is missing. Safe to re-run."] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
-        notes: ['--json prints {"schema", "ok", "checks": [{"label", "status", "hint"}], "services": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
+        notes: ['--json prints {"schema", "ok", "checks": [{"id", "label", "status", "hint"}], "services": [...]}; id names what is checked and stays the same while the label\'s wording and numbers change (a check that finds several problems repeats it); status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
                 'services: flk-net.service, flk-machines.service and flk-tmux.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
       { name: "version", group: "Setup", summary: "Print the flk version",
         notes: ["What changed in each version: #{File.join(File.dirname(SHARE), 'CHANGELOG.md')}. " \
@@ -215,6 +215,9 @@ module Flk
                          "Examples: flk config set backup_dir=/mnt/backups   flk config set backup_keep=5   " \
                          "flk config set bind=10.0.0.5,10.0.0.6",
                          "bind=A,B (a comma) writes a list; one address stays a string.",
+                         "For flk doctor and the host checks: disk_warn_percent (default 90) warns when a disk under flk's " \
+                         "state or volumes is that full; backup_warn_days (unset: not checked) warns when a volume that has " \
+                         "backups has none that recent, which is how a backup job that stopped shows.",
                          "Values are written to #{Host::PATH} (created if missing), and checked before the file is " \
                          "replaced (a bad value leaves it unchanged). Run `flk doctor` to verify."] },
                { name: "unset", args: "KEY...",
@@ -274,6 +277,7 @@ module Flk
       { name: "check", group: "Machines",
         opts: [["--all", "Every app's machines"],
                ["-i", "--instance ID", "One machine (default: all of the app's)"],
+               ["--host", "The host's own checks (what flk doctor checks), kept and followed the same way"],
                ["--due", "Only checks with an interval, when their time has come (what #{Checks::TIMER} runs)"], JSON_OPT],
         json: true, summary: "Run the [checks] of running machines now and keep what they find (flk status shows it)",
         notes: ["A deploy runs an app's [checks] once. flk check runs them again on the machines that are running, one try each " \
@@ -290,7 +294,16 @@ module Flk
                 "It reads the whole boot's console output, like flk logs --boot.",
                 "--json prints [{ app, machine, name, type, what, interval, ok, at, since, detail?, changed?, skipped? }]: " \
                 "ok is null with skipped (why it wasn't run or counted); changed is failed, recovered or passed when this run " \
-                "changed the result. Exit code #{CLI_CHECK_FAILED} when a check it ran is failing."] },
+                "changed the result. Exit code #{CLI_CHECK_FAILED} when a check it ran is failing.",
+                "--host runs the host's checks, the ones flk doctor shows (bridge, units, the port helper, room on the disks, " \
+                "backups and their copies...), keeps each result, and sends an event when one changes: host.problem when a " \
+                "check starts to warn or fail, host.recovered when it passes again (the first run only takes stock). " \
+                "The timer's run (--all --due) includes them every #{HostChecks::EVERY / 60} minutes, so a host that " \
+                "has the timer is watched without anyone running flk doctor. flk doctor and flk context look for themselves " \
+                "and send nothing.",
+                "Host rows in --json have the same fields: name is the check's id (as in flk doctor --json), type \"host\", " \
+                "what its label, detail the fix, status pass, warn or fail; app and machine are null. ok is false, and the " \
+                "exit code #{CLI_CHECK_FAILED}, only for a failure: a warning is an optional thing that's off, as in flk doctor."] },
       { name: "console", group: "Machines", args: "[ID]", opts: CONSOLE_OPTS,
         blocks: "attaches an interactive terminal; agents: use --send (and --wait-log), or `flk logs`",
         summary: "Attach to a machine's serial console, or --send one line to the app's stdin",
