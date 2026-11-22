@@ -256,8 +256,9 @@ same review.
   table its unknown-key warnings use (`lib/flk/config_keys.rb`).
   `00-config` checks the guide names every key flk reads and that the
   listed defaults are the parser's. Not there: the flk version a key
-  appeared in (flk has one version, 0.1.0; a key's presence in the list
-  is the answer to "does this flk support X").
+  appeared in (a key's presence in the list is the answer to "does this
+  flk support X"; since 0.6.0, `CHANGELOG.md` says which version added a
+  key).
 - [x] **A `[[mounts]] source` that isn't a volume name passes config**
   (done, on main: a config warning).
   `flk volumes create` takes only `[a-z0-9_]{1,30}`

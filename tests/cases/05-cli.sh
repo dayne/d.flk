@@ -311,6 +311,28 @@ test_machine_extend_grows_the_root_disk() {
   rm -rf "$d"
 }
 
+# Versions: flk version, the JSON and CHANGELOG.md's newest release agree,
+# and the changelog keeps its shape (Unreleased first, releases newest
+# first, each with its date).
+test_version_matches_the_changelog() {
+  local v; v=$("$FLK_BIN" version)
+  [[ $v =~ ^flk\ [0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "flk version printed '$v'"
+  local newest; newest=$(ruby -e '
+    heads = File.readlines(ARGV[0]).grep(/^## /).map(&:strip)
+    abort "the first section must be ## Unreleased, not #{heads.first}" unless heads.first == "## Unreleased"
+    rel = heads.drop(1).map do |h|
+      m = h.match(/\A## (\d+\.\d+\.\d+) \((\d{4}-\d\d-\d\d)(, commit \h{7})?\)\z/) or abort "bad heading: #{h}"
+      [m[1].split(".").map(&:to_i), m[2]]
+    end
+    vers = rel.map(&:first)
+    abort "versions are not newest first" unless vers == vers.uniq.sort.reverse
+    dates = rel.map(&:last)
+    abort "dates are not newest first" unless dates == dates.sort.reverse
+    puts vers.first.join(".")' "$FLK_SRC/CHANGELOG.md" 2>&1) || fail "$newest"
+  assert_eq "$v" "flk $newest" "CHANGELOG.md's newest release is the version flk reports"
+  assert_eq "$newest" "$("$FLK_BIN" help --all --json | json_get version)" "help --all --json"
+}
+
 test_help_topics() {
   local t out
   for t in cheatsheet install first-app operate troubleshoot uninstall dockerfile host bugs; do
