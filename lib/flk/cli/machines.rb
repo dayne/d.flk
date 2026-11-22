@@ -26,6 +26,8 @@ module Flk
         "internal_names" => Hosts.wants?(m) ? Hosts.names(m) : [],
         # its [checks] with each one's last result this boot (flk check): ok is null until one ran
         "checks" => Checks.summary(m),
+        # the guest kernel of its latest boot: { version, sha256 }; null for a boot from before flk recorded it
+        "kernel" => m.h["kernel"],
         "created_at" => m.created_at, "updated_at" => m.updated_at }
     end
 
@@ -395,9 +397,15 @@ module Flk
     # checks come next (checks_follow).
     def boot(m, msg, revive: false, event: "machine.started", checks_follow: false)
       m.h.delete("restarts") unless revive
+      was = m.h["kernel"]
       VM.start(m)
-      Events.machine(revive ? "machine.restarted" : event, m, msg)
+      now = m.h["kernel"]
+      # flk setup replaced the guest kernel since this machine last booted
+      changed = was && now && !Kernel.same?(was, now) &&
+                "guest kernel #{Kernel.name_against(now, was)} (was #{Kernel.name_against(was, now)})"
+      Events.machine(revive ? "machine.restarted" : event, m, changed ? "#{msg}, on #{changed}" : msg, kernel: Kernel.name(now))
       puts "  #{Util.green('✔')} #{msg} (#{m.ip})"
+      puts "    #{changed}" if changed
       port = m.config["internal_port"] or return m
       if m.config["internal_protocol"] == "udp"
         if Array(m.config["checks"]).empty?

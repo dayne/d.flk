@@ -272,8 +272,10 @@ a key flk doesn't know at all gets a warning. Every key, annotated:
 
 `flk events` reads a history kept in the state dir (`events.jsonl`), written
 by every flk command and the tmux exit hook. `--json` prints one object
-per line: `{ "at", "app", "machine", "type", "release"?, "detail"?, "log"? }`
-(`log`: a file with the whole story, such as a failed build's output).
+per line: `{ "at", "app", "machine", "type", "release"?, "detail"?, "log"?, "kernel"? }`
+(`log`: a file with the whole story, such as a failed build's output;
+`kernel`: the guest kernel a machine booted, on the events of a boot,
+and `detail` says when it isn't the one of its boot before).
 `type` is one of a fixed set (new ones may be added; existing ones keep
 their meaning). `detail` is free text on one line: a cause that had
 several lines (rsync's, podman's) has them joined with " · ".

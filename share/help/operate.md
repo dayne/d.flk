@@ -253,6 +253,10 @@ lazily (up to 35s): redeploy them, or use `settle = 35` until then.
 
 **Updating flk.** `git -C {{SRC}} pull`, then `flk setup` for a newer
 firecracker or kernel. Running machines pick changes up on their next
-deploy or restart.
+deploy or restart. When `flk setup` brings another guest kernel it says
+so; `flk status` then names the machines that still run the old one,
+`flk releases` shows the kernel each release was deployed on, and the
+event of the boot that changes kernels says `guest kernel NEW (was
+OLD)`. What changed in flk itself is in `{{SRC}}/CHANGELOG.md`.
 
 When something's wrong: flk help troubleshoot

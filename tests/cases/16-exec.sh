@@ -84,6 +84,40 @@ test_exec_waits_for_a_freshly_booted_agent() {
   assert_eq ok "$(flk exec -- echo ok)" "exec right after a boot"
 }
 
+# The guest kernel is recorded per release and per boot. `flk setup` can
+# replace it under running machines: status says which still run the old
+# one, and the boot that changes kernels says so (here the other kernel is
+# a copy with one more byte).
+test_the_guest_kernel_is_recorded() {
+  local m rel sha; m=$(machine_id)
+  rel=$(flk releases --json)
+  sha=$(json_get 0.kernel.sha256 <<<"$rel")
+  [[ $sha =~ ^[0-9a-f]{64}$ ]] || fail "the release has no kernel: $rel"
+  [[ $(json_get 0.kernel.version <<<"$rel") =~ ^[0-9]+\.[0-9]+ ]] || fail "no kernel version: $rel"
+  assert_eq "$sha" "$(flk status --json | json_get machines.0.kernel.sha256)" "the machine booted the release's kernel"
+  assert_eq "$sha" "$(flk context --json --no-host | json_get flk.kernel.sha256)" "context: the host's kernel"
+  [[ $(flk status) != *"guest kernel"* ]] || fail "status mentions the kernel when nothing differs"
+
+  local other="$WORK/vmlinux-$RUN_ID"
+  cp "$(ruby -I"$FLK_SRC/lib" -rflk -e 'print Flk::VM.kernel')" "$other"; echo >>"$other"
+  local out; out=$(FLK_KERNEL="$other" flk machine restart "$m" 2>&1) || fail "restart on the other kernel: $out"
+  assert_contains "$out" "guest kernel" "the boot says the kernel changed"
+  assert_contains "$out" "(was "
+  wait_mc 60
+  local now; now=$(flk status --json | json_get machines.0.kernel.sha256)
+  [[ $now =~ ^[0-9a-f]{64}$ && $now != "$sha" ]] || fail "the machine's kernel after the restart: $now"
+  local ev; ev=$(flk events --json -n 20 | grep -F '"machine.started"' | tail -n 1)
+  assert_contains "$ev" "on guest kernel" "the event says so"
+  assert_contains "$ev" '"kernel":"' "the event names the kernel"
+  # the host's kernel (without FLK_KERNEL) is the first one again
+  out=$(flk status)
+  assert_contains "$out" "$m runs guest kernel" "status: the machine is on another kernel than the host's"
+  assert_contains "$out" "booted at the next start"
+  flk machine restart "$m" >/dev/null; wait_mc 60
+  assert_eq "$sha" "$(flk status --json | json_get machines.0.kernel.sha256)" "back on the host's kernel"
+  [[ $(flk status) != *"guest kernel"* ]] || fail "status still mentions the kernel"
+}
+
 # [flk] log_max_mb = 1 (enshrouded BUGS #3): this app's console.log rotates
 # at 1MB, not the host's 10, and flk logs --boot still finds the boot's start.
 test_console_log_rotates_at_the_apps_limit() {

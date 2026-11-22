@@ -22,6 +22,7 @@ module Flk
       puts "  Config   = #{a.meta['config_path'] || 'unknown (run flk deploy in the app directory once)'}"
       puts
       machine_table(a)
+      kernel_note(a)
       checks_section(a)
       return if mounted.empty?
       puts "\nMounted on this host (flk ssh mount)"
@@ -32,6 +33,17 @@ module Flk
     end
 
     # Each running machine's [checks] as last seen (flk check, a deploy).
+    # flk setup replaced the guest kernel while these ran: they keep the
+    # one they booted until their next start.
+    def kernel_note(a)
+      host = Kernel.info or return
+      old = a.machines.select { _1.running? && _1.h["kernel"] && !Kernel.same?(_1.h["kernel"], host) }
+      return if old.empty?
+      puts "  #{old.map(&:id).join(', ')} run#{'s' if old.size == 1} guest kernel " \
+           "#{old.map { Kernel.name_against(_1.h['kernel'], host) }.uniq.join(', ')}; " \
+           "the host's is #{Kernel.name_against(host, old.first.h['kernel'])} now (booted at the next start)"
+    end
+
     def checks_section(a)
       rows = a.machines.select(&:running?).flat_map do |m|
         Checks.summary(m).map do |name, r|
@@ -62,13 +74,13 @@ module Flk
       end
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No releases") if rows.empty?
-      Util.table(%w[VERSION STATUS MACHINES SOURCE CREATED], rows.reverse.map do |r|
+      Util.table(%w[VERSION STATUS MACHINES SOURCE KERNEL CREATED], rows.reverse.map do |r|
         status = if r["status"] == "failed" then "failed: #{r['failure']}"
                  elsif r["current"] then "current"
                  elsif r["image"] then "kept (flk releases rollback v#{r['version']})"
                  else "image pruned"
                  end
-        ["v#{r['version']}", status, r["machines"], r["source"], Util.ago(r["created_at"])]
+        ["v#{r['version']}", status, r["machines"], r["source"], Kernel.name(r["kernel"]) || "-", Util.ago(r["created_at"])]
       end)
     end
 
@@ -148,7 +160,8 @@ module Flk
         tag = "#{Image.repo(a.name)}:v#{version}"
         system(Image.engine, "tag", target["tag"], tag, out: File::NULL, err: File::NULL) rescue nil
         rel = { "version" => version, "tag" => tag, "path" => path, "source" => "rollback to v#{target['version']}",
-                "rollback_of" => target["version"], "created_at" => Util.now, "config" => mconfig }
+                "rollback_of" => target["version"], "created_at" => Util.now, "config" => mconfig,
+                "kernel" => Kernel.info }
         meta["releases"] << rel
         a.save_meta(meta)
         roll!(a, rel, mconfig, machines, no_rollback: o[:no_rollback], pre_backup: pre, restore: restore)

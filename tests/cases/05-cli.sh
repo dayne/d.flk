@@ -311,6 +311,46 @@ test_machine_extend_grows_the_root_disk() {
   rm -rf "$d"
 }
 
+# Which guest kernel: its version from the banner inside the image (what
+# uname -r says), else from the build config next to it; the file's
+# sha256, kept until the file changes.
+test_kernel_info() {
+  local d="$WORK/kernel-$RUN_ID"; mkdir -p "$d"
+  local got; got=$(FLK_HOME="$d/state" ruby -I"$FLK_SRC/lib" -rflk -rdigest -e '
+    K = Flk::Kernel
+    dir = ARGV[0]
+    out = []
+    a = File.join(dir, "vmlinux")
+    File.binwrite(a, "\x7fELF" + "\0" * 2_000_000 + "Linux version 6.18.56+ (builder@host) (gcc 13) #1 SMP\n" + "\0" * 100)
+    i = K.info(a)
+    out << [i["version"], i["sha256"] == Digest::SHA256.file(a).hexdigest, K.name(i)].join(" ")
+    # kept: the same answer without reading the file again
+    cached = JSON.parse(File.read(K.cache_path))[a]
+    read = K.method(:version)
+    K.define_singleton_method(:version) { |_| raise "read again" }
+    out << [K.info(a) == i, cached["size"] == File.size(a)].join(" ")
+    # the file changed: read again
+    K.define_singleton_method(:version, read)
+    File.binwrite(a, "\x7fELF" + "Linux version 6.19.1 (x) #2\n" + "\0" * 50)
+    j = K.info(a)
+    out << [j["version"], j["sha256"] != i["sha256"], K.same?(i, j)].join(" ")
+    # no banner: the build config; neither: the hash is its name
+    b = File.join(dir, "custom")
+    File.binwrite(b, "no banner here")
+    File.write("#{b}.config", "#\n# Automatically generated file; DO NOT EDIT.\n# Linux/x86 6.1.99 Kernel Configuration\n#\n")
+    out << K.info(b)["version"]
+    File.delete("#{b}.config"); File.binwrite(b, "still no banner")
+    n = K.info(b)
+    out << [n["version"].inspect, K.name(n) == "sha256 #{n["sha256"][0, 12]}"].join(" ")
+    out << K.info(File.join(dir, "missing")).inspect
+    # two builds of one version are told apart by the hash
+    same_v = { "version" => "6.18.56+", "sha256" => "f" * 64 }
+    out << [K.name_against(i, j), K.name_against(i, same_v)].join(" | ")
+    puts out' "$d" 2>&1) || fail "$got"
+  local sha; sha=$(ruby -rdigest -e 'print Digest::SHA256.hexdigest("\x7fELF".b + "\0" * 2_000_000 + "Linux version 6.18.56+ (builder@host) (gcc 13) #1 SMP\n" + "\0" * 100)[0, 12]')
+  assert_eq $'6.18.56+ true 6.18.56+\ntrue true\n6.19.1 true false\n6.1.99\nnil true\nnil\n6.18.56+ | 6.18.56+ ('"$sha"')' "$got" "Kernel.info"
+}
+
 # Versions: flk version, the JSON and CHANGELOG.md's newest release agree,
 # and the changelog keeps its shape (Unreleased first, releases newest
 # first, each with its date).
@@ -737,7 +777,7 @@ test_log_check_reads_a_big_boot() {
     # a regex and a log outside ASCII, and a byte that is no text at all
     File.binwrite(log, "\n--- flk: booting m ---\ncaf\xC3\xA9 ready \xFF\r\n")
     out << [match.call("^café ready"), cli.send(:check_passes?, m, { "type" => "log", "match" => "^café ready" })].join(" ")
-    puts out' "$d" 2>&1)
+    puts out' "$d" 2>&1) || fail "$got"
   assert_eq $'true true false false\nfalse true true\ntrue\ntrue true' "$got" "log checks over a big boot"
 }
 

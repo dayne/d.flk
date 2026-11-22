@@ -65,6 +65,8 @@ module Flk
         opts: [["--fix", "Apply auto-fixable issues after setup: PATH symlink and podman short-name registries"]],
         summary: "Download firecracker + guest kernel (no root), then run doctor",
         notes: ["Root setup (bridge, taps, NAT, port helper, boot units) is separate: sudo #{SETUP_HOST} --install-service",
+                "A newer guest kernel replaces the old one, and setup says so. Running machines keep the kernel they booted " \
+                "until their next start; flk status names them, and each release and boot records its kernel (flk releases).",
                 "--fix also creates ~/.local/bin/flk and configures podman short image names (FROM ruby:3.3) if either is missing. Safe to re-run."] },
       { name: "doctor", group: "Setup", opts: [JSON_OPT], json: true,
         summary: "Check host readiness",
@@ -131,7 +133,10 @@ module Flk
         notes: ["Also tidies machines that exited on their own and hands their host ports on.",
                 "Checks: each running machine's [checks] as last seen by a deploy or flk check. In --json every machine has " \
                 "checks: { NAME: { type, interval, ok, at, since, detail } }; ok is null until the check has run since the " \
-                "machine booted (and for a stopped machine), since is when it began passing or failing."] },
+                "machine booted (and for a stopped machine), since is when it began passing or failing.",
+                "In --json every machine has kernel: { version, sha256 }, the guest kernel of its latest boot (null when it last " \
+                "booted before flk recorded it). flk setup can replace the host's kernel while machines run: status then says " \
+                "which machines still run the old one; they boot the new one at their next start."] },
       { name: "start", group: "Apps", summary: "Boot every stopped machine of the app",
         notes: ["One machine: flk machine start ID."] },
       { name: "stop", group: "Apps",
@@ -142,7 +147,9 @@ module Flk
       { name: "releases", group: "Apps", default_sub: "list", summary: "Release history, and rollback",
         subs: [
           { name: "list", aliases: %w[ls], opts: [JSON_OPT], json: true,
-            summary: "Releases, newest first: current, failed (and why), kept for rollback, or pruned" },
+            summary: "Releases, newest first: current, failed (and why), kept for rollback, or pruned",
+            notes: ["KERNEL is the guest kernel the host had when the release was deployed; in --json, kernel: { version, sha256 } " \
+                    "(absent on releases made before flk recorded it). What a machine runs now is in flk status --json."] },
           { name: "log", args: "[VERSION|FILE]",
             opts: [["--failed", "The newest failed build's log (of VERSION, if given)"]],
             summary: "Print a build's output (default: the newest build, failed or not)",

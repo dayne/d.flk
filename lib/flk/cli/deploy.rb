@@ -97,6 +97,7 @@ module Flk
           # Record the release only once its machines can be rolled, so a
           # failed precondition never leaves a release with nothing on it.
           meta = a.meta
+          rel["kernel"] = Kernel.info # the guest kernel its machines are about to boot
           meta["releases"] << rel
           meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)

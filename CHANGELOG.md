@@ -26,7 +26,17 @@ so the commit named in each heading is what identifies them.
 
 ## Unreleased
 
-Nothing yet.
+### Added
+
+- Each release and each boot records the guest kernel: `kernel:
+  {version, sha256}` in `flk releases --json` and per machine in
+  `flk status --json`. `flk releases` has a KERNEL column.
+- `flk setup` says when it replaced the guest kernel, and `flk status`
+  names the machines that still run the old one.
+- The events of a boot carry `kernel`, and their `detail` says when the
+  machine booted another kernel than before.
+- `flk doctor --json` has `kernel`, and `flk context --json` has
+  `flk.kernel`: the kernel machines boot from now on.
 
 ## 0.6.0 (2026-11-21)
 

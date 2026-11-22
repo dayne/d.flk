@@ -116,6 +116,16 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   `config.log_max_mb` (a number, or null for the host's limit). The log
   files and `flk logs` are as before; a machine can now keep more than
   20MB of log, so read it through `flk logs`, not whole into memory.
+- [ ] **The guest kernel, recorded** (flk, 2026-11-22, branch
+  `kernel-record`; nothing asked yet). Additive: `kernel: { version,
+  sha256 }` on each machine in `flk status --json` and `flk machine list
+  --json` (its latest boot; null before flk recorded it) and on each
+  release in `flk releases --json` (absent on older ones); `kernel` (a
+  name, e.g. `"6.18.56+"`) on the events of a boot; `kernel: { path,
+  version, sha256 }` in `flk doctor --json` and as `flk.kernel` in `flk
+  context --json` (the host's, what machines boot from now on). lazyflk
+  could mark a running machine whose `kernel.sha256` isn't the host's
+  ("boots a newer kernel at its next start").
 - [ ] **Mounted directories** (flk, 2026-11-17, on main since ed47eab;
   nothing asked yet). New and additive: `flk ssh mount PATH DIR [--user
   U] [--read-only]`, `flk ssh unmount DIR|--all [--force]`, `flk ssh
@@ -355,16 +365,10 @@ must be built in (`=y`).
     and can open it as its USER; an app without the key boots the default
     kernel, unchanged.
 
-- [ ] **A release doesn't record the kernel it booted.** Re-running
-  `flk setup` replaces `kernel/vmlinux`, and every machine boots the new
-  kernel at its next start, silently: nothing in `flk releases`, events
-  or status says a kernel changed. Record it per release and per boot
-  (version from the `.config` header, plus a sha256 of `vmlinux`) in
-  `releases --json` and `status --json` (additive), and have the
-  `machine.started` event say when the kernel differs from the last boot.
-  Optionally `flk setup` keeps the previous kernel (`vmlinux.prev`), so a
-  machine can go back to it. Do this with per-app kernels, which need the
-  same bookkeeping.
+- [x] **Releases and boots record their kernel** (2026-11-22, branch
+  `kernel-record`; history.md, Machines). Left for per-app kernels,
+  which need a way to choose one: `flk setup` keeping the previous
+  kernel (`vmlinux.prev`) so a machine can go back to it.
 
 ## Machines
 
