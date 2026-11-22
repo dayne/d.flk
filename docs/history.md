@@ -97,6 +97,24 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Setup and host checks
 
+- [x] **Versions and `CHANGELOG.md`** (Dayne, 2026-11-21). flk had said
+  0.1.0 since its first commit. `CHANGELOG.md` now lists what changed
+  per version for people who run flk and tools that read it (this file
+  keeps the reasons), with a "On the host" part for what to run after
+  updating. The past was cut into versions afterwards, from this file
+  and the git log, at the points where main rested: 0.1.0 (6183c62,
+  2026-10-12, the base), 0.2.0 (6958961, 2026-10-16: safer deploys, M1
+  to M4, first install), 0.3.0 (fbfbe93, 2026-11-05: R1), 0.4.0
+  (2ebd093, 2026-11-11: M6), 0.5.0 (54772bf, 2026-11-17: ssh mount),
+  and 0.6.0 (2026-11-21: health while running, `logs --boot`,
+  `log_max_mb`), the first one flk reports itself. Each command's first
+  version was checked against the command table at those commits.
+  Decided: `0.MINOR.PATCH`, MINOR for anything new and PATCH for fixes
+  alone; work on main between releases is "Unreleased" and
+  `Flk::VERSION` stays at the last release; a release is Dayne's call
+  (the rule is in AGENTS.md). Test: `05-cli`
+  test_version_matches_the_changelog.
+
 - [x] **Install tests run as a user** (2026-10-15). Tests 60–62 create
   `flkuser` (a password, no NOPASSWD) and run sanity, `flk setup --fix`,
   the PATH and final checks as that user; only package installs and the

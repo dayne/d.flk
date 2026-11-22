@@ -53,6 +53,14 @@ Working on flk itself:
   sections and keep the index in `TODO.md` ("Reported by apps") current.
   When you fix one, update its status line in the app's file; never edit
   anything else in an app repo.
+- Versions: `CHANGELOG.md` lists what changed in each version, for people
+  who run flk and tools that read it. A change they can see (a command,
+  an option, a flk.toml key, a JSON field, a fix, a step on the host)
+  adds a line under "Unreleased", in the same branch as the change. A
+  release is Dayne's call: move "Unreleased" under `## X.Y.Z (DATE)`,
+  set `Flk::VERSION` (`lib/flk/util.rb`), commit as "Release X.Y.Z", and
+  tag the commit on main `vX.Y.Z` (Dayne pushes the tag). New things
+  raise MINOR, fixes alone raise PATCH.
 - Commit, never push. Dayne pushes every repo by hand: end with what's
   waiting (`git log --oneline origin/main..main`), and leave git remotes,
   SSH keys and agents alone, even if a push or fetch fails.

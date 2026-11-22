@@ -142,6 +142,8 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
   a machine's log since its latest boot, across the rotation.
 - Done (on main since 53483cd, 2026-11-21): `[flk] log_max_mb`, an app's
   own console.log limit (the last part of enshrouded #3).
+- Done (2026-11-21, branch `versions`): versions and `CHANGELOG.md`.
+  flk is 0.6.0; 0.1.0 to 0.5.0 were named afterwards (history.md).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Recording the kernel each release and boot used (TODO.md, Guest
   kernels). Per-app kernels (ntsync) are parked until enshrouded asks.

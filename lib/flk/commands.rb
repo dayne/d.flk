@@ -70,7 +70,9 @@ module Flk
         summary: "Check host readiness",
         notes: ['--json prints {"schema", "ok", "checks": [{"label", "status", "hint"}], "services": [...]}; status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
                 'services: flk-net.service, flk-machines.service and flk-tmux.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
-      { name: "version", group: "Setup", summary: "Print the flk version" },
+      { name: "version", group: "Setup", summary: "Print the flk version",
+        notes: ["What changed in each version: #{File.join(File.dirname(SHARE), 'CHANGELOG.md')}. " \
+                "Between releases the checkout can be ahead of it: git -C #{File.dirname(SHARE)} describe --tags."] },
 
       { name: "resume", group: "Host",
         summary: "Start every machine that should be running (after a reboot, or after stop-all)",
