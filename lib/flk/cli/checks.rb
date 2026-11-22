@@ -53,6 +53,13 @@ module Flk
     HOST_CONFIRM = Float(ENV.fetch("FLK_HOST_CONFIRM", "3")) # seconds; tests shorten it
 
     def check_host(due: false)
+      # Only the host's own settings give the host's own results: a process
+      # that swapped them (FLK_HOST_CONFIG, as the tests do) would store
+      # and report what isn't so.
+      unless Host::PATH == Host::HOST_FILE
+        return [] if due
+        raise Error, "flk check --host keeps this host's results, and FLK_HOST_CONFIG points at other settings (#{Host::PATH}); to look only: flk doctor"
+      end
       return [] if due && !HostChecks.due?
       found = doctor_checks
       if HostChecks.new_problem?(found)

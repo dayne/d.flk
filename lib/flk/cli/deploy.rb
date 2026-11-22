@@ -472,6 +472,7 @@ module Flk
         res = ::Net::HTTP.start(m.ip, c["port"], open_timeout: 2, read_timeout: 5) { _1.get(c["path"]) }
         res.code.to_i.between?(200, 399)
       when "exec" then exec_check_passes?(m, c)
+      when "disk" then disk_check_passes?(m, c)
       when "udp" then udp_check_passes?(m, c)
       when "log"
         log = m.path("console.log")
@@ -493,6 +494,7 @@ module Flk
       case c["type"]
       when "log" then "log /#{c['match']}/"
       when "exec" then "exec #{c['command'].shelljoin}".then { _1.size > 60 ? "#{_1[0, 57]}..." : _1 }
+      when "disk" then "disk #{c['path']} under #{c['max_percent']}%"
       else "#{c['type']} :#{c['port']}#{c['path']}"
       end
     end
@@ -508,6 +510,39 @@ module Flk
       return true if st.zero?
       last = out.string.scrub.lines.map(&:strip).reject(&:empty?).last
       @check_detail = st == 124 ? "timed out after #{c['timeout']}s" : "exit #{st}#{": #{last[0, 200]}" if last}"
+      false
+    rescue Timeout::Error
+      @check_detail = "the guest didn't answer within #{c['timeout'] + 5}s"
+      false
+    rescue Error => e
+      @check_detail = e.message
+      false
+    end
+
+    # How full is the filesystem holding path in the guest? `df -P` there,
+    # through flk-agent as root (any image with a shell has df; busybox
+    # prints the same columns). Passes under max_percent.
+    def disk_check_passes?(m, c)
+      out = StringIO.new
+      st = Timeout.timeout(c["timeout"] + 5) do
+        Agent.run(m, { argv: ["df", "-P", "-k", c["path"]], tty: false, user: "root" },
+                  timeout: c["timeout"], out: out, err: out, signals: false)
+      end
+      text = out.string.scrub
+      unless st.zero?
+        last = text.lines.map(&:strip).reject(&:empty?).last
+        @check_detail = st == 124 ? "df timed out after #{c['timeout']}s" : "can't measure #{c['path']}: #{last ? last[0, 200] : "df exit #{st}"}"
+        return false
+      end
+      # Filesystem 1024-blocks Used Available Capacity Mounted on
+      _fs, _size, _used, avail, pct, = text.lines.last.to_s.split
+      unless pct.to_s.match?(/\A\d+%\z/)
+        @check_detail = "can't read df's answer for #{c['path']}: #{text.lines.last.to_s.strip[0, 120]}"
+        return false
+      end
+      return true if pct.to_i < c["max_percent"]
+      free = avail.to_i >= 1024**2 ? Backup.gb(avail.to_i * 1024) : "#{avail.to_i / 1024}MB"
+      @check_detail = "#{c['path']} is #{pct} full (limit #{c['max_percent']}%), #{free} free"
       false
     rescue Timeout::Error
       @check_detail = "the guest didn't answer within #{c['timeout'] + 5}s"

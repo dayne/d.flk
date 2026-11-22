@@ -116,6 +116,10 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
     fail, `since`; exit 2 only when one fails.
   - Host settings `disk_warn_percent` and `backup_warn_days`
     (`flk config set`, `config show --host`).
+  - A new check type, `disk` (branch `disk-check`): in `checks` it has
+    `type: "disk"` like any other; `flk check --json` rows have `what`
+    such as `disk /data under 90%`, and a failing one's `detail` says
+    how full.
 - [ ] **`flk logs --boot`** (flk, 2026-11-20, on main since 2f5f00f;
   nothing asked yet). New and additive: `flk logs [-i ID] --boot [-n N]
   [--no-tail|-f]` prints a machine's log from its latest `--- flk:
@@ -266,8 +270,12 @@ same review.
     `check.recovered` events on a change, and `flk-check.timer` to run
     them. flkforge could offer an interval with its checks, and its
     status snippets could read `checks` in place of scraping logs.
-    Still open: host checks (disk, backups, units) on the same timer;
-    `on_failure = "restart"`; a notify hook (health-design.md).
+    Host checks run on the same timer since 2026-11-22 (branch
+    `host-checks`). Still open: `on_failure = "restart"`; a notify hook
+    (health-design.md).
+  - Checks of `type = "disk"` (2026-11-22, branch `disk-check`;
+    history.md): `path`, `max_percent` (in `config_keys`). A volume
+    snippet could add one with an interval for the volume's mount point.
   - `[flk] log_max_mb` (2026-11-21, on main since 53483cd; history.md):
     a new key in `help --all --json`'s `config_keys`. A game-server
     recipe could set it when the server logs a lot between restarts.

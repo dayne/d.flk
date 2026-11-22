@@ -234,7 +234,7 @@ module Flk
       list
     end
 
-    CHECK_TYPES = %w[tcp http log exec udp].freeze
+    CHECK_TYPES = %w[tcp http log exec udp disk].freeze
 
     def check_spec(name, h, default_port)
       raise Error, "check #{name} must be a table" unless h.is_a?(Hash)
@@ -252,6 +252,8 @@ module Flk
         spec["match"] = check_regex(name, h["match"] || raise(Error, "check #{name}: type = \"log\" needs match = \"REGEX\""))
       when "exec"
         spec.merge!(exec_check(name, h))
+      when "disk"
+        spec.merge!(disk_check(name, h))
       else
         port = h["port"] || default_port or raise Error, "check #{name} needs a port"
         spec["port"] = Integer(port)
@@ -269,6 +271,18 @@ module Flk
       m.to_s
     rescue RegexpError => e
       raise Error, "check #{name}: bad regex: #{e.message}"
+    end
+
+    # path: a directory in the machine (default /); the check fails when
+    # the filesystem holding it is max_percent full or more (default 90).
+    def disk_check(name, h)
+      path = (h["path"] || "/").to_s
+      raise Error, "check #{name}: type = \"disk\" needs path = \"/DIR\" (a directory in the machine), got '#{path}'" unless path.start_with?("/")
+      max = h["max_percent"].nil? ? 90 : h["max_percent"]
+      unless max.is_a?(Integer) && max.between?(1, 100)
+        raise Error, "check #{name}: max_percent must be a whole number from 1 to 100 (got '#{max}')"
+      end
+      { "path" => path, "max_percent" => max, "timeout" => AppConfig.seconds(h["timeout"], 10, "check #{name} timeout") }
     end
 
     # command: an argv list, or a string run with sh -c. user: who runs it

@@ -481,6 +481,16 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Builds
 
+- [x] **Checks of `type = "disk"`** (health-design.md, 2026-11-22).
+  `path` (a directory in the machine, default `/`) and `max_percent`
+  (default 90): `df -P -k` in the guest through flk-agent as root; the
+  check fails when the filesystem is that full, with how full and how
+  much is free in its detail. With an `interval` it is the event before
+  a volume or root disk fills up. A check type, so opt-in per app like
+  the rest; nothing is run in machines that don't ask. Tests: `00-config`
+  test_disk_check_config, `05-cli` test_disk_check_reads_df (coreutils'
+  and busybox's df output, canned), `47-checks`
+  test_a_full_disk_is_a_failing_check (a 1GB volume filled past 50%).
 - [x] **Health while running: `flk check`, `interval`, `flk-check.timer`**
   (enshrouded #3, part 1; PLAN M6's last piece; 2026-11-20). Checks ran
   only during a deploy, so `started` said the VM was alive and nothing

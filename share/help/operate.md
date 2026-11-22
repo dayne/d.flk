@@ -48,6 +48,12 @@ is tried every minute until it passes. `flk events` gets `check.failed`
 when a check that passed stops passing and `check.recovered` when it's
 back, once each, so a follower (`flk events -f --json`) can notify.
 
+A check of `type = "disk"` watches room in the machine: with
+`path = "/data"`, `max_percent = 90` and an interval it fails, and so
+sends its event, when the volume mounted there is 90% full, while there
+is still time to grow it (`flk volumes extend`, or `flk machine extend`
+for `/`).
+
 The same timer watches the host: every 5 minutes it runs what
 `flk doctor` checks (the bridge and units, the port helper, room on the
 disks under flk's state and volumes, backups and their copies) and keeps

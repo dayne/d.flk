@@ -129,9 +129,10 @@ check`, results in `flk status`, change events, `interval` and
 deploy. **Host checks (2026-11-22, branch `host-checks`):** the timer
 runs doctor's checks every 5 minutes, `flk check --host` by hand, and
 `host.problem` / `host.recovered` events on a change (health-design.md,
-"As built: host checks"). **What's left of that design:** watches inside
-a machine (disk fill, memory, restart loops), `on_failure = "restart"`,
-a notify hook, the MQTT bridge: none scheduled.
+"As built: host checks"). **Disk fill in a machine (2026-11-22, branch
+`disk-check`):** a check of `type = "disk"`. **What's left of that
+design:** memory in the guest and restart loops, `on_failure =
+"restart"`, a notify hook, the MQTT bridge: none scheduled.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.

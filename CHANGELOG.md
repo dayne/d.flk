@@ -43,6 +43,10 @@ so the commit named in each heading is what identifies them.
   changes; their `app` is null.
 - `flk doctor --json`: every check has an `id` that stays the same
   while its label changes.
+- Checks of `type = "disk"`: `path` and `max_percent` (default 90). The
+  check fails when the filesystem under that directory in the machine
+  is that full, and says how full. With an `interval` it warns before a
+  volume or root disk fills up.
 - Two doctor checks: room on the disks under flk's state and volumes
   (host setting `disk_warn_percent`, default 90), and, with the host
   setting `backup_warn_days`, a backed-up volume with no recent backup.

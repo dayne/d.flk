@@ -4,9 +4,10 @@
 since a4654bc): `flk check`, the results in `flk status`, the change
 events, `interval` with `--due`, and `flk-check.timer`. Step 3, host
 checks, is built too (2026-11-22). What was built and what was decided
-on the way is under "As built" below. Not built: the per-machine
-watches (disk fill and memory in the guest, restart loops), acting on a
-failure, a notify hook, the MQTT bridge.** Drafted 2026-11-11. Decided with Dayne that day: checks report
+on the way is under "As built" below. Of the per-machine watches, disk
+fill is built as a check type (`type = "disk"`, 2026-11-22). Not built:
+memory in the guest and restart loops, acting on a failure, a notify
+hook, the MQTT bridge.** Drafted 2026-11-11. Decided with Dayne that day: checks report
 and don't act; the MQTT bridge waits until its purpose is clearer. M6
 step 3 built the check kinds that run at deploy (`exec`, `udp`,
 `[deploy] preflight`); this is the part after that: who runs checks while
@@ -92,6 +93,18 @@ read the results.
   suite the scheduled run still sees what the tests' apps do to the
   host (their volumes' disks, their bind addresses), because tests
   share the state dir.
+
+## As built: disk fill in a machine (2026-11-22)
+
+A check type, not something flk does to every machine by itself: an app
+asks for it, as for every other check, so machines that didn't ask are
+never run commands in. `[checks.NAME] type = "disk"`, `path` (default
+`/`), `max_percent` (default 90). flk runs `df -P -k PATH` in the guest
+through flk-agent as root and fails the check when the filesystem is
+that full or more: "/data is 93% full (limit 90%), 68MB free". An image
+without `df` fails it with df's own error, at the deploy that adds the
+check. The host can't measure this from outside: a mounted ext4 image's
+free count on disk is stale. Inodes aren't looked at.
 
 ## The problem
 

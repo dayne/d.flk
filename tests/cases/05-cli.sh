@@ -317,7 +317,7 @@ test_machine_extend_grows_the_root_disk() {
 # real host's store and event stream never hear of it.
 test_host_checks_report_changes() {
   local d="$WORK/hostchecks-$RUN_ID"; mkdir -p "$d"
-  local got; got=$(FLK_HOME="$d" FLK_HOST_CONFIRM=0 ruby -I"$FLK_SRC/lib" -rflk -e '
+  local got; got=$(env -u FLK_HOST_CONFIG FLK_HOME="$d" FLK_HOST_CONFIRM=0 ruby -I"$FLK_SRC/lib" -rflk -e '
     H = Flk::HostChecks
     row = ->(id, status, label = id, hint = nil) { { "id" => id, "label" => label, "status" => status, "hint" => hint } }
     t = Time.utc(2026, 11, 22, 10)
@@ -369,6 +369,46 @@ host.problem,host.recovered
 []' "$got" "host checks"
   local out; out=$("$FLK_BIN" check --host --all 2>&1) && fail "check --host --all was accepted"
   assert_contains "$out" "--host checks the host"
+  # the tests have their own host settings: they must never write the host's results
+  out=$("$FLK_BIN" check --host 2>&1) && fail "check --host ran under FLK_HOST_CONFIG"
+  assert_contains "$out" "FLK_HOST_CONFIG points at other settings"
+}
+
+# type = "disk": df in the guest (here its answers, canned), as coreutils
+# and busybox print them.
+test_disk_check_reads_df() {
+  local got; got=$(ruby -I"$FLK_SRC/lib" -rflk -e '
+    answers = []
+    Flk::Agent.define_singleton_method(:run) do |_m, req, out:, **|
+      st, text = answers.shift
+      out.write(text)
+      $argv = req[:argv]
+      st
+    end
+    cli = Flk::CLI.allocate
+    try = lambda do |st, text, max = 90|
+      answers << [st, text]
+      cli.instance_variable_set(:@check_detail, nil) # as before every try
+      ok = cli.send(:disk_check_passes?, nil, { "path" => "/data", "max_percent" => max, "timeout" => 10 })
+      "#{ok} #{cli.instance_variable_get(:@check_detail)}".strip
+    end
+    head = "Filesystem     1024-blocks    Used Available Capacity Mounted on\n"
+    puts try.call(0, head + "/dev/vdc            999320  123456    807052      14% /data\n")
+    puts $argv.join(" ")
+    puts try.call(0, head + "/dev/vdc            999320  912000     18508      99% /data\n")
+    puts try.call(0, head + "/dev/vdb         52403200 26201600  26201600      50% /data\n", 50)
+    puts try.call(0, "Filesystem           1024-blocks    Used Available Capacity Mounted on\n/dev/vdc                999320    2580    927928   0% /data\n")
+    puts try.call(1, "df: /data: No such file or directory\n")
+    puts try.call(0, "something else entirely\n")
+    puts try.call(124, "")' 2>&1) || fail "$got"
+  assert_eq 'true
+df -P -k /data
+false /data is 99% full (limit 90%), 18MB free
+false /data is 50% full (limit 50%), 25.0GB free
+true
+false can'"'"'t measure /data: df: /data: No such file or directory
+false can'"'"'t read df'"'"'s answer for /data: something else entirely
+false df timed out after 10s' "$got" "disk check"
 }
 
 # Which guest kernel: its version from the banner inside the image (what
