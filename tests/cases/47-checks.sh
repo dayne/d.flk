@@ -10,7 +10,8 @@ setup_file() {
   toml_append '' '[checks.ready]' '  type = "log"' '  match = '"'"'Done \('"'"'' '  interval = "1m"' \
     '' '[checks.port]' '  type = "tcp"' '  port = 25565' '  interval = "1m"' \
     '' '[checks.well]' '  type = "exec"' '  command = "test ! -e /tmp/sick"' '  interval = "5m"' \
-    '' '[checks.once]' '  type = "tcp"' '  port = 25565'
+    '' '[checks.once]' '  type = "tcp"' '  port = 25565' \
+    '' '[checks.room]' '  type = "disk"' '  path = "/data"' '  max_percent = 50' '  interval = "5m"'
   flk launch --no-deploy
   flk volumes create world --size 1
   flk deploy
@@ -25,7 +26,7 @@ check_rc() { local rc=0; flk check "$@" >"$WORK/check.out" 2>&1 || rc=$?; echo "
 
 test_deploy_keeps_what_its_checks_found() {
   local name
-  for name in ready port well once; do
+  for name in ready port well once room; do
     assert_eq true "$(check_field "$name.ok")" "$name after the deploy"
   done
   assert_eq 60 "$(check_field port.interval)" "interval in status"
@@ -46,7 +47,7 @@ test_check_runs_them_now() {
   assert_contains "$(cat "$WORK/check.out")" "well"
   assert_ne "$before" "$(check_field port.at)" "port.at after flk check"
   local j; j=$(flk check --json)
-  assert_eq 4 "$(ruby -rjson -e 'puts JSON.parse($stdin.read).size' <<<"$j")" "rows"
+  assert_eq 5 "$(ruby -rjson -e 'puts JSON.parse($stdin.read).size' <<<"$j")" "rows"
   assert_eq "$APP" "$(json_get 0.app <<<"$j")" "app in --json"
   assert_eq true "$(json_get 2.ok <<<"$j")" "well in --json"
   assert_eq "$(machine_id)" "$(json_get 2.machine <<<"$j")" "machine in --json"
@@ -90,13 +91,29 @@ test_recovery_is_an_event() {
   [[ $(flk context --no-host) != *"has been failing"* ]] || fail "context still lists the check as failing"
 }
 
+# type = "disk": the volume at /data (1GB) fills past max_percent = 50, the
+# check says how full it is, and passes again once there is room.
+test_a_full_disk_is_a_failing_check() {
+  assert_contains "$(flk status)" "disk /data under 50%"
+  flk exec --user root -- fallocate -l 600M /data/fill
+  assert_eq 2 "$(check_rc)" "flk check with /data 60% full: $(cat "$WORK/check.out")"
+  assert_eq false "$(check_field room.ok)" "room in status"
+  assert_contains "$(check_field room.detail)" "/data is 6" "how full"
+  assert_contains "$(check_field room.detail)" "% full (limit 50%)"
+  assert_eq true "$(check_field well.ok)" "the other checks still pass"
+  flk exec --user root -- rm /data/fill
+  assert_eq 0 "$(check_rc)" "flk check after freeing it: $(cat "$WORK/check.out")"
+  assert_eq true "$(check_field room.ok)" "room in status"
+  assert_eq "1 1" "$(event_count check.failed room) $(event_count check.recovered room)" "one event each way"
+}
+
 # Results belong to a boot. Right after one, a check that doesn't pass yet
 # is "starting", not failed; --due leaves it alone for its grace period.
 test_a_new_boot_starts_clean() {
   flk machine restart "$(machine_id)" >/dev/null
   assert_eq "[]" "$(flk check --due --json | tr -d ' \n')" "--due inside the grace period"
   flk check >"$WORK/check.out" 2>&1 || fail "flk check during the boot failed: $(cat "$WORK/check.out")"
-  assert_eq 1 "$(event_count check.failed "")" "no new check.failed while it boots"
+  assert_eq 2 "$(event_count check.failed "")" "no new check.failed while it boots"
   wait_mc 60
   wait_log "Done ("
   assert_eq 0 "$(check_rc)" "flk check after the boot: $(cat "$WORK/check.out")"

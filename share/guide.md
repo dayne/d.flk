@@ -174,6 +174,12 @@ To ask whether this flk has a setting, look for its `key` (such as
     `send_hex = "FFFFFFFF54536F7572636520456E67696E6520517565727900"`;
     any reply (the info, or the challenge newer servers send first)
     means the server answers.
+  - `"disk"`: `path` = a directory in the machine (default `/`), and
+    `max_percent` (default 90): fails when the filesystem holding it is
+    that full or more, saying how full and how much is free. Measured
+    with `df` in the guest through flk-agent. With an `interval` it is
+    the warning before a volume or the root disk fills up, which is how
+    a server dies quietly.
 
   Checks run one after another, retried each second; each must pass within
   `grace_period` (default 60s) or the machine goes back to its previous

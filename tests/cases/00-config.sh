@@ -409,9 +409,21 @@ test_log_max_mb() {
   assert_eq "3145728 2097152" "$(FLK_LOG_MAX_MB=2 ruby -I"$FLK_SRC/lib" -rflk -e "$bytes")" "the host's own limit"
 }
 
+# type = "disk": how full the filesystem under a directory in the machine may get
+test_disk_check_config() {
+  stage_app hello
+  toml_append '' '[checks.root]' '  type = "disk"' \
+    '' '[checks.room]' '  type = "disk"' '  path = "/data"' '  max_percent = 80' '  interval = "10m"'
+  local cfg; cfg=$(config 2>&1) || fail "config show failed: $cfg"
+  assert_eq '/ 90 10' "$(json_get machine_config.checks.0.path <<<"$cfg") $(json_get machine_config.checks.0.max_percent <<<"$cfg") $(json_get machine_config.checks.0.timeout <<<"$cfg")" "defaults"
+  assert_eq '/data 80 600' "$(json_get machine_config.checks.1.path <<<"$cfg") $(json_get machine_config.checks.1.max_percent <<<"$cfg") $(json_get machine_config.checks.1.interval <<<"$cfg")" "as set"
+  [[ $cfg != *"unknown key"* ]] || fail "a disk check warns: $cfg"
+}
+
 test_bad_checks_rejected() {
   local bad out
-  for bad in 'type = "exec"' 'type = "udp"|port = 1|send_hex = "zz"' 'type = "udp"|port = 1|send = "a"|send_hex = "61"' \
+  for bad in 'type = "disk"|path = "data"' 'type = "disk"|max_percent = 0' 'type = "disk"|max_percent = "90"' \
+             'type = "exec"' 'type = "udp"|port = 1|send_hex = "zz"' 'type = "udp"|port = 1|send = "a"|send_hex = "61"' \
              'type = "udp"|port = 1|expect = "("' 'type = "nope"'; do
     stage_app hello
     toml_append '' '[checks.c]' "${bad//|/$'\n'}"

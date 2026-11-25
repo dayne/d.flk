@@ -41,7 +41,7 @@ Change things
   flk scale count N                  new machines need their own volumes
   flk secrets set|unset ...          restarts machines (unless --stage)
   flk releases rollback [vN]         back to an older release (image + config)
-  [checks.NAME] type = ...           log|tcp|http|exec|udp: deploys wait for them; failures roll back
+  [checks.NAME] type = ...           log|tcp|http|exec|udp|disk: deploys wait for them; failures roll back
   [checks.NAME] interval = "5m"      also while it runs (flk-check.timer); flk status shows the results
   [deploy] preflight = "CMD"         a host check before the build; non-zero stops the deploy
 
