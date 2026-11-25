@@ -53,7 +53,13 @@ module Flk
     # remember the order. One line, plain, after the result.
     def cmd_setup(_args, o)
       setup_preflight_packages!
+      was = Kernel.info
       Util.sh!(File.join(LIBEXEC, "flk-fetch-assets"))
+      now = Kernel.info
+      if was && now && !Kernel.same?(was, now)
+        puts "==> guest kernel: #{Kernel.name_against(was, now)} -> #{Kernel.name_against(now, was)}. " \
+             "Running machines keep theirs until their next start (flk status says which)."
+      end
       puts "==> flk-agent (flk exec): #{Agent.ensure! || 'not built'}"
       setup_post_fixes(o) # before doctor, so its report shows them done
       puts
@@ -134,7 +140,7 @@ module Flk
       ok = results.none? { _1["status"] == "fail" }
       if o[:json]
         return puts(JSON.pretty_generate("schema" => JSON_SCHEMA, "ok" => ok, "checks" => results,
-                                         "services" => services_status))
+                                         "services" => services_status, "kernel" => host_kernel))
       end
       icons = { "pass" => Util.green("✔"), "fail" => Util.red("✘"), "warn" => Util.yellow("!") }
       warns, main = results.partition { _1["status"] == "warn" }
@@ -145,6 +151,9 @@ module Flk
         warns.each { |c| puts "#{icons['warn']} #{c['label']}#{c['hint'] ? "  -> #{c['hint']}" : ''}" }
       end
     end
+
+    # The guest kernel machines boot from now on: { path, version, sha256 }.
+    def host_kernel = Kernel.info&.then { { "path" => VM.kernel }.merge(_1) }
 
     def doctor_checks
       results = []

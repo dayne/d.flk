@@ -145,7 +145,8 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - Done (2026-11-21): versions and `CHANGELOG.md`.
   flk is 0.6.0; 0.1.0 to 0.5.0 were named afterwards (history.md).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
-- Recording the kernel each release and boot used (TODO.md, Guest
-  kernels). Per-app kernels (ntsync) are parked until enshrouded asks.
+- Done (2026-11-22, branch `kernel-record`): each release and boot
+  records its guest kernel (history.md, Machines). Per-app kernels
+  (ntsync) are parked until enshrouded asks.
 - Volume snapshots: need volumes on a reflink filesystem or LVM thin (a
   host decision first, `~/mud`).

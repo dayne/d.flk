@@ -664,6 +664,27 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Machines
 
+- [x] **Releases and boots record their guest kernel** (2026-11-22).
+  One kernel serves the host, and `flk setup` replaces it: every
+  machine then boots the new one at its next start, and nothing said
+  so. `Flk::Kernel.info` gives `{ version, sha256 }` for the kernel
+  file: the version is the banner inside the image (what `uname -r`
+  says in the guest, `6.18.56+` on mud), else the build config next to
+  it; the hash tells two builds of one version apart. It is kept in
+  `STATE/kernel-info.json` until the file's size or mtime changes
+  (hashing 28MB at every boot would be felt). `VM.launch` stores it in
+  the machine (`kernel`, in `status --json`), a deploy or rollback in
+  the release (`releases --json`, and a KERNEL column). The boot that
+  finds another kernel than the machine's last one says so on the
+  terminal and in its event's `detail` (`guest kernel NEW (was OLD)`),
+  and every boot event carries `kernel`. `flk setup` prints the change;
+  `flk status` names running machines that are still on the old one.
+  `doctor --json` and `context --json` have the host's. Machines and
+  releases from before have no record, so their first boot after this
+  says nothing. Not built: keeping the previous kernel to go back to
+  (it needs a way to choose a kernel per app, TODO Guest kernels).
+  Tests: `05-cli` test_kernel_info (fast), `16-exec`
+  test_the_guest_kernel_is_recorded (a restart on a second kernel).
 - [x] **`flk logs --boot`: the log since the latest boot** (enshrouded
   #3, part 2; 2026-11-20). `flk logs` is `tail -n N` of `console.log`,
   so a chatty server's boot scrolls out of reach (enshrouded: 51k lines

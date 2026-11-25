@@ -169,6 +169,7 @@ module Flk
     def launch(m)
       FileUtils.rm_f(m.path("pid")) # stale, from a machine that exited on its own; see reap
       bin = firecracker_bin
+      booting = Kernel.info(kernel) # before the boot: the file it is about to read
       build_config_drive(m)
       s = spec(m)
       Util.write_json(m.path("vm.json"), s)
@@ -199,6 +200,7 @@ module Flk
       api(sock, "PUT", "/actions", { "action_type" => "InstanceStart" })
 
       m.h["started_at"] = Util.now
+      m.h["kernel"] = booting # the guest kernel of this boot (Kernel)
       m.h["desired_state"] = "started"
       m.save!
       Ports.sync! if Array(m.config["ports"]).any?

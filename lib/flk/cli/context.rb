@@ -49,7 +49,7 @@ module Flk
       end
       plain, detail = steps_json(steps, prefix_app: true)
       { "schema" => JSON_SCHEMA,
-        "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE) },
+        "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE), "kernel" => host_kernel },
         "mount_dirs" => mount_dirs,
         "host" => if no_host
                     { "lan_ip" => Net.host_lan_ip, "address" => Net.host_address }
@@ -105,7 +105,7 @@ module Flk
       host = no_host ? [] : doctor_checks
       c = { "schema" => JSON_SCHEMA,
             "flk" => { "version" => VERSION, "state_dir" => ROOT, "source" => File.dirname(SHARE),
-                       "reference" => "flk help --all" },
+                       "reference" => "flk help --all", "kernel" => host_kernel },
             "host" => if no_host
                         { "lan_ip" => Net.host_lan_ip, "address" => Net.host_address }
                       else

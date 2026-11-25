@@ -41,12 +41,14 @@ module Flk
     def path = File.join(ROOT, "events.jsonl")
 
     # log: a file with the whole story (a failed build's output).
-    def emit(type, app: nil, machine: nil, release: nil, detail: nil, log: nil)
+    # kernel: the guest kernel a machine booted (boot events).
+    def emit(type, app: nil, machine: nil, release: nil, detail: nil, log: nil, kernel: nil)
       raise ArgumentError, "unknown event type #{type}" unless TYPES.key?(type)
       ev = { "at" => Time.now.utc.iso8601(3), "app" => app, "machine" => machine, "type" => type }
       ev["release"] = release if release
       ev["detail"] = one_line(detail) if detail
       ev["log"] = log if log
+      ev["kernel"] = kernel if kernel
       FileUtils.mkdir_p(ROOT)
       rotate if (File.size?(path) || 0) > MAX_BYTES
       # one write of one short line with O_APPEND: whole lines, even from
@@ -64,7 +66,9 @@ module Flk
     # lines joined with " · ".
     def one_line(s) = s.to_s.lines.map(&:strip).reject(&:empty?).join(" · ")
 
-    def machine(type, m, detail = nil) = emit(type, app: m.app.name, machine: m.id, release: m.release, detail: detail)
+    def machine(type, m, detail = nil, kernel: nil)
+      emit(type, app: m.app.name, machine: m.id, release: m.release, detail: detail, kernel: kernel)
+    end
 
     def rotate
       File.open("#{path}.lock", File::RDWR | File::CREAT, 0o644) do |l|
