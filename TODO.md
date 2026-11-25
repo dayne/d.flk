@@ -100,8 +100,8 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
     note comes with the host checks (`flk doctor --json` has the same
     label, and `services` lists `flk-check.timer` and
     `flk-check.service`).
-- [ ] **Host checks while the host runs** (flk, 2026-11-22, branch
-  `host-checks`; nothing asked yet). New and additive:
+- [ ] **Host checks while the host runs** (flk, 2026-11-22, main
+  `8db719c`; nothing asked yet). New and additive:
   - Events `host.problem` and `host.recovered` on `flk events --all`
     (`-f --json` too): a host check began to warn or fail, or passes
     again. Their `app` and `machine` are null (the first events without
@@ -116,7 +116,7 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
     fail, `since`; exit 2 only when one fails.
   - Host settings `disk_warn_percent` and `backup_warn_days`
     (`flk config set`, `config show --host`).
-  - A new check type, `disk` (branch `disk-check`): in `checks` it has
+  - A new check type, `disk` (main `749544c`): in `checks` it has
     `type: "disk"` like any other; `flk check --json` rows have `what`
     such as `disk /data under 90%`, and a failing one's `detail` says
     how full.
@@ -136,8 +136,8 @@ shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
   `config.log_max_mb` (a number, or null for the host's limit). The log
   files and `flk logs` are as before; a machine can now keep more than
   20MB of log, so read it through `flk logs`, not whole into memory.
-- [ ] **The guest kernel, recorded** (flk, 2026-11-22, branch
-  `kernel-record`; nothing asked yet). Additive: `kernel: { version,
+- [ ] **The guest kernel, recorded** (flk, 2026-11-22, main
+  `ce7cf79`; nothing asked yet). Additive: `kernel: { version,
   sha256 }` on each machine in `flk status --json` and `flk machine list
   --json` (its latest boot; null before flk recorded it) and on each
   release in `flk releases --json` (absent on older ones); `kernel` (a
@@ -270,10 +270,10 @@ same review.
     `check.recovered` events on a change, and `flk-check.timer` to run
     them. flkforge could offer an interval with its checks, and its
     status snippets could read `checks` in place of scraping logs.
-    Host checks run on the same timer since 2026-11-22 (branch
-    `host-checks`). Still open: `on_failure = "restart"`; a notify hook
+    Host checks run on the same timer since 2026-11-22 (main
+    `8db719c`). Still open: `on_failure = "restart"`; a notify hook
     (health-design.md).
-  - Checks of `type = "disk"` (2026-11-22, branch `disk-check`;
+  - Checks of `type = "disk"` (2026-11-22, main `749544c`;
     history.md): `path`, `max_percent` (in `config_keys`). A volume
     snippet could add one with an interval for the volume's mount point.
   - `[flk] log_max_mb` (2026-11-21, on main since 53483cd; history.md):
@@ -389,8 +389,8 @@ must be built in (`=y`).
     and can open it as its USER; an app without the key boots the default
     kernel, unchanged.
 
-- [x] **Releases and boots record their kernel** (2026-11-22, branch
-  `kernel-record`; history.md, Machines). Left for per-app kernels,
+- [x] **Releases and boots record their kernel** (2026-11-22, main
+  `ce7cf79`; history.md, Machines). Left for per-app kernels,
   which need a way to choose one: `flk setup` keeping the previous
   kernel (`vmlinux.prev`) so a machine can go back to it.
 

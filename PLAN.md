@@ -126,11 +126,11 @@ check`, results in `flk status`, change events, `interval` and
 `flk-check.timer`. Checks report and don't act. Tested: fast, VM case
 47, then the full suite. On a host, the timer needs `sudo setup-host.sh
 --install-service` once more, and an app gets an interval at its next
-deploy. **Host checks (2026-11-22, branch `host-checks`):** the timer
+deploy. **Host checks (2026-11-22, main `8db719c`):** the timer
 runs doctor's checks every 5 minutes, `flk check --host` by hand, and
 `host.problem` / `host.recovered` events on a change (health-design.md,
-"As built: host checks"). **Disk fill in a machine (2026-11-22, branch
-`disk-check`):** a check of `type = "disk"`. **What's left of that
+"As built: host checks"). **Disk fill in a machine (2026-11-22, main
+`749544c`):** a check of `type = "disk"`. **What's left of that
 design:** memory in the guest and restart loops, `on_failure =
 "restart"`, a notify hook, the MQTT bridge: none scheduled.
 
@@ -149,7 +149,7 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - Done (2026-11-21): versions and `CHANGELOG.md`.
   flk is 0.6.0; 0.1.0 to 0.5.0 were named afterwards (history.md).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
-- Done (2026-11-22, branch `kernel-record`): each release and boot
+- Done (2026-11-22, main `ce7cf79`): each release and boot
   records its guest kernel (history.md, Machines). Per-app kernels
   (ntsync) are parked until enshrouded asks.
 - Volume snapshots: need volumes on a reflink filesystem or LVM thin (a
