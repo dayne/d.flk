@@ -26,6 +26,13 @@ so the commit named in each heading is what identifies them.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.7.0 (2026-11-24)
+
+The guest kernel on record, checks of the host on a schedule, and a
+check for a disk filling up in a machine.
+
 ### Added
 
 - Each release and each boot records the guest kernel: `kernel:

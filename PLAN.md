@@ -147,7 +147,9 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
 - Done (on main since 53483cd, 2026-11-21): `[flk] log_max_mb`, an app's
   own console.log limit (the last part of enshrouded #3).
 - Done (2026-11-21): versions and `CHANGELOG.md`.
-  flk is 0.6.0; 0.1.0 to 0.5.0 were named afterwards (history.md).
+  0.1.0 to 0.5.0 were named afterwards (history.md); 0.6.0 was the
+  first release, and flk is 0.7.0 since 2026-11-24 (the guest kernel
+  on record, host checks, disk checks).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Done (2026-11-22, main `ce7cf79`): each release and boot
   records its guest kernel (history.md, Machines). Per-app kernels
