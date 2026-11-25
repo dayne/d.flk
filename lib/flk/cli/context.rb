@@ -55,7 +55,7 @@ module Flk
                     { "lan_ip" => Net.host_lan_ip, "address" => Net.host_address }
                   else
                     { "ok" => host.none? { _1["status"] == "fail" }, "problems" => host.reject { _1["status"] == "pass" },
-                      "lan_ip" => Net.host_lan_ip, "address" => Net.host_address, "boot_service" => host.any? { _1["label"].start_with?("boot service (") },
+                      "lan_ip" => Net.host_lan_ip, "address" => Net.host_address, "boot_service" => host.any? { _1["id"] == "boot_service" && _1["status"] == "pass" },
                       "services" => services_status }
                   end,
         "apps" => apps, "next_steps" => plain, "next_steps_detail" => detail }

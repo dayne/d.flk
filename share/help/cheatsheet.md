@@ -18,6 +18,7 @@ Look inside
   flk logs --boot | head -n 100      how the latest boot began, however much came after
   [flk] log_max_mb = N               MB of console.log a machine keeps before rotating (default 10)
   flk check [--all]                  run the [checks] now: does the app still answer? (exit 2: one fails)
+  flk check --host                   the host's own checks (flk doctor's), and since when one has failed
   flk console [ID]                   type to the app (server consoles); leave: Ctrl-b d
   flk console --send "say hi"        one line to the app, no attaching (--wait-log REGEX: see the answer)
   flk machine status ID              everything flk knows about a machine

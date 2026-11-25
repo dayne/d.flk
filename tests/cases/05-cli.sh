@@ -311,6 +311,66 @@ test_machine_extend_grows_the_root_disk() {
   rm -rf "$d"
 }
 
+# Host checks while the host runs (health-design.md step 3): flk check
+# --host keeps doctor's results by id and sends an event when one
+# changes. All of it in a throwaway state dir with doctor stubbed, so the
+# real host's store and event stream never hear of it.
+test_host_checks_report_changes() {
+  local d="$WORK/hostchecks-$RUN_ID"; mkdir -p "$d"
+  local got; got=$(FLK_HOME="$d" FLK_HOST_CONFIRM=0 ruby -I"$FLK_SRC/lib" -rflk -e '
+    H = Flk::HostChecks
+    row = ->(id, status, label = id, hint = nil) { { "id" => id, "label" => label, "status" => status, "hint" => hint } }
+    t = Time.utc(2026, 11, 22, 10)
+    say = ->(rows) { rows.select { _1["changed"] }.map { "#{_1["id"]}=#{_1["changed"]}" }.join(",").then { _1.empty? ? "-" : _1 } }
+    out = []
+    # the first run takes stock: a host that already warns says nothing new
+    out << say.call(H.record([row["bridge", "pass"], row["backup_dir", "warn"]], now: t))
+    out << say.call(H.record([row["bridge", "fail"], row["backup_dir", "warn"]], now: t + 300))
+    out << say.call(H.record([row["bridge", "fail"], row["backup_dir", "warn"]], now: t + 600)) # still failing: said once
+    out << H.stored["checks"]["bridge"]["since"]
+    out << say.call(H.record([row["bridge", "pass"], row["backup_dir", "fail"]], now: t + 900)) # a warning became a failure
+    out << say.call(H.record([row["bridge", "pass"], row["backup_dir", "warn"]], now: t + 1200)) # and a warning again: no news
+    # one id, two problems: as bad as the worst; a check that is no longer reported has recovered
+    r = H.record([row["bridge", "pass"], row["disk", "pass", "/ ok"], row["disk", "warn", "/data 95%"], row["disk", "warn", "/vol 97%"]], now: t + 1500)
+    out << say.call(r) << r.find { _1["id"] == "disk" }["label"]
+    out << say.call(H.record([row["bridge", "pass"]], now: t + 1800))
+    out << [H.due?(t + 1800 + 200), H.due?(t + 1800 + 290), H.stored["checks"].keys.join(",")].join(" ")
+    puts out.join("\n")
+
+    # through the CLI: the events, and a problem seen only at the first of two looks is none
+    cli = Flk::CLI.allocate
+    looks = []
+    cli.define_singleton_method(:doctor_checks) { looks.shift }
+    events = -> { File.exist?(Flk::Events.path) ? File.readlines(Flk::Events.path).map { JSON.parse(_1) } : [] }
+    looks << [row["bridge", "fail", "bridge flkbr0", "sudo setup-host.sh"]] << [row["bridge", "pass", "bridge flkbr0"]]
+    rows = cli.send(:check_host)
+    puts [rows.size, rows[0]["ok"], rows[0]["status"], events.call.size].join(" ")
+    looks << [row["bridge", "fail", "bridge flkbr0", "sudo setup-host.sh"]] << [row["bridge", "fail", "bridge flkbr0", "sudo setup-host.sh"]]
+    rows = cli.send(:check_host)
+    e = events.call.last
+    puts [rows[0].values_at("name", "type", "ok", "status", "changed", "app").inspect, e["type"], e["app"].inspect, e["detail"]].join(" ")
+    looks << [row["bridge", "pass", "bridge flkbr0"]]
+    cli.send(:check_host)
+    puts events.call.map { _1["type"] }.join(",")
+    puts cli.send(:check_host, due: true).inspect # not due yet: nothing runs' 2>&1) || fail "$got"
+  assert_eq '-
+bridge=problem
+-
+2026-11-22T10:05:00Z
+bridge=recovered,backup_dir=problem
+-
+disk=problem,backup_dir=recovered
+/data 95% · /vol 97%
+disk=recovered
+false true bridge
+1 true pass 0
+["bridge", "host", false, "fail", "problem", nil] host.problem nil bridge: fail: bridge flkbr0 -> sudo setup-host.sh
+host.problem,host.recovered
+[]' "$got" "host checks"
+  local out; out=$("$FLK_BIN" check --host --all 2>&1) && fail "check --host --all was accepted"
+  assert_contains "$out" "--host checks the host"
+}
+
 # Which guest kernel: its version from the banner inside the image (what
 # uname -r says), else from the build config next to it; the file's
 # sha256, kept until the file changes.

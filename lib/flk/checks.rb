@@ -97,16 +97,19 @@ module Flk
     # [problem, fix] when checks ask for an interval and nothing runs them
     # (stored results would look healthy for ever); nil when all is well or
     # no check has an interval.
+    # An installed timer that stopped running is a problem with no such
+    # check too: it also runs the host's own checks (HostChecks).
     def runner_problem(machines = interval_machines)
-      return nil if machines.empty?
       apps = machines.map { _1.app.name }.uniq.join(", ")
       unless timer_installed?
+        return nil if machines.empty?
         return ["checks with an interval (#{apps}) aren't run: #{TIMER} isn't installed",
                 "sudo #{SETUP_HOST} --install-service (or by hand: flk check --all)"]
       end
       t = last_run
       return nil if t && Time.now - t < STALE_AFTER
-      ["checks with an interval (#{apps}) #{t ? "last ran #{Util.ago(t.utc.iso8601)}" : 'have never run'}: is #{TIMER} running?",
+      what = machines.empty? ? "the host's checks" : "checks with an interval (#{apps})"
+      ["#{what} #{t ? "last ran #{Util.ago(t.utc.iso8601)}" : 'have never run'}: is #{TIMER} running?",
        "systemctl status #{TIMER} flk-check.service"]
     end
   end

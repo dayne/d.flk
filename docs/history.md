@@ -97,6 +97,25 @@ G numbers lazyflk's docs refer to). Newer work is in `git log`.
 
 ### Setup and host checks
 
+- [x] **Host checks while the host runs** (health-design.md step 3,
+  2026-11-22). The checks `flk doctor` makes are run by the timer every
+  5 minutes (`flk check --all --due`) and by hand (`flk check --host`);
+  each result is kept by the check's new `id` in
+  `STATE/host-checks.json`, and `host.problem` / `host.recovered` events
+  go out when one changes. The first run takes stock; a new problem is
+  looked at twice. Doctor and context still look for themselves and
+  write nothing. Two checks were added: room on the disks under flk's
+  state and volumes (`disk_warn_percent`, 90) and the age of the newest
+  backup of each backed-up volume (`backup_warn_days`, unset = not
+  checked, because flk doesn't know the backup schedule). Decided: one
+  list (doctor's), not a second set of host checks; a warning is a
+  change worth an event but not a failure (`ok` stays true, exit 0).
+  Fixed on the way: doctor's tmux-server check counted machines on
+  another tmux socket. Details in health-design.md, "As built: host
+  checks". Tests (fast, in a throwaway state dir so the real host's
+  store and events never hear of them): `05-cli`
+  test_host_checks_report_changes, `00-config` test_doctor_json (ids)
+  and test_doctor_disk_and_backup_age.
 - [x] **Versions and `CHANGELOG.md`** (Dayne, 2026-11-21). flk had said
   0.1.0 since its first commit. `CHANGELOG.md` now lists what changed
   per version for people who run flk and tools that read it (this file

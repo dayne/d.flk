@@ -312,7 +312,7 @@ module Flk
         raise Error, "expected KEY=VALUE, got: #{arg}" unless arg.include?("=")
         host_key!(key)
         next [key, raw.split(",").map(&:strip)] if LIST_KEYS.include?(key) && raw.include?(",")
-        next [key, raw] unless key.end_with?("_keep", "_days")
+        next [key, raw] unless key.end_with?("_keep", "_days", "_percent")
         [key, Integer(raw, 10)] rescue raise(Error, "#{key} must be a whole number, got: #{raw}")
       end.to_h
 

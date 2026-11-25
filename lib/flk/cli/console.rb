@@ -13,7 +13,7 @@ module Flk
           puts JSON.generate(ev)
         else
           t = (Time.parse(ev["at"]).localtime.strftime("%Y-%m-%d %H:%M:%S") rescue ev["at"])
-          puts [t, name ? nil : ev["app"], ev["machine"] || "-", ev["type"], ev["release"] ? "v#{ev['release']}" : nil, ev["detail"]]
+          puts [t, name ? nil : ev["app"] || "-", ev["machine"] || "-", ev["type"], ev["release"] ? "v#{ev['release']}" : nil, ev["detail"]]
             .compact.join("  ")
         end
       end

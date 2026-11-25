@@ -9,7 +9,9 @@ problems show up there with the fix. Then find the symptom below.
   (`flk help operate`), with an `interval` to have it watched.
 - A check shows "not checked since this boot": nothing has run it since
   the machine booted. `flk check` does; a check with an `interval` needs
-  `flk-check.timer` (`flk doctor` says when it's missing).
+  `flk-check.timer` (`flk doctor` says when it's missing). The timer
+  also runs the host's checks: `flk events --all | grep host\\.` shows
+  when one started to fail, `flk check --host` what fails now.
 - flk doesn't restart it for you: `flk logs -i ID --boot`, then
   `flk machine restart ID` when you decide to.
 

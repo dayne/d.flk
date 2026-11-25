@@ -2,10 +2,11 @@
 
 **Status: steps 1 and 2 of the proposal are built (2026-11-20, on main
 since a4654bc): `flk check`, the results in `flk status`, the change
-events, `interval` with `--due`, and `flk-check.timer`. What was built
-and what was decided on the way is under "As built" below. Not built:
-host checks (step 3), acting on a failure, a notify hook, the MQTT
-bridge.** Drafted 2026-11-11. Decided with Dayne that day: checks report
+events, `interval` with `--due`, and `flk-check.timer`. Step 3, host
+checks, is built too (2026-11-22). What was built and what was decided
+on the way is under "As built" below. Not built: the per-machine
+watches (disk fill and memory in the guest, restart loops), acting on a
+failure, a notify hook, the MQTT bridge.** Drafted 2026-11-11. Decided with Dayne that day: checks report
 and don't act; the MQTT bridge waits until its purpose is clearer. M6
 step 3 built the check kinds that run at deploy (`exec`, `udp`,
 `[deploy] preflight`); this is the part after that: who runs checks while
@@ -52,6 +53,45 @@ read the results.
   on fly. No real app had it, so nothing started running on its own.
   The timer's shortest period is a minute: a shorter interval runs every
   minute.
+
+## As built: host checks (2026-11-22)
+
+- **They are doctor's checks**, not a second list. Each doctor check
+  got an `id` that names what is checked and stays the same while its
+  label's wording and numbers change (`bridge`, `port_helper`,
+  `disk:/data`, `address:10.47.11.3`, `service:flk-net.service`...);
+  `flk doctor --json` has it. A check that finds several problems
+  repeats its id, and counts as its worst.
+- **Results** live in `STATE/host-checks.json`: `{ at, checks: { ID: {
+  status, label, hint, since } } }`. Only `flk check` writes it (`--host`
+  by hand, `--all --due` on the timer, every 5 minutes); `flk doctor`
+  and `flk context` look for themselves and send nothing, so lazyflk's
+  polling isn't a runner.
+- **Events on a change**: `host.problem` when a check that passed warns
+  or fails, or a warning becomes a failure; `host.recovered` when it
+  passes again, or doctor no longer reports it (its subject is gone).
+  `app` and `machine` are null. The first run takes stock and sends
+  nothing: a host that has warned for months has no news.
+- **A new problem is looked at twice**, 3 seconds apart, and counts
+  only if both looks find it (a machine's failed check is tried twice
+  too).
+- **Rows** of `flk check --host --json` have the fields of a machine's
+  check: `name` (the id), `type: "host"`, `what` (the label), `detail`
+  (the fix), `status`. `ok` is false, and the exit code 2, only for a
+  failure: a warning is an optional thing that's off, as in doctor.
+- **Two checks were added** for what the draft listed and doctor didn't
+  know: room on the disks under flk's state and volumes
+  (`disk_warn_percent`, 90), and the age of the newest backup of each
+  backed-up volume (`backup_warn_days`, unset: flk doesn't know when
+  backups should run, so it says nothing until told). Podman storage
+  growth isn't checked.
+- **The watcher**: with the timer installed, doctor warns when it
+  hasn't run for 5 minutes, now also when no app has an interval.
+- **Found on the way**: doctor counted machines on another tmux socket
+  (the tests') as "not in a flk service". On a host that runs the test
+  suite the scheduled run still sees what the tests' apps do to the
+  host (their volumes' disks, their bind addresses), because tests
+  share the state dir.
 
 ## The problem
 

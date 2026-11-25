@@ -480,6 +480,10 @@ module Flk
   #                                       # backup, copy it there too
   #   backup_copy_keep = 7                # copies kept there per volume
   #   backup_copy_warn_days = 8           # doctor warns when the newest copy is older
+  #   backup_warn_days = 2                # doctor warns when a backed-up volume has
+  #                                       # no backup that recent (unset: not checked)
+  #   disk_warn_percent = 90              # doctor warns when the disk under flk's
+  #                                       # state or volumes is this full
   module Host
     # FLK_HOST_CONFIG (tests) swaps the file for this process. Except for
     # `bind`: the port map is one for the whole host, and every flk process
@@ -487,7 +491,9 @@ module Flk
     # (else a test run would move every app's ports; see port_settings).
     HOST_FILE = File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
     PATH = ENV["FLK_HOST_CONFIG"] || HOST_FILE
-    KEYS = %w[backup_dir backup_keep address bind backup_copy_to backup_copy_keep backup_copy_warn_days].freeze
+    KEYS = %w[backup_dir backup_keep address bind backup_copy_to backup_copy_keep backup_copy_warn_days
+              backup_warn_days disk_warn_percent].freeze
+    NUMBERS = { "disk_warn_percent" => 1..100, "backup_warn_days" => 1..3650 }.freeze
 
     module_function
 
@@ -500,10 +506,15 @@ module Flk
         raise Error, "#{path}: address is one address" unless a.size == 1 && a != ["all"]
       end
       h["bind"] = AppConfig.bind_list(h["bind"], "#{path}: bind") if h.key?("bind")
+      NUMBERS.each do |key, range|
+        next if h[key].nil? || (h[key].is_a?(Integer) && range.cover?(h[key]))
+        raise Error, "#{path}: #{key} must be a whole number from #{range.min} to #{range.max} (got '#{h[key]}')"
+      end
       h
     rescue TOML::ParseError => e
       raise Error, "#{path}: #{e.message}"
     end
+
 
     # The settings that shape the host-wide port map (bind): always the
     # host's own file, whatever FLK_HOST_CONFIG says.

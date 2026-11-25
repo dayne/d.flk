@@ -16,8 +16,9 @@ What's safe to do on the host, and what stops machines.
   shutdown. Restarting it does the same: stop all, start all.
 - `flk-check.timer`: every minute, `flk-check.service` runs
   `flk check --all --due`: the health checks that have an `interval` and
-  are due. It does nothing when no app has one, and never touches a
-  machine: checks only report (`flk help operate`).
+  are due, and every 5 minutes the host's own checks (what `flk doctor`
+  checks; `host.problem` and `host.recovered` events when one changes).
+  It never touches a machine: checks only report (`flk help operate`).
 
 `flk doctor` checks they're installed and current; after updating flk,
 re-run `--install-service` when it says so (it doesn't stop machines).

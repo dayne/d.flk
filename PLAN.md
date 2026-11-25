@@ -126,9 +126,12 @@ check`, results in `flk status`, change events, `interval` and
 `flk-check.timer`. Checks report and don't act. Tested: fast, VM case
 47, then the full suite. On a host, the timer needs `sudo setup-host.sh
 --install-service` once more, and an app gets an interval at its next
-deploy. **What's left of that design:** host checks on the same timer,
-`on_failure = "restart"`, a notify hook, the MQTT bridge: none
-scheduled.
+deploy. **Host checks (2026-11-22, branch `host-checks`):** the timer
+runs doctor's checks every 5 minutes, `flk check --host` by hand, and
+`host.problem` / `host.recovered` events on a change (health-design.md,
+"As built: host checks"). **What's left of that design:** watches inside
+a machine (disk fill, memory, restart loops), `on_failure = "restart"`,
+a notify hook, the MQTT bridge: none scheduled.
 
 All of it is additive and opt-in, so real apps are unaffected. Tell
 flkforge about each one with the commit and its JSON, as with lazyflk.

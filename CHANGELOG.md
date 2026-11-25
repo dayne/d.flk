@@ -37,6 +37,25 @@ so the commit named in each heading is what identifies them.
   machine booted another kernel than before.
 - `flk doctor --json` has `kernel`, and `flk context --json` has
   `flk.kernel`: the kernel machines boot from now on.
+- Host checks on a schedule: `flk-check.timer` now also runs what
+  `flk doctor` checks, every 5 minutes, and `flk check --host` runs them
+  by hand. Events `host.problem` and `host.recovered` say when one
+  changes; their `app` is null.
+- `flk doctor --json`: every check has an `id` that stays the same
+  while its label changes.
+- Two doctor checks: room on the disks under flk's state and volumes
+  (host setting `disk_warn_percent`, default 90), and, with the host
+  setting `backup_warn_days`, a backed-up volume with no recent backup.
+
+### Fixed
+
+- `flk doctor` warned that machines weren't in a flk service when a
+  machine ran on another tmux socket (the test suite's).
+
+### On the host
+
+- Nothing to run where `flk-check.timer` is installed: its next run
+  includes the host checks.
 
 ## 0.6.0 (2026-11-21)
 

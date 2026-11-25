@@ -183,7 +183,54 @@ test_doctor_json() {
     abort "ok missing" unless [true, false].include?(d["ok"])
     abort "no checks" if d["checks"].empty?
     d["checks"].each { |c| abort "bad check #{c}" unless c["label"].is_a?(String) && %w[pass fail warn].include?(c["status"]) }
+    # every check has an id that names what is checked (flk check --host follows a check by it)
+    d["checks"].each { |c| abort "no id: #{c}" unless c["id"].to_s.match?(/\A[a-z_]+(:\S.*)?\z/) }
+    %w[kvm bridge kernel engine].each { |id| abort "no #{id} check" unless d["checks"].any? { _1["id"] == id } }
+    abort "no disk check" unless d["checks"].any? { _1["id"].start_with?("disk:/") }
     abort "ok disagrees with checks" unless d["ok"] == d["checks"].none? { _1["status"] == "fail" }' "$out"
+}
+
+# Two host checks with a setting each: room on the disk under flk's
+# state (disk_warn_percent), and how old a backed-up volume's newest
+# backup may be (backup_warn_days; without it flk says nothing, because
+# it doesn't know when backups should run).
+test_doctor_disk_and_backup_age() {
+  local h="$WORK/host-doctor-$RUN_ID.toml" out
+  disk() { FLK_HOST_CONFIG="$h" "$FLK_BIN" doctor --json | ruby -rjson -e '
+    c = JSON.parse($stdin.read)["checks"].select { _1["id"].start_with?("disk:", "host_config") }
+    puts c.map { "#{_1["id"][/\A[a-z_]+/]} #{_1["status"]}" }.uniq.join(", ")'; }
+  : >"$h"
+  assert_eq "disk pass" "$(disk)" "room on the disk, at the default 90%"
+  echo 'disk_warn_percent = 1' >"$h"
+  assert_eq "disk warn" "$(disk)" "a limit of 1% warns"
+  assert_contains "$(FLK_HOST_CONFIG="$h" "$FLK_BIN" doctor)" "% used"
+  echo 'disk_warn_percent = 0' >"$h"
+  assert_contains "$(disk)" "host_config warn" "a limit of 0 is a settings mistake, said as one"
+  : >"$h"
+  out=$(FLK_HOST_CONFIG="$h" "$FLK_BIN" config set disk_warn_percent=101 2>&1) && fail "config set took 101%"
+  assert_contains "$out" "disk_warn_percent must be a whole number from 1 to 100"
+  FLK_HOST_CONFIG="$h" "$FLK_BIN" config set disk_warn_percent=85 backup_warn_days=2 >/dev/null || fail "config set"
+  assert_contains "$(cat "$h")" "disk_warn_percent = 85"
+  assert_contains "$(cat "$h")" "backup_warn_days = 2"
+
+  out=$(FLK_HOME="$WORK/state-doctor-$RUN_ID" FLK_HOST_CONFIG="$h" ruby -I"$FLK_SRC/lib" -rflk -e '
+    A = Struct.new(:name, :volumes)
+    apps = [A.new("games", [{ "name" => "world" }, { "name" => "mods" }, { "name" => "never" }])]
+    Flk::App.define_singleton_method(:all) { apps }
+    ages = { "world" => [1, 9], "mods" => [5, 30], "never" => [] } # days
+    Flk::Backup.define_singleton_method(:list) { |_root, _app, v| ages[v["name"]].map { { "created_at" => (Time.now - _1 * 86_400).utc.iso8601 } } }
+    cli = Flk::CLI.allocate
+    run = lambda do
+      got = []
+      cli.send(:backup_age_check, ->(id, label, status, _hint) { got << "#{id} #{status}: #{label}" }, "/nowhere")
+      got
+    end
+    puts run.call
+    File.write(ENV["FLK_HOST_CONFIG"], "backup_warn_days = 7\n"); puts run.call
+    File.write(ENV["FLK_HOST_CONFIG"], "") ; puts run.call.inspect' 2>&1) || fail "$out"
+  assert_eq $'backup_age warn: no backup in 2 days: games/mods (newest 5d ago)\nbackup_age pass: every backed-up volume has a backup from the last 7 days\n[]' \
+    "$out" "backup_warn_days"
+  rm -f "$h"
 }
 
 # [http_service] is only forwarded when [flk] http_port picks the host port

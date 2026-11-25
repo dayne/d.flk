@@ -157,39 +157,42 @@ module Flk
 
     def doctor_checks
       results = []
-      record = lambda do |label, status, hint|
-        results << { "label" => label, "status" => status, "hint" => status == "pass" ? nil : hint }
+      # id: a name for what is checked that stays the same whatever the label
+      # says (flk check --host follows a check by it); a check that finds
+      # several problems repeats its id.
+      record = lambda do |id, label, status, hint|
+        results << { "id" => id, "label" => label, "status" => status, "hint" => status == "pass" ? nil : hint }
       end
-      check = ->(label, ok, hint = nil) { record[label, ok ? "pass" : "fail", hint] }
-      check["/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
+      check = ->(id, label, ok, hint = nil) { record[id, label, ok ? "pass" : "fail", hint] }
+      check["kvm", "/dev/kvm read/write", File.readable?("/dev/kvm") && File.writable?("/dev/kvm"),
             "#{Util.setup_host_cmd} (adds you to kvm group; log out/in)"]
-      check["bridge #{Net::BRIDGE}", Net.bridge_up?, Util.setup_host_cmd]
+      check["bridge", "bridge #{Net::BRIDGE}", Net.bridge_up?, Util.setup_host_cmd]
       taps = (0...Net::POOL).count { Net.tap_exists?(_1) }
-      check["tap pool #{taps}/#{Net::POOL}", taps.positive?, Util.setup_host_cmd]
+      check["taps", "tap pool #{taps}/#{Net::POOL}", taps.positive?, Util.setup_host_cmd]
       fwd = (File.read("/proc/sys/net/ipv4/ip_forward").strip == "1" rescue false)
-      check["ipv4 forwarding", fwd, Util.setup_host_cmd]
+      check["ip_forward", "ipv4 forwarding", fwd, Util.setup_host_cmd]
       fc = begin; VM.firecracker_bin; rescue Error; nil; end
-      check["firecracker #{fc}", !fc.nil?, "flk setup"]
-      check["guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
+      check["firecracker", "firecracker #{fc}", !fc.nil?, "flk setup"]
+      check["kernel", "guest kernel #{VM.kernel}", File.exist?(VM.kernel), "flk setup"]
       { "tmux" => "tmux", "mkfs.ext4" => "e2fsprogs", "fakeroot" => "fakeroot" }.each do |bin, pkg|
-        check[bin, !Util.which(bin).nil?, "install #{pkg}"]
+        check["bin:#{bin}", bin, !Util.which(bin).nil?, "install #{pkg}"]
       end
       eng = begin; Image.engine; rescue Error; nil; end
-      check["container engine (#{eng || 'none'})", !eng.nil?, "install podman (or docker)"]
+      check["engine", "container engine (#{eng || 'none'})", !eng.nil?, "install podman (or docker)"]
       if eng && Image.podman?(eng)
         if Image.short_names_resolve?
-          record["podman resolves short image names (FROM ruby:3.3)", "pass", nil]
+          record["short_names", "podman resolves short image names (FROM ruby:3.3)", "pass", nil]
         else
-          record["podman can't resolve short image names like FROM ruby:3.3 (full names work)", "warn", Image::REGISTRIES_FIX]
+          record["short_names", "podman can't resolve short image names like FROM ruby:3.3 (full names work)", "warn", Image::REGISTRIES_FIX]
         end
       end
       if eng && (orphans = Image.orphan_repos).any?
-        record["#{orphans.size} destroyed app#{'s' if orphans.size > 1} still have container images", "warn", "flk apps prune"]
+        record["orphan_images", "#{orphans.size} destroyed app#{'s' if orphans.size > 1} still have container images", "warn", "flk apps prune"]
       end
       if eng && Image.podman?(eng)
         old = Image.storage_containers.select { (Time.now - Time.parse(_1[2].to_s) rescue 0) > 3600 }
         if old.any?
-          record["#{old.size} build container#{'s' if old.size > 1} left over (interrupted builds?): #{old.map { _1[1] }.join(', ')}",
+          record["build_containers", "#{old.size} build container#{'s' if old.size > 1} left over (interrupted builds?): #{old.map { _1[1] }.join(', ')}",
                  "warn", "if no build is running: #{Image.cleanup_command(old)}"]
         end
       end
@@ -197,6 +200,7 @@ module Flk
       boot_service_check(record)
       exit_hook_check(record)
       tmux_server_check(record)
+      disk_space_check(record)
       backup_check(record)
       services_check(record)
       address_check(record)
@@ -256,14 +260,14 @@ module Flk
       return if VM.tmux_sessions.empty? # nothing running: the next start installs it
       bin = VM.exit_hook_bin
       if bin.nil?
-        record["exit hook missing: machines that exit won't be noticed", "warn", "flk resume (re-installs it)"]
+        record["exit_hook", "exit hook missing: machines that exit won't be noticed", "warn", "flk resume (re-installs it)"]
       elsif !File.executable?(bin)
-        record["exit hook runs #{bin}, which is gone", "warn", "flk resume (re-installs it)"]
+        record["exit_hook", "exit hook runs #{bin}, which is gone", "warn", "flk resume (re-installs it)"]
       elsif bin != VM.hook_bin
-        record["exit hook runs #{bin}, not #{VM.hook_bin} (the boot service's flk)", "warn",
+        record["exit_hook", "exit hook runs #{bin}, not #{VM.hook_bin} (the boot service's flk)", "warn",
                "#{VM.hook_bin} resume (re-installs it)"]
       else
-        record["exit hook (#{bin})", "pass", nil]
+        record["exit_hook", "exit hook (#{bin})", "pass", nil]
       end
     end
 
@@ -276,15 +280,19 @@ module Flk
     def tmux_server_check(record)
       return unless VM::SOCKET == "flk" && File.exist?("/etc/systemd/system/flk-machines.service")
       server = VM.tmux_server_pid or return
-      pids = [server] + App.all.flat_map(&:machines).select(&:running?).map(&:pid)
+      # only machines on this tmux server: one started on another socket
+      # (the tests' own) lives wherever that server does, and isn't ours to
+      # stop at shutdown
+      here = VM.tmux_sessions
+      pids = [server] + App.all.flat_map(&:machines).select { _1.running? && here.include?(_1.session) }.map(&:pid)
       units = pids.filter_map { VM.cgroup_unit(_1) }.uniq
       return if units.empty?
       stray = units - [VM::SERVER_UNIT, "flk-machines.service"]
       if stray.empty?
-        record["machines run under #{units.join(', ')} (stopped gracefully at shutdown)", "pass", nil]
+        record["tmux_server", "machines run under #{units.join(', ')} (stopped gracefully at shutdown)", "pass", nil]
       else
         restart = VM.server_unit? ? "flk resume" : "sudo systemctl restart flk-machines.service"
-        record["flk's tmux server or machines run in #{stray.first(3).join(', ')}, not a flk service: " \
+        record["tmux_server", "flk's tmux server or machines run in #{stray.first(3).join(', ')}, not a flk service: " \
                "at shutdown they're killed, not stopped", "warn",
                "when they can stop: flk stop-all && #{VM::TMUX.join(' ')} kill-server && #{restart}"]
       end
@@ -306,19 +314,19 @@ module Flk
       bound = (Array(ps["bind"]) - ["all"]).any? ||
               App.all.any? { |a| a.machines.any? { (Array(_1.config["bind"]) - ["all"]).any? } }
       if bound && Ports.available? && !Ports.per_address?
-        record["bind is set, but the port helper predates it: ports still answer on every host address", "warn",
+        record["bind_helper", "bind is set, but the port helper predates it: ports still answer on every host address", "warn",
                Util.setup_host_cmd]
       end
       wanted.each do |addr, why|
         if local.include?(addr)
-          record["#{addr} (#{why}) is on this host", "pass", nil]
+          record["address:#{addr}", "#{addr} (#{why}) is on this host", "pass", nil]
         else
-          record["#{addr} (#{why}) isn't on this host: nothing answers there", "warn",
+          record["address:#{addr}", "#{addr} (#{why}) isn't on this host: nothing answers there", "warn",
                  "add it to the interface (netplan), or ignore while another host holds it (floating address)"]
         end
       end
     rescue Error => e
-      record[e.message, "warn", "fix #{Host::PATH}"]
+      record["host_config", e.message, "warn", "fix #{Host::PATH}"]
     end
 
     # Only when some machine uses a 2M pool: will the ones that aren't
@@ -330,9 +338,9 @@ module Flk
       waiting = ms.reject(&:running?).select { _1.desired_state == "started" }.sum { VM.huge_pages_needed(_1.config) }
       label = "huge pages: #{pool[:available]} of #{pool[:total]} (2M) free for #{ms.size} machine#{'s' if ms.size > 1} using them"
       if (why = VM.huge_pages_short(waiting, pool[:available]))
-        record["#{label}; machines that should run #{why.lines.first.strip}", "warn", why.lines[1..].map(&:strip).first(2).join(" && ")]
+        record["huge_pages", "#{label}; machines that should run #{why.lines.first.strip}", "warn", why.lines[1..].map(&:strip).first(2).join(" && ")]
       else
-        record[label, "pass", nil]
+        record["huge_pages", label, "pass", nil]
       end
     end
 
@@ -359,7 +367,7 @@ module Flk
     # boot_service_check (and setup-host.sh).
     def services_check(record)
       services_status.select { _1["installed"] && _1["active"] == "failed" }.each do |s|
-        record["#{s['unit']} failed (#{s['result']}) #{Util.ago(s['since']) if s['since']}".strip, "warn",
+        record["service:#{s['unit']}", "#{s['unit']} failed (#{s['result']}) #{Util.ago(s['since']) if s['since']}".strip, "warn",
                "journalctl -u #{s['unit']} -b, then sudo systemctl restart #{s['unit']}"]
       end
     end
@@ -369,17 +377,18 @@ module Flk
       dir = Host.settings["backup_dir"]
       if dir.nil?
         return unless App.all.any? { _1.volumes.any? }
-        record["no backup_dir set: flk volumes backup needs --to DIR", "warn",
+        record["backup_dir", "no backup_dir set: flk volumes backup needs --to DIR", "warn",
                "flk config set backup_dir=/path/to/backups"]
       elsif !File.directory?(dir) || !File.writable?(dir)
-        record["backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn",
+        record["backup_dir", "backup_dir #{dir} is missing or not writable (disk not mounted?)", "warn",
                "mount it, or: flk config set backup_dir=/new/path"]
       else
         backup_space_check(record, dir)
+        backup_age_check(record, dir)
         backup_copy_check(record, dir)
       end
     rescue Error => e
-      record[e.message, "warn", "fix #{Host::PATH}"]
+      record["host_config", e.message, "warn", "fix #{Host::PATH}"]
     end
 
     # Will `keep` backups of every volume that has backups fit? Each takes
@@ -402,10 +411,60 @@ module Flk
       label = "backups go to #{root}: #{Backup.gb(now)} now, about #{Backup.gb(steady)} at their keep counts; " \
               "#{Backup.gb(free)} free; #{%w[xfs btrfs].include?(fs) ? "#{fs}: copies of volumes on it are instant" : "full copies (#{fs || '?'} has no reflinks)"}"
       if steady > room * 0.9
-        record["#{label}: that's tight (#{(100.0 * steady / room).round}% of #{Backup.gb(room)})", "warn",
+        record["backup_space", "#{label}: that's tight (#{(100.0 * steady / room).round}% of #{Backup.gb(room)})", "warn",
                "lower backup_keep / [flk.backup] keep, or give #{root} more space"]
       else
-        record[label, "pass", nil]
+        record["backup_space", label, "pass", nil]
+      end
+    end
+
+    # Is there room where flk keeps its state and its volumes? Volume and
+    # root disk files are sparse: they grow as the apps write, and a full
+    # disk under them is an I/O error inside every machine on it. One line
+    # per filesystem; a warning from disk_warn_percent used (default 90).
+    def disk_space_check(record)
+      limit = Host.settings["disk_warn_percent"] || 90
+      seen = {}
+      mount_dirs.each do |dir|
+        out, st = Open3.capture2("df", "-P", "-B1", dir, err: File::NULL)
+        next unless st.success?
+        _dev, size, _used, avail, _pct, mount = out.lines.last.to_s.split(nil, 6)
+        mount = mount.to_s.strip
+        next if mount.empty? || size.to_i.zero? || seen[mount]
+        seen[mount] = true
+        pct = (100.0 * (size.to_i - avail.to_i) / size.to_i).round
+        what = dir == ROOT ? "flk's state" : "volumes in #{dir}"
+        label = "disk #{mount} (#{what}): #{pct}% used, #{Backup.gb(avail.to_i)} free"
+        if pct >= limit
+          record["disk:#{mount}", "#{label}: volumes and root disks grow as apps write, and a full disk stops them",
+                 "warn", "flk disk (what flk uses), flk images prune, or more space; the limit is disk_warn_percent (#{limit})"]
+        else
+          record["disk:#{mount}", label, "pass", nil]
+        end
+      end
+    rescue Error => e
+      record["host_config", e.message, "warn", "fix #{Host::PATH}"]
+    rescue SystemCallError
+      nil # no df: nothing to say
+    end
+
+    # With backup_warn_days: has every volume that is being backed up got
+    # a backup that recent? flk doesn't know when backups should run (cron
+    # does), so without the setting it says nothing; a volume that was
+    # never backed up isn't one that is being backed up.
+    def backup_age_check(record, root)
+      days = Host.settings["backup_warn_days"] or return
+      old = App.all.flat_map do |a|
+        a.volumes.filter_map do |v|
+          newest = Backup.list(root, a.name, v).filter_map { Time.parse(_1["created_at"].to_s) rescue nil }.max or next
+          "#{a.name}/#{v['name']} (newest #{Util.ago(newest.utc.iso8601)})" if Time.now - newest > days * 86_400
+        end
+      end
+      if old.any?
+        record["backup_age", "no backup in #{days} days: #{old.join(', ')}", "warn",
+               "is the backup job running? By hand: flk -a APP volumes backup"]
+      else
+        record["backup_age", "every backed-up volume has a backup from the last #{days} days", "pass", nil]
       end
     end
 
@@ -422,31 +481,35 @@ module Flk
         end
       end
       if stale.any?
-        record["backup copies to #{dest} are missing or older than #{days.to_i} days: #{stale.join(', ')}", "warn",
+        record["backup_copies", "backup copies to #{dest} are missing or older than #{days.to_i} days: #{stale.join(', ')}", "warn",
                "flk -a APP volumes copy (and check that backups run: flk -a APP volumes backups)"]
       else
-        record["backups are copied to #{dest}", "pass", nil]
+        record["backup_copies", "backups are copied to #{dest}", "pass", nil]
       end
     end
 
     # Optional: flk exec / ssh console need the agent in new releases.
     def agent_check(record)
       if File.exist?(Agent.path) && !Agent.stale?
-        record["flk-agent built (flk exec in releases deployed from now on)", "pass", nil]
+        record["agent", "flk-agent built (flk exec in releases deployed from now on)", "pass", nil]
       elsif Agent.go
-        record["flk-agent #{File.exist?(Agent.path) ? 'is older than its source' : 'not built yet'} (built at the next deploy)", "pass", nil]
+        record["agent", "flk-agent #{File.exist?(Agent.path) ? 'is older than its source' : 'not built yet'} (built at the next deploy)", "pass", nil]
       else
-        record["no flk-agent and no Go to build it: releases get no flk exec / flk ssh console", "warn",
+        record["agent", "no flk-agent and no Go to build it: releases get no flk exec / flk ssh console", "warn",
                "install Go (or set FLK_GO), then flk setup"]
       end
     end
 
     # Only when some machine's checks have an interval: they need the timer.
+    # The timer also runs the host's own checks, so once it's installed it
+    # has to keep running whether or not an app has an interval.
     def check_runner_check(record)
       ms = Checks.interval_machines
-      return if ms.empty?
+      return if ms.empty? && !Checks.timer_installed?
       problem, fix = Checks.runner_problem(ms)
-      problem ? record[problem, "warn", fix] : record["checks with an interval run every minute (#{Checks::TIMER})", "pass", nil]
+      return record["check_runner", problem, "warn", fix] if problem
+      label = ms.empty? ? "the host's checks run every #{HostChecks::EVERY / 60} minutes" : "checks with an interval run every minute"
+      record["check_runner", "#{label} (#{Checks::TIMER})", "pass", nil]
     end
 
     # Optional: without it nothing comes back after a reboot.
@@ -455,38 +518,38 @@ module Flk
       ok = File.exist?(unit) && system("systemctl", "is-enabled", "--quiet", "flk-machines.service", err: File::NULL)
       fix = "sudo #{SETUP_HOST} --install-service"
       if !ok
-        record["boot service: after a reboot the network and machines stay down", "warn", fix]
+        record["boot_service", "boot service: after a reboot the network and machines stay down", "warn", fix]
       elsif !File.exist?("/etc/systemd/system/#{VM::SERVER_UNIT}")
-        record["boot service predates #{VM::SERVER_UNIT}: machines started from a shell can be killed, " \
+        record["boot_service", "boot service predates #{VM::SERVER_UNIT}: machines started from a shell can be killed, " \
                "not stopped, at shutdown", "warn", fix]
       elsif !File.read("/etc/systemd/system/#{VM::SERVER_UNIT}").include?("ExecStartPost=")
-        record["#{VM::SERVER_UNIT} predates resuming after a restart: if it's restarted (needrestart after " \
+        record["boot_service", "#{VM::SERVER_UNIT} predates resuming after a restart: if it's restarted (needrestart after " \
                "an apt upgrade), every machine stays stopped until flk resume", "warn", fix]
       elsif (gaps = mount_dirs.filter_map { mount_gap(_1) }).any?
-        gaps.each { |problem, how| record[problem, "warn", how] }
+        gaps.each { |problem, how| record["boot_service", problem, "warn", how] }
       else
-        record["boot service (machines come back after a reboot)", "pass", nil]
+        record["boot_service", "boot service (machines come back after a reboot)", "pass", nil]
       end
     rescue SystemCallError
-      record["boot service: systemctl not found", "warn", "after a reboot: #{Util.setup_host_cmd} && flk resume"]
+      record["boot_service", "boot service: systemctl not found", "warn", "after a reboot: #{Util.setup_host_cmd} && flk resume"]
     end
 
     # Optional: without it machines run, but [[services.ports]] isn't forwarded.
     def port_helper_check(record)
       fix = Util.setup_host_cmd
       if !Ports.available?
-        record["port helper (forwarding [[services.ports]])", "warn", fix]
+        record["port_helper", "port helper (forwarding [[services.ports]])", "warn", fix]
       elsif !system("sudo", "-n", "-l", Ports::HELPER, out: File::NULL, err: File::NULL)
-        record["port helper usable without a password", "warn", fix]
+        record["port_helper", "port helper usable without a password", "warn", fix]
       elsif !File.read(Ports::HELPER).match?(/^min_port=/)
-        record["port helper up to date (host port guard)", "warn", fix]
+        record["port_helper", "port helper up to date (host port guard)", "warn", fix]
       elsif VM.server_unit? && !File.read(Ports::HELPER).include?("start-tmux")
-        record["port helper predates #{VM::SERVER_UNIT}: flk can't start its tmux server there", "warn", fix]
+        record["port_helper", "port helper predates #{VM::SERVER_UNIT}: flk can't start its tmux server there", "warn", fix]
       else
-        record["port helper (host ports from #{Ports.min_port})", "pass", nil]
+        record["port_helper", "port helper (host ports from #{Ports.min_port})", "pass", nil]
       end
     rescue SystemCallError => e
-      record["port helper: #{e.message}", "warn", fix]
+      record["port_helper", "port helper: #{e.message}", "warn", fix]
     end
   end
 end
