@@ -18,7 +18,7 @@ require "rbconfig"
 module Flk
   # What changed in each version is in CHANGELOG.md; a release sets this
   # (AGENTS.md), and 05-cli checks the two agree.
-  VERSION = "0.7.0"
+  VERSION = "0.8.0"
   # The "schema" of flk's JSON documents (context, doctor, help --all):
   # adding fields keeps it; renaming, removing or retyping one bumps it.
   JSON_SCHEMA = 1

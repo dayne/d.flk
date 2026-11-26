@@ -1,6 +1,7 @@
 # An app written here, run on another host
 
-**Status: R1 to R3 are built (2026-11-25, branch `remote-design`), with
+**Status: R1 to R3 are built (2026-11-25, on main since `b3618cf`, flk
+0.8.0), with
 `[flk] host` in flk.toml as Dayne asked, so the host needn't be named on
 every command. "As built" below says what exists and where it differs
 from the plan under it. R4 and R5 are not built.** Dayne set flk up on a
@@ -82,6 +83,18 @@ logs, releases (FROM mud), `exec --stdin`, exit codes, a secret from
 stdin, `-a APP` from another directory and `flk peers` all answered from
 nexus. It found one bug the fake peer can't (rsync's `-e` doesn't read
 shell backslashes).
+
+### Keeping the hosts on one version
+
+Both hosts need the same flk. nexus's checkout (`~/Projects/d.flk`) has
+a git remote `mud` (this host's `~/flk`, over ssh; set up 2026-11-25),
+so it follows mud's main without anything going through GitHub:
+
+    ssh nexus "sh -c 'git -C ~/Projects/d.flk pull --ff-only mud main && git -C ~/Projects/d.flk fetch mud --tags'"
+    flk peers        # or: flk -H nexus version --json
+
+Its `origin` is still GitHub. A change to `setup-host.sh` or the units
+needs its root step on nexus as on any host (CHANGELOG, "On the host").
 
 ### What went wrong once
 

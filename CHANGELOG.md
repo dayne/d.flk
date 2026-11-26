@@ -26,6 +26,10 @@ so the commit named in each heading is what identifies them.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.8.0 (2026-11-25)
+
 An app written on one host and run on another, over ssh.
 
 ### Added

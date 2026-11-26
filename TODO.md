@@ -82,8 +82,8 @@ JSON field is additive: lazyflk ignores unknown fields and treats missing
 ones as "not supported by this flk", so nothing existing may change
 shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
 
-- [ ] **Apps on another host (branch `remote-design`, 2026-11-25).**
-  Additive, to tell lazyflk when it's on main: `flk peers --json`;
+- [ ] **Apps on another host (flk 0.8.0, main `b3618cf`, 2026-11-25).**
+  Additive, to tell lazyflk: `flk peers --json`;
   `flk version --json` (`host`); `origin` on a release; `-H HOST` /
   `FLK_HOST` on every command, so a second host is the same CLI with one
   more option. `flk apps list` and `context --all` still show this host

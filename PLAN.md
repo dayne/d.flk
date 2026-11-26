@@ -90,8 +90,8 @@ Tailscale and the other larger pieces, which decide its open questions
 (transport, service address, witness). Settle those before building
 past P0.
 
-**A first piece, built 2026-11-25 (branch `remote-design`, not on main
-yet):** an app written on mud and run on nexus over ssh: `[flk] host`,
+**A first piece, built 2026-11-25 (on main since `b3618cf`, flk
+0.8.0):** an app written on mud and run on nexus over ssh: `[flk] host`,
 `-H PEER` / `FLK_HOST`, deploy to a peer, `flk peers`
 (`docs/remote-design.md`, "As built"; `flk help remote`). It is P0 plus
 the transport P1 needs, and it doesn't wait on Tailscale. Tested: fast,
@@ -157,8 +157,9 @@ flkforge about each one with the commit and its JSON, as with lazyflk.
   own console.log limit (the last part of enshrouded #3).
 - Done (2026-11-21): versions and `CHANGELOG.md`.
   0.1.0 to 0.5.0 were named afterwards (history.md); 0.6.0 was the
-  first release, and flk is 0.7.0 since 2026-11-24 (the guest kernel
-  on record, host checks, disk checks).
+  first release, 0.7.0 came 2026-11-24 (the guest kernel on record,
+  host checks, disk checks), and flk is 0.8.0 since 2026-11-25 (an app
+  on another host).
 - Machine snapshots (Firecracker snapshot/restore): nothing blocks it.
 - Done (2026-11-22, main `ce7cf79`): each release and boot
   records its guest kernel (history.md, Machines). Per-app kernels
