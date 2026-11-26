@@ -113,6 +113,17 @@ module Flk
 
     def rootfs_extra_mb = (data.dig("flk", "rootfs_extra_mb") || 512).to_i
 
+    # [flk] host: the flk host this app runs on (Peer). nil: wherever flk
+    # is run. On that host itself the key changes nothing.
+    def host
+      v = data.dig("flk", "host")
+      return nil if v.nil?
+      unless v.is_a?(String) && v.match?(Peer::NAME) && v != Peer::LOCAL
+        raise Error, "[flk] host is the name of a flk host, e.g. host = \"nexus\" (got '#{v}')"
+      end
+      v
+    end
+
     # [flk] log_max_mb: the size at which this app's machines rotate
     # console.log to console.log.1 (nil: the host's FLK_LOG_MAX_MB).
     def log_max_mb
@@ -498,6 +509,11 @@ module Flk
   #                                       # no backup that recent (unset: not checked)
   #   disk_warn_percent = 90              # doctor warns when the disk under flk's
   #                                       # state or volumes is this full
+  #   name = "mud"                        # this host's name among flk hosts
+  #                                       # (default: the hostname); an app whose
+  #                                       # [flk] host says it runs here
+  #   [peers]                             # other flk hosts: name = ssh destination
+  #     nexus = "dayne@10.47.11.85"       # (a name not listed is its own destination)
   module Host
     # FLK_HOST_CONFIG (tests) swaps the file for this process. Except for
     # `bind`: the port map is one for the whole host, and every flk process
@@ -506,7 +522,7 @@ module Flk
     HOST_FILE = File.join(ENV["XDG_CONFIG_HOME"] || File.join(Dir.home, ".config"), "flk", "host.toml")
     PATH = ENV["FLK_HOST_CONFIG"] || HOST_FILE
     KEYS = %w[backup_dir backup_keep address bind backup_copy_to backup_copy_keep backup_copy_warn_days
-              backup_warn_days disk_warn_percent].freeze
+              backup_warn_days disk_warn_percent name peers].freeze
     NUMBERS = { "disk_warn_percent" => 1..100, "backup_warn_days" => 1..3650 }.freeze
 
     module_function
@@ -520,6 +536,10 @@ module Flk
         raise Error, "#{path}: address is one address" unless a.size == 1 && a != ["all"]
       end
       h["bind"] = AppConfig.bind_list(h["bind"], "#{path}: bind") if h.key?("bind")
+      raise Error, "#{path}: name is a host name (got '#{h['name']}')" unless h["name"].nil? || h["name"].to_s.match?(Peer::NAME)
+      unless h["peers"].nil? || (h["peers"].is_a?(Hash) && h["peers"].all? { |k, v| k.match?(Peer::NAME) && v.to_s.match?(Peer::NAME) })
+        raise Error, "#{path}: [peers] lists other flk hosts as name = \"ssh destination\""
+      end
       NUMBERS.each do |key, range|
         next if h[key].nil? || (h[key].is_a?(Integer) && range.cover?(h[key]))
         raise Error, "#{path}: #{key} must be a whole number from #{range.min} to #{range.max} (got '#{h[key]}')"

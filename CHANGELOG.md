@@ -26,7 +26,36 @@ so the commit named in each heading is what identifies them.
 
 ## Unreleased
 
-Nothing yet.
+An app written on one host and run on another, over ssh.
+
+### Added
+
+- `[flk] host = "NAME"` in flk.toml: the app runs on that flk host. From
+  another host, the commands about the app (`status`, `logs`, `deploy`,
+  `secrets`, `volumes`...) are sent there over ssh; on that host the key
+  changes nothing. `flk help remote` is the guide.
+- `-H HOST` (`--on-host HOST`) and `FLK_HOST`: run any command on another
+  flk host. `local` means this one, whatever flk.toml says.
+- `flk launch`, `flk deploy` and `flk build` for an app on another host
+  first send the directory holding flk.toml (not `.git`, nor what
+  `.flkignore` lists) into `src/APP/` of that host's state dir, then
+  build and deploy there.
+- Releases record where they were sent from: `origin: {host, path,
+  commit, dirty}` in `flk releases --json`, and a FROM column in `flk
+  releases` for apps that have one.
+- `flk peers [--json]`: the other flk hosts this one knows, each asked
+  for its version, name and machine subnet.
+- `flk version --json`: `{schema, version, host, root, subnet}`.
+- host.toml: `name` (this host's name among flk hosts; default the
+  hostname) and `[peers]` (`name = "ssh destination"`).
+- Environment: `FLK_HOST`, `FLK_SSH`, `FLK_REMOTE_FLK`.
+- `flk apps destroy` also removes the directory another host sent for
+  the app.
+
+### On the host
+
+- Both hosts need this version for a deploy from one to the other; `flk
+  peers` shows each one's. Nothing to install: it uses ssh and rsync.
 
 ## 0.7.0 (2026-11-24)
 

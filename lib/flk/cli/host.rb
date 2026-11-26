@@ -3,6 +3,47 @@ module Flk
   class CLI
     private
 
+    # flk peers: every known peer, asked at once.
+    def cmd_peers(_args, o)
+      mine = Peer.remote_apps
+      names = (Peer.peers.keys + mine.values.map { _1["host"] }).uniq.sort
+      here = { "version" => VERSION, "subnet" => "#{Net::SUBNET}.0/24" }
+      rows = names.map do |n|
+        Thread.new do
+          row = { "name" => n, "dest" => Peer.dest(n), "reachable" => false, "flk_version" => nil, "schema" => nil, "host" => nil,
+                  "subnet" => nil, "same_version" => nil, "same_subnet" => nil,
+                  "apps" => mine.select { |_, v| v["host"] == n }.keys.sort, "why" => nil }
+          begin
+            hi = Peer.hello(n)
+            row.merge!("reachable" => true, "flk_version" => hi["version"], "schema" => hi["schema"], "host" => hi["host"],
+                       "subnet" => hi["subnet"], "same_version" => hi["version"] == here["version"],
+                       "same_subnet" => hi["subnet"] == here["subnet"])
+          rescue Error => e
+            row["why"] = e.message
+          end
+          row
+        end
+      end.map(&:value)
+      if o[:json]
+        puts JSON.pretty_generate(rows)
+      elsif rows.empty?
+        puts "No peers: this host (#{Peer.self_name}) hasn't deployed to another, and #{Host::PATH} lists none under [peers]."
+        puts "Next: flk help remote"
+      else
+        puts "This host: #{Peer.self_name}  flk #{VERSION}  machines on #{here['subnet']}"
+        Util.table(%w[PEER DEST STATE FLK NAME-THERE SUBNET APPS], rows.map do |r|
+          state = r["reachable"] ? Util.green("ok") : Util.red("unreachable")
+          ver = r["flk_version"] ? "#{r['flk_version']}#{' (differs)' if r['same_version'] == false}" : "-"
+          [r["name"], r["dest"], state, ver, r["host"] || "-", r["subnet"] || "-", r["apps"].join(",")]
+        end)
+        rows.reject { _1["reachable"] }.each { warn "  #{_1['name']}: #{_1['why']}" }
+        rows.select { _1["reachable"] && _1["host"] != _1["name"] }.each do |r|
+          puts "  #{r['name']} calls itself '#{r['host']}': that is the name [flk] host needs (or set name = \"#{r['name']}\" in host.toml there)"
+        end
+      end
+      exit 1 if rows.any? { !_1["reachable"] }
+    end
+
     def lifecycle_machines = (@app_name ? [app] : App.all).flat_map(&:machines)
 
     def cmd_resume(_args, _o)

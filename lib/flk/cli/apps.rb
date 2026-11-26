@@ -74,13 +74,15 @@ module Flk
       end
       return puts(JSON.pretty_generate(rows)) if o[:json]
       return puts("No releases") if rows.empty?
-      Util.table(%w[VERSION STATUS MACHINES SOURCE KERNEL CREATED], rows.reverse.map do |r|
+      from = rows.any? { _1["origin"] } # only apps another host deploys here have the column
+      Util.table([*%w[VERSION STATUS MACHINES SOURCE], *("FROM" if from), *%w[KERNEL CREATED]], rows.reverse.map do |r|
         status = if r["status"] == "failed" then "failed: #{r['failure']}"
                  elsif r["current"] then "current"
                  elsif r["image"] then "kept (flk releases rollback v#{r['version']})"
                  else "image pruned"
                  end
-        ["v#{r['version']}", status, r["machines"], r["source"], Kernel.name(r["kernel"]) || "-", Util.ago(r["created_at"])]
+        ["v#{r['version']}", status, r["machines"], r["source"], *(Peer.origin_label(r["origin"]) || "-" if from),
+         Kernel.name(r["kernel"]) || "-", Util.ago(r["created_at"])]
       end)
     end
 
@@ -230,6 +232,7 @@ module Flk
       kept = a.volumes.select { App.external_volume?(_1) }
       Util.with_lock { a.machines.each { destroy_machine(_1, force: true) } }
       FileUtils.rm_rf(a.dir) # external volume files live outside it
+      FileUtils.rm_rf(Peer.src_dir(ROOT, name)) # its directory, if another host sent it here
       Image.untag(name)
       Image.remove_trial(name)
       puts "Destroyed app #{name}"

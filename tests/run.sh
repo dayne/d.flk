@@ -39,7 +39,14 @@ FLK_TMUX_SOCKET="flkt-$RUN_ID"
 # address, backup_dir): a file that doesn't exist means the defaults.
 # Tests that need settings write their own.
 FLK_HOST_CONFIG="${TMPDIR:-/tmp}/flk-tests-host-$RUN_ID.toml"
-export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT FLK_TMUX_SOCKET FLK_HOST_CONFIG
+# No test command may ever reach another host: FLK_HOST=local keeps every
+# command here whatever an flk.toml says, and should one get past that,
+# "ssh" is the fake one with no peers. The remote tests (09, 48) lift
+# FLK_HOST for their own commands and give the fake ssh its peers.
+FLK_HOST=local
+FLK_SSH="$TESTS/lib/fake-ssh"
+FLK_FAKE_PEERS="${TMPDIR:-/tmp}/flk-tests-nopeers-$RUN_ID"
+export TESTS FLK_SRC FLK_BIN RUN_ID HOST_PORT FLK_TMUX_SOCKET FLK_HOST_CONFIG FLK_HOST FLK_SSH FLK_FAKE_PEERS
 
 TIER=all FORCE=0 KEEP=0 LIST=0 FILTERS=() CUR=""
 COLOR=1; [[ -t 1 && -z ${NO_COLOR:-} ]] || COLOR=0

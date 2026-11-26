@@ -92,6 +92,12 @@ a Dockerfile for it: `flk help dockerfile`.
   that failed, and `Build log: FILE`: every build's whole output is kept
   in `APP/builds/` (each kept release's as `vN.log`, `build_log` in
   `flk releases --json`; the last 3 failed builds as `vN-failed-TIME.log`).
+- **An app can live on another host.** With `[flk] host = "NAME"` in its
+  flk.toml, the commands about the app run on that flk host over ssh, and
+  `deploy` sends the directory first; `-H NAME` (or `FLK_HOST=NAME`) sends
+  any command, `-H local` keeps it here. Output, `--json` and exit codes
+  are that host's; exit 255 means ssh couldn't connect. `flk peers --json`
+  lists the hosts. Details: `flk help remote`.
 - **Where the config is.** `launch` uses the current directory. After an
   app's first `launch` or `deploy` there, flk remembers its config file
   (`config_path` in `status --json`), so `flk -a APP deploy` and
@@ -299,8 +305,9 @@ roll is a `deploy.failed` for the new release, its `detail` starting with
 
 ## Commands
 
-Global option for every command: `-a, --app APP`. `flk COMMAND --help` works
-everywhere.
+Global options for every command: `-a, --app APP`, and `-H, --on-host HOST`
+to run it on another flk host (`flk help remote`). `flk COMMAND --help`
+works everywhere.
 
 {{COMMANDS}}
 
@@ -317,6 +324,9 @@ everywhere.
 - `FLK_DNS`: resolvers handed to machines (default `1.1.1.1 9.9.9.9`)
 - `FLK_TMUX_SOCKET`: name of flk's own tmux server (default `flk`)
 - `FLK_LOG_MAX_MB`: size at which a machine's `console.log` rotates to `console.log.1` (default 10); an app sets its own with `[flk] log_max_mb`
+- `FLK_HOST`: run commands on this flk host, as `-H` does; `local` keeps them here whatever flk.toml says
+- `FLK_SSH`: the ssh command used to reach another flk host (default `ssh`)
+- `FLK_REMOTE_FLK`: flk's path on the other host, when it isn't on its `PATH` or in `~/.local/bin`
 - `NO_COLOR`: plain output
 
 ## Files
@@ -330,6 +340,8 @@ everywhere.
         machines/ID/
           machine.json  vm.json  rootfs.ext4  config.ext4
           console.log  console.log.1  firecracker.log  fc.sock  pid
+      src/APP/            an app's directory, sent here by another host's deploy
+      remote_apps.json    apps this host deployed to another one, and where
 
 The flk source is at `{{SRC}}`. Host setup lives in `setup-host.sh`, the host
 checker in `flk-sanity.sh`, and end-to-end tests in `tests/run.sh`. Known rough
