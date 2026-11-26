@@ -86,9 +86,16 @@ shell backslashes).
 
 ### Keeping the hosts on one version
 
-Both hosts need the same flk. nexus's checkout (`~/Projects/d.flk`) has
-a git remote `mud` (this host's `~/flk`, over ssh; set up 2026-11-25),
-so it follows mud's main without anything going through GitHub:
+Both hosts need the same flk. nexus's checkout (`~/Projects/d.flk`) is
+to follow mud's main over ssh (keys are in place both ways), so nothing
+has to go through GitHub first. **Not set up yet:** nexus was off the
+network when 0.8.0 was released (2026-11-25), and until it pulls, it
+runs 0.7.0 and can't be deployed to. Once, on nexus (use the name or
+address nexus reaches mud by):
+
+    git -C ~/Projects/d.flk remote add mud dayne@mud:flk
+
+then after each merge or release here, from mud:
 
     ssh nexus "sh -c 'git -C ~/Projects/d.flk pull --ff-only mud main && git -C ~/Projects/d.flk fetch mud --tags'"
     flk peers        # or: flk -H nexus version --json
