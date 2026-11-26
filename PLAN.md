@@ -90,10 +90,14 @@ Tailscale and the other larger pieces, which decide its open questions
 (transport, service address, witness). Settle those before building
 past P0.
 
-**A first piece, planned 2026-11-25:** an app written on mud and run on
-nexus over ssh (`flk -H PEER`, deploy to a peer): `docs/remote-design.md`.
-It is P0 plus the transport P1 needs, and it doesn't wait on Tailscale.
-The app that needs it is `~/spaceengineers.flk`.
+**A first piece, built 2026-11-25 (branch `remote-design`, not on main
+yet):** an app written on mud and run on nexus over ssh: `[flk] host`,
+`-H PEER` / `FLK_HOST`, deploy to a peer, `flk peers`
+(`docs/remote-design.md`, "As built"; `flk help remote`). It is P0 plus
+the transport P1 needs, and it doesn't wait on Tailscale. Tested: fast,
+VM case 48, the full suite, and a `flkt-*` app from mud to nexus by
+hand. The app that needs it is `~/spaceengineers.flk`. Left of that
+plan: files across hosts (R4) and one view of both hosts (R5).
 
 ### M6: Making apps (for flkforge)
 

@@ -36,7 +36,7 @@ module Flk
       end
     end
 
-    def default_toml(name, o)
+    def default_toml(name, o, host: nil)
       build = o[:image] ? "image = #{o[:image].to_s.dump}" : 'dockerfile = "Dockerfile"'
       <<~TOML
         # flk.toml: local Firecracker app config (fly.toml-compatible subset)
@@ -62,7 +62,8 @@ module Flk
         # [[restart]]
         #   policy = "on-failure"  # default: restart after a crash; "always" or "never"
 
-        # [flk]
+        #{host ? '[flk]' : '# [flk]'}
+        #{host ? "  host = #{host.dump}          # the flk host this app runs on (flk help remote)" : '#   host = "nexus"         # run it on another flk host (flk help remote)'}
         #   http_port = 8080       # also serve internal_port on host port 8080 (LAN too)
       TOML
     end
@@ -76,6 +77,7 @@ module Flk
       a.create! unless a.exists?
       config_warnings(cfg)
       mconfig = cfg.machine_config
+      origin = note_origin(cfg)
 
       deploy_capacity!(a, mconfig) # before the slow build
       version = (a.meta["releases"].last&.dig("version") || 0) + 1
@@ -98,6 +100,7 @@ module Flk
           # failed precondition never leaves a release with nothing on it.
           meta = a.meta
           rel["kernel"] = Kernel.info # the guest kernel its machines are about to boot
+          rel["origin"] = origin if origin # sent here from another host (Peer)
           meta["releases"] << rel
           meta["config_path"] = File.expand_path(cfg.path)
           a.save_meta(meta)

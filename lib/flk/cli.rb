@@ -6,6 +6,7 @@ module Flk
 
     def run(argv)
       argv = extract_global(argv)
+      return if run_on_peer(argv) # the app's host is another one (cli/remote.rb)
       name = argv.shift
       case name
       when nil, "-h", "--help" then return puts(Commands.short_help)
@@ -110,6 +111,8 @@ module Flk
         case a
         when "-a", "--app" then @app_name = it.next
         when /\A--app=(.+)\z/ then @app_name = $1
+        when "-H", "--on-host" then @host_name = it.next # (--host is `config show`'s and `check`'s own)
+        when /\A--on-host=(.+)\z/ then @host_name = $1
         else out << a
         end
       end

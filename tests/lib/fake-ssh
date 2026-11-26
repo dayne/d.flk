@@ -1,0 +1,23 @@
+#!/bin/sh
+# A stand-in for ssh in tests (FLK_SSH): "connects" to peer DEST by
+# running the command on this machine with the environment in
+# $FLK_FAKE_PEERS/DEST.env (its own FLK_HOME, host.toml, PATH), from that
+# peer's home directory. rsync uses it too (-e). An unknown DEST fails as
+# ssh does, with 255.
+while [ $# -gt 0 ]; do
+  case $1 in
+    -o|-l|-p|-e|-i) shift 2 ;;
+    -*) shift ;;
+    *) break ;;
+  esac
+done
+dest=$1; shift
+if [ ! -f "$FLK_FAKE_PEERS/$dest.env" ]; then
+  echo "ssh: Could not resolve hostname $dest: Name or service not known" >&2
+  exit 255
+fi
+unset FLK_HOP FLK_ORIGIN FLK_HOST FLK_HOME FLK_HOST_CONFIG   # ssh carries no environment across
+. "$FLK_FAKE_PEERS/$dest.env"
+echo "$dest: $*" >>"$FLK_FAKE_PEERS/calls.log"
+cd "$PEER_HOME" || exit 255
+exec sh -c "$*"

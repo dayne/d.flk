@@ -88,6 +88,7 @@ module Flk
       ["check", "send_hex", "string", nil, "udp: the datagram to send, as hex digits.", :flk],
       ["check", "expect", "regex", nil, "udp: the reply's bytes must match (default: any reply).", :flk],
 
+      ["flk", "host", "string", nil, "The flk host this app runs on, by name (host.toml [peers] there maps a name to an ssh destination). Run from another host, every flk command about the app is sent there, and deploy sends this directory first. Unset: the app runs where flk is run.", :flk],
       ["flk", "http_port", "integer", nil, "A host port forwarded to [http_service] internal_port.", :flk],
       ["flk", "bind", "list", nil, "Forward this app's host ports only on these host addresses (one, a list, or \"all\").", :flk],
       ["flk", "rootfs_extra_mb", "integer", 512, "Free space on / beyond the image's files, in MB; applies at the next deploy.", :flk],

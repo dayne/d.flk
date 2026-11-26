@@ -28,6 +28,7 @@ workflow in its header), and the app's owner confirms. Last checked
 | valheim #1 | A health check for UDP-only servers (udp / a2s) | M6: `type = "udp"`, on main since d49b4a8; valheim to confirm |
 | valheim #3 | A pre-deploy check the app owns (`[deploy] preflight`) | M6: `[deploy] preflight`, on main since d49b4a8; valheim to confirm |
 | flkforge #1 | Any `type = "http"` check crashed deploy (NameError) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
+| spaceengineers | (none open yet; the app is written on mud and runs on nexus) | its `BUGS.flk.md` is the inbox for what remote deploys still lack (remote-design.md R4, R5) |
 | flkforge #2 | A log check ending in `$` never matched (`\r\r\n` line ends) | fixed, on main since 7f0317f; flkforge confirmed (history.md) |
 | enshrouded #4 | `volumes backups` still lists copies that were pruned there | fixed in 56721dc (history.md) |
 | enshrouded #3 | No current health for a long-running machine; its boot scrolls out of `flk logs` | Health while running: on main since a4654bc (`interval`, `flk check`, `checks` in status, `flk-check.timer`); enshrouded to adopt and confirm; `flk logs --boot` on main since 2f5f00f; `[flk] log_max_mb` on main since 53483cd; all in 0.6.0 |
@@ -80,6 +81,16 @@ lazyflk only uses flk's CLI, so what it needs are flk changes. Every new
 JSON field is additive: lazyflk ignores unknown fields and treats missing
 ones as "not supported by this flk", so nothing existing may change
 shape. G1–G16 are done (`docs/history.md`; G15–G16 in git log).
+
+- [ ] **Apps on another host (branch `remote-design`, 2026-11-25).**
+  Additive, to tell lazyflk when it's on main: `flk peers --json`;
+  `flk version --json` (`host`); `origin` on a release; `-H HOST` /
+  `FLK_HOST` on every command, so a second host is the same CLI with one
+  more option. `flk apps list` and `context --all` still show this host
+  only: one list over both hosts is R5 in `docs/remote-design.md`, and
+  lazyflk's wishes for its shape go there. gamebus: `flk -H nexus events
+  --all -f --json` is nexus's stream (a follower cut off here stops
+  there).
 
 - [ ] **Health while running** (flk, 2026-11-20, on main since a4654bc;
   lazyflk's planned "Health while running"). New and additive:

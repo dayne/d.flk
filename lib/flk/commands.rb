@@ -38,7 +38,8 @@ module Flk
       "uninstall" => "Removing apps, host setup and files",
       "dockerfile" => "Writing a Dockerfile for flk: the guest is a VM, not a container",
       "host" => "Looking after the host while apps run: services, upgrades, disk space",
-      "bugs" => "Reporting flk bugs from an app: the BUGS.flk.md format"
+      "bugs" => "Reporting flk bugs from an app: the BUGS.flk.md format",
+      "remote" => "An app written on one host and run on another: [flk] host, -H, what is sent"
     }.freeze
 
     LIST = [
@@ -72,8 +73,11 @@ module Flk
         summary: "Check host readiness",
         notes: ['--json prints {"schema", "ok", "checks": [{"id", "label", "status", "hint"}], "services": [...]}; id names what is checked and stays the same while the label\'s wording and numbers change (a check that finds several problems repeats it); status is pass, fail or warn. warn means flk works but an optional feature (port forwarding) is off; ok is false only when a check fails.',
                 'services: flk-net.service, flk-machines.service and flk-tmux.service as systemd sees them: {"unit", "installed", "enabled", "active", "sub", "result", "since"}.'] },
-      { name: "version", group: "Setup", summary: "Print the flk version",
-        notes: ["What changed in each version: #{File.join(File.dirname(SHARE), 'CHANGELOG.md')}. " \
+      { name: "version", group: "Setup", summary: "Print the flk version", opts: [JSON_OPT], json: true,
+        notes: ['--json prints {"schema", "version", "host", "root", "subnet"}: host is this host\'s name among flk hosts ' \
+                "(name in host.toml, else the hostname), root its state dir, subnet its machines' network. " \
+                "It is what one flk host asks another (flk peers).",
+                "What changed in each version: #{File.join(File.dirname(SHARE), 'CHANGELOG.md')}. " \
                 "Between releases the checkout can be ahead of it: git -C #{File.dirname(SHARE)} describe --tags."] },
 
       { name: "resume", group: "Host",
@@ -171,6 +175,15 @@ module Flk
                     "Only releases whose image is still kept can be used: the last two by default ([flk] keep_releases = N keeps more).",
                     "Volumes aren't touched unless --with-volumes; otherwise restore data with flk volumes restore."] }
         ] },
+      { name: "peers", group: "Host", opts: [JSON_OPT], json: true,
+        summary: "The other flk hosts this one knows, each asked over ssh: version, name, apps deployed there from here",
+        notes: ["Known: [peers] in #{Host::PATH} (name = \"ssh destination\"), and every host an app was deployed to from here.",
+                "A name that isn't listed is its own ssh destination, so `flk -H nexus status` needs no setup when `ssh nexus` works.",
+                '--json: [{"name", "dest", "reachable", "flk_version", "schema", "host", "subnet", "same_version", ' \
+                '"same_subnet", "apps", "why"}]; host is what the peer calls itself (what [flk] host must say), ' \
+                "apps the ones this host deployed there, why the reason when it can't be asked.",
+                "The same machine subnet on two hosts only matters once their machines must reach each other.",
+                "Exits 1 when a peer can't be reached. See: flk help remote."] },
       { name: "disk", group: "Host", opts: [JSON_OPT], json: true,
         summary: "Disk space flk uses, per app: release images, machine disks, volumes, logs; and backups",
         notes: ["Sizes are allocated bytes (sparse files count only what they use); --json also gives apparent sizes.",
@@ -511,7 +524,9 @@ module Flk
         ] }
     ].freeze
 
-    GLOBAL_OPTS = [["-a", "--app APP", "Act on this app instead of the one in ./flk.toml (any command)"]].freeze
+    GLOBAL_OPTS = [["-a", "--app APP", "Act on this app instead of the one in ./flk.toml (any command)"],
+                   ["-H", "--on-host HOST", "Run the command on another flk host, over ssh (or FLK_HOST; 'local' means here). " \
+                                            "Without it, [flk] host in flk.toml decides for commands about the app: flk help remote"]].freeze
 
     EXIT_CODES = { 0 => "success", 1 => "error (message on stderr, starting with 'Error:')",
                    CLI_CHECK_FAILED => "flk check: it ran, and a health check is failing", 130 => "interrupted (Ctrl-C)" }.freeze
@@ -565,7 +580,7 @@ module Flk
 
     def short_help
       out = ["flk: fly.io-style workflow for local Firecracker microVMs", "",
-             "Usage: flk COMMAND [SUBCOMMAND] [ARGS] [-a APP] [--help]", ""]
+             "Usage: flk COMMAND [SUBCOMMAND] [ARGS] [-a APP] [-H HOST] [--help]", ""]
       GROUPS.each do |g|
         out << g
         LIST.select { _1[:group] == g && !_1[:hidden] }.each do |c|
@@ -607,6 +622,7 @@ module Flk
         notes.each { out << "  - #{_1}" }
       end
       out << "" << "Global: -a, --app APP   act on this app instead of the one in ./flk.toml"
+      out << "        -H, --on-host HOST   run it on another flk host over ssh (flk help remote)"
       out.join("\n")
     end
 
@@ -700,7 +716,7 @@ module Flk
             -i|--instance) COMPREPLY=($(compgen -W "$(__flk_ids)" -- "$cur")); return ;;
             --path|--from-dir) COMPREPLY=($(compgen -f -- "$cur")); return ;;
           esac
-          while [[ ${words[cmd_at]} == -a || ${words[cmd_at]} == --app ]]; do cmd_at=$((cmd_at + 2)); done
+          while [[ ${words[cmd_at]} == -a || ${words[cmd_at]} == --app || ${words[cmd_at]} == -H || ${words[cmd_at]} == --on-host ]]; do cmd_at=$((cmd_at + 2)); done
           if [[ $cword -eq $cmd_at ]]; then
             COMPREPLY=($(compgen -W "#{cmds.join(' ')} --help --version -a" -- "$cur")); return
           fi

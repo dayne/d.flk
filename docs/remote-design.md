@@ -1,15 +1,113 @@
-# An app written here, run on another host (plan draft)
+# An app written here, run on another host
 
-**Status: plan, 2026-11-25. Nothing is built.** Dayne set flk up on a
+**Status: R1 to R3 are built (2026-11-25, branch `remote-design`), with
+`[flk] host` in flk.toml as Dayne asked, so the host needn't be named on
+every command. "As built" below says what exists and where it differs
+from the plan under it. R4 and R5 are not built.** Dayne set flk up on a
 second machine, `nexus`, and wants to write a new game server
 (`~/spaceengineers.flk`, Space Engineers) on mud and run it on nexus,
-which has the memory for it. This is flk's side of that: what to build
-so deploying to another host over ssh is a flk command and not a script
-in every app repo. It is the first built piece of M5
-(`docs/m5-design.md`): its P0 (host identity and peers) plus the
-transport that P1's moves need anyway.
+which has the memory for it. This is flk's side of that: deploying to
+another host over ssh as a flk command and not a script in every app
+repo. It is the first built piece of M5 (`docs/m5-design.md`): its P0
+(host identity and peers) plus the transport that P1's moves need anyway.
 
 The app's side is `~/spaceengineers.flk/PLAN.md`, for another agent.
+
+## As built (2026-11-25)
+
+The user's guide is `flk help remote` (`share/help/remote.md`). The code
+is `lib/flk/peer.rb` (transport, sync, origin, the record of remote
+apps) and `lib/flk/cli/remote.rb` (which host a command goes to).
+
+- **`[flk] host = "nexus"`** in the app's flk.toml is the usual way in.
+  In that directory every command about the app goes to nexus; `flk
+  deploy` sends the directory first. `-H HOST` / `--on-host HOST` and
+  `FLK_HOST` send any command; `-H local` keeps one here. (`--host` was
+  taken: `config show --host`, `check --host`.)
+- **A host knows its name** (`name` in host.toml, else the hostname) and
+  `[flk] host` must be that name, checked before anything is sent. That
+  is how the copy of flk.toml on nexus does nothing there. A name is its
+  own ssh destination unless `[peers]` in host.toml maps it. There is no
+  `peers add` command: host.toml is edited by hand, as its other keys
+  are.
+- **What stays on this host** even in such a directory: `doctor`,
+  `version`, `setup`, `disk`, `images`, `apps`, `ports`, `resume`,
+  `stop-all`, `config set|unset`, and anything with `--host` or `--all`.
+  They are about a host, and flk.toml's word must never redirect a
+  command that changes host settings (see "What went wrong once").
+- **The transport.** One ssh per command: `ssh DEST sh -c 'eval "$(printf
+  %s BASE64 | base64 -d)"'`. The login shell sees one quoted word with
+  nothing in it to interpret, so fish on nexus is no different from
+  bash; the script inside is POSIX sh with the arguments quoted for sh.
+  No version handshake on ordinary commands (it would double every
+  call); a deploy asks first (`flk version --json` there) and warns when
+  the versions differ.
+- **stdin** reaches `secrets`, `exec` and `console` only. For everything
+  else flk holds a pipe open as the remote stdin and a watchdog on the
+  peer stops the command when it closes, so a follower (`events -f`)
+  killed here doesn't live on there. Measured on nexus: none left after
+  an interrupt, a TERM and a kill -9 of the local flk. At a terminal the
+  peer's flk gets a terminal too (`ssh -t`).
+- **The sync** is rsync to `FLK_HOME/src/APP/` on the peer: everything
+  but `.git` and `.flkignore`'s patterns, `--delete`, the peer's
+  `.flk-origin` marker protected. Gitignored files go (hooks read
+  `site.env`). `flk apps destroy` there removes the directory.
+- **Origin.** The release records `origin: {host, path, commit, dirty}`;
+  `flk releases` shows FROM. The sending host records the app in
+  `FLK_HOME/remote_apps.json`, so `flk -a APP status` works from any
+  directory there, and `flk peers` lists each peer's apps.
+- **Not in doctor.** A peer being off is normal, and doctor runs every 5
+  minutes from the timer: `flk peers` is the check, by hand.
+- **Refused:** `setup`, `proxy`, `flk ssh ...` with a host.
+
+Tested: `tests/cases/09-remote.sh` (fast: routing, quoting, stdin, the
+sync, peers, refusals) and `48-remote.sh` (a deploy through the fake
+peer boots, origin, marker, destroy), against `tests/lib/fake-ssh`,
+which runs the "peer" on this machine under another host name.
+
+### On a real peer
+
+The suite never leaves the machine (`FLK_HOST=local` and the fake ssh,
+set by `tests/run.sh`). To try a checkout against nexus by hand, with a
+`flkt-*` app only:
+
+    rsync -a --delete --exclude .git ./ nexus:.cache/flk-under-test/
+    export FLK_REMOTE_FLK=/home/dayne/.cache/flk-under-test/bin/flk
+    cd /some/scratch/flkt-app && /path/to/checkout/bin/flk launch
+    ... flk -H nexus apps destroy flkt-NAME --yes; remove the copy on nexus
+
+Done 2026-11-25 with `flkt-nexus-hello` (flk.toml with `host =
+"nexus"`): launch from mud built and booted it on nexus in 7s; status,
+logs, releases (FROM mud), `exec --stdin`, exit codes, a secret from
+stdin, `-a APP` from another directory and `flk peers` all answered from
+nexus. It found one bug the fake peer can't (rsync's `-e` doesn't read
+shell backslashes).
+
+### What went wrong once
+
+During that work a stray `flk.toml` with `host = "nexus"` was left in
+the checkout's root. The suite, run from there, sent some of its
+commands to nexus, and `flk config set` wrote four test values into
+nexus's host.toml (`bind = "10.99.0.7"` among them; nexus had no apps,
+and they were removed within minutes). Three fixes came out of it: host
+settings and other host-level commands never follow flk.toml; the test
+runner pins itself to this host; and AGENTS.md says never to leave an
+flk.toml in the checkout.
+
+### Still open
+
+- R4, files across hosts; R5, one list and one event stream over both.
+- `flk logs`, `status` and the rest pay one ssh connection each (about
+  0.4s to nexus). ssh's own `ControlMaster` in `~/.ssh/config` removes
+  most of it; flk doesn't set it up.
+- A peer's hooks run on the peer: an app repo's scripts must work on
+  both distros.
+- The machine subnet is the same on both hosts. It can stay until
+  machines on the two must reach each other; nexus has no machines yet,
+  so changing it there now (`FLK_SUBNET` with `setup-host.sh`) would be
+  the cheap moment. Dayne's call, host work.
+
+## The plan it was built from (2026-11-25, before building)
 
 ## The two hosts (looked at 2026-11-25, read-only)
 

@@ -3,7 +3,11 @@ module Flk
   class CLI
     private
 
-    def cmd_version(_args, _o) = puts("flk #{VERSION}")
+    def cmd_version(_args, o)
+      return puts("flk #{VERSION}") unless o[:json]
+      puts JSON.pretty_generate({ "schema" => JSON_SCHEMA, "version" => VERSION, "host" => Peer.self_name, "root" => ROOT,
+                                  "subnet" => "#{Net::SUBNET}.0/24" })
+    end
 
     def cmd_help(args, o)
       if o[:all]

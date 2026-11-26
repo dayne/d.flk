@@ -46,7 +46,10 @@ Working on flk itself:
   --json`, `status --json`, `logs --no-tail`) and the game repos' own
   scripts.
 - Tests: `tests/run.sh --fast` (no VMs, no root), and `tests/run.sh` for the
-  full run. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`,
+  full run. The runner sets `FLK_HOST=local` and a fake ssh, so no test
+  command can reach another host; trying a checkout on a real peer is done
+  by hand, with `flkt-*` apps (`docs/remote-design.md`, "On a real peer").
+  Never leave an `flk.toml` in the checkout's root. `./flk-sanity.sh` checks the host. Open issues are in `TODO.md`,
   the order in `PLAN.md`, what's done and decided in `docs/history.md`.
 - Apps report flk bugs in their own `BUGS.flk.md` (`~/*/BUGS.flk.md` on
   the reference host). At the start of a session, read their "Open"
