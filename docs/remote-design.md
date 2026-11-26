@@ -86,19 +86,20 @@ shell backslashes).
 
 ### Keeping the hosts on one version
 
-Both hosts need the same flk. nexus's checkout (`~/Projects/d.flk`) is
-to follow mud's main over ssh (keys are in place both ways), so nothing
-has to go through GitHub first. **Not set up yet:** nexus was off the
-network when 0.8.0 was released (2026-11-25), and until it pulls, it
-runs 0.7.0 and can't be deployed to. Once, on nexus (use the name or
-address nexus reaches mud by):
+Both hosts need the same flk. nexus's checkout (`~/Projects/d.flk`)
+follows mud's main over ssh, so nothing has to go through GitHub first
+(set up 2026-11-25). It has a git remote `mud` (`dayne@mud:flk`) and a
+repo-local alias that pulls main and the tags from it. After each merge
+or release here, from mud:
 
-    git -C ~/Projects/d.flk remote add mud dayne@mud:flk
+    ssh nexus "sh -c 'git -C ~/Projects/d.flk pull-mud'"
+    flk -H nexus version --json      # or: flk peers
 
-then after each merge or release here, from mud:
-
-    ssh nexus "sh -c 'git -C ~/Projects/d.flk pull --ff-only mud main && git -C ~/Projects/d.flk fetch mud --tags'"
-    flk peers        # or: flk -H nexus version --json
+The alias exists because the key mud accepts from nexus has its own
+name (`~/.ssh/id_ed25519-mud`), which a plain `ssh mud` there doesn't
+offer; the alias names it for this pull only (`GIT_SSH_COMMAND`), and
+nexus's ssh config and keys are untouched. It refuses anything but a
+fast-forward, so the checkout on nexus must stay free of local commits.
 
 Its `origin` is still GitHub. A change to `setup-host.sh` or the units
 needs its root step on nexus as on any host (CHANGELOG, "On the host").

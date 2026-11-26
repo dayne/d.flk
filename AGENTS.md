@@ -65,11 +65,10 @@ Working on flk itself:
   tag the commit on main `vX.Y.Z` (Dayne pushes the tag). New things
   raise MINOR, fixes alone raise PATCH.
 - nexus, the second flk host, follows this one: after a merge or release
-  here it is brought up to date with `git pull --ff-only mud main` in
-  its checkout, from a git remote named `mud` (the exact commands, and
-  whether that remote is set up yet, are in `docs/remote-design.md`,
-  "Keeping the hosts on one version"). That is a pull on nexus, not a
-  push from here.
+  here, bring it up to date with `ssh nexus "sh -c 'git -C
+  ~/Projects/d.flk pull-mud'"` (a pull on nexus from its git remote
+  `mud`, not a push from here; `docs/remote-design.md`, "Keeping the
+  hosts on one version"), then check with `flk -H nexus version --json`.
 - Commit, never push. Dayne pushes every repo by hand: end with what's
   waiting (`git log --oneline origin/main..main`), and leave git remotes,
   SSH keys and agents alone, even if a push or fetch fails.
