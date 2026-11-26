@@ -2,14 +2,14 @@
 
 **Status: plan, 2026-11-25. Nothing is built.** Dayne set flk up on a
 second machine, `nexus`, and wants to write a new game server
-(`~/spaceengineers.m`, Space Engineers) on mud and run it on nexus,
+(`~/spaceengineers.flk`, Space Engineers) on mud and run it on nexus,
 which has the memory for it. This is flk's side of that: what to build
 so deploying to another host over ssh is a flk command and not a script
 in every app repo. It is the first built piece of M5
 (`docs/m5-design.md`): its P0 (host identity and peers) plus the
 transport that P1's moves need anyway.
 
-The app's side is `~/spaceengineers.m/PLAN.md`, for another agent.
+The app's side is `~/spaceengineers.flk/PLAN.md`, for another agent.
 
 ## The two hosts (looked at 2026-11-25, read-only)
 
@@ -39,8 +39,8 @@ Three things this already shows:
 
 ## What works today, with no flk change
 
-    rsync -a --delete --exclude .git ~/spaceengineers.m/ nexus:spaceengineers.m/
-    ssh nexus "sh -c 'cd spaceengineers.m && flk launch'"
+    rsync -a --delete --exclude .git ~/spaceengineers.flk/ nexus:spaceengineers.flk/
+    ssh nexus "sh -c 'cd spaceengineers.flk && flk launch'"
     ssh nexus "sh -c 'flk -a spaceengineers-flk status --json'"
 
 That is what the app's agent starts with, in a `bin/se` wrapper. Every
@@ -130,7 +130,7 @@ no new protocol: they already read `flk ... --json`.
 
 ### R3: deploy to a peer
 
-    cd ~/spaceengineers.m
+    cd ~/spaceengineers.flk
     flk -H nexus launch            # first time
     flk -H nexus deploy            # after that
 
@@ -201,7 +201,7 @@ is unchanged. A machine subnet per host comes with it.
 
 - It starts now, with the plain rsync-and-ssh wrapper. It doesn't wait
   for flk.
-- What gets in its way goes into `~/spaceengineers.m/BUGS.flk.md`; this
+- What gets in its way goes into `~/spaceengineers.flk/BUGS.flk.md`; this
   session reads it at the start, as with the other apps, and keeps the
   index in `TODO.md`.
 - When R2 and R3 are on main and on nexus, its wrapper becomes `flk -H

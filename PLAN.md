@@ -93,7 +93,7 @@ past P0.
 **A first piece, planned 2026-11-25:** an app written on mud and run on
 nexus over ssh (`flk -H PEER`, deploy to a peer): `docs/remote-design.md`.
 It is P0 plus the transport P1 needs, and it doesn't wait on Tailscale.
-The app that needs it is `~/spaceengineers.m`.
+The app that needs it is `~/spaceengineers.flk`.
 
 ### M6: Making apps (for flkforge)
 
